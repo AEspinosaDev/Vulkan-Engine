@@ -4,7 +4,7 @@
 void vkboot::VulkanBooter::create_instance()
 {
 	if (m_validation && !vkutils::check_validation_layer_suport(m_validationLayers)) {
-		throw std::runtime_error(ERROR" validation layers requested, but not available!");
+		throw std::runtime_error(" validation layers requested, but not available!");
 	}
 
 	VkApplicationInfo appInfo{};
@@ -39,7 +39,7 @@ void vkboot::VulkanBooter::create_instance()
 	}
 
 	if (vkCreateInstance(&createInfo, nullptr, m_instance) != VK_SUCCESS) {
-		throw std::runtime_error(ERROR"failed to create instance!");
+		throw std::runtime_error("failed to create instance!");
 	}
 }
 
@@ -72,7 +72,7 @@ void vkboot::VulkanBooter::setup_debug_messenger()
 	vkutils::populate_debug_messenger_create_info(createInfo);
 
 	if (vkutils::create_debug_utils_messenger_EXT(*m_instance, &createInfo, nullptr, m_debugMessenger) != VK_SUCCESS) {
-		throw std::runtime_error(ERROR"failed to set up debug messenger!");
+		throw std::runtime_error("failed to set up debug messenger!");
 	}
 }
 
@@ -83,7 +83,7 @@ void vkboot::VulkanBooter::pick_graphics_card_device()
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(*m_instance, &deviceCount, nullptr);
 	if (deviceCount == 0) {
-		throw std::runtime_error(ERROR"failed to find GPUs with Vulkan support!");
+		throw std::runtime_error("failed to find GPUs with Vulkan support!");
 	}
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(*m_instance, &deviceCount, devices.data());
@@ -104,7 +104,7 @@ void vkboot::VulkanBooter::pick_graphics_card_device()
 		*m_gpu = candidates.rbegin()->second;
 	}
 	else {
-		throw std::runtime_error(ERROR"failed to find a suitable GPU!");
+		throw std::runtime_error("failed to find a suitable GPU!");
 	}
 
 
@@ -146,7 +146,7 @@ void vkboot::VulkanBooter::create_logical_device()
 		createInfo.enabledLayerCount = 0;
 	}
 	if (vkCreateDevice(*m_gpu, &createInfo, nullptr, m_device) != VK_SUCCESS) {
-		throw std::runtime_error(ERROR"failed to create logical device!");
+		throw std::runtime_error("failed to create logical device!");
 	}
 	vkGetDeviceQueue(*m_device, indices.graphicsFamily.value(), 0, m_graphicsQueue);
 	vkGetDeviceQueue(*m_device, indices.presentFamily.value(), 0, m_presentQueue);

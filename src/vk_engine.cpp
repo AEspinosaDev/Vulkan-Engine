@@ -27,24 +27,22 @@ void VulkanEngine::init_vulkan()
 		&m_presentQueue, &m_enableValidationLayers);
 
 	booter.boot_vulkan();
-
-	if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS) {
-		throw std::runtime_error(ERROR"failed to create window surface!");
-	}
+	
+	VK_CHECK(glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface));
 
 	booter.setup_devices();
 
 	create_swapchain();
 
 	create_default_renderpass();
-	
+
 	create_framebuffers();
 
-	createGraphicPipeline();
+	init_commands();
 
-	createCommandPool();
-	create_command_buffers();
 	create_sync_objects();
+
+	createGraphicPipeline();
 
 	m_globalParams.initialized = true;
 
@@ -63,9 +61,9 @@ void VulkanEngine::update()
 
 void VulkanEngine::draw_frame()
 {
-	vkWaitForFences(m_device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(m_device, 1, &m_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreate_swap_chain();
@@ -75,7 +73,7 @@ void VulkanEngine::draw_frame()
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	vkResetFences(m_device, 1, &inFlightFences[currentFrame]);
+	vkResetFences(m_device, 1, &m_inFlightFences[currentFrame]);
 
 	vkResetCommandBuffer(m_commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
 	record_command_buffer(m_commandBuffers[currentFrame], imageIndex);
@@ -83,7 +81,7 @@ void VulkanEngine::draw_frame()
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
@@ -92,11 +90,11 @@ void VulkanEngine::draw_frame()
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_commandBuffers[currentFrame];
 
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
@@ -134,9 +132,9 @@ void VulkanEngine::cleanup()
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 		vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(m_device, renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(m_device, imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(m_device, inFlightFences[i], nullptr);
+			vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
 		}
 		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 	}
@@ -231,7 +229,7 @@ void VulkanEngine::create_framebuffers()
 		};
 
 		fb_info.pAttachments = attachments;
-		
+
 
 		if (vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create framebuffer!");
@@ -247,6 +245,25 @@ void VulkanEngine::create_framebuffers()
 
 }
 
+void VulkanEngine::init_commands()
+{
+	//create a command pool for commands submitted to the graphics queue.
+	//we also want the pool to allow for resetting of individual command buffers
+	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(vkboot::find_queue_families(m_gpu, m_surface).graphicsFamily.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+	VK_CHECK(vkCreateCommandPool(m_device, &commandPoolInfo, nullptr, &m_commandPool));
+
+	//allocate the default command buffer that we will use for rendering
+	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(m_commandPool, (uint32_t)m_commandBuffers.size());
+
+	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, m_commandBuffers.data()));
+
+	m_deletionQueue.push_function([=]() {
+		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+		});
+}
+
 
 
 void VulkanEngine::createGraphicPipeline()
@@ -254,7 +271,7 @@ void VulkanEngine::createGraphicPipeline()
 	//auto vertShaderCode = readFile("shaders/vert.spv");
 	//auto fragShaderCode = readFile("shaders/frag.spv");
 
-	ShaderSource shaderSources = readShaderFile("../resources/shaders/test.glsl");
+	ShaderSource shaderSources = readShaderFile("./resources/shaders/test.glsl");
 	//DEBUG_LOG(shaderSources.vert);
 
 	VkShaderModule vertShaderModule = createShaderModule(compileShader(shaderSources.vert, "test vert", shaderc_vertex_shader, true));
@@ -368,34 +385,7 @@ void VulkanEngine::createGraphicPipeline()
 }
 
 
-void VulkanEngine::createCommandPool()
-{
-	vkboot::QueueFamilyIndices queueFamilyIndices = vkboot::find_queue_families(m_gpu, m_surface);
 
-	VkCommandPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-	if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
-	}
-}
-
-void VulkanEngine::create_command_buffers()
-{
-	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = m_commandPool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
-
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate command buffers!");
-	}
-}
 
 void VulkanEngine::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
@@ -448,25 +438,37 @@ void VulkanEngine::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t
 
 void VulkanEngine::create_sync_objects()
 {
-	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+	m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkSemaphoreCreateInfo semaphoreInfo{};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	VkFenceCreateInfo fenceInfo{};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	//create syncronization structures
+	//one fence to control when the gpu has finished rendering the frame,
+	//and 2 semaphores to syncronize rendering with swapchain
+	//we want the fence to start signalled so we can wait on it on the first frame
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-			vkCreateFence(m_device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
 
-			throw std::runtime_error("failed to create synchronization objects for a frame!");
-		}
+		VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_inFlightFences[i]));
+		m_deletionQueue.push_function([=]() {
+			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+			});
+		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_imageAvailableSemaphores[i]));
+		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderFinishedSemaphores[i]));
+		m_deletionQueue.push_function([=]() {
+			vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+			vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+			});
 	}
+
+
+}
+
+void VulkanEngine::create_pipelines()
+{
+
 
 }
 
@@ -479,7 +481,7 @@ void VulkanEngine::recreate_swap_chain()
 		glfwWaitEvents();
 	}
 
-	vkDeviceWaitIdle(m_device);
+	VK_CHECK(vkDeviceWaitIdle(m_device));
 	cleanup_swap_chain();
 	create_swapchain();
 	create_framebuffers();
@@ -546,7 +548,7 @@ VkShaderModule VulkanEngine::createShaderModule(const std::vector<uint32_t> code
 
 	VkShaderModule shaderModule;
 	if (vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		throw std::runtime_error(ERROR"failed to create shader module!");
+		throw std::runtime_error("failed to create shader module!");
 	}
 	return shaderModule;
 }
@@ -560,7 +562,7 @@ std::vector<uint32_t> VulkanEngine::compileShader(const std::string src, const s
 	}
 	shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(src, kind, shaderName.c_str(), options);
 	if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-		DEBUG_LOG(ERROR"Error compiling module - " << result.GetErrorMessage());
+		DEBUG_LOG("Error compiling module - " << result.GetErrorMessage());
 	}
 
 	std::vector<uint32_t> spirv = { result.cbegin(),result.cend() };

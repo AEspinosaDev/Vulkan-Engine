@@ -44,13 +44,11 @@ void Swapchain::create(VkPhysicalDevice* gpu, VkDevice* device, VkSurfaceKHR* su
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(*device, &createInfo, nullptr, &m_swapchain) != VK_SUCCESS) {
-		throw std::runtime_error(ERROR"failed to create swap chain!");
-	}
+	VK_CHECK(vkCreateSwapchainKHR(*device, &createInfo, nullptr, &m_swapchain));
 
-	vkGetSwapchainImagesKHR(*device, m_swapchain, &imageCount, nullptr);
-	m_swapchainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(*device, m_swapchain, &imageCount, m_swapchainImages.data());
+	VK_CHECK(vkGetSwapchainImagesKHR(*device, m_swapchain, &imageCount, nullptr);
+	m_swapchainImages.resize(imageCount));
+	VK_CHECK(vkGetSwapchainImagesKHR(*device, m_swapchain, &imageCount, m_swapchainImages.data()));
 
 	m_swapchainImageFormat = surfaceFormat.format;
 	*windowExtent = extent;
@@ -132,10 +130,8 @@ void Swapchain::create_image_views(VkDevice* device)
 		createInfo.subresourceRange.levelCount = 1;
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
-
-		if (vkCreateImageView(*device, &createInfo, nullptr, &m_swapchainImageViews[i]) != VK_SUCCESS) {
-			throw std::runtime_error(ERROR"failed to create image views!");
-		}
+		
+		VK_CHECK(vkCreateImageView(*device, &createInfo, nullptr, &m_swapchainImageViews[i]));
 	}
 
 }

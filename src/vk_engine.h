@@ -57,15 +57,19 @@ class VulkanEngine {
 	VkQueue									m_presentQueue;
 
 
-	VkCommandPool							m_commandPool;
-	std::vector<VkCommandBuffer>			m_commandBuffers;
-
-
 
 	Swapchain								m_swapchain;
 
 	std::vector<VkFramebuffer>				m_framebuffers;
 	
+	//Command
+	VkCommandPool							m_commandPool;
+	std::vector<VkCommandBuffer>			m_commandBuffers;
+	//Syncs
+	std::vector<VkSemaphore>				m_imageAvailableSemaphores;
+	std::vector<VkSemaphore>				m_renderFinishedSemaphores;
+	std::vector<VkFence>					m_inFlightFences;
+
 
 	VkPipelineLayout						m_pipelineLayout;
 	VkPipeline								m_graphicsPipeline;
@@ -73,9 +77,6 @@ class VulkanEngine {
 
 	vkutils::DeletionQueue					m_deletionQueue;
 
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
 	uint32_t currentFrame = 0;
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	//VkPipelineLayout _trianglePipelineLayout;
@@ -98,7 +99,7 @@ class VulkanEngine {
 
 #pragma endregion
 public:
-	void run() {
+	inline void run() {
 
 		init_window();
 		init_vulkan();
@@ -122,20 +123,23 @@ private:
 
 #pragma endregion
 #pragma region Vulkan Management
-	//Initiation
 	void create_swapchain();
+
 	void create_default_renderpass();
+
 	void create_framebuffers();
-	//void init_commands();
-	//void create_pipelines();
+
+	void init_commands();
+
+	void create_sync_objects();
+
+	void create_pipelines();
 
 	void createGraphicPipeline();
-	void createCommandPool();
-	void create_command_buffers();
+
 	void record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
 
-	void create_sync_objects();
 
 	void recreate_swap_chain();
 
