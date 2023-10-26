@@ -43,5 +43,7 @@ namespace vkutils
 	void log_available_extensions(std::vector<VkExtensionProperties> ext);
 	void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 
+
+
 };
 

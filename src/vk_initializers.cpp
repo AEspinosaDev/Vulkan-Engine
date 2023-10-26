@@ -152,7 +152,7 @@ VkPipelineInputAssemblyStateCreateInfo vkinit::input_assembly_create_info(VkPrim
 	info.primitiveRestartEnable = VK_FALSE;
 	return info;
 }
-VkPipelineRasterizationStateCreateInfo vkinit::rasterization_state_create_info(VkPolygonMode polygonMode)
+VkPipelineRasterizationStateCreateInfo vkinit::rasterization_state_create_info(VkPolygonMode polygonMode,VkCullModeFlags cullMode, VkFrontFace face ,float lineWidth)
 {
 	VkPipelineRasterizationStateCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -163,10 +163,10 @@ VkPipelineRasterizationStateCreateInfo vkinit::rasterization_state_create_info(V
 	info.rasterizerDiscardEnable = VK_FALSE;
 
 	info.polygonMode = polygonMode;
-	info.lineWidth = 1.0f;
+	info.lineWidth = lineWidth;
 	//no backface cull
-	info.cullMode = VK_CULL_MODE_NONE;
-	info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	info.cullMode = cullMode;
+	info.frontFace = face;
 	//no depth bias
 	info.depthBiasEnable = VK_FALSE;
 	info.depthBiasConstantFactor = 0.0f;

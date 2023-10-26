@@ -10,13 +10,10 @@
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 #include "vk_swapchain.h"
-#include "vk_shader.h"
+#include "vk_pipeline.h"
 
 
-//Shader class
-//Pipeline class
-// 
-//SwapChain class
+
 
 struct GlobalParams {
 	uint32_t								width = 800;
@@ -66,7 +63,11 @@ class VulkanEngine {
 
 
 	VkPipelineLayout						m_pipelineLayout;
-	VkPipeline								m_graphicsPipeline;
+
+	VkPipeline								m_currentPipeline;
+	std::unordered_map<std::string,VkPipeline>						m_pipelines;
+
+
 
 
 	vkutils::DeletionQueue					m_deletionQueue;
@@ -75,13 +76,7 @@ class VulkanEngine {
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
 
-	//VkPipelineLayout _trianglePipelineLayout;
-	//VkPipeline _trianglePipeline;
-	//VkPipeline _redTrianglePipeline;
-
-	/*DeletionQueue _mainDeletionQueue;*/
-
-	//friend class vkboot::VulkanBooter;
+	
 
 #ifdef NDEBUG
 	const bool m_enableValidationLayers = false;
@@ -113,7 +108,7 @@ private:
 
 	void update();
 
-	void draw_frame();
+	void draw();
 
 	void cleanup();
 

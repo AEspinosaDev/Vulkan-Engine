@@ -28,7 +28,7 @@ namespace vkinit {
 
 	VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info(VkPrimitiveTopology topology);
 
-	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode);
+	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace face, float lineWidth = 1.0);
 
 	VkPipelineMultisampleStateCreateInfo multisampling_state_create_info();
 
