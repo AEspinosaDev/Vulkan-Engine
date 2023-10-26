@@ -364,22 +364,10 @@ void VulkanEngine::create_pipelines()
 	VkShaderModule vertShaderModule = Shader::createShaderModule(m_device, Shader::compileShader(testShader.getSource()->vert, "test vert", shaderc_vertex_shader, true));
 	VkShaderModule fragShaderModule = Shader::createShaderModule(m_device, Shader::compileShader(testShader.getSource()->frag, "test frag", shaderc_fragment_shader, true));
 
-
-	//VERTEX
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = vertShaderModule;
-	vertShaderStageInfo.pName = "main";
-
-	//FRAGMENT
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = fragShaderModule;
-	fragShaderStageInfo.pName = "main";
-
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo = vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo = vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
 	
 
 
