@@ -2,6 +2,7 @@
 
 
 
+
 void VulkanEngine::init_window()
 {
 	glfwInit();
@@ -13,6 +14,7 @@ void VulkanEngine::init_window()
 	//WINDOW CALLBACKS
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+	glfwSetKeyCallback(m_window, onKeyPressedCallback);
 
 }
 
@@ -42,7 +44,7 @@ void VulkanEngine::init_vulkan()
 
 	create_sync_objects();
 
-	createGraphicPipeline();
+	create_pipelines();
 
 	m_globalParams.initialized = true;
 
@@ -266,16 +268,102 @@ void VulkanEngine::init_commands()
 
 
 
-void VulkanEngine::createGraphicPipeline()
+
+
+
+
+
+void VulkanEngine::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
-	//auto vertShaderCode = readFile("shaders/vert.spv");
-	//auto fragShaderCode = readFile("shaders/frag.spv");
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	ShaderSource shaderSources = readShaderFile("./resources/shaders/test.glsl");
-	//DEBUG_LOG(shaderSources.vert);
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
 
-	VkShaderModule vertShaderModule = createShaderModule(compileShader(shaderSources.vert, "test vert", shaderc_vertex_shader, true));
-	VkShaderModule fragShaderModule = createShaderModule(compileShader(shaderSources.frag, "test frag", shaderc_fragment_shader, true));
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_renderPass;
+	renderPassInfo.framebuffer = m_framebuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_windowExtent;
+
+	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_windowExtent.width;
+	viewport.height = (float)m_windowExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = m_windowExtent;
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+void VulkanEngine::create_sync_objects()
+{
+	m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+	//create syncronization structures
+	//one fence to control when the gpu has finished rendering the frame,
+	//and 2 semaphores to syncronize rendering with swapchain
+	//we want the fence to start signalled so we can wait on it on the first frame
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
+	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+		VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_inFlightFences[i]));
+		m_deletionQueue.push_function([=]() {
+			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+			});
+		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_imageAvailableSemaphores[i]));
+		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderFinishedSemaphores[i]));
+		m_deletionQueue.push_function([=]() {
+			vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+			vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+			});
+	}
+
+
+}
+
+void VulkanEngine::create_pipelines()
+{
+	//compile shaders
+	//FUNCTION !!!!!!!!!!!!!!!!!!
+
+	//for all pipelines
+
+	Shader testShader("../resources/shaders/test.glsl");
+
+	VkShaderModule vertShaderModule = Shader::createShaderModule(m_device, Shader::compileShader(testShader.getSource()->vert, "test vert", shaderc_vertex_shader, true));
+	VkShaderModule fragShaderModule = Shader::createShaderModule(m_device, Shader::compileShader(testShader.getSource()->frag, "test frag", shaderc_fragment_shader, true));
+
 
 	//VERTEX
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -292,7 +380,7 @@ void VulkanEngine::createGraphicPipeline()
 	fragShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-
+	
 
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -382,95 +470,9 @@ void VulkanEngine::createGraphicPipeline()
 
 	vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
-}
-
-
-
-
-void VulkanEngine::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-{
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0; // Optional
-	beginInfo.pInheritanceInfo = nullptr; // Optional
-
-	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
-
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_renderPass;
-	renderPassInfo.framebuffer = m_framebuffers[imageIndex];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_windowExtent;
-
-	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
-
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)m_windowExtent.width;
-	viewport.height = (float)m_windowExtent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = m_windowExtent;
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-	vkCmdEndRenderPass(commandBuffer);
-
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
-	}
-}
-
-void VulkanEngine::create_sync_objects()
-{
-	m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-
-	//create syncronization structures
-	//one fence to control when the gpu has finished rendering the frame,
-	//and 2 semaphores to syncronize rendering with swapchain
-	//we want the fence to start signalled so we can wait on it on the first frame
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
-	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-		VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_inFlightFences[i]));
-		m_deletionQueue.push_function([=]() {
-			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
-			});
-		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_imageAvailableSemaphores[i]));
-		VK_CHECK(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_renderFinishedSemaphores[i]));
-		m_deletionQueue.push_function([=]() {
-			vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
-			vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
-			});
-	}
-
 
 }
 
-void VulkanEngine::create_pipelines()
-{
-
-
-}
 
 void VulkanEngine::recreate_swap_chain()
 {
@@ -495,83 +497,6 @@ void VulkanEngine::cleanup_swap_chain()
 
 	m_swapchain.cleanup(&m_device);
 }
-
-std::vector<char> VulkanEngine::readFile(const std::string& filename)
-{
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-	if (!file.is_open()) {
-		throw std::runtime_error("failed to open file!");
-	}
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-	file.close();
-
-	return buffer;
-}
-
-ShaderSource VulkanEngine::readShaderFile(const std::string& filePath)
-{
-	std::ifstream stream(filePath);
-
-	enum class ShaderType
-	{
-		NONE = -1, VERTEX = 0, FRAGMENT = 1, GEOMETRY = 2, TESSELATION = 3
-	};
-
-	std::string line;
-	std::stringstream ss[4];
-	ShaderType type = ShaderType::NONE;
-
-	while (getline(stream, line)) {
-		if (line.find("#shader") != std::string::npos) {
-			if (line.find("vertex") != std::string::npos) type = ShaderType::VERTEX;
-			else if (line.find("fragment") != std::string::npos) type = ShaderType::FRAGMENT;
-			else if (line.find("geometry") != std::string::npos) type = ShaderType::GEOMETRY;
-			else if (line.find("tesselation") != std::string::npos) type = ShaderType::TESSELATION;
-		}
-		else {
-			ss[(int)type] << line << '\n';
-		}
-	}
-	return { ss[0].str(), ss[1].str(), ss[2].str(),ss[3].str() };
-}
-
-VkShaderModule VulkanEngine::createShaderModule(const std::vector<uint32_t> code)
-{
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size() * sizeof(unsigned int);
-	createInfo.pCode = code.data();
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create shader module!");
-	}
-	return shaderModule;
-}
-
-std::vector<uint32_t> VulkanEngine::compileShader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize)
-{
-	shaderc::Compiler compiler;
-	shaderc::CompileOptions options;
-	if (optimize) {
-		options.SetOptimizationLevel(shaderc_optimization_level_size);
-	}
-	shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(src, kind, shaderName.c_str(), options);
-	if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-		DEBUG_LOG("Error compiling module - " << result.GetErrorMessage());
-	}
-
-	std::vector<uint32_t> spirv = { result.cbegin(),result.cend() };
-
-	return spirv;
-
-}
-
-
 
 
 

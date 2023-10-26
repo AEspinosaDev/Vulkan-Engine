@@ -29,6 +29,6 @@
 		}                                                           \
 	} while (0)
 
-
+//std::string SHADER_ROOT = "../resources/shaders/";
 
 

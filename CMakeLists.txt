@@ -14,7 +14,7 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 # endif()
 
 # Set the CMake generator for Visual Studio 2022
-set(CMAKE_GENERATOR "Visual Studio 17 2022" CACHE STRING "Visual Studio 2022" FORCE)
+set(CMAKE_GENERATOR "Visual Studio 16 2019" CACHE STRING "Visual Studio 2019" FORCE)
 
 # Set the platform (e.g., x64)
 set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed

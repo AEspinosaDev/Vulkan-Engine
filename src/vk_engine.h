@@ -10,6 +10,7 @@
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 #include "vk_swapchain.h"
+#include "vk_shader.h"
 
 
 //Shader class
@@ -25,13 +26,6 @@ struct GlobalParams {
 
 
 
-struct ShaderSource
-{
-	std::string								vert;
-	std::string								frag;
-	std::string								geom;
-	std::string								tess;
-};
 
 class VulkanEngine {
 #pragma region Properties
@@ -79,6 +73,8 @@ class VulkanEngine {
 
 	uint32_t currentFrame = 0;
 	const int MAX_FRAMES_IN_FLIGHT = 2;
+
+
 	//VkPipelineLayout _trianglePipelineLayout;
 	//VkPipeline _trianglePipeline;
 	//VkPipeline _redTrianglePipeline;
@@ -123,6 +119,7 @@ private:
 
 #pragma endregion
 #pragma region Vulkan Management
+
 	void create_swapchain();
 
 	void create_default_renderpass();
@@ -135,33 +132,25 @@ private:
 
 	void create_pipelines();
 
-	void createGraphicPipeline();
-
 	void record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
-
 
 	void recreate_swap_chain();
 
 	void cleanup_swap_chain();
 
+#pragma endregion
 
+#pragma region Input Management
+	static void onKeyPressedCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
-	
-
-
-
-	std::vector<char> readFile(const std::string& filename);
-	ShaderSource readShaderFile(const std::string& filePath);
-
-	VkShaderModule createShaderModule(const std::vector<uint32_t> code);
-	std::vector<uint32_t> compileShader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize);
+		std::cout << "key pressed";
+	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 		auto app = reinterpret_cast<VulkanEngine*>(glfwGetWindowUserPointer(window));
 		app->framebufferResized = true;
 	}
-#pragma endregion
 
+#pragma endregion
 };
 
