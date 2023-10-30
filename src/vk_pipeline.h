@@ -3,6 +3,8 @@
 
 struct Shader
 {
+	std::string								name;
+
 	std::string								vertSource;
 	std::string								fragSource;
 	std::string								geomSource;

@@ -61,8 +61,6 @@ namespace vkboot {
 
 	};
 
-	
-
 	QueueFamilyIndices find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);
 	SwapChainSupportDetails query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 

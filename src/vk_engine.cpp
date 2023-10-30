@@ -14,8 +14,15 @@ void VulkanEngine::init_window()
 
 	//WINDOW CALLBACKS
 	glfwSetWindowUserPointer(m_window, this);
-	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
-	glfwSetKeyCallback(m_window, onKeyPressedCallback);
+
+	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* w, int width, int heigth)
+		{
+			static_cast<VulkanEngine*>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth);
+		});
+	glfwSetKeyCallback(m_window, [](GLFWwindow* w, int key, int scancode, int action, int mods)
+		{
+			static_cast<VulkanEngine*>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods);
+		});
 
 }
 
@@ -30,7 +37,7 @@ void VulkanEngine::init_vulkan()
 		&m_presentQueue, &m_enableValidationLayers);
 
 	booter.boot_vulkan();
-	
+
 	VK_CHECK(glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface));
 
 	booter.setup_devices();
@@ -47,7 +54,7 @@ void VulkanEngine::init_vulkan()
 
 	create_pipelines();
 
-	m_globalParams.initialized = true;
+	m_initialized = true;
 
 }
 
@@ -59,14 +66,14 @@ void VulkanEngine::update()
 		glfwPollEvents();
 		draw();
 	}
-	vkDeviceWaitIdle(m_device);
+	VK_CHECK(vkDeviceWaitIdle(m_device));
 }
 
 void VulkanEngine::draw()
 {
-	vkWaitForFences(m_device, 1, &m_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+	VK_CHECK(vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX));
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreate_swap_chain();
@@ -76,79 +83,81 @@ void VulkanEngine::draw()
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	vkResetFences(m_device, 1, &m_inFlightFences[currentFrame]);
+	VK_CHECK(vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]));
+	VK_CHECK(vkResetCommandBuffer(m_commandBuffers[m_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
-	vkResetCommandBuffer(m_commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-	record_command_buffer(m_commandBuffers[currentFrame], imageIndex);
+	record_command_buffer(m_commandBuffers[m_currentFrame], imageIndex);
 
-	VkSubmitInfo submitInfo{};
+	//prepare the submission to the queue. 
+	//we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
+	//we will signal the renderSemaphore, to signal that rendering has finished
+	VkSubmitInfo submitInfo = vkinit::submit_info(&m_commandBuffers[m_currentFrame]);
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[currentFrame] };
+	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
-
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[currentFrame];
-
-	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[currentFrame] };
+	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[currentFrame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
-	VkPresentInfoKHR presentInfo{};
+	// this will put the image we just rendered to into the visible window.
+	// we want to wait on the renderSemaphore for that, 
+	// as its necessary that drawing commands have finished before the image is displayed to the user
+	VkPresentInfoKHR presentInfo = vkinit::present_info();
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
-
 	VkSwapchainKHR swapChains[] = { *m_swapchain.get_swapchain_obj() };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
-
 	presentInfo.pImageIndices = &imageIndex;
 
 	result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
-		framebufferResized = false;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
+		m_framebufferResized = false;
 		recreate_swap_chain();
 	}
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void VulkanEngine::cleanup()
 {
-	cleanup_swap_chain();
+	if (m_initialized) {
+		/*cleanup_swap_chain();
 
-	{
-		vkDestroyPipeline(m_device, m_currentPipeline, nullptr);
-		vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
-		vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+		{
+			vkDestroyPipeline(m_device, *m_currentPipeline, nullptr);
+			vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+			vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+				vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+				vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+				vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+			}
+			vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+		}*/
+		m_deletionQueue.flush();
+
+		vkDestroyDevice(m_device, nullptr);
+
+		if (m_enableValidationLayers) {
+			vkutils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
 		}
-		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		vkDestroyInstance(m_instance, nullptr);
 	}
-
-	vkDestroyDevice(m_device, nullptr);
-
-	if (m_enableValidationLayers) {
-		vkutils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
-	}
-	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-	vkDestroyInstance(m_instance, nullptr);
 
 	glfwDestroyWindow(m_window);
 
@@ -238,11 +247,6 @@ void VulkanEngine::create_framebuffers()
 			throw std::runtime_error("failed to create framebuffer!");
 		}
 
-		/*m_deletionQueue.push_function([=]() {
-			vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-			vkDestroyImageView(m_device, _swapchainImageViews[i], nullptr);
-			});*/
-
 	}
 
 
@@ -268,38 +272,27 @@ void VulkanEngine::init_commands()
 }
 
 
-
-
-
-
-
-
 void VulkanEngine::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0; // Optional
-	beginInfo.pInheritanceInfo = nullptr; // Optional
-
+	VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_renderPass;
-	renderPassInfo.framebuffer = m_framebuffers[imageIndex];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_windowExtent;
+	VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, m_windowExtent, m_framebuffers[imageIndex]);
 
-	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	//Clear COLOR | DEPTH | STENCIL ??
+	VkClearValue clearColor = { {{m_globalParams.clearColor.r, m_globalParams.clearColor.g, m_globalParams.clearColor.b, m_globalParams.clearColor.a}} };
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_currentPipeline);
+	//Like bind program
+	m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_currentPipeline);
 
+	//Viewport setup
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -355,18 +348,16 @@ void VulkanEngine::create_sync_objects()
 
 void VulkanEngine::create_pipelines()
 {
-	
-	//for all pipelines or shaders
+	//Populate shader list
+	std::vector<Shader> shaders;
+	//resources easy route!!!
+	shaders.push_back(Shader::read_file("../resources/shaders/test.glsl"));
+	shaders.push_back(Shader::read_file("../resources/shaders/red.glsl"));
 
 
-	Shader testShader = Shader::read_file("../resources/shaders/test.glsl");
-	VkShaderModule vertShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(testShader.vertSource, "test vert", shaderc_vertex_shader, true));
-	VkShaderModule fragShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(testShader.fragSource, "test frag", shaderc_fragment_shader, true));
-	
+
+	//Create standard pipelines info
 	PipelineBuilder builder;
-
-	builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule));
-	builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule));
 
 	builder.vertexInputInfo = vkinit::vertex_input_state_create_info();
 
@@ -388,7 +379,7 @@ void VulkanEngine::create_pipelines()
 	builder.colorBlendAttachment = vkinit::color_blend_attachment_state();
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-	
+
 
 	if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
@@ -396,15 +387,45 @@ void VulkanEngine::create_pipelines()
 
 	builder.pipelineLayout = m_pipelineLayout;
 
-	m_currentPipeline = builder.build_pipeline(m_device, m_renderPass);
+	//Compile shaders
+	int i = 0;
+	for each (auto shader in shaders)
+	{
+		VkShaderModule vertShaderModule{}, fragShaderModule{}, geomShaderModule{}, tessShaderModule{};
+		if (shader.vertSource != "") {
+			vertShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule));
+		}
+		if (shader.fragSource != "") {
+			fragShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule));
+		}
+		if (shader.geomSource != "") {
+			geomShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, geomShaderModule));
+		}
+		if (shader.tessSource != "") {
+			tessShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.tessSource, shader.name + "tess", shaderc_tess_control_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, tessShaderModule));
+		}
 
-	vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
-	vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
+		m_pipelines[std::to_string(i)] = builder.build_pipeline(m_device, m_renderPass);
+		
+		vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, geomShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, tessShaderModule, nullptr);
 
-	builder.shaderStages.clear();
+		builder.shaderStages.clear();
+		i++;
+	}
+
 
 	m_deletionQueue.push_function([=]() {
-		vkDestroyPipeline(m_device, m_currentPipeline, nullptr);
+		for each (auto pipeline in m_pipelines)
+		{
+			vkDestroyPipeline(m_device, pipeline.second, nullptr);
+		}
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 		});
 

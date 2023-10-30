@@ -108,7 +108,7 @@ Shader Shader::read_file(const std::string& filePath)
 			ss[(int)type] << line << '\n';
 		}
 	}
-	return { ss[0].str(), ss[1].str(), ss[2].str(),ss[3].str() };
+	return { filePath,ss[0].str(), ss[1].str(), ss[2].str(),ss[3].str() };
 }
 
 std::vector<uint32_t> Shader::compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize)
