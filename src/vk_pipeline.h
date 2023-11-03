@@ -1,6 +1,8 @@
 #pragma once
 #include "vk_core.h"
-
+/*
+/Shader useful info
+*/
 struct Shader
 {
 	std::string								name;
@@ -15,7 +17,9 @@ struct Shader
 	static std::vector<uint32_t> compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize);
 };
 
-
+/*
+/Pipeline data and creation wrapper
+*/
 struct PipelineBuilder {
 
 	VkViewport viewport;

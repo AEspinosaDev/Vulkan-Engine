@@ -5,6 +5,8 @@
 #include "vk_initializers.h"
 #include "vk_swapchain.h"
 #include "vk_pipeline.h"
+#include "vk_control.h"
+#include "vk_mesh.h"
 
 
 struct GlobalParams {
@@ -42,21 +44,12 @@ class VulkanEngine {
 	VkPipelineLayout						m_pipelineLayout;
 	std::unordered_map<std::string, VkPipeline>			m_pipelines;
 
-	//Command
-	VkCommandPool							m_commandPool;
-	std::vector<VkCommandBuffer>			m_commandBuffers;
-	//Syncs
-	std::vector<VkSemaphore>				m_imageAvailableSemaphores;
-	std::vector<VkSemaphore>				m_renderFinishedSemaphores;
-	std::vector<VkFence>					m_inFlightFences;
-
+	Command									m_cmd;
 
 	vkutils::DeletionQueue					m_deletionQueue;
 
 
-	const int MAX_FRAMES_IN_FLIGHT = 2;
-
-
+	const int								MAX_FRAMES_IN_FLIGHT{ 2 };
 #ifdef NDEBUG
 	const bool								m_enableValidationLayers = false;
 #else
@@ -100,9 +93,7 @@ private:
 
 	void create_framebuffers();
 
-	void init_commands();
-
-	void create_sync_objects();
+	void init_control_objects();
 
 	void create_pipelines();
 
