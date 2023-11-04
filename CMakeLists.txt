@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.12)
 project(VulkanEngine)
 
 # Place inside source dir
-set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR})
+set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
 # if(WIN32 OR UNIX)
 #     # Your Windows and Linux-specific configuration goes here
@@ -36,7 +36,7 @@ get_filename_component(VULKAN_SDK_ROOT ${Vulkan_LIBRARY} DIRECTORY)
 # Include CMake FetchContent
 include(FetchContent)
 # Set the directory where FetchContent will download and build content
-set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/dependencies")
+set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/build_dependencies")
 
 # GLFW
 #Exclude addons
@@ -74,6 +74,9 @@ file(GLOB SOURCES
 "src/gfx_backend/*.h"
 )
 
+# add_subdirectory(${CMAKE_SOURCE_DIR}/src/gfx)
+# add_subdirectory(${CMAKE_SOURCE_DIR}/src/gfx_backend)
+
 # Add your source files
 add_executable(VulkanEngine ${SOURCES})
 
@@ -86,4 +89,15 @@ target_link_libraries(VulkanEngine shaderc_shared.lib)
 
 # Set the output directory for the executable (optional)
 # set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Set the output directory for debug build
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug)
+
+# Set the output directory for release build
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
+
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/resources/shaders/")
+set(TEXTURE_DIR "${CMAKE_SOURCE_DIR}/resources/textures/")
+set(MODEL_DIR "${CMAKE_SOURCE_DIR}/resources/meshes/")
+configure_file(config.h.in ${CMAKE_SOURCE_DIR}/src/config.h)

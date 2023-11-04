@@ -1,4 +1,4 @@
-# Ignore build output directories
+# Ignore build output directories IN CASE builded in src dir
 /build/
 /build
 /CMakeFiles/
@@ -9,7 +9,7 @@
 /VulkanEngine.dir
 *.cmake
 
-#Heavy dependencies
+#Heavy dependencies IN CASE builded in src dir
 /dependencies/glfw-build
 /dependencies/glfw-src
 /dependencies/glfw-subbuild
@@ -30,3 +30,6 @@
 *.pdb
 /Debug
 /x64
+
+#Take out config.h
+/src/config.h

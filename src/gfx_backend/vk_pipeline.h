@@ -1,6 +1,7 @@
 #pragma once
 #include  "vk_core.h"
 
+
 namespace VKENG {
 	/*
 	/Shader useful info

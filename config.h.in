@@ -1,0 +1,6 @@
+// config.h.in
+#pragma once
+
+#define TEXTURE_DIR "@TEXTURE_DIR@"
+#define SHADER_DIR "@SHADER_DIR@"
+#define MODEL_DIR "@MODEL_DIR@"

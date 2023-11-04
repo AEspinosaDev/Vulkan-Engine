@@ -1,4 +1,5 @@
 #pragma once
+#include "../config.h"
 #include "../gfx_backend/vk_core.h"
 #include "../gfx_backend/vk_utils.h"
 #include "../gfx_backend/vk_bootstrap.h"

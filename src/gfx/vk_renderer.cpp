@@ -308,12 +308,13 @@ namespace VKENG {
 		m_mesh->cache_buffer(m_device, m_gpu);
 		m_deletionQueue.push_function([=]() {m_mesh->cleanup_buffer(m_device); });
 
+		std::string shaderDir(SHADER_DIR);
 
 		//Populate shader list
 		std::vector<Shader> shaders;
 		//resources easy route!!!
-		shaders.push_back(Shader::read_file("./resources/shaders/test.glsl"));
-		shaders.push_back(Shader::read_file("./resources/shaders/red.glsl"));
+		shaders.push_back(Shader::read_file(shaderDir+"test.glsl"));
+		shaders.push_back(Shader::read_file(shaderDir+"red.glsl"));
 
 
 
