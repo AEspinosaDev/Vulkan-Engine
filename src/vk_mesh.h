@@ -1,66 +1,101 @@
 #pragma once
 #include "vk_core.h"
+#include "vk_utils.h"
 
 //struct for buffers
-struct BufferData {
+//struct BufferData {
+//
+//	unsigned int triangles;
+//	unsigned int numFaces{ 0 };
+//	unsigned int numVertices{ 0 };
+//	unsigned int* faceArray{ nullptr };
+//
+//	float* positions{ nullptr };
+//	float* normals{ nullptr };
+//	float* colors{ nullptr };
+//	float* texCoords{ nullptr };
+//	float* tangents{ nullptr };
+//
+//
+//};
+namespace VKENG {
 
-	unsigned int triangles;
-	unsigned int numFaces{ 0 };
-	unsigned int numVertices{ 0 };
-	unsigned int* faceArray{ nullptr };
+	struct Vertex {
+		glm::vec3 pos;
+		glm::vec3 normal;
+		glm::vec3 tangent;
+		glm::vec2 texCoord;
+		glm::vec3 color;
 
-	float* positions{ nullptr };
-	float* normals{ nullptr };
-	float* colors{ nullptr };
-	float* texCoords{ nullptr };
-	float* tangents{ nullptr };
+		static VkVertexInputBindingDescription getBindingDescription() {
+			VkVertexInputBindingDescription bindingDescription{};
+			bindingDescription.binding = 0;
+			bindingDescription.stride = sizeof(Vertex);
+			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+			return bindingDescription;
+		}
+		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+			std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-	
-};
+			VkVertexInputAttributeDescription posAtt{};
+			posAtt.binding = 0;
+			posAtt.location = 0;
+			posAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+			posAtt.offset = offsetof(Vertex, pos);
+			attributeDescriptions.push_back(posAtt);
+			VkVertexInputAttributeDescription normalAtt{};
+			normalAtt.binding = 0;
+			normalAtt.location = 1;
+			normalAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+			normalAtt.offset = offsetof(Vertex, normal);
+			attributeDescriptions.push_back(normalAtt);
+			VkVertexInputAttributeDescription texCoordAtt{};
+			texCoordAtt.binding = 0;
+			texCoordAtt.location = 2;
+			texCoordAtt.format = VK_FORMAT_R32G32_SFLOAT;
+			texCoordAtt.offset = offsetof(Vertex, texCoord);
+			attributeDescriptions.push_back(texCoordAtt);
+			VkVertexInputAttributeDescription tangentAtt{};
+			tangentAtt.binding = 0;
+			tangentAtt.location = 3;
+			tangentAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+			tangentAtt.offset = offsetof(Vertex, tangent);
+			attributeDescriptions.push_back(tangentAtt);
+			VkVertexInputAttributeDescription colorAtt{};
+			colorAtt.binding = 0;
+			colorAtt.location = 4;
+			colorAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+			colorAtt.offset = offsetof(Vertex, color);
+			attributeDescriptions.push_back(colorAtt);
 
-struct Vertex {
-	glm::vec3 pos;
-	glm::vec3 normal;
-	glm::vec3 tangent;
-	glm::vec2 texCoord;
-	glm::vec3 color;
+			return attributeDescriptions;
+		}
+	};
 
-	static VkVertexInputBindingDescription getBindingDescription() {
-		VkVertexInputBindingDescription bindingDescription{};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		return bindingDescription;
-	}
-	static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+	struct VertexBuffer {
+		VkBuffer buffer;
+		VkDeviceMemory memory;
 
-		VkVertexInputAttributeDescription att0{};
-		att0.binding = 0;
-		att0.location = 0;
-		att0.format = VK_FORMAT_R32G32B32_SFLOAT;
-		att0.offset = offsetof(Vertex, pos);
-		VkVertexInputAttributeDescription att1{};
-		att1.binding = 0;
-		att1.location = 1;
-		att1.format = VK_FORMAT_R32G32B32_SFLOAT;
-		att1.offset = offsetof(Vertex, color);
-		return attributeDescriptions;
-	}
-};
+	};
 
 
-class Mesh {
-	
-private:
-	//VkPipeline* m_pipeline;
-	BufferData  m_tmpBufferData;
+	class Mesh {
 
-public:
-	Mesh(){}
-	//Mesh() :m_pipeline(nullptr) {}
+	private:
+		//VkPipeline* m_pipeline;
+		std::vector<Vertex>  m_vertexData;
+		VkBuffer	m_vbo;
+		VkDeviceMemory m_memory;
 
-	static void load_file();
-	static void cache_buffer();
-	static Mesh* load();
-};
+	public:
+		Mesh() : m_vbo{}, m_memory{} {}
+		//Mesh() :m_pipeline(nullptr) {}
+
+		static void load_file();
+		void cache_buffer(VkDevice device, VkPhysicalDevice gpu);
+		void cleanup_buffer(VkDevice device);
+		void draw(VkCommandBuffer cmd);
+		static Mesh* load();
+	};
+
+}

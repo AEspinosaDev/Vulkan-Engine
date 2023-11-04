@@ -3,19 +3,22 @@
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 
-/*
-* Struct containing command objects and sync structures and their initiation logic
-*/
-struct Command {
-	int										maxFramesInFlight;
-	//Command
-	VkCommandPool							commandPool;
-	std::vector<VkCommandBuffer>			commandBuffers;
-	//Syncs
-	std::vector<VkSemaphore>				imageAvailableSemaphores;
-	std::vector<VkSemaphore>				renderFinishedSemaphores;
-	std::vector<VkFence>					inFlightFences;
+namespace VKENG {
+	/*
+	* Struct containing command objects and sync structures and their initiation logic
+	*/
+	struct Command {
+		int										maxFramesInFlight;
+		//Command
+		VkCommandPool							commandPool;
+		std::vector<VkCommandBuffer>			commandBuffers;
+		//Syncs
+		std::vector<VkSemaphore>				imageAvailableSemaphores;
+		std::vector<VkSemaphore>				renderFinishedSemaphores;
+		std::vector<VkFence>					inFlightFences;
 
-	void init(VkDevice device,VkPhysicalDevice gpu, VkSurfaceKHR surface);
-	void cleanup(VkDevice device);
-};
+		void init(VkDevice device, VkPhysicalDevice gpu, VkSurfaceKHR surface);
+		void cleanup(VkDevice device);
+	};
+
+}

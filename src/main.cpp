@@ -7,12 +7,13 @@
 
 #include <iostream>
 
-#include "vk_engine.h"
+#include "vk_renderer.h"
 
 
 
 int main() {
-    VulkanEngine app;
+
+    VKENG::Renderer app;
 
     try {
         
