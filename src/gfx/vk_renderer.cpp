@@ -312,8 +312,8 @@ namespace VKENG {
 		//Populate shader list
 		std::vector<Shader> shaders;
 		//resources easy route!!!
-		shaders.push_back(Shader::read_file("../resources/shaders/test.glsl"));
-		shaders.push_back(Shader::read_file("../resources/shaders/red.glsl"));
+		shaders.push_back(Shader::read_file("./resources/shaders/test.glsl"));
+		shaders.push_back(Shader::read_file("./resources/shaders/red.glsl"));
 
 
 

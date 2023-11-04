@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.12)
 project(VulkanEngine)
 
 # Place inside source dir
-set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
+set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR})
 
 # if(WIN32 OR UNIX)
 #     # Your Windows and Linux-specific configuration goes here
@@ -36,7 +36,7 @@ get_filename_component(VULKAN_SDK_ROOT ${Vulkan_LIBRARY} DIRECTORY)
 # Include CMake FetchContent
 include(FetchContent)
 # Set the directory where FetchContent will download and build content
-set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/third_party")
+set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/dependencies")
 
 # GLFW
 #Exclude addons
@@ -68,6 +68,10 @@ link_directories(${VULKAN_SDK_ROOT})
 file(GLOB SOURCES
 "src/*.cpp"
 "src/*.h"
+"src/gfx/*.cpp"
+"src/gfx/*.h"
+"src/gfx_backend/*.cpp"
+"src/gfx_backend/*.h"
 )
 
 # Add your source files

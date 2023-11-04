@@ -1,11 +1,11 @@
 #pragma once
-#include "vk_core.h"
-#include "vk_utils.h"
-#include "vk_bootstrap.h"
-#include "vk_initializers.h"
-#include "vk_swapchain.h"
-#include "vk_pipeline.h"
-#include "vk_control.h"
+#include "../gfx_backend/vk_core.h"
+#include "../gfx_backend/vk_utils.h"
+#include "../gfx_backend/vk_bootstrap.h"
+#include "../gfx_backend/vk_initializers.h"
+#include "../gfx_backend/vk_swapchain.h"
+#include "../gfx_backend/vk_pipeline.h"
+#include "../gfx_backend/vk_control.h"
 #include "vk_mesh.h"
 
 

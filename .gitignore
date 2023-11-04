@@ -6,8 +6,20 @@
 /CMakeCache.txt
 /CMakeCache/
 /CMakeTmp/
+/VulkanEngine.dir
+*.cmake
+
+#Heavy dependencies
+/dependencies/glfw-build
+/dependencies/glfw-src
+/dependencies/glfw-subbuild
+/dependencies/glm-build
+/dependencies/glm-src
+/dependencies/glm-subbuild
+
 
 # Ignore Visual Studio-specific files
+*.vs
 *.suo
 *.sdf
 *.opensdf
@@ -16,3 +28,5 @@
 *.vcxproj.filters
 *.vcxproj.user
 *.pdb
+/Debug
+/x64

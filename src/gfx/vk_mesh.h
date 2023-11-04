@@ -1,6 +1,6 @@
 #pragma once
-#include "vk_core.h"
-#include "vk_utils.h"
+#include "../gfx_backend/vk_core.h"
+#include "../gfx_backend/vk_utils.h"
 
 //struct for buffers
 //struct BufferData {
