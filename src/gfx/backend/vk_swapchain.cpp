@@ -1,5 +1,5 @@
 #include "vk_swapchain.h"
-namespace VKENG {
+namespace vkeng {
 
 	void Swapchain::create(VkPhysicalDevice* gpu, VkDevice* device, VkSurfaceKHR* surface, GLFWwindow* window, VkExtent2D* windowExtent)
 	{

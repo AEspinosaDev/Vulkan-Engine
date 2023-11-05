@@ -3,7 +3,7 @@
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 
-namespace VKENG {
+namespace vkeng {
 	/*
 	* Struct containing command objects and sync structures and their initiation logic
 	*/

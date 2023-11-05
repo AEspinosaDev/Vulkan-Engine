@@ -1,31 +1,28 @@
 #pragma once
 #include "../config.h"
-#include "../gfx_backend/vk_core.h"
-#include "../gfx_backend/vk_utils.h"
-#include "../gfx_backend/vk_bootstrap.h"
-#include "../gfx_backend/vk_initializers.h"
-#include "../gfx_backend/vk_swapchain.h"
-#include "../gfx_backend/vk_pipeline.h"
-#include "../gfx_backend/vk_control.h"
+#include "backend/vk_core.h"
+#include "backend/vk_utils.h"
+#include "backend/vk_bootstrap.h"
+#include "backend/vk_initializers.h"
+#include "backend/vk_swapchain.h"
+#include "backend/vk_pipeline.h"
+#include "backend/vk_control.h"
+#include "backend/vk_window.h"
 #include "vk_mesh.h"
 
 
-namespace VKENG {
+namespace vkeng {
 
 	class Renderer {
 #pragma region Properties
 
 		struct UserParams {
-			uint32_t								width{ 800 };
-			uint32_t								height{ 600 };
-
 			glm::vec4								clearColor{ glm::vec4(0.0,0.0,0.0,1.0) };
-
 		};
+
 		UserParams								m_params;
 
-		GLFWwindow* m_window;
-		VkExtent2D								m_windowExtent{ 1700 , 900 };
+		Window									m_window{"Viewer",800,600};
 
 		VkInstance								m_instance;
 		VkDebugUtilsMessengerEXT				m_debugMessenger;
@@ -64,26 +61,29 @@ namespace VKENG {
 		uint32_t								m_currentFrame{ 0 };
 
 #pragma endregion
+#pragma region Core Functions
 	public:
-		inline void run() {
-
+		
+		inline void init() {
 			init_window();
 			init_vulkan();
-			update();
-			cleanup();
+		}
 
+
+		inline void run(std::vector<Mesh*> meshes) {
+			update(meshes);
+			cleanup();
 		}
 
 	private:
-#pragma region Core Functions
 
 		void init_window();
 
 		void init_vulkan();
 
-		void update();
+		void update(std::vector<Mesh*> meshes);
 
-		void draw();
+		void draw(std::vector<Mesh*> meshes);
 
 		void cleanup();
 
@@ -100,7 +100,7 @@ namespace VKENG {
 
 		void create_pipelines();
 
-		void record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		void record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh*> meshes);
 
 		void recreate_swap_chain();
 
@@ -108,7 +108,8 @@ namespace VKENG {
 
 #pragma endregion
 #pragma region Drawing
-		void draw_mesh(VkCommandBuffer cmd, Mesh* m);
+		///*void upload_buffer(Mesh* m);
+		void draw_mesh(Mesh* m, VkCommandBuffer commandBuffer);
 #pragma endregion
 #pragma region Input Management
 		void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {

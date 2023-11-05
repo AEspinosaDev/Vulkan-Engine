@@ -1,6 +1,6 @@
 #include "vk_bootstrap.h"
 
-namespace VKENG {
+namespace vkeng {
 
 	void vkboot::VulkanBooter::create_instance()
 	{

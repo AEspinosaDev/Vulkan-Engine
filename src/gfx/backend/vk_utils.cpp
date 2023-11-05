@@ -1,5 +1,5 @@
 #include "vk_utils.h"
-namespace VKENG {
+namespace vkeng {
 
 	bool vkutils::check_validation_layer_suport(std::vector<const char*> validationLayers)
 	{

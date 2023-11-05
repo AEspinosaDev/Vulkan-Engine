@@ -31,5 +31,8 @@
 /Debug
 /x64
 
+#Ignore VSCode specific config file
+.vscode
+
 #Take out config.h
 /src/config.h

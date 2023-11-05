@@ -1,20 +1,20 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-
 project(VulkanEngine)
 
 # Place inside source dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
-# if(WIN32 OR UNIX)
-#     # Your Windows and Linux-specific configuration goes here
-# else()
-#     message(FATAL_ERROR "This project is intended for Windows and Linux.")
-# endif()
+#Activate all warnings
 
-# Set the CMake generator for Visual Studio 2022
-set(CMAKE_GENERATOR "Visual Studio 17 2022" CACHE STRING "Visual Studio 2022" FORCE)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # using Visual Studio C++
+    message("Visual Studio C++")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # using GCC
+    message("Using GCC")
+endif()
 
 # Set the platform (e.g., x64)
 set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed
@@ -22,6 +22,9 @@ set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# For exporting compile config
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) #DOES NOT WORK WITH MSVC
 
 # Find the Vulkan package
 find_package(Vulkan REQUIRED)
@@ -62,7 +65,6 @@ FetchContent_MakeAvailable(glm)
 
 
 # Configure Shaderc
-#link_directories(C:/VulkanSDK/1.3.261.1/Lib)  # Path to where shaderc_shared.lib is located
 link_directories(${VULKAN_SDK_ROOT})
 
 file(GLOB SOURCES
@@ -70,12 +72,9 @@ file(GLOB SOURCES
 "src/*.h"
 "src/gfx/*.cpp"
 "src/gfx/*.h"
-"src/gfx_backend/*.cpp"
-"src/gfx_backend/*.h"
+"src/gfx/backend/*.cpp"
+"src/gfx/backend/*.h"
 )
-
-# add_subdirectory(${CMAKE_SOURCE_DIR}/src/gfx)
-# add_subdirectory(${CMAKE_SOURCE_DIR}/src/gfx_backend)
 
 # Add your source files
 add_executable(VulkanEngine ${SOURCES})
@@ -97,6 +96,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug)
 # Set the output directory for release build
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
 
+# Set config
 set(SHADER_DIR "${CMAKE_SOURCE_DIR}/resources/shaders/")
 set(TEXTURE_DIR "${CMAKE_SOURCE_DIR}/resources/textures/")
 set(MODEL_DIR "${CMAKE_SOURCE_DIR}/resources/meshes/")

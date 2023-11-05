@@ -1,6 +1,6 @@
 #pragma once
-#include "../gfx_backend/vk_core.h"
-#include "../gfx_backend/vk_utils.h"
+#include "backend/vk_core.h"
+#include "backend/vk_utils.h"
 
 //struct for buffers
 //struct BufferData {
@@ -18,7 +18,7 @@
 //
 //
 //};
-namespace VKENG {
+namespace vkeng {
 
 	struct Vertex {
 		glm::vec3 pos;
@@ -82,20 +82,28 @@ namespace VKENG {
 	class Mesh {
 
 	private:
-		//VkPipeline* m_pipeline;
 		std::vector<Vertex>  m_vertexData;
 		VkBuffer	m_vbo;
 		VkDeviceMemory m_memory;
+		bool loaded{ false };
+		bool buffer_loaded{ false };
 
 	public:
 		Mesh() : m_vbo{}, m_memory{} {}
-		//Mesh() :m_pipeline(nullptr) {}
+		inline bool is_data_loaded() { return loaded; }
+		inline bool is_buffer_loaded() { return buffer_loaded; }
+		inline VkBuffer get_vbo() { return m_vbo; }
+		inline std::vector<Vertex> get_vertex_data() {
+			return m_vertexData;
+		}
 
-		static void load_file();
 		void cache_buffer(VkDevice device, VkPhysicalDevice gpu);
 		void cleanup_buffer(VkDevice device);
-		void draw(VkCommandBuffer cmd);
+		static Mesh* load_file();
 		static Mesh* load();
+		static Mesh* load2();
+
+		
 	};
 
 }

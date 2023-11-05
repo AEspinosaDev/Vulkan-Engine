@@ -2,7 +2,7 @@
 #include  "vk_core.h"
 
 
-namespace VKENG {
+namespace vkeng {
 	/*
 	/Shader useful info
 	*/

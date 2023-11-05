@@ -1,6 +1,6 @@
 #include "vk_pipeline.h"
 
-namespace VKENG {
+namespace vkeng {
 
 	VkPipeline PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass)
 	{

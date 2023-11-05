@@ -1,10 +1,3 @@
-
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
-
 #include <iostream>
 
 #include "gfx/vk_renderer.h"
@@ -13,11 +6,18 @@
 
 int main() {
 
-    VKENG::Renderer app;
-
+    vkeng::Renderer app;
+    
     try {
+        app.init();
+
+        std::vector<vkeng::Mesh*> meshes;
+        vkeng::Mesh* m = vkeng::Mesh::load();
+        vkeng::Mesh* m2 = vkeng::Mesh::load2();
+        meshes.push_back(m);
+        meshes.push_back(m2);
         
-        app.run();
+        app.run(meshes);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

@@ -1,29 +1,20 @@
 #include "vk_renderer.h"
 
 
-namespace VKENG {
+namespace vkeng {
 
 
 	void Renderer::init_window()
 	{
-		glfwInit();
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+		m_window.init();
 
-		m_window = glfwCreateWindow(m_params.width, m_params.height, "Vulkan Renderer", nullptr, nullptr);
+		// WINDOW CALLBACKS
+		glfwSetWindowUserPointer(m_window.get_window_obj(), this);
 
-		//WINDOW CALLBACKS
-		glfwSetWindowUserPointer(m_window, this);
-
-		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* w, int width, int heigth)
-			{
-				static_cast<Renderer*>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth);
-			});
-		glfwSetKeyCallback(m_window, [](GLFWwindow* w, int key, int scancode, int action, int mods)
-			{
-				static_cast<Renderer*>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods);
-			});
-
+		glfwSetFramebufferSizeCallback(m_window.get_window_obj(), [](GLFWwindow* w, int width, int heigth)
+			{ static_cast<Renderer*>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
+		glfwSetKeyCallback(m_window.get_window_obj(), [](GLFWwindow* w, int key, int scancode, int action, int mods)
+			{ static_cast<Renderer*>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
 	}
 
 	void Renderer::init_vulkan()
@@ -38,7 +29,8 @@ namespace VKENG {
 
 		booter.boot_vulkan();
 
-		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface));
+		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window.get_window_obj(), nullptr, &m_surface));
+
 
 		booter.setup_devices();
 
@@ -56,19 +48,22 @@ namespace VKENG {
 
 	}
 
-	void Renderer::update()
+	void Renderer::update(std::vector<Mesh*> meshes)
 	{
-		while (!glfwWindowShouldClose(m_window))
+		while (!glfwWindowShouldClose(m_window.get_window_obj()))
 		{
 			//I-O
 			glfwPollEvents();
-			draw();
+			draw(meshes);
 		}
 		VK_CHECK(vkDeviceWaitIdle(m_device));
 	}
 
-	void Renderer::draw()
+	void Renderer::draw(std::vector<Mesh*> meshes)
 	{
+		//upload_buffers(meshes);
+
+
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_cmd.imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -84,7 +79,7 @@ namespace VKENG {
 		VK_CHECK(vkResetFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame]));
 		VK_CHECK(vkResetCommandBuffer(m_cmd.commandBuffers[m_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
-		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex);
+		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex, meshes);
 
 		//prepare the submission to the queue. 
 		//we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
@@ -144,14 +139,14 @@ namespace VKENG {
 			vkDestroyInstance(m_instance, nullptr);
 		}
 
-		glfwDestroyWindow(m_window);
+		glfwDestroyWindow(m_window.get_window_obj());
 
 		glfwTerminate();
 	}
 
 	void Renderer::create_swapchain()
 	{
-		m_swapchain.create(&m_gpu, &m_device, &m_surface, m_window, &m_windowExtent);
+		m_swapchain.create(&m_gpu, &m_device, &m_surface, m_window.get_window_obj(), m_window.get_extent());
 
 		m_deletionQueue.push_function([=]() {
 			//vkDestroySwapchainKHR(_device, _swapchain, nullptr);
@@ -219,7 +214,7 @@ namespace VKENG {
 
 		m_framebuffers.resize(size);
 
-		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, m_windowExtent);
+		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, *m_window.get_extent());
 		for (size_t i = 0; i < size; i++) {
 			VkImageView attachments[] = {
 				m_swapchain.get_image_views()[i]
@@ -251,14 +246,14 @@ namespace VKENG {
 
 
 
-	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh*> meshes)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, m_windowExtent, m_framebuffers[imageIndex]);
+		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window.get_extent(), m_framebuffers[imageIndex]);
 
 		//Clear COLOR | DEPTH | STENCIL ??
 		VkClearValue clearColor = { {{m_params.clearColor.r, m_params.clearColor.g, m_params.clearColor.b, m_params.clearColor.a}} };
@@ -275,21 +270,27 @@ namespace VKENG {
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)m_windowExtent.width;
-		viewport.height = (float)m_windowExtent.height;
+		viewport.width = (float)m_window.get_extent()->width;
+		viewport.height = (float)m_window.get_extent()->height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = m_windowExtent;
+		scissor.extent = *m_window.get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+		for each (Mesh * m in meshes)
+		{
 
+			if (m) {
+
+				draw_mesh(m, commandBuffer);
+			}
+		}
 
 		//draw_mesh(commandBuffer, m_Mesh);
-		m_mesh->draw(commandBuffer);
 
 		//vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
@@ -303,18 +304,18 @@ namespace VKENG {
 
 	void Renderer::create_pipelines()
 	{
-
 		m_mesh = Mesh::load();
 		m_mesh->cache_buffer(m_device, m_gpu);
 		m_deletionQueue.push_function([=]() {m_mesh->cleanup_buffer(m_device); });
+
 
 		std::string shaderDir(SHADER_DIR);
 
 		//Populate shader list
 		std::vector<Shader> shaders;
 		//resources easy route!!!
-		shaders.push_back(Shader::read_file(shaderDir+"test.glsl"));
-		shaders.push_back(Shader::read_file(shaderDir+"red.glsl"));
+		shaders.push_back(Shader::read_file(shaderDir + "test.glsl"));
+		shaders.push_back(Shader::read_file(shaderDir + "red.glsl"));
 
 
 
@@ -336,12 +337,12 @@ namespace VKENG {
 
 		builder.viewport.x = 0.0f;
 		builder.viewport.y = 0.0f;
-		builder.viewport.width = (float)m_windowExtent.width;
-		builder.viewport.height = (float)m_windowExtent.height;
+		builder.viewport.width = (float)m_window.get_extent()->width;
+		builder.viewport.height = (float)m_window.get_extent()->height;
 		builder.viewport.minDepth = 0.0f;
 		builder.viewport.maxDepth = 1.0f;
 		builder.scissor.offset = { 0, 0 };
-		builder.scissor.extent = m_windowExtent;
+		builder.scissor.extent = *m_window.get_extent();
 
 		builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
 
@@ -409,9 +410,9 @@ namespace VKENG {
 	void Renderer::recreate_swap_chain()
 	{
 		int width = 0, height = 0;
-		glfwGetFramebufferSize(m_window, &width, &height);
+		glfwGetFramebufferSize(m_window.get_window_obj(), &width, &height);
 		while (width == 0 || height == 0) {
-			glfwGetFramebufferSize(m_window, &width, &height);
+			glfwGetFramebufferSize(m_window.get_window_obj(), &width, &height);
 			glfwWaitEvents();
 		}
 
@@ -430,11 +431,17 @@ namespace VKENG {
 		m_swapchain.cleanup(&m_device);
 	}
 
-	void Renderer::draw_mesh(VkCommandBuffer cmd, Mesh* m)
-	{
+	void Renderer::draw_mesh(Mesh* m, VkCommandBuffer commandBuffer) {
+		if (!m->is_data_loaded())return;
+		if (!m->is_buffer_loaded()) m->cache_buffer(m_device, m_gpu);
 
-	}
+		VkBuffer vertexBuffers[] = { m->get_vbo() };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
+
+	};
 
 }
 

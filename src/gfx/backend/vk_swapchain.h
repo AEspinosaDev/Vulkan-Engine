@@ -1,7 +1,7 @@
 #pragma once
 #include  "vk_core.h"
 #include "vk_bootstrap.h"
-namespace VKENG {
+namespace vkeng {
 
 	class Swapchain
 	{

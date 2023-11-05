@@ -1,5 +1,5 @@
 #include "vk_control.h"
-namespace VKENG {
+namespace vkeng {
 
 	void Command::init(VkDevice device, VkPhysicalDevice gpu, VkSurfaceKHR surface)
 	{

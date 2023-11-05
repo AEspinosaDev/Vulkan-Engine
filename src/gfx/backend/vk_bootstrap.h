@@ -2,7 +2,7 @@
 #include "vk_core.h"
 #include "vk_utils.h"
 
-namespace VKENG {
+namespace vkeng {
 
 	namespace vkboot {
 

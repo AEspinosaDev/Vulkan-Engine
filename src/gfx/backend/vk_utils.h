@@ -3,7 +3,7 @@
 #include <deque>
 #include <functional>
 
-namespace VKENG {
+namespace vkeng {
 
 	namespace vkutils
 	{
@@ -24,6 +24,29 @@ namespace VKENG {
 				deletors.clear();
 			}
 		};
+
+		struct EventDispatcher
+		{
+
+			std::vector<std::function<void()>> functions;
+
+			
+			void push_function(std::function<void()>&& function) {
+				functions.push_back(function);
+			}
+
+			void dispatch() {
+				// reverse iterate the deletion queue to execute all the functions
+				for (auto it = functions.rbegin(); it != functions.rend(); it++) {
+					(*it)(); //call functors
+				}
+
+				functions.clear();
+			}
+
+
+		};
+
 		uint32_t find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		bool check_validation_layer_suport(std::vector<const char*> validationLayers);
 		void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);

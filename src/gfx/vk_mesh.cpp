@@ -1,9 +1,10 @@
 #include "vk_mesh.h"
 
-namespace VKENG {
+namespace vkeng {
 
 	void Mesh::cache_buffer(VkDevice device, VkPhysicalDevice gpu)
 	{
+
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = sizeof(m_vertexData[0]) * m_vertexData.size();
@@ -31,19 +32,14 @@ namespace VKENG {
 		vkMapMemory(device, m_memory, 0, bufferInfo.size, 0, &data);
 		memcpy(data, m_vertexData.data(), (size_t)bufferInfo.size);
 		vkUnmapMemory(device, m_memory);
+
+		buffer_loaded = true;
 	}
 
 
 	Mesh* Mesh::load()
 	{
 		Mesh* m = new Mesh();
-		//vertex positions
-		/*m->m_vertexData.positions = new float[1.f, 1.f, 0.0f,
-			-1.f, 1.f, 0.0f,
-			0.f, -1.f, 0.0f];
-		m->m_vertexData.colors = new float[0.f, 1.f, 0.0f,
-			0.f, 1.f, 0.0f,
-			0.f, 1.f, 0.0f];*/
 		m->m_vertexData = {
 		{{0.0f, -0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {1.0f, 1.0f, 1.0f}},
 		{{0.5f, 0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -55,21 +51,31 @@ namespace VKENG {
 		{{-0.5f, 0.5f,0.0f}, {0.0f, 0.0f, 1.0f}}
 		};*/
 
+		m->loaded = true;
+		return m;
+
+	}
+	Mesh* Mesh::load2()
+	{
+		Mesh* m = new Mesh();
+		m->m_vertexData = {
+		{{0.1f, -0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {1.0f, 1.0f, 1.0f}},
+		{{0.6f, 0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {1.0f, 0.0f, 0.0f}},
+		{{-0.4f, 0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {0.0f, 1.0f, 1.0f}}
+		};
+		/*m->m_vertexData = {
+		{{0.0f, -0.5f,0.0f}, {1.0f, 1.0f, 1.0f}},
+		{{0.5f, 0.5f,0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f,0.0f}, {0.0f, 0.0f, 1.0f}}
+		};*/
+
+		m->loaded = true;
 		return m;
 
 	}
 	void  Mesh::cleanup_buffer(VkDevice device) {
 		vkDestroyBuffer(device, m_vbo, nullptr);
 		vkFreeMemory(device, m_memory, nullptr);
-	}
-
-	void Mesh::draw(VkCommandBuffer cmd) {
-
-		VkBuffer vertexBuffers[] = { m_vbo };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-
-		vkCmdDraw(cmd, static_cast<uint32_t>(m_vertexData.size()), 1, 0, 0);
 	}
 
 }
