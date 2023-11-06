@@ -92,8 +92,8 @@ namespace vkeng {
 		Mesh() : m_vbo{}, m_memory{} {}
 		inline bool is_data_loaded() { return loaded; }
 		inline bool is_buffer_loaded() { return buffer_loaded; }
-		inline VkBuffer get_vbo() { return m_vbo; }
-		inline std::vector<Vertex> get_vertex_data() {
+		inline VkBuffer const get_vbo() const { return m_vbo; }
+		inline std::vector<Vertex> const get_vertex_data() const {
 			return m_vertexData;
 		}
 

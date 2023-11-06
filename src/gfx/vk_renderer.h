@@ -17,32 +17,28 @@ namespace vkeng {
 #pragma region Properties
 
 		struct UserParams {
-			glm::vec4								clearColor{ glm::vec4(0.0,0.0,0.0,1.0) };
+			glm::vec4								clearColor{ glm::vec4{0.0,0.0,0.0,1.0} };
 		};
 
 		UserParams								m_params;
 
-		Window									m_window{"Viewer",800,600};
-
-		VkInstance								m_instance;
-		VkDebugUtilsMessengerEXT				m_debugMessenger;
-		VkPhysicalDevice						m_gpu;
-		VkDevice								m_device;
-
-		VkSurfaceKHR							m_surface;
-		VkRenderPass							m_renderPass;
-
-		VkQueue									m_graphicsQueue;
-		VkQueue									m_presentQueue;
-
+		Window*									m_window;
 		Swapchain								m_swapchain;
+		Command									m_cmd;
+
+		VkInstance								m_instance{};
+		VkDebugUtilsMessengerEXT				m_debugMessenger{};
+		VkPhysicalDevice						m_gpu{};
+		VkDevice								m_device{};
+		VkRenderPass							m_renderPass{};
+		VkQueue									m_graphicsQueue{};
+		VkQueue									m_presentQueue{};
 
 		std::vector<VkFramebuffer>				m_framebuffers;
-		VkPipeline* m_currentPipeline{ nullptr };
-		VkPipelineLayout						m_pipelineLayout;
+		VkPipeline*								m_currentPipeline{ nullptr };
+		VkPipelineLayout						m_pipelineLayout{};
 		std::unordered_map<std::string, VkPipeline>			m_pipelines;
 
-		Command									m_cmd;
 
 		vkutils::DeletionQueue					m_deletionQueue;
 
@@ -51,9 +47,9 @@ namespace vkeng {
 
 		const int								MAX_FRAMES_IN_FLIGHT{ 2 };
 #ifdef NDEBUG
-		const bool								m_enableValidationLayers = false;
+		const bool								m_enableValidationLayers{ false };
 #else
-		const bool								m_enableValidationLayers = true;
+		const bool								m_enableValidationLayers{ true };
 #endif
 		bool									m_framebufferResized{ false };
 		bool									m_initialized{ false };
@@ -63,7 +59,8 @@ namespace vkeng {
 #pragma endregion
 #pragma region Core Functions
 	public:
-		
+		Renderer(Window* window): m_window(window) {}
+
 		inline void init() {
 			init_window();
 			init_vulkan();
@@ -120,7 +117,9 @@ namespace vkeng {
 		}
 
 		void window_resize_callback(GLFWwindow* window, int width, int height) {
-			m_framebufferResized = true;
+			m_window->set_size(glm::vec2(width, height));
+			//m_window->set_resized(true);
+			//m_framebufferResized = true;
 		}
 
 #pragma endregion

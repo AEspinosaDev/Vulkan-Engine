@@ -6,7 +6,7 @@
 
 int main() {
 
-    vkeng::Renderer app;
+    vkeng::Renderer app(new vkeng::Window("VK", 800, 600));
     
     try {
         app.init();

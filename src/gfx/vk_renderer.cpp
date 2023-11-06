@@ -6,14 +6,14 @@ namespace vkeng {
 
 	void Renderer::init_window()
 	{
-		m_window.init();
+		m_window->init();
 
 		// WINDOW CALLBACKS
-		glfwSetWindowUserPointer(m_window.get_window_obj(), this);
+		glfwSetWindowUserPointer(m_window->get_window_obj(), this);
 
-		glfwSetFramebufferSizeCallback(m_window.get_window_obj(), [](GLFWwindow* w, int width, int heigth)
+		glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow* w, int width, int heigth)
 			{ static_cast<Renderer*>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
-		glfwSetKeyCallback(m_window.get_window_obj(), [](GLFWwindow* w, int key, int scancode, int action, int mods)
+		glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow* w, int key, int scancode, int action, int mods)
 			{ static_cast<Renderer*>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
 	}
 
@@ -24,12 +24,12 @@ namespace vkeng {
 			&m_debugMessenger,
 			&m_gpu,
 			&m_device,
-			&m_graphicsQueue, &m_surface,
+			&m_graphicsQueue, m_window->get_surface(),
 			&m_presentQueue, &m_enableValidationLayers);
 
 		booter.boot_vulkan();
 
-		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window.get_window_obj(), nullptr, &m_surface));
+		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window->get_window_obj(), nullptr, m_window->get_surface()));
 
 
 		booter.setup_devices();
@@ -50,7 +50,7 @@ namespace vkeng {
 
 	void Renderer::update(std::vector<Mesh*> meshes)
 	{
-		while (!glfwWindowShouldClose(m_window.get_window_obj()))
+		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
 			//I-O
 			glfwPollEvents();
@@ -114,8 +114,9 @@ namespace vkeng {
 
 		result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
-			m_framebufferResized = false;
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized()) {
+
+			m_window->set_resized(false);
 			recreate_swap_chain();
 		}
 		else if (result != VK_SUCCESS) {
@@ -135,18 +136,18 @@ namespace vkeng {
 			if (m_enableValidationLayers) {
 				vkutils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
 			}
-			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+			vkDestroySurfaceKHR(m_instance, *m_window->get_surface(), nullptr);
 			vkDestroyInstance(m_instance, nullptr);
 		}
 
-		glfwDestroyWindow(m_window.get_window_obj());
+		m_window->destroy();
 
 		glfwTerminate();
 	}
 
 	void Renderer::create_swapchain()
 	{
-		m_swapchain.create(&m_gpu, &m_device, &m_surface, m_window.get_window_obj(), m_window.get_extent());
+		m_swapchain.create(&m_gpu, &m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent());
 
 		m_deletionQueue.push_function([=]() {
 			//vkDestroySwapchainKHR(_device, _swapchain, nullptr);
@@ -214,7 +215,7 @@ namespace vkeng {
 
 		m_framebuffers.resize(size);
 
-		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, *m_window.get_extent());
+		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, *m_window->get_extent());
 		for (size_t i = 0; i < size; i++) {
 			VkImageView attachments[] = {
 				m_swapchain.get_image_views()[i]
@@ -235,7 +236,7 @@ namespace vkeng {
 	void Renderer::init_control_objects()
 	{
 		m_cmd.maxFramesInFlight = MAX_FRAMES_IN_FLIGHT;
-		m_cmd.init(m_device, m_gpu, m_surface);
+		m_cmd.init(m_device, m_gpu, *m_window->get_surface());
 
 		m_deletionQueue.push_function([=]() {
 			m_cmd.cleanup(m_device);
@@ -253,7 +254,7 @@ namespace vkeng {
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window.get_extent(), m_framebuffers[imageIndex]);
+		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
 
 		//Clear COLOR | DEPTH | STENCIL ??
 		VkClearValue clearColor = { {{m_params.clearColor.r, m_params.clearColor.g, m_params.clearColor.b, m_params.clearColor.a}} };
@@ -270,15 +271,15 @@ namespace vkeng {
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)m_window.get_extent()->width;
-		viewport.height = (float)m_window.get_extent()->height;
+		viewport.width = (float)m_window->get_extent()->width;
+		viewport.height = (float)m_window->get_extent()->height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = *m_window.get_extent();
+		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 		for each (Mesh * m in meshes)
@@ -337,12 +338,12 @@ namespace vkeng {
 
 		builder.viewport.x = 0.0f;
 		builder.viewport.y = 0.0f;
-		builder.viewport.width = (float)m_window.get_extent()->width;
-		builder.viewport.height = (float)m_window.get_extent()->height;
+		builder.viewport.width = (float)m_window->get_extent()->width;
+		builder.viewport.height = (float)m_window->get_extent()->height;
 		builder.viewport.minDepth = 0.0f;
 		builder.viewport.maxDepth = 1.0f;
 		builder.scissor.offset = { 0, 0 };
-		builder.scissor.extent = *m_window.get_extent();
+		builder.scissor.extent = *m_window->get_extent();
 
 		builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
 
@@ -410,9 +411,10 @@ namespace vkeng {
 	void Renderer::recreate_swap_chain()
 	{
 		int width = 0, height = 0;
-		glfwGetFramebufferSize(m_window.get_window_obj(), &width, &height);
+		glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
+		
 		while (width == 0 || height == 0) {
-			glfwGetFramebufferSize(m_window.get_window_obj(), &width, &height);
+			glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
 			glfwWaitEvents();
 		}
 
