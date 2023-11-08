@@ -18,6 +18,7 @@
 #include <shaderc/shaderc.hpp>
 
 
+
 #define DEBUG_LOG(msg) { std::cout << msg << std::endl;}
 #define VK_CHECK(x)                                                 \
 	do                                                              \

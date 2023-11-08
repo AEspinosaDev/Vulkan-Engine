@@ -9,6 +9,8 @@
 #include "backend/vk_control.h"
 #include "backend/vk_window.h"
 #include "vk_mesh.h"
+#include <vma/vk_mem_alloc.h>
+
 
 
 namespace vkeng {
@@ -19,7 +21,7 @@ namespace vkeng {
 		struct UserParams {
 			glm::vec4								clearColor{ glm::vec4{0.0,0.0,0.0,1.0} };
 		};
-
+		VmaAllocator m_memory;
 		UserParams								m_params;
 
 		Window*									m_window;
@@ -118,8 +120,6 @@ namespace vkeng {
 
 		void window_resize_callback(GLFWwindow* window, int width, int height) {
 			m_window->set_size(glm::vec2(width, height));
-			//m_window->set_resized(true);
-			//m_framebufferResized = true;
 		}
 
 #pragma endregion

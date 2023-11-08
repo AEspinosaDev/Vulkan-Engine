@@ -7,23 +7,24 @@ namespace vkeng {
 	class Window
 	{
 	private:
-		GLFWwindow* m_window{ nullptr };
+		GLFWwindow* m_window;
 		std::string m_title{};
 		uint32_t m_width;
 		uint32_t m_height;
 		VkExtent2D* m_extent;
 		VkSurfaceKHR* m_surface;
 
-		bool m_resized{ false };
+		bool m_resized;
 		bool m_resizeable;
 		bool m_fullscreen;
-		glm::vec2 m_screenPos = glm::vec2(45, 45);
+		glm::vec2 m_screenPos;
 
 		//vkutils::EventDispatcher keyDispatcher;
 
 	public:
 
-		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_width(w), m_height(h), m_extent(new VkExtent2D{}), m_surface(new VkSurfaceKHR{}), m_resizeable{ resizable }, m_fullscreen{ fullscreen } {}
+		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) :m_window(nullptr),m_resized(false), m_title(t),
+			m_width(w), m_height(h), m_extent(new VkExtent2D{}), m_surface(new VkSurfaceKHR{}), m_resizeable{ resizable }, m_fullscreen{ fullscreen }, m_screenPos{ glm::vec2(45, 45) } {}
 		void init();
 		inline void destroy(){ glfwDestroyWindow(m_window); }
 

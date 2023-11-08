@@ -1,3 +1,5 @@
+
+#define VMA_IMPLEMENTATION
 #include "vk_renderer.h"
 
 
@@ -33,6 +35,12 @@ namespace vkeng {
 
 
 		booter.setup_devices();
+		
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = m_gpu;
+		allocatorInfo.device = m_device;
+		allocatorInfo.instance = m_instance;
+		vmaCreateAllocator(&allocatorInfo, &m_memory);
 
 		create_swapchain();
 
