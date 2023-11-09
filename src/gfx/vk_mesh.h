@@ -83,22 +83,25 @@ namespace vkeng {
 
 	private:
 		std::vector<Vertex>  m_vertexData;
-		VkBuffer	m_vbo;
-		VkDeviceMemory m_memory;
+		VkBuffer* m_vbo;
+		VmaAllocation* m_allocation;
 		bool loaded{ false };
 		bool buffer_loaded{ false };
 
 	public:
-		Mesh() : m_vbo{}, m_memory{} {}
+		
+		Mesh() : m_vbo{ new VkBuffer }, m_allocation{ new VmaAllocation } {}
 		inline bool is_data_loaded() { return loaded; }
 		inline bool is_buffer_loaded() { return buffer_loaded; }
-		inline VkBuffer const get_vbo() const { return m_vbo; }
+		inline void set_buffer_loaded(bool t) { buffer_loaded=t;}
+		inline VkBuffer* const get_vbo() const { return m_vbo; }
+		inline VmaAllocation* const get_allocation() const { return m_allocation; }
 		inline std::vector<Vertex> const get_vertex_data() const {
 			return m_vertexData;
 		}
 
-		void cache_buffer(VkDevice device, VkPhysicalDevice gpu);
-		void cleanup_buffer(VkDevice device);
+		/*void cache_buffer(VkDevice device, VkPhysicalDevice gpu);
+		void cleanup_buffer(VkDevice device);*/
 		static Mesh* load_file();
 		static Mesh* load();
 		static Mesh* load2();

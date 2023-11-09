@@ -2,7 +2,7 @@
 
 namespace vkeng {
 
-	void Mesh::cache_buffer(VkDevice device, VkPhysicalDevice gpu)
+	/*void Mesh::cache_buffer(VkDevice device, VkPhysicalDevice gpu)
 	{
 
 		VkBufferCreateInfo bufferInfo{};
@@ -34,7 +34,7 @@ namespace vkeng {
 		vkUnmapMemory(device, m_memory);
 
 		buffer_loaded = true;
-	}
+	}*/
 
 
 	Mesh* Mesh::load()
@@ -73,9 +73,9 @@ namespace vkeng {
 		return m;
 
 	}
-	void  Mesh::cleanup_buffer(VkDevice device) {
+	/*void  Mesh::cleanup_buffer(VkDevice device) {
 		vkDestroyBuffer(device, m_vbo, nullptr);
 		vkFreeMemory(device, m_memory, nullptr);
-	}
+	}*/
 
 }

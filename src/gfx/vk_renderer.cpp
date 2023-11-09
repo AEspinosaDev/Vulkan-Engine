@@ -36,6 +36,7 @@ namespace vkeng {
 
 		booter.setup_devices();
 		
+		//To booter
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.physicalDevice = m_gpu;
 		allocatorInfo.device = m_device;
@@ -313,9 +314,10 @@ namespace vkeng {
 
 	void Renderer::create_pipelines()
 	{
-		m_mesh = Mesh::load();
-		m_mesh->cache_buffer(m_device, m_gpu);
-		m_deletionQueue.push_function([=]() {m_mesh->cleanup_buffer(m_device); });
+		/*m_mesh = Mesh::load();
+		upload_buffers(m_mesh)*/
+		//m_mesh->cache_buffer(m_device, m_gpu);
+		//m_deletionQueue.push_function([=]() {m_mesh->cleanup_buffer(m_device); });
 
 
 		std::string shaderDir(SHADER_DIR);
@@ -443,15 +445,50 @@ namespace vkeng {
 
 	void Renderer::draw_mesh(Mesh* m, VkCommandBuffer commandBuffer) {
 		if (!m->is_data_loaded())return;
-		if (!m->is_buffer_loaded()) m->cache_buffer(m_device, m_gpu);
+		if (!m->is_buffer_loaded()) upload_buffers(m);
 
-		VkBuffer vertexBuffers[] = { m->get_vbo() };
+		VkBuffer vertexBuffers[] = { *m->get_vbo()};
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 		vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
 
-	};
+	}
+	void Renderer::upload_buffers(Mesh* m)
+	{
+
+		//allocate vertex buffer
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size();
+		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+		//let the VMA library know that this data should be writeable by CPU, but also readable by GPU
+		VmaAllocationCreateInfo vmaallocInfo = {};
+		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+		//allocate the buffer
+		VK_CHECK(vmaCreateBuffer(m_memory, &bufferInfo, &vmaallocInfo,
+			m->get_vbo(),
+			m->get_allocation(),
+			nullptr));
+
+		//add the destruction of triangle mesh buffer to the deletion queue
+		m_deletionQueue.push_function([=]() {
+			vmaDestroyBuffer(m_memory, *m->get_vbo(),
+				*m->get_allocation());
+			});
+
+		void* data;
+		vmaMapMemory(m_memory, *m->get_allocation(), &data);
+		memcpy(data,m->get_vertex_data().data(), (size_t)bufferInfo.size);
+		vmaUnmapMemory(m_memory, *m->get_allocation());
+
+		m->set_buffer_loaded(true);
+
+
+		
+	}
+	;
 
 }
 

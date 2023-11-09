@@ -5,6 +5,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
+#include <shaderc/shaderc.hpp>
+#include <vma/vk_mem_alloc.h>
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -15,7 +17,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm> 
-#include <shaderc/shaderc.hpp>
+
 
 
 

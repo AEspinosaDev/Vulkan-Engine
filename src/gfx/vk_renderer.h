@@ -9,7 +9,6 @@
 #include "backend/vk_control.h"
 #include "backend/vk_window.h"
 #include "vk_mesh.h"
-#include <vma/vk_mem_alloc.h>
 
 
 
@@ -21,7 +20,7 @@ namespace vkeng {
 		struct UserParams {
 			glm::vec4								clearColor{ glm::vec4{0.0,0.0,0.0,1.0} };
 		};
-		VmaAllocator m_memory;
+		VmaAllocator							m_memory;
 		UserParams								m_params;
 
 		Window*									m_window;
@@ -109,6 +108,7 @@ namespace vkeng {
 #pragma region Drawing
 		///*void upload_buffer(Mesh* m);
 		void draw_mesh(Mesh* m, VkCommandBuffer commandBuffer);
+		void upload_buffers(Mesh* m);
 #pragma endregion
 #pragma region Input Management
 		void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
