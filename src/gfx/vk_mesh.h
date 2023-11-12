@@ -2,39 +2,27 @@
 #include "backend/vk_core.h"
 #include "backend/vk_utils.h"
 
-//struct for buffers
-//struct BufferData {
-//
-//	unsigned int triangles;
-//	unsigned int numFaces{ 0 };
-//	unsigned int numVertices{ 0 };
-//	unsigned int* faceArray{ nullptr };
-//
-//	float* positions{ nullptr };
-//	float* normals{ nullptr };
-//	float* colors{ nullptr };
-//	float* texCoords{ nullptr };
-//	float* tangents{ nullptr };
-//
-//
-//};
-namespace vkeng {
+namespace vkeng
+{
 
-	struct Vertex {
+	struct Vertex
+	{
 		glm::vec3 pos;
 		glm::vec3 normal;
 		glm::vec3 tangent;
 		glm::vec2 texCoord;
 		glm::vec3 color;
 
-		static VkVertexInputBindingDescription getBindingDescription() {
+		static VkVertexInputBindingDescription getBindingDescription()
+		{
 			VkVertexInputBindingDescription bindingDescription{};
 			bindingDescription.binding = 0;
 			bindingDescription.stride = sizeof(Vertex);
 			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 			return bindingDescription;
 		}
-		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions()
+		{
 			std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
 			VkVertexInputAttributeDescription posAtt{};
@@ -72,41 +60,53 @@ namespace vkeng {
 		}
 	};
 
-	struct VertexBuffer {
-		VkBuffer buffer;
-		VkDeviceMemory memory;
-
-	};
-
-
-	class Mesh {
+	class Mesh
+	{
 
 	private:
-		std::vector<Vertex>  m_vertexData;
-		VkBuffer* m_vbo;
-		VmaAllocation* m_allocation;
-		bool loaded{ false };
-		bool buffer_loaded{ false };
+		std::vector<uint16_t> m_vertexIndex;
+		std::vector<Vertex> m_vertexData;
+		VkBuffer *m_vbo;
+		VmaAllocation *m_allocation;
+		VkBuffer *m_ibo;
+		VmaAllocation *m_idxAllocation;
+		bool loaded{false};
+		bool indexed{false};
+		bool buffer_loaded{false};
 
 	public:
-		
-		Mesh() : m_vbo{ new VkBuffer }, m_allocation{ new VmaAllocation } {}
+		Mesh() : m_vbo{new VkBuffer}, m_allocation{new VmaAllocation},
+		m_ibo{new VkBuffer}, m_idxAllocation{new VmaAllocation} {}
 		inline bool is_data_loaded() { return loaded; }
 		inline bool is_buffer_loaded() { return buffer_loaded; }
-		inline void set_buffer_loaded(bool t) { buffer_loaded=t;}
-		inline VkBuffer* const get_vbo() const { return m_vbo; }
-		inline VmaAllocation* const get_allocation() const { return m_allocation; }
-		inline std::vector<Vertex> const get_vertex_data() const {
+		inline bool is_indexed(){return indexed;}
+		inline void set_buffer_loaded(bool t) { buffer_loaded = t; }
+
+		inline VkBuffer *const get_vbo() const { return m_vbo; }
+		inline VkBuffer *const get_ibo() const { return m_ibo; }
+		inline VmaAllocation *const get_allocation() const { return m_allocation; }
+		inline VmaAllocation *const get_index_allocation() const { return m_idxAllocation; }
+		inline std::vector<uint16_t> const get_vertex_index() const
+		{
+			return m_vertexIndex;
+		}
+		inline std::vector<Vertex> const get_vertex_data() const
+		{
 			return m_vertexData;
 		}
+		~Mesh()
+		{
+			delete m_vbo;
+			delete m_ibo;
+			delete m_allocation;
+			delete m_idxAllocation;
+		}
 
-		/*void cache_buffer(VkDevice device, VkPhysicalDevice gpu);
-		void cleanup_buffer(VkDevice device);*/
-		static Mesh* load_file();
-		static Mesh* load();
-		static Mesh* load2();
-
-		
+		static Mesh *load_from_file(const std::string fileName);
+		static Mesh *load(std::vector<Vertex> vertexInfo);
+		static Mesh *load(std::vector<Vertex> vertexInfo,std::vector<uint16_t> vertexIndex);
+		static Mesh *load(glm::vec3** pos, glm::vec3** normal, glm::vec2** uv, glm::vec3** tangent);
+		static Mesh *load2();
 	};
 
 }

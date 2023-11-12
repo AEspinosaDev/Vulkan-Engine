@@ -2,9 +2,8 @@
 #define VMA_IMPLEMENTATION
 #include "vk_renderer.h"
 
-
-namespace vkeng {
-
+namespace vkeng
+{
 
 	void Renderer::init_window()
 	{
@@ -13,30 +12,29 @@ namespace vkeng {
 		// WINDOW CALLBACKS
 		glfwSetWindowUserPointer(m_window->get_window_obj(), this);
 
-		glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow* w, int width, int heigth)
-			{ static_cast<Renderer*>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
-		glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow* w, int key, int scancode, int action, int mods)
-			{ static_cast<Renderer*>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
+		glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow *w, int width, int heigth)
+									   { static_cast<Renderer *>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
+		glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow *w, int key, int scancode, int action, int mods)
+						   { static_cast<Renderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
 	}
 
 	void Renderer::init_vulkan()
 	{
 
 		vkboot::VulkanBooter booter(&m_instance,
-			&m_debugMessenger,
-			&m_gpu,
-			&m_device,
-			&m_graphicsQueue, m_window->get_surface(),
-			&m_presentQueue, &m_enableValidationLayers);
+									&m_debugMessenger,
+									&m_gpu,
+									&m_device,
+									&m_graphicsQueue, m_window->get_surface(),
+									&m_presentQueue, &m_enableValidationLayers);
 
 		booter.boot_vulkan();
 
 		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window->get_window_obj(), nullptr, m_window->get_surface()));
 
-
 		booter.setup_devices();
-		
-		//To booter
+
+		// To booter
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.physicalDevice = m_gpu;
 		allocatorInfo.device = m_device;
@@ -54,81 +52,84 @@ namespace vkeng {
 		create_pipelines();
 
 		m_initialized = true;
-
 	}
 
-	void Renderer::update(std::vector<Mesh*> meshes)
+	void Renderer::update(std::vector<Mesh *> meshes,Camera* camera)
 	{
 		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
-			//I-O
+			// I-O
 			glfwPollEvents();
-			draw(meshes);
+			draw(meshes,camera);
 		}
 		VK_CHECK(vkDeviceWaitIdle(m_device));
 	}
 
-	void Renderer::draw(std::vector<Mesh*> meshes)
+	void Renderer::draw(std::vector<Mesh *> meshes,Camera* camera)
 	{
-		//upload_buffers(meshes);
-
+		// upload_buffers(meshes);
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_cmd.imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
 			recreate_swap_chain();
 			return;
 		}
-		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
 
 		VK_CHECK(vkResetFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame]));
 		VK_CHECK(vkResetCommandBuffer(m_cmd.commandBuffers[m_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
-		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex, meshes);
+		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex, meshes,camera);
 
-		//prepare the submission to the queue. 
-		//we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
-		//we will signal the renderSemaphore, to signal that rendering has finished
+		// prepare the submission to the queue.
+		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
+		// we will signal the renderSemaphore, to signal that rendering has finished
 		VkSubmitInfo submitInfo = vkinit::submit_info(&m_cmd.commandBuffers[m_currentFrame]);
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		VkSemaphore waitSemaphores[] = { m_cmd.imageAvailableSemaphores[m_currentFrame] };
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkSemaphore waitSemaphores[] = {m_cmd.imageAvailableSemaphores[m_currentFrame]};
+		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		VkSemaphore signalSemaphores[] = { m_cmd.renderFinishedSemaphores[m_currentFrame] };
+		VkSemaphore signalSemaphores[] = {m_cmd.renderFinishedSemaphores[m_currentFrame]};
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_cmd.inFlightFences[m_currentFrame]) != VK_SUCCESS) {
+		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_cmd.inFlightFences[m_currentFrame]) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 
 		// this will put the image we just rendered to into the visible window.
-		// we want to wait on the renderSemaphore for that, 
+		// we want to wait on the renderSemaphore for that,
 		// as its necessary that drawing commands have finished before the image is displayed to the user
 		VkPresentInfoKHR presentInfo = vkinit::present_info();
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = { *m_swapchain.get_swapchain_obj() };
+		VkSwapchainKHR swapChains[] = {*m_swapchain.get_swapchain_obj()};
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 
 		result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized()) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized())
+		{
 
 			m_window->set_resized(false);
 			recreate_swap_chain();
 		}
-		else if (result != VK_SUCCESS) {
+		else if (result != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to present swap chain image!");
 		}
 
@@ -137,12 +138,14 @@ namespace vkeng {
 
 	void Renderer::cleanup()
 	{
-		if (m_initialized) {
+		if (m_initialized)
+		{
 			m_deletionQueue.flush();
 
 			vkDestroyDevice(m_device, nullptr);
 
-			if (m_enableValidationLayers) {
+			if (m_enableValidationLayers)
+			{
 				vkutils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
 			}
 			vkDestroySurfaceKHR(m_instance, *m_window->get_surface(), nullptr);
@@ -158,19 +161,18 @@ namespace vkeng {
 	{
 		m_swapchain.create(&m_gpu, &m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent());
 
-		m_deletionQueue.push_function([=]() {
-			//vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-			cleanup_swap_chain();
-
-			});
+		m_deletionQueue.push_function([=]()
+									  {
+										  // vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+										  cleanup_swap_chain(); });
 	}
 
 	void Renderer::create_default_renderpass()
 	{
-		//as in values it sould hace
-		//multisampled number
-		//stencil
-		//depth
+		// as in values it sould hace
+		// multisampled number
+		// stencil
+		// depth
 
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = *m_swapchain.get_image_format();
@@ -191,7 +193,6 @@ namespace vkeng {
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
 
-
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.dstSubpass = 0;
@@ -208,14 +209,13 @@ namespace vkeng {
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to create render pass!");
 		}
 
-		m_deletionQueue.push_function([=]() {
-			vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-			});
-
+		m_deletionQueue.push_function([=]()
+									  { vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
 	}
 
 	void Renderer::create_framebuffers()
@@ -225,21 +225,18 @@ namespace vkeng {
 		m_framebuffers.resize(size);
 
 		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, *m_window->get_extent());
-		for (size_t i = 0; i < size; i++) {
+		for (size_t i = 0; i < size; i++)
+		{
 			VkImageView attachments[] = {
-				m_swapchain.get_image_views()[i]
-			};
+				m_swapchain.get_image_views()[i]};
 
 			fb_info.pAttachments = attachments;
 
-
-			if (vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS) {
+			if (vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
+			{
 				throw std::runtime_error("failed to create framebuffer!");
 			}
-
 		}
-
-
 	}
 
 	void Renderer::init_control_objects()
@@ -247,36 +244,32 @@ namespace vkeng {
 		m_cmd.maxFramesInFlight = MAX_FRAMES_IN_FLIGHT;
 		m_cmd.init(m_device, m_gpu, *m_window->get_surface());
 
-		m_deletionQueue.push_function([=]() {
-			m_cmd.cleanup(m_device);
-			});
-
+		m_deletionQueue.push_function([=]()
+									  { m_cmd.cleanup(m_device); });
 	}
 
-
-
-
-	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh*> meshes)
+	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes,Camera* camera)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
 
-		//Clear COLOR | DEPTH | STENCIL ??
-		VkClearValue clearColor = { {{m_params.clearColor.r, m_params.clearColor.g, m_params.clearColor.b, m_params.clearColor.a}} };
+		// Clear COLOR | DEPTH | STENCIL ??
+		VkClearValue clearColor = {{{m_params.clearColor.r, m_params.clearColor.g, m_params.clearColor.b, m_params.clearColor.a}}};
 		renderPassInfo.clearValueCount = 1;
 		renderPassInfo.pClearValues = &clearColor;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		//Like bind program
+		// Like bind program
 		m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_currentPipeline);
 
-		//Viewport setup
+		// Viewport setup
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -287,50 +280,44 @@ namespace vkeng {
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
+		scissor.offset = {0, 0};
 		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		for each (Mesh * m in meshes)
+		for each (Mesh *m in meshes)
 		{
 
-			if (m) {
+			if (m)
+			{
 
 				draw_mesh(m, commandBuffer);
 			}
 		}
 
-		//draw_mesh(commandBuffer, m_Mesh);
+		// draw_mesh(commandBuffer, m_Mesh);
 
-		//vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		// vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
 
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to record command buffer!");
 		}
 	}
 
-
 	void Renderer::create_pipelines()
 	{
-		/*m_mesh = Mesh::load();
-		upload_buffers(m_mesh)*/
-		//m_mesh->cache_buffer(m_device, m_gpu);
-		//m_deletionQueue.push_function([=]() {m_mesh->cleanup_buffer(m_device); });
-
 
 		std::string shaderDir(SHADER_DIR);
 
-		//Populate shader list
+		// Populate shader list
 		std::vector<Shader> shaders;
-		//resources easy route!!!
+		// resources easy route!!!
 		shaders.push_back(Shader::read_file(shaderDir + "test.glsl"));
 		shaders.push_back(Shader::read_file(shaderDir + "red.glsl"));
 
-
-
-		//Create standard pipelines info
+		// Create standard pipelines info
 		PipelineBuilder builder;
 
 		builder.vertexInputInfo = vkinit::vertex_input_state_create_info();
@@ -345,14 +332,13 @@ namespace vkeng {
 		builder.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		builder.vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-
 		builder.viewport.x = 0.0f;
 		builder.viewport.y = 0.0f;
 		builder.viewport.width = (float)m_window->get_extent()->width;
 		builder.viewport.height = (float)m_window->get_extent()->height;
 		builder.viewport.minDepth = 0.0f;
 		builder.viewport.maxDepth = 1.0f;
-		builder.scissor.offset = { 0, 0 };
+		builder.scissor.offset = {0, 0};
 		builder.scissor.extent = *m_window->get_extent();
 
 		builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
@@ -363,31 +349,47 @@ namespace vkeng {
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
 
+		// // setup push constants
+		// VkPushConstantRange push_constant;
+		// // this push constant range starts at the beginning
+		// push_constant.offset = 0;
+		// // this push constant range takes up the size of a MeshPushConstants struct
+		// push_constant.size = sizeof(MeshPushConstants);
+		// // this push constant range is accessible only in the vertex shader
+		// push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
+		// mesh_pipeline_layout_info.pPushConstantRanges = &push_constant;
+		// mesh_pipeline_layout_info.pushConstantRangeCount = 1;
+
+		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
 		builder.pipelineLayout = m_pipelineLayout;
 
-		//Compile shaders
+		// Compile shaders
 		int i = 0;
 		for each (auto shader in shaders)
 		{
 			VkShaderModule vertShaderModule{}, fragShaderModule{}, geomShaderModule{}, tessShaderModule{};
-			if (shader.vertSource != "") {
+			if (shader.vertSource != "")
+			{
 				vertShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
 				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule));
 			}
-			if (shader.fragSource != "") {
+			if (shader.fragSource != "")
+			{
 				fragShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
 				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule));
 			}
-			if (shader.geomSource != "") {
+			if (shader.geomSource != "")
+			{
 				geomShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
 				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, geomShaderModule));
 			}
-			if (shader.tessSource != "") {
+			if (shader.tessSource != "")
+			{
 				tessShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.tessSource, shader.name + "tess", shaderc_tess_control_shader, true));
 				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, tessShaderModule));
 			}
@@ -403,27 +405,22 @@ namespace vkeng {
 			i++;
 		}
 
-
-		m_deletionQueue.push_function([=]() {
+		m_deletionQueue.push_function([=]()
+									  {
 			for each (auto pipeline in m_pipelines)
 			{
 				vkDestroyPipeline(m_device, pipeline.second, nullptr);
 			}
-			vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
-			});
-
-
-
-
+			vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr); });
 	}
-
 
 	void Renderer::recreate_swap_chain()
 	{
 		int width = 0, height = 0;
 		glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
-		
-		while (width == 0 || height == 0) {
+
+		while (width == 0 || height == 0)
+		{
 			glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
 			glfwWaitEvents();
 		}
@@ -436,59 +433,90 @@ namespace vkeng {
 
 	void Renderer::cleanup_swap_chain()
 	{
-		for (size_t i = 0; i < m_framebuffers.size(); i++) {
+		for (size_t i = 0; i < m_framebuffers.size(); i++)
+		{
 			vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
 		}
 
 		m_swapchain.cleanup(&m_device);
 	}
 
-	void Renderer::draw_mesh(Mesh* m, VkCommandBuffer commandBuffer) {
-		if (!m->is_data_loaded())return;
-		if (!m->is_buffer_loaded()) upload_buffers(m);
+	void Renderer::draw_mesh(Mesh *m, VkCommandBuffer commandBuffer)
+	{
+		if (!m->is_data_loaded())
+			return;
+		if (!m->is_buffer_loaded())
+			upload_buffers(m);
 
-		VkBuffer vertexBuffers[] = { *m->get_vbo()};
-		VkDeviceSize offsets[] = { 0 };
+		VkBuffer vertexBuffers[] = {*m->get_vbo()};
+		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
+		if (m->is_indexed())
+		{
+			vkCmdBindIndexBuffer(commandBuffer, *m->get_ibo(), 0, VK_INDEX_TYPE_UINT16);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m->get_vertex_index().size()), 1, 0, 0, 0);
+		}
+		else
+		{
 
+			vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
+		}
 	}
-	void Renderer::upload_buffers(Mesh* m)
+	void Renderer::upload_buffers(Mesh *m)
 	{
 
-		//allocate vertex buffer
+		// allocate vertex buffer
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size();
 		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
-		//let the VMA library know that this data should be writeable by CPU, but also readable by GPU
+		// let the VMA library know that this data should be writeable by CPU, but also readable by GPU
 		VmaAllocationCreateInfo vmaallocInfo = {};
 		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-		//allocate the buffer
+		// allocate the buffer
 		VK_CHECK(vmaCreateBuffer(m_memory, &bufferInfo, &vmaallocInfo,
-			m->get_vbo(),
-			m->get_allocation(),
-			nullptr));
+								 m->get_vbo(),
+								 m->get_allocation(),
+								 nullptr));
 
-		//add the destruction of triangle mesh buffer to the deletion queue
-		m_deletionQueue.push_function([=]() {
-			vmaDestroyBuffer(m_memory, *m->get_vbo(),
-				*m->get_allocation());
-			});
+		// add the destruction of triangle mesh buffer to the deletion queue
+		m_deletionQueue.push_function([=]()
+									  { vmaDestroyBuffer(m_memory, *m->get_vbo(),
+														 *m->get_allocation()); });
 
-		void* data;
+		void *data;
 		vmaMapMemory(m_memory, *m->get_allocation(), &data);
-		memcpy(data,m->get_vertex_data().data(), (size_t)bufferInfo.size);
+		memcpy(data, m->get_vertex_data().data(), (size_t)bufferInfo.size);
 		vmaUnmapMemory(m_memory, *m->get_allocation());
 
+		if (m->is_indexed())
+		{
+			// allocate index buffer
+			VkBufferCreateInfo indexBufferInfo = {};
+			indexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+			indexBufferInfo.size = sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size();
+			indexBufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+			VmaAllocationCreateInfo vmaindexAllocInfo = {};
+			vmaindexAllocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+			// allocate the buffer
+			VK_CHECK(vmaCreateBuffer(m_memory, &indexBufferInfo, &vmaindexAllocInfo,
+									 m->get_ibo(),
+									 m->get_index_allocation(),
+									 nullptr));
+			// add the destruction of triangle mesh buffer to the deletion queue
+			m_deletionQueue.push_function([=]()
+										  { vmaDestroyBuffer(m_memory, *m->get_ibo(),
+															 *m->get_index_allocation()); });
+
+			void *index_data;
+			vmaMapMemory(m_memory, *m->get_index_allocation(), &index_data);
+			memcpy(index_data, m->get_vertex_index().data(), (size_t)indexBufferInfo.size);
+			vmaUnmapMemory(m_memory, *m->get_index_allocation());
+		}
 		m->set_buffer_loaded(true);
-
-
-		
-	}
-	;
+	};
 
 }
-
