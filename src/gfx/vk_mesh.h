@@ -1,6 +1,6 @@
 #pragma once
-#include "backend/vk_core.h"
 #include "backend/vk_utils.h"
+#include "backend/vk_buffer.h"
 
 namespace vkeng
 {
@@ -66,26 +66,21 @@ namespace vkeng
 	private:
 		std::vector<uint16_t> m_vertexIndex;
 		std::vector<Vertex> m_vertexData;
-		VkBuffer *m_vbo;
-		VmaAllocation *m_allocation;
-		VkBuffer *m_ibo;
-		VmaAllocation *m_idxAllocation;
+		Buffer *m_vbo;
+		Buffer *m_ibo;
 		bool loaded{false};
 		bool indexed{false};
 		bool buffer_loaded{false};
 
 	public:
-		Mesh() : m_vbo{new VkBuffer}, m_allocation{new VmaAllocation},
-		m_ibo{new VkBuffer}, m_idxAllocation{new VmaAllocation} {}
+		Mesh() : m_vbo{new Buffer}, 
+				 m_ibo{new Buffer} {}
 		inline bool is_data_loaded() { return loaded; }
 		inline bool is_buffer_loaded() { return buffer_loaded; }
-		inline bool is_indexed(){return indexed;}
+		inline bool is_indexed() { return indexed; }
 		inline void set_buffer_loaded(bool t) { buffer_loaded = t; }
-
-		inline VkBuffer *const get_vbo() const { return m_vbo; }
-		inline VkBuffer *const get_ibo() const { return m_ibo; }
-		inline VmaAllocation *const get_allocation() const { return m_allocation; }
-		inline VmaAllocation *const get_index_allocation() const { return m_idxAllocation; }
+		inline Buffer *const get_vbo() const  { return m_vbo; }
+		inline Buffer *const get_ibo() const { return m_ibo; }
 		inline std::vector<uint16_t> const get_vertex_index() const
 		{
 			return m_vertexIndex;
@@ -98,14 +93,14 @@ namespace vkeng
 		{
 			delete m_vbo;
 			delete m_ibo;
-			delete m_allocation;
-			delete m_idxAllocation;
+			// delete m_allocation;
+			// delete m_idxAllocation;
 		}
 
 		static Mesh *load_from_file(const std::string fileName);
 		static Mesh *load(std::vector<Vertex> vertexInfo);
-		static Mesh *load(std::vector<Vertex> vertexInfo,std::vector<uint16_t> vertexIndex);
-		static Mesh *load(glm::vec3** pos, glm::vec3** normal, glm::vec2** uv, glm::vec3** tangent);
+		static Mesh *load(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
+		static Mesh *load(glm::vec3 **pos, glm::vec3 **normal, glm::vec2 **uv, glm::vec3 **tangent);
 		static Mesh *load2();
 	};
 

@@ -45,7 +45,6 @@ namespace vkeng
 
 		vkutils::DeletionQueue m_deletionQueue;
 
-		Mesh *m_mesh{nullptr};
 
 		const int MAX_FRAMES_IN_FLIGHT{2};
 #ifdef NDEBUG
@@ -69,9 +68,9 @@ namespace vkeng
 			init_vulkan();
 		}
 
-		inline void render(std::vector<Mesh *> meshes, Camera* camera)
+		inline void render(std::vector<Mesh *> meshes, Camera *camera)
 		{
-			update(meshes,camera);
+			update(meshes, camera);
 			cleanup();
 		}
 
@@ -80,9 +79,9 @@ namespace vkeng
 
 		void init_vulkan();
 
-		void update(std::vector<Mesh *> meshes, Camera* camera);
+		void update(std::vector<Mesh *> meshes, Camera *camera);
 
-		void draw(std::vector<Mesh *> meshes, Camera* camera);
+		void draw(std::vector<Mesh *> meshes, Camera *camera);
 
 		void cleanup();
 
@@ -99,7 +98,7 @@ namespace vkeng
 
 		void create_pipelines();
 
-		void record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera* camera);
+		void record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera);
 
 		void recreate_swap_chain();
 
@@ -108,7 +107,8 @@ namespace vkeng
 #pragma endregion
 #pragma region Drawing
 		void draw_mesh(Mesh *m, VkCommandBuffer commandBuffer);
-		void upload_buffers(Mesh *m);
+		void upload_buffer(Buffer *buffer,const void* bufferData, size_t size);
+		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 #pragma endregion
 #pragma region Input Management
 		void keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods)

@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -42,7 +44,7 @@ namespace vkeng
     protected:
         std::string m_name;
         Transform m_transform;
-
+        
         std::vector<Object3D *> m_children;
         Object3D *m_parent;
 

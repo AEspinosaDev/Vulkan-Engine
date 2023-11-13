@@ -54,18 +54,18 @@ namespace vkeng
 		m_initialized = true;
 	}
 
-	void Renderer::update(std::vector<Mesh *> meshes,Camera* camera)
+	void Renderer::update(std::vector<Mesh *> meshes, Camera *camera)
 	{
 		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
 			// I-O
 			glfwPollEvents();
-			draw(meshes,camera);
+			draw(meshes, camera);
 		}
 		VK_CHECK(vkDeviceWaitIdle(m_device));
 	}
 
-	void Renderer::draw(std::vector<Mesh *> meshes,Camera* camera)
+	void Renderer::draw(std::vector<Mesh *> meshes, Camera *camera)
 	{
 		// upload_buffers(meshes);
 
@@ -86,7 +86,7 @@ namespace vkeng
 		VK_CHECK(vkResetFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame]));
 		VK_CHECK(vkResetCommandBuffer(m_cmd.commandBuffers[m_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
 
-		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex, meshes,camera);
+		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex, meshes, camera);
 
 		// prepare the submission to the queue.
 		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
@@ -248,7 +248,7 @@ namespace vkeng
 									  { m_cmd.cleanup(m_device); });
 	}
 
-	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes,Camera* camera)
+	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
@@ -445,16 +445,27 @@ namespace vkeng
 	{
 		if (!m->is_data_loaded())
 			return;
-		if (!m->is_buffer_loaded())
-			upload_buffers(m);
 
-		VkBuffer vertexBuffers[] = {*m->get_vbo()};
+		if (!m->is_buffer_loaded())
+		{
+			create_buffer(m->get_vbo(), sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			upload_buffer(m->get_vbo(), m->get_vertex_data().data(),  sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size());
+			if (m->is_indexed())
+			{
+				create_buffer(m->get_ibo(), sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+				upload_buffer(m->get_ibo(), m->get_vertex_index().data(), sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size());
+
+				m->set_buffer_loaded(true);
+			}
+		}
+
+		VkBuffer vertexBuffers[] = {m->get_vbo()->buffer};
 		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 		if (m->is_indexed())
 		{
-			vkCmdBindIndexBuffer(commandBuffer, *m->get_ibo(), 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(commandBuffer, m->get_ibo()->buffer, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m->get_vertex_index().size()), 1, 0, 0, 0);
 		}
 		else
@@ -463,60 +474,35 @@ namespace vkeng
 			vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
 		}
 	}
-	void Renderer::upload_buffers(Mesh *m)
+	void Renderer::upload_buffer(Buffer *buffer, const void *bufferData, size_t size)
 	{
+		void *data;
+		vmaMapMemory(m_memory, buffer->allocation, &data);
+		memcpy(data, bufferData, size);
+		vmaUnmapMemory(m_memory, buffer->allocation);
 
-		// allocate vertex buffer
+	}
+	void Renderer::create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+	{
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size();
-		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.pNext = nullptr;
 
-		// let the VMA library know that this data should be writeable by CPU, but also readable by GPU
+		bufferInfo.size = allocSize;
+		bufferInfo.usage = usage;
+
 		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+		vmaallocInfo.usage = memoryUsage;
+
+		// buffer = new Buffer{};
 		// allocate the buffer
 		VK_CHECK(vmaCreateBuffer(m_memory, &bufferInfo, &vmaallocInfo,
-								 m->get_vbo(),
-								 m->get_allocation(),
+								 &buffer->buffer,
+								 &buffer->allocation,
 								 nullptr));
 
-		// add the destruction of triangle mesh buffer to the deletion queue
 		m_deletionQueue.push_function([=]()
-									  { vmaDestroyBuffer(m_memory, *m->get_vbo(),
-														 *m->get_allocation()); });
-
-		void *data;
-		vmaMapMemory(m_memory, *m->get_allocation(), &data);
-		memcpy(data, m->get_vertex_data().data(), (size_t)bufferInfo.size);
-		vmaUnmapMemory(m_memory, *m->get_allocation());
-
-		if (m->is_indexed())
-		{
-			// allocate index buffer
-			VkBufferCreateInfo indexBufferInfo = {};
-			indexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-			indexBufferInfo.size = sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size();
-			indexBufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-
-			VmaAllocationCreateInfo vmaindexAllocInfo = {};
-			vmaindexAllocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-			// allocate the buffer
-			VK_CHECK(vmaCreateBuffer(m_memory, &indexBufferInfo, &vmaindexAllocInfo,
-									 m->get_ibo(),
-									 m->get_index_allocation(),
-									 nullptr));
-			// add the destruction of triangle mesh buffer to the deletion queue
-			m_deletionQueue.push_function([=]()
-										  { vmaDestroyBuffer(m_memory, *m->get_ibo(),
-															 *m->get_index_allocation()); });
-
-			void *index_data;
-			vmaMapMemory(m_memory, *m->get_index_allocation(), &index_data);
-			memcpy(index_data, m->get_vertex_index().data(), (size_t)indexBufferInfo.size);
-			vmaUnmapMemory(m_memory, *m->get_index_allocation());
-		}
-		m->set_buffer_loaded(true);
+									  { vmaDestroyBuffer(m_memory, buffer->buffer,
+														 buffer->allocation); });
 	};
-
 }
