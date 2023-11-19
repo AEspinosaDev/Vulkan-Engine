@@ -4,6 +4,86 @@
 
 namespace vkeng
 {
+	void Renderer::run(std::vector<Mesh *> meshes, Camera *camera)
+	{
+		while (!glfwWindowShouldClose(m_window->get_window_obj()))
+		{
+			// I-O
+			glfwPollEvents();
+			render(meshes, camera);
+		}
+		VK_CHECK(vkDeviceWaitIdle(m_device));
+	}
+
+	void Renderer::render(std::vector<Mesh *> meshes, Camera *camera)
+	{
+
+		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
+		uint32_t imageIndex;
+		VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_frames[m_currentFrame].presentSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			recreate_swap_chain();
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			throw std::runtime_error("failed to acquire swap chain image!");
+		}
+
+		VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
+		VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, /*VkCommandBufferResetFlagBits*/ 0));
+
+		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, meshes, camera);
+
+		// prepare the submission to the queue.
+		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
+		// we will signal the renderSemaphore, to signal that rendering has finished
+		VkSubmitInfo submitInfo = vkinit::submit_info(&m_frames[m_currentFrame].commandBuffer);
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		VkSemaphore waitSemaphores[] = {m_frames[m_currentFrame].presentSemaphore};
+		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		VkSemaphore signalSemaphores[] = {m_frames[m_currentFrame].renderSemaphore};
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_frames[m_currentFrame].renderFence) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+
+		// this will put the image we just rendered to into the visible window.
+		// we want to wait on the renderSemaphore for that,
+		// as its necessary that drawing commands have finished before the image is displayed to the user
+		VkPresentInfoKHR presentInfo = vkinit::present_info();
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+		VkSwapchainKHR swapChains[] = {*m_swapchain.get_swapchain_obj()};
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+
+		result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized())
+		{
+			m_window->set_resized(false);
+			recreate_swap_chain();
+			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
+		}
+		else if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to present swap chain image!");
+		}
+
+		m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	}
 
 	void Renderer::init_window()
 	{
@@ -43,97 +123,17 @@ namespace vkeng
 
 		create_swapchain();
 
-		create_default_renderpass();
+		init_default_renderpass();
 
-		create_framebuffers();
+		init_framebuffers();
 
 		init_control_objects();
 
-		create_pipelines();
+		init_descriptors();
+
+		init_pipelines();
 
 		m_initialized = true;
-	}
-
-	void Renderer::update(std::vector<Mesh *> meshes, Camera *camera)
-	{
-		while (!glfwWindowShouldClose(m_window->get_window_obj()))
-		{
-			// I-O
-			glfwPollEvents();
-			draw(meshes, camera);
-		}
-		VK_CHECK(vkDeviceWaitIdle(m_device));
-	}
-
-	void Renderer::draw(std::vector<Mesh *> meshes, Camera *camera)
-	{
-		// upload_buffers(meshes);
-
-		VK_CHECK(vkWaitForFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX));
-		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_cmd.imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
-
-		if (result == VK_ERROR_OUT_OF_DATE_KHR)
-		{
-			recreate_swap_chain();
-			return;
-		}
-		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		{
-			throw std::runtime_error("failed to acquire swap chain image!");
-		}
-
-		VK_CHECK(vkResetFences(m_device, 1, &m_cmd.inFlightFences[m_currentFrame]));
-		VK_CHECK(vkResetCommandBuffer(m_cmd.commandBuffers[m_currentFrame], /*VkCommandBufferResetFlagBits*/ 0));
-
-		record_command_buffer(m_cmd.commandBuffers[m_currentFrame], imageIndex, meshes, camera);
-
-		// prepare the submission to the queue.
-		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
-		// we will signal the renderSemaphore, to signal that rendering has finished
-		VkSubmitInfo submitInfo = vkinit::submit_info(&m_cmd.commandBuffers[m_currentFrame]);
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		VkSemaphore waitSemaphores[] = {m_cmd.imageAvailableSemaphores[m_currentFrame]};
-		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = waitSemaphores;
-		submitInfo.pWaitDstStageMask = waitStages;
-		submitInfo.commandBufferCount = 1;
-		VkSemaphore signalSemaphores[] = {m_cmd.renderFinishedSemaphores[m_currentFrame]};
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = signalSemaphores;
-
-		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_cmd.inFlightFences[m_currentFrame]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to submit draw command buffer!");
-		}
-
-		// this will put the image we just rendered to into the visible window.
-		// we want to wait on the renderSemaphore for that,
-		// as its necessary that drawing commands have finished before the image is displayed to the user
-		VkPresentInfoKHR presentInfo = vkinit::present_info();
-		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = {*m_swapchain.get_swapchain_obj()};
-		presentInfo.swapchainCount = 1;
-		presentInfo.pSwapchains = swapChains;
-		presentInfo.pImageIndices = &imageIndex;
-
-		result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
-
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized())
-		{
-
-			m_window->set_resized(false);
-			recreate_swap_chain();
-		}
-		else if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to present swap chain image!");
-		}
-
-		m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void Renderer::cleanup()
@@ -167,7 +167,7 @@ namespace vkeng
 										  cleanup_swap_chain(); });
 	}
 
-	void Renderer::create_default_renderpass()
+	void Renderer::init_default_renderpass()
 	{
 		// as in values it sould hace
 		// multisampled number
@@ -218,7 +218,7 @@ namespace vkeng
 									  { vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
 	}
 
-	void Renderer::create_framebuffers()
+	void Renderer::init_framebuffers()
 	{
 		auto size = m_swapchain.get_image_views().size();
 
@@ -241,21 +241,98 @@ namespace vkeng
 
 	void Renderer::init_control_objects()
 	{
-		m_cmd.maxFramesInFlight = MAX_FRAMES_IN_FLIGHT;
-		m_cmd.init(m_device, m_gpu, *m_window->get_surface());
-
-		m_deletionQueue.push_function([=]()
-									  { m_cmd.cleanup(m_device); });
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			m_frames[i].init(m_device, m_gpu, *m_window->get_surface());
+			m_deletionQueue.push_function([=]()
+										  { m_frames[i].cleanup(m_device); });
+		}
 	}
 
-	void Renderer::record_command_buffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
+	void Renderer::init_descriptors()
+	{
+
+		// create a descriptor pool that will hold 10 uniform buffers
+		std::vector<VkDescriptorPoolSize> sizes =
+			{
+				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}};
+
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = 0;
+		pool_info.maxSets = 10;
+		pool_info.poolSizeCount = (uint32_t)sizes.size();
+		pool_info.pPoolSizes = sizes.data();
+
+		VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_descriptorPool));
+
+		// information about the binding.
+		VkDescriptorSetLayoutBinding camBufferBinding = {};
+		camBufferBinding.binding = 0;
+		camBufferBinding.descriptorCount = 1;
+		camBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		camBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkDescriptorSetLayoutCreateInfo setinfo = {};
+		setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		setinfo.pNext = nullptr;
+		setinfo.bindingCount = 1;
+		setinfo.flags = 0;
+		setinfo.pBindings = &camBufferBinding;
+
+		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &m_globalSetLayout));
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			create_buffer(&m_frames[i].cameraUniformBuffer, sizeof(CameraUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+			// allocate one descriptor set for each frame
+			VkDescriptorSetAllocateInfo allocInfo = {};
+			allocInfo.pNext = nullptr;
+			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			allocInfo.descriptorPool = m_descriptorPool;
+			allocInfo.descriptorSetCount = 1;
+			allocInfo.pSetLayouts = &m_globalSetLayout;
+
+			VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
+											  &m_frames[i].globalDescriptor));
+
+			VkDescriptorBufferInfo binfo;
+			// CAMERA
+			binfo.buffer = m_frames[i].cameraUniformBuffer.buffer;
+			binfo.offset = 0;
+			binfo.range = sizeof(CameraUniforms);
+
+			VkWriteDescriptorSet setWrite = {};
+			setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			setWrite.pNext = nullptr;
+
+			// we are going to write into binding number 0
+			setWrite.dstBinding = 0;
+			// of the global descriptor
+			setWrite.dstSet = m_frames[i].globalDescriptor;
+
+			setWrite.descriptorCount = 1;
+			// and the type is uniform buffer
+			setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			setWrite.pBufferInfo = &binfo;
+
+			vkUpdateDescriptorSets(m_device, 1, &setWrite, 0, nullptr);
+		}
+
+		m_deletionQueue.push_function([=]()
+									  {
+										vkDestroyDescriptorSetLayout(m_device, m_globalSetLayout, nullptr); 
+										vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr); });
+	}
+
+	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
-
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
 
 		// Clear COLOR | DEPTH | STENCIL ??
@@ -265,9 +342,20 @@ namespace vkeng
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+		// UNIFORMS
+		// camera view
+		if (camera->is_dirty())
+			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
+		CameraUniforms camData;
+		camData.view = camera->get_view();
+		camData.proj = camera->get_projection();
+		camData.viewProj = camera->get_projection() * camera->get_view();
+		upload_buffer(&m_frames[m_currentFrame].cameraUniformBuffer, &camData, sizeof(CameraUniforms));
+
 		// Like bind program
 		m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_currentPipeline);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 0, nullptr);
 
 		// Viewport setup
 		VkViewport viewport{};
@@ -284,19 +372,7 @@ namespace vkeng
 		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		for each (Mesh *m in meshes)
-		{
-
-			if (m)
-			{
-
-				draw_mesh(m, commandBuffer);
-			}
-		}
-
-		// draw_mesh(commandBuffer, m_Mesh);
-
-		// vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		draw_meshes(commandBuffer,meshes);
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -306,7 +382,7 @@ namespace vkeng
 		}
 	}
 
-	void Renderer::create_pipelines()
+	void Renderer::init_pipelines()
 	{
 
 		std::string shaderDir(SHADER_DIR);
@@ -348,18 +424,9 @@ namespace vkeng
 		builder.colorBlendAttachment = vkinit::color_blend_attachment_state();
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-
-		// // setup push constants
-		// VkPushConstantRange push_constant;
-		// // this push constant range starts at the beginning
-		// push_constant.offset = 0;
-		// // this push constant range takes up the size of a MeshPushConstants struct
-		// push_constant.size = sizeof(MeshPushConstants);
-		// // this push constant range is accessible only in the vertex shader
-		// push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-		// mesh_pipeline_layout_info.pPushConstantRanges = &push_constant;
-		// mesh_pipeline_layout_info.pushConstantRangeCount = 1;
+		// hook the global set layout
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &m_globalSetLayout;
 
 		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		{
@@ -370,7 +437,7 @@ namespace vkeng
 
 		// Compile shaders
 		int i = 0;
-		for each (auto shader in shaders)
+		for (auto &shader : shaders)
 		{
 			VkShaderModule vertShaderModule{}, fragShaderModule{}, geomShaderModule{}, tessShaderModule{};
 			if (shader.vertSource != "")
@@ -407,7 +474,7 @@ namespace vkeng
 
 		m_deletionQueue.push_function([=]()
 									  {
-			for each (auto pipeline in m_pipelines)
+			for (auto &pipeline : m_pipelines)
 			{
 				vkDestroyPipeline(m_device, pipeline.second, nullptr);
 			}
@@ -428,7 +495,7 @@ namespace vkeng
 		VK_CHECK(vkDeviceWaitIdle(m_device));
 		cleanup_swap_chain();
 		create_swapchain();
-		create_framebuffers();
+		init_framebuffers();
 	}
 
 	void Renderer::cleanup_swap_chain()
@@ -441,7 +508,21 @@ namespace vkeng
 		m_swapchain.cleanup(&m_device);
 	}
 
-	void Renderer::draw_mesh(Mesh *m, VkCommandBuffer commandBuffer)
+	void Renderer::draw_meshes(VkCommandBuffer commandBuffer,std::vector<Mesh *> meshes)
+	{
+		//Reorder by transparency
+		for (Mesh *m : meshes)
+		{
+			if (m)
+			{
+				draw_mesh(commandBuffer,m);
+			}
+		}
+		//Draw helpers ...
+
+	}
+
+	void Renderer::draw_mesh(VkCommandBuffer commandBuffer,Mesh *m)
 	{
 		if (!m->is_data_loaded())
 			return;
@@ -449,14 +530,13 @@ namespace vkeng
 		if (!m->is_buffer_loaded())
 		{
 			create_buffer(m->get_vbo(), sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-			upload_buffer(m->get_vbo(), m->get_vertex_data().data(),  sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size());
+			upload_buffer(m->get_vbo(), m->get_vertex_data().data(), sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size());
 			if (m->is_indexed())
 			{
 				create_buffer(m->get_ibo(), sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 				upload_buffer(m->get_ibo(), m->get_vertex_index().data(), sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size());
-
-				m->set_buffer_loaded(true);
 			}
+			m->set_buffer_loaded(true);
 		}
 
 		VkBuffer vertexBuffers[] = {m->get_vbo()->buffer};
@@ -470,7 +550,6 @@ namespace vkeng
 		}
 		else
 		{
-
 			vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
 		}
 	}
@@ -480,10 +559,10 @@ namespace vkeng
 		vmaMapMemory(m_memory, buffer->allocation, &data);
 		memcpy(data, bufferData, size);
 		vmaUnmapMemory(m_memory, buffer->allocation);
-
 	}
 	void Renderer::create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 	{
+
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.pNext = nullptr;
@@ -494,8 +573,6 @@ namespace vkeng
 		VmaAllocationCreateInfo vmaallocInfo = {};
 		vmaallocInfo.usage = memoryUsage;
 
-		// buffer = new Buffer{};
-		// allocate the buffer
 		VK_CHECK(vmaCreateBuffer(m_memory, &bufferInfo, &vmaallocInfo,
 								 &buffer->buffer,
 								 &buffer->allocation,

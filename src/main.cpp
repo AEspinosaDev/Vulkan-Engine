@@ -22,9 +22,17 @@ int main()
                                              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}});
 
         meshes.push_back(m);
+
         vkeng::Camera *camera = new vkeng::Camera();
 
-        app.render(meshes,camera);
+        camera->set_position(glm::vec3(0.0f,0.0f,-1.0f));
+        camera->set_far(200.0f);
+        camera->set_near(0.01f);
+        camera->set_field_of_view(70.0f);
+
+
+        // app.render(meshes,camera);
+        app.run(meshes,camera);
     }
     catch (const std::exception &e)
     {

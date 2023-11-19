@@ -49,7 +49,7 @@ namespace vkeng
         Object3D *m_parent;
 
         bool enabled;
-        bool isDirty;
+        bool isDirty{true};
 
     public:
         Object3D(const std::string na) : m_name(na), enabled(true),
@@ -115,6 +115,8 @@ namespace vkeng
         }
 
         virtual inline bool is_active() { return enabled; }
+
+        virtual inline bool is_dirty() { return isDirty; }
 
         virtual inline std::string get_name() { return m_name; }
 

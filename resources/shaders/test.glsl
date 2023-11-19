@@ -1,28 +1,25 @@
 #shader vertex
 #version 450
 
+//Input VBO
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 tangent;
 layout(location = 3) in vec2 texCoord;
 layout(location = 4) in vec3 color;
 
+//Output
 layout(location = 0) out vec3 fragColor;
 
-// vec2 positions[3] = vec2[](
-//     vec2(0.0, -0.5),
-//     vec2(0.5, 0.5),
-//     vec2(-0.5, 0.5)
-// );
-
-// vec3 colors[3] = vec3[](
-//     vec3(1.0, 0.0, 0.0),
-//     vec3(0.0, 1.0, 0.0),
-//     vec3(0.0, 0.0, 1.0)
-// );
+//Uniforms
+layout(set = 0, binding = 0) uniform CameraUniforms{
+    mat4 view;
+    mat4 proj;
+    mat4 viewProj;
+} camera;
 
 void main() {
-    gl_Position = vec4(pos, 1.0);
+    gl_Position = camera.viewProj * mat4(1.0f) * vec4(pos,1.0f);
     fragColor = color;
 }
 

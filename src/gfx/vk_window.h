@@ -18,9 +18,7 @@ namespace vkeng
 		bool m_resized{false};
 		bool m_resizeable;
 		bool m_fullscreen;
-		glm::vec2 m_screenPos = glm::vec2(45, 45);
-
-		// vkutils::EventDispatcher keyDispatcher;
+		glm::ivec2 m_screenPos = glm::ivec2(45, 45);
 
 	public:
 		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_width(w), m_height(h), m_extent(new VkExtent2D{}), m_surface(new VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
@@ -56,8 +54,8 @@ namespace vkeng
 		}
 		inline bool is_resizable() { return m_resizeable; }
 		inline void set_resizeable(bool t) { m_resizeable = t; /*glfwsetwindowresize(GLFW_RESIZABLE, t);*/ }
-		inline glm::vec2 get_position() { return m_screenPos; }
-		inline void set_position(glm::vec2 p)
+		inline glm::ivec2 get_position() { return m_screenPos; }
+		inline void set_position(glm::ivec2 p)
 		{
 			m_screenPos = p;
 			glfwSetWindowPos(m_window, p.x, p.y);

@@ -4,7 +4,7 @@
 
 namespace vkeng
 {
-
+	
 	struct Vertex
 	{
 		glm::vec3 pos;
