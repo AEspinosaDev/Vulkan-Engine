@@ -44,7 +44,7 @@ namespace vkeng
     protected:
         std::string m_name;
         Transform m_transform;
-        
+
         std::vector<Object3D *> m_children;
         Object3D *m_parent;
 
@@ -139,14 +139,28 @@ namespace vkeng
                 m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.y, glm::vec3(0, 1, 0));
                 m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.z, glm::vec3(0, 0, 1));
                 m_transform.worldMatrix = glm::scale(m_transform.worldMatrix, m_transform.scale);
-                //iterate though parents for multypling model matrix
-                //  and set children to dirty  for them to do the same!!!!!!!!
-                // .............
-                // Dirty flag
+                // iterate though parents for multypling model matrix
+                //   and set children to dirty  for them to do the same!!!!!!!!
+                //  .............
+                //  Dirty flag
 
                 isDirty = false;
             }
             return m_transform.worldMatrix;
         }
+
+        // virtual add_child(Object3D *child)
+        // {
+        //     // child->m_parent= this;
+        //     // child->set_parent(this);
+        //     m_children.push_back(child);
+        // }
+
+        virtual std::vector<Object3D *> get_children() const { return m_children; }
+
+        // virtual set_parent(Object3D* parent){m_parent=parent;}
+
+        virtual Object3D *get_parent() const { return m_parent; }
+
     };
 }

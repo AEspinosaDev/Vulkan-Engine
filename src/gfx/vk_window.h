@@ -4,7 +4,9 @@
 
 namespace vkeng
 {
-
+	/**
+	 * Class containing all functionality related to a window. It uses GLFW as context creator.
+	 */
 	class Window
 	{
 	private:
@@ -22,7 +24,8 @@ namespace vkeng
 
 	public:
 		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_width(w), m_height(h), m_extent(new VkExtent2D{}), m_surface(new VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
-		~Window(){
+		~Window()
+		{
 			delete m_extent;
 			delete m_surface;
 		}
@@ -65,5 +68,10 @@ namespace vkeng
 		inline GLFWwindow *const get_window_obj() const { return m_window; }
 		inline VkExtent2D *const get_extent() const { return m_extent; }
 		inline VkSurfaceKHR *const get_surface() const { return m_surface; }
+		inline void poll_events() { glfwPollEvents(); }
+		
+		void set_keyboard_callback(std::function<void()>&& function);
+		void set_mouse_callback(std::function<void()>&& function);
+		void set_window_callback(std::function<void()>&& function);
 	};
 }

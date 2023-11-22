@@ -30,6 +30,9 @@ namespace vkeng
 		MSAA_16 = 16,
 	};
 
+	/**
+	 * Core class whose porpuse is to render data on a window.
+	 */
 	class Renderer
 	{
 #pragma region Properties
@@ -79,26 +82,50 @@ namespace vkeng
 		uint32_t m_currentFrame{0};
 
 #pragma endregion
-#pragma region Core Functions
+#pragma region Getters & Setters
 	public:
+		inline glm::vec4 get_clearcolor() const { return m_params.clearColor; }
+
+		inline void set_clearcolor(glm::vec4 c)
+		{
+			m_params.clearColor = c;
+		}
+
+		inline Window *const get_window() const { return m_window; }
+
+		inline void set_shader()
+		{
+			m_selectedShader = m_selectedShader == 0 ? 1 : 0;
+		}
+
+#pragma endregion
+#pragma region Core Functions
 		Renderer(Window *window) : m_window(window),
 								   MAX_FRAMES_IN_FLIGHT(m_params.bufferingType)
 		{
 		}
-
+		/**
+		 * Inits the renderer. Call it before using any other function related to this class.
+		 */
 		inline void init()
 		{
-			init_window();
+			m_window->init();
 			init_vulkan();
 		}
-
+		/**
+		 * Standalone preimplemented render loop for the renderer.
+		 */
 		void run(std::vector<Mesh *> meshes, Camera *camera);
-
+		/**
+		 * Renders a scene given a camera on the default backbuffer.
+		 */
 		void render(std::vector<Mesh *> meshes, Camera *camera);
+		/**
+		 * Shut the renderer down.
+		 */
+		void shutdown();
 
 	private:
-		void init_window();
-
 		void init_vulkan();
 
 		void cleanup();
@@ -136,32 +163,10 @@ namespace vkeng
 
 		void touch_buffer();
 
-		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size);
-
 		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
-#pragma region Input Management
+		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size);
 
-		void keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-		{
-
-			if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			{
-				m_selectedShader = m_selectedShader == 0 ? 1 : 0;
-			}
-
-			if (glfwGetKey(window, GLFW_KEY_F11) == GLFW_PRESS)
-			{
-				m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
-			}
-		}
-
-		void window_resize_callback(GLFWwindow *window, int width, int height)
-		{
-			m_window->set_size(width, height);
-		}
-
-#pragma endregion
 	};
 
 }

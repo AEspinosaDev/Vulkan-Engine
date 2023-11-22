@@ -9,10 +9,16 @@ namespace vkeng
 		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
 			// I-O
-			glfwPollEvents();
+			m_window->poll_events();
 			render(meshes, camera);
 		}
+		shutdown();
+	}
+
+	void Renderer::shutdown()
+	{
 		VK_CHECK(vkDeviceWaitIdle(m_device));
+		cleanup();
 	}
 
 	void Renderer::render(std::vector<Mesh *> meshes, Camera *camera)
@@ -83,19 +89,6 @@ namespace vkeng
 		}
 
 		m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-	}
-
-	void Renderer::init_window()
-	{
-		m_window->init();
-
-		// WINDOW CALLBACKS
-		glfwSetWindowUserPointer(m_window->get_window_obj(), this);
-
-		glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow *w, int width, int heigth)
-									   { static_cast<Renderer *>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
-		glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow *w, int key, int scancode, int action, int mods)
-						   { static_cast<Renderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
 	}
 
 	void Renderer::init_vulkan()
@@ -372,7 +365,7 @@ namespace vkeng
 		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		draw_meshes(commandBuffer,meshes);
+		draw_meshes(commandBuffer, meshes);
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -508,49 +501,49 @@ namespace vkeng
 		m_swapchain.cleanup(&m_device);
 	}
 
-	void Renderer::draw_meshes(VkCommandBuffer commandBuffer,std::vector<Mesh *> meshes)
+	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes)
 	{
-		//Reorder by transparency
+		// Reorder by transparency
 		for (Mesh *m : meshes)
 		{
 			if (m)
 			{
-				draw_mesh(commandBuffer,m);
+				draw_mesh(commandBuffer, m);
 			}
 		}
-		//Draw helpers ...
-
+		// Draw helpers ...
 	}
 
-	void Renderer::draw_mesh(VkCommandBuffer commandBuffer,Mesh *m)
+	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *m)
 	{
-		if (!m->is_data_loaded())
+		Geometry* g = m->get_geometry();
+		if (!g->is_data_loaded())
 			return;
 
-		if (!m->is_buffer_loaded())
+		if (!g->is_buffer_loaded())
 		{
-			create_buffer(m->get_vbo(), sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-			upload_buffer(m->get_vbo(), m->get_vertex_data().data(), sizeof(m->get_vertex_data()[0]) * m->get_vertex_data().size());
-			if (m->is_indexed())
+			create_buffer(g->get_vbo(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			upload_buffer(g->get_vbo(), g->get_vertex_data().data(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size());
+			if (g->is_indexed())
 			{
-				create_buffer(m->get_ibo(), sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-				upload_buffer(m->get_ibo(), m->get_vertex_index().data(), sizeof(m->get_vertex_index()[0]) * m->get_vertex_index().size());
+				create_buffer(g->get_ibo(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+				upload_buffer(g->get_ibo(), g->get_vertex_index().data(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size());
 			}
-			m->set_buffer_loaded(true);
+			g->set_buffer_loaded(true);
 		}
 
-		VkBuffer vertexBuffers[] = {m->get_vbo()->buffer};
+		VkBuffer vertexBuffers[] = {g->get_vbo()->buffer};
 		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-		if (m->is_indexed())
+		if (g->is_indexed())
 		{
-			vkCmdBindIndexBuffer(commandBuffer, m->get_ibo()->buffer, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m->get_vertex_index().size()), 1, 0, 0, 0);
+			vkCmdBindIndexBuffer(commandBuffer, g->get_ibo()->buffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->get_vertex_index().size()), 1, 0, 0, 0);
 		}
 		else
 		{
-			vkCmdDraw(commandBuffer, static_cast<uint32_t>(m->get_vertex_data().size()), 1, 0, 0);
+			vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->get_vertex_data().size()), 1, 0, 0);
 		}
 	}
 	void Renderer::upload_buffer(Buffer *buffer, const void *bufferData, size_t size)
