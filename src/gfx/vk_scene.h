@@ -11,18 +11,25 @@ namespace vkeng
         std::vector<Mesh *> m_meshes;
         Camera *m_currentCamera;
         // std::vector<Light*> m_lights;
+        // delete m_parent;
 
     public:
-        Scene(/* args */);
+        Scene(Camera *cam) : m_currentCamera(cam) { add_child(cam); };
         ~Scene();
+        inline void add(Object3D *obj)
+        {
+            switch (obj->get_type())
+            {
+            case MESH:
+                m_meshes.push_back(obj);
+                break;
+            case LIGHT:
+                //
+                break;
+            }
+            add_child(obj);
+        }
+        
     };
-
-    Scene::Scene(/* args */)
-    {
-    }
-
-    Scene::~Scene()
-    {
-    }
 
 }

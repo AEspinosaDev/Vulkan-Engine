@@ -23,6 +23,10 @@ namespace vkeng
 
 	void Renderer::render(std::vector<Mesh *> meshes, Camera *camera)
 	{
+		// if(scene is dirty){
+		// 	iterate scene tree and update mesh and lights vectors
+		// 	dirty = false
+		// }
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
@@ -516,7 +520,7 @@ namespace vkeng
 
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *m)
 	{
-		Geometry* g = m->get_geometry();
+		Geometry *g = m->get_geometry();
 		if (!g->is_data_loaded())
 			return;
 
@@ -553,6 +557,7 @@ namespace vkeng
 		memcpy(data, bufferData, size);
 		vmaUnmapMemory(m_memory, buffer->allocation);
 	}
+
 	void Renderer::create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 	{
 
@@ -575,4 +580,5 @@ namespace vkeng
 									  { vmaDestroyBuffer(m_memory, buffer->buffer,
 														 buffer->allocation); });
 	};
+
 }

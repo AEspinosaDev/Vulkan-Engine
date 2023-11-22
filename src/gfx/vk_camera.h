@@ -17,7 +17,6 @@ namespace vkeng
         float m_yaw;
         float m_pitch;
         float m_zoom;
-        float m_speed;
 
         bool perspective;
 
@@ -34,7 +33,7 @@ namespace vkeng
 
     public:
         Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : 
-        Object3D(p), m_yaw(-90.0f), m_pitch(0.0f), m_speed(0.1f), m_fov(45.0f), m_near(.1f), m_far(100.0f){}
+        Object3D(p,OTHER), m_yaw(-90.0f), m_pitch(0.0f), m_fov(45.0f), m_near(.1f), m_far(100.0f){}
 
         inline void set_field_of_view(float fov) { m_fov = fov; }
         inline float get_field_of_view() { return m_fov; }
@@ -49,8 +48,6 @@ namespace vkeng
         inline void set_far(float f) { m_far = f; }
         inline float get_near() { return m_near; }
         inline void set_near(float n) { m_near = n; }
-        inline void set_speed(float n) { m_speed = n; }
-        inline float get_speed() { return m_speed; }
         inline glm::mat4 get_model_matrix()
         {
             if (isDirty)

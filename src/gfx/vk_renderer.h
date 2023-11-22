@@ -120,6 +120,7 @@ namespace vkeng
 		 * Renders a scene given a camera on the default backbuffer.
 		 */
 		void render(std::vector<Mesh *> meshes, Camera *camera);
+		// void render(Scene* scene, Camera *camera);
 		/**
 		 * Shut the renderer down.
 		 */
@@ -161,7 +162,7 @@ namespace vkeng
 #pragma endregion
 #pragma region BufferManagement
 
-		void touch_buffer();
+		void touch_buffer(Buffer *buffer);
 
 		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 

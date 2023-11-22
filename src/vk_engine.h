@@ -1,5 +1,6 @@
 #pragma once
 #include "gfx/vk_renderer.h"
+#include "utilities/vk_controller.h"
 // IMPORT THAT AS LIBRARY IN THE FUTURE
 
 /**
@@ -11,8 +12,8 @@ class VulkanEngine
     vkeng::Renderer *m_renderer;
     std::vector<vkeng::Mesh *> meshes;
     vkeng::Camera *camera;
+    vkeng::CameraController *m_controller;
     // vkeng::Scene m_scene;
-    // vkeng::Controller m_controller;
     // imgui::gui m_gui;
 
 public:
@@ -31,7 +32,7 @@ private:
     void keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
     {
 
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
         {
             m_renderer->set_shader();
         }
@@ -40,6 +41,13 @@ private:
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
+
+        m_controller->handle_keyboard(window, 1.0);
+    }
+
+    void mouse_callback(GLFWwindow* w, double xpos, double ypos)
+    {
+        m_controller->handle_mouse(xpos,ypos);
     }
 
     void window_resize_callback(GLFWwindow *window, int width, int height)

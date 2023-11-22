@@ -74,6 +74,8 @@ file(GLOB SOURCES
 "src/gfx/*.h"
 "src/gfx/backend/*.cpp"
 "src/gfx/backend/*.h"
+"src/utilities/*.h"
+"src/utilities/*.cpp"
 )
 
 # Add your source files

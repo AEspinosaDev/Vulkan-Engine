@@ -11,8 +11,8 @@ namespace vkeng
 		// Material* m_material;
 
 	public:
-		Mesh() : Object3D(), m_geometry(nullptr) {}
-		Mesh(Geometry *geom) : Object3D(), m_geometry(geom) {}
+		Mesh() : Object3D(MESH), m_geometry(nullptr) {}
+		Mesh(Geometry *geom) : Object3D(MESH), m_geometry(geom) {}
 		~Mesh()
 		{
 			delete m_geometry;

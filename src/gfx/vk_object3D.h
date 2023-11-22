@@ -39,12 +39,19 @@ namespace vkeng
         }
     };
 
+    enum ObjectType
+    {
+        MESH = 0,
+        LIGHT = 1,
+        OTHER = 2
+    };
+
     class Object3D
     {
     protected:
+        const ObjectType TYPE;
         std::string m_name;
         Transform m_transform;
-
         std::vector<Object3D *> m_children;
         Object3D *m_parent;
 
@@ -52,25 +59,30 @@ namespace vkeng
         bool isDirty{true};
 
     public:
-        Object3D(const std::string na) : m_name(na), enabled(true),
-                                         m_parent(nullptr)
+        Object3D(const std::string na, ObjectType t) : TYPE(t), m_name(na), enabled(true),
+                                                       m_parent(nullptr)
         {
             m_transform.position = glm::vec3(0.0f);
         }
 
-        Object3D(const std::string na, glm::vec3 p) : m_name(na), enabled(true),
-                                                      m_parent(nullptr)
+        Object3D(const std::string na, glm::vec3 p, ObjectType t) : TYPE(t), m_name(na), enabled(true),
+                                                                    m_parent(nullptr)
         {
             m_transform.position = p;
         }
 
-        Object3D(glm::vec3 p) : m_name(""), enabled(true),
-                                m_parent(nullptr)
+        Object3D(glm::vec3 p, ObjectType t) : TYPE(t), m_name(""), enabled(true),
+                                              m_parent(nullptr)
         {
             m_transform.position = p;
         }
+        Object3D(ObjectType t) : TYPE(t), m_name(""), enabled(true),
+                     m_parent(nullptr)
+        {
+            m_transform.position = glm::vec3(0.0f);
+        }
 
-        Object3D() : m_name(""), enabled(true),
+        Object3D() : TYPE(OTHER), m_name(""), enabled(true),
                      m_parent(nullptr)
         {
             m_transform.position = glm::vec3(0.0f);
@@ -82,6 +94,7 @@ namespace vkeng
             delete m_parent;
         }
 
+        virtual inline ObjectType get_type() const {return TYPE;};
         virtual void set_position(const glm::vec3 p)
         {
             m_transform.position = p;
@@ -149,18 +162,16 @@ namespace vkeng
             return m_transform.worldMatrix;
         }
 
-        // virtual add_child(Object3D *child)
-        // {
-        //     // child->m_parent= this;
-        //     // child->set_parent(this);
-        //     m_children.push_back(child);
-        // }
+        virtual void add_child(Object3D *child)
+        {
+            child->m_parent = this;
+            m_children.push_back(child);
+        }
 
         virtual std::vector<Object3D *> get_children() const { return m_children; }
 
         // virtual set_parent(Object3D* parent){m_parent=parent;}
 
         virtual Object3D *get_parent() const { return m_parent; }
-
     };
 }
