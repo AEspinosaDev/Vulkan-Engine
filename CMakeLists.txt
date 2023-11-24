@@ -68,18 +68,17 @@ FetchContent_MakeAvailable(glm)
 link_directories(${VULKAN_SDK_ROOT})
 
 file(GLOB SOURCES
-"src/*.cpp"
-"src/*.h"
-"src/gfx/*.cpp"
-"src/gfx/*.h"
-"src/gfx/backend/*.cpp"
-"src/gfx/backend/*.h"
-"src/utilities/*.h"
-"src/utilities/*.cpp"
+"src/engine/*.cpp"
+"src/engine/*.h"
+"src/engine/internal/*.cpp"
+"src/engine/internal/*.h"
+"src/engine/utilities/*.h"
+"src/engine/utilities/*.cpp"
 )
 
 # Add your source files
-add_executable(VulkanEngine ${SOURCES})
+# add_executable(VulkanEngine ${SOURCES})
+add_library(VulkanEngine STATIC ${SOURCES})
 
 # Link Vulkan, glfw, and include glm
 target_link_libraries(VulkanEngine Vulkan::Vulkan glfw)
@@ -87,6 +86,18 @@ target_include_directories(VulkanEngine PRIVATE ${glm_SOURCE_DIR})
 
 # Link against Shaderc
 target_link_libraries(VulkanEngine shaderc_shared.lib)
+
+set_target_properties(VulkanEngine PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+file(GLOB APP_SOURCES
+"src/app/*.cpp"
+"src/app/*.h"
+)
+
+add_executable(VulkanApp  ${APP_SOURCES})
+
+target_link_libraries(VulkanApp PRIVATE VulkanEngine)
+
 
 # Set the output directory for the executable (optional)
 # set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
