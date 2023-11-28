@@ -1,7 +1,8 @@
-#pragma once
-#include "../engine/vk_renderer.h"
-#include "../engine/utilities/vk_controller.h"
-// IMPORT THAT AS LIBRARY IN THE FUTURE
+#ifndef VK_APPLICATION_H
+#define VK_APPLICATION_H
+
+#include <vk_renderer.h>
+#include <utilities/vk_controller.h>
 
 /**
  * Example app
@@ -58,3 +59,5 @@ private:
 
 #pragma endregion
 };
+
+#endif
