@@ -41,9 +41,16 @@ namespace vke
 
 		struct UserParams
 		{
+			
 			AntialiasingType AAtype{NONE};
 			BufferingType bufferingType{_DOUBLE};
+
 			glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
+			bool autoClearColor{true};
+			bool autoClearDepth{true};
+			bool autoClearStencil{true};
+			bool depthTest{true};
+			bool depthWrite{true};
 		};
 
 		VmaAllocator m_memory;
@@ -94,6 +101,16 @@ namespace vke
 		}
 
 		inline Window *const get_window() const { return m_window; }
+
+		inline set_autoclear(bool clrColor, bool clrDepth = true, bool crlStencil = true)
+		{
+			m_params.autoClearColor = clrColor;
+			m_params.autoClearDepth = clrDepth;
+			m_params.autoClearStencil = clrStencil;
+		}
+
+		inline enable_depth_test(bool op){m_params.depthTest=op;}
+		inline enable_depth_writes(bool op){m_params.depthWrite=op;}
 
 		inline void set_shader()
 		{
@@ -164,11 +181,11 @@ namespace vke
 #pragma endregion
 #pragma region BufferManagement
 
-		void touch_buffer(Buffer *buffer);
-
 		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
 		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size);
+
+		void setup_geometry_buffers(Geometry *g);
 	};
 
 }

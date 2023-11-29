@@ -525,16 +525,7 @@ namespace vke
 			return;
 
 		if (!g->is_buffer_loaded())
-		{
-			create_buffer(g->get_vbo(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-			upload_buffer(g->get_vbo(), g->get_vertex_data().data(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size());
-			if (g->is_indexed())
-			{
-				create_buffer(g->get_ibo(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-				upload_buffer(g->get_ibo(), g->get_vertex_index().data(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size());
-			}
-			g->set_buffer_loaded(true);
-		}
+			setup_geometry_buffers(g);
 
 		VkBuffer vertexBuffers[] = {g->get_vbo()->buffer};
 		VkDeviceSize offsets[] = {0};
@@ -580,5 +571,17 @@ namespace vke
 									  { vmaDestroyBuffer(m_memory, buffer->buffer,
 														 buffer->allocation); });
 	};
+
+	void Renderer::setup_geometry_buffers(Geometry *g)
+	{
+		create_buffer(g->get_vbo(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		upload_buffer(g->get_vbo(), g->get_vertex_data().data(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size());
+		if (g->is_indexed())
+		{
+			create_buffer(g->get_ibo(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			upload_buffer(g->get_ibo(), g->get_vertex_index().data(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size());
+		}
+		g->set_buffer_loaded(true);
+	}
 
 }

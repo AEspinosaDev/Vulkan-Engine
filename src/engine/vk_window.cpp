@@ -15,4 +15,9 @@ namespace vke {
         glfwSetWindowPos(m_window, (int)m_screenPos.x, (int)m_screenPos.y);
     }
 
+    void Window::set_keyboard_callback(std::function<void()> &&function)
+    {
+        //   glfwSetKeyCallback(m_window, [](GLFWwindow *w, int key, int scancode, int action, int mods)
+        //                { function(w, key, scancode, action, mods); });
+    }
 }

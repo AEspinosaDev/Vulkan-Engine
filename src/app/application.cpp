@@ -12,12 +12,13 @@ void VulkanRenderer::init()
 void VulkanRenderer::run()
 {
     init();
-    while (!glfwWindowShouldClose(m_window->get_window_obj()))
+    while (!m_window->get_window_should_close())
     {
+
         // I-O
-        m_window->poll_events();
+         vke::Window::poll_events();
+
         tick();
-        m_renderer->render(meshes, camera);
     }
     m_renderer->shutdown();
 }
@@ -44,6 +45,8 @@ void VulkanRenderer::setup()
 
     m_controller = new vke::CameraController(camera);
 
+    m_renderer.
+
     // WINDOW CALLBACKS
     glfwSetWindowUserPointer(m_window->get_window_obj(), this);
 
@@ -51,12 +54,15 @@ void VulkanRenderer::setup()
                                    { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
     glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow *w, int key, int scancode, int action, int mods)
                        { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
-    //     glfwSetCursorPosCallback(m_window->get_window_obj(), [](GLFWwindow* w, double xpos, double ypos)
-    // 	{
-    //         //  { static_cast<VulkanEngine *>(glfwGetWindowUserPointer(w)) });
-    // 	};
+    glfwSetCursorPosCallback(m_window->get_window_obj(), [](GLFWwindow *w, double xpos, double ypos)
+                             { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->mouse_callback(w, xpos, ypos); });
 }
 
 void VulkanRenderer::tick()
 {
+    float currentTime = vke::Window::get_time_elapsed();
+    m_deltaTime = currentTime - m_lastTime;
+    m_lastTime = currentTime;
+
+    m_renderer->render(meshes, camera);
 }

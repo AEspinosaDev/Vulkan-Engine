@@ -13,10 +13,11 @@ class VulkanRenderer
     vke::Renderer *m_renderer;
     std::vector<vke::Mesh *> meshes;
     vke::Camera *camera;
-    
     vke::CameraController *m_controller;
     // vkeng::Scene m_scene;
     // imgui::gui m_gui;
+    float m_deltaTime{0.0f};
+    float m_lastTime{0.0f};
 
 public:
     void
@@ -33,6 +34,10 @@ private:
 
     void keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
     {
+         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        {
+           m_window->set_window_should_close(true);
+        }
 
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
         {
@@ -44,12 +49,12 @@ private:
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
 
-        m_controller->handle_keyboard(window, 1.0);
+        m_controller->handle_keyboard(window, m_deltaTime);
     }
 
-    void mouse_callback(GLFWwindow* w, double xpos, double ypos)
+    void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     {
-        m_controller->handle_mouse(xpos,ypos);
+        m_controller->handle_mouse(window,(float)xpos,(float)ypos);
     }
 
     void window_resize_callback(GLFWwindow *window, int width, int height)

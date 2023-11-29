@@ -48,7 +48,6 @@ namespace vke
 			m_fullscreen = t;
 			if (!m_fullscreen)
 			{
-
 				glfwSetWindowMonitor(m_window, NULL, m_screenPos.x, m_screenPos.y, m_width, m_height, GLFW_DONT_CARE);
 			}
 			else
@@ -70,11 +69,15 @@ namespace vke
 		inline GLFWwindow *const get_window_obj() const { return m_window; }
 		inline VkExtent2D *const get_extent() const { return m_extent; }
 		inline VkSurfaceKHR *const get_surface() const { return m_surface; }
-		inline void poll_events() { glfwPollEvents(); }
+		inline int get_window_should_close() { return glfwWindowShouldClose(m_window); }
+		inline void set_window_should_close(bool op) {  glfwSetWindowShouldClose(m_window, op); }
 
 		void set_keyboard_callback(std::function<void()> &&function);
 		void set_mouse_callback(std::function<void()> &&function);
 		void set_window_callback(std::function<void()> &&function);
+
+		inline static void poll_events() { glfwPollEvents(); }
+		inline static double get_time_elapsed() { return glfwGetTime(); }
 	};
 }
 #endif

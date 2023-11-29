@@ -22,17 +22,6 @@ namespace vke
 
         bool perspective;
 
-        inline void update_vectors(float pitch, float yaw)
-        { // Pitch/Yaw setup
-            glm::vec3 direction;
-            direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-            direction.y = sin(glm::radians(pitch));
-            direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-            m_transform.forward = -glm::normalize(direction);
-            m_transform.rotation = acos(direction);
-            isDirty = true;
-        }
-
     public:
         Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D(p, OTHER), m_yaw(-90.0f), m_pitch(0.0f), m_fov(45.0f), m_near(.1f), m_far(100.0f) {}
 
@@ -41,7 +30,7 @@ namespace vke
         inline void set_projection(int width, int height)
         {
             m_proj = glm::perspective(glm::radians(m_fov), (float)width / (float)height, m_near, m_far);
-            m_proj[1][1] *= -1; // Because vulkan
+            m_proj[1][1] *= -1; // Because Vulkan
         }
         inline glm::mat4 get_projection() { return m_proj; }
         inline glm::mat4 get_view() { return get_model_matrix(); }
@@ -49,6 +38,10 @@ namespace vke
         inline void set_far(float f) { m_far = f; }
         inline float get_near() { return m_near; }
         inline void set_near(float n) { m_near = n; }
+        inline float get_pitch(){ return m_pitch;}
+        inline void set_pitch(float p){m_pitch=p;}
+        inline void set_yaw(float p){m_yaw=p;}
+        inline float get_yaw(){ return m_yaw;}
         inline glm::mat4 get_model_matrix()
         {
             if (isDirty)
@@ -58,8 +51,17 @@ namespace vke
             }
             return m_view;
         }
-
-        void update();
+        inline void update_vectors()
+        {
+            // Pitch/Yaw setup
+            glm::vec3 direction;
+            direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+            direction.y = sin(glm::radians(m_pitch));
+            direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+            m_transform.forward = -glm::normalize(direction);
+            m_transform.rotation = acos(direction);
+            isDirty = true;
+        }
     };
 }
 #endif // VK_CAMERA_H
