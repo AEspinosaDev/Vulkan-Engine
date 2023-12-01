@@ -51,6 +51,10 @@ namespace vke
 			bool autoClearStencil{true};
 			bool depthTest{true};
 			bool depthWrite{true};
+
+			SceneUniforms sceneUniforms;
+			Buffer sceneUniformBuffer;
+
 		};
 
 		VmaAllocator m_memory;
@@ -102,15 +106,15 @@ namespace vke
 
 		inline Window *const get_window() const { return m_window; }
 
-		inline set_autoclear(bool clrColor, bool clrDepth = true, bool crlStencil = true)
+		inline void set_autoclear(bool clrColor, bool clrDepth = true, bool clrStencil = true)
 		{
 			m_params.autoClearColor = clrColor;
 			m_params.autoClearDepth = clrDepth;
 			m_params.autoClearStencil = clrStencil;
 		}
 
-		inline enable_depth_test(bool op){m_params.depthTest=op;}
-		inline enable_depth_writes(bool op){m_params.depthWrite=op;}
+		inline void enable_depth_test(bool op){m_params.depthTest=op;}
+		inline void enable_depth_writes(bool op){m_params.depthWrite=op;}
 
 		inline void set_shader()
 		{
@@ -185,7 +189,12 @@ namespace vke
 
 		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size);
 
+		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size,size_t offset);
+
 		void setup_geometry_buffers(Geometry *g);
+
+		void upload_global_uniform_buffers(Camera* camera, uint32_t* offsets);
+
 	};
 
 }

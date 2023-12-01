@@ -53,6 +53,7 @@ namespace vke
 			}
 		};
 
+		size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice gpu);
 		uint32_t find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		bool check_validation_layer_suport(std::vector<const char *> validationLayers);
 		void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &createInfo);

@@ -74,15 +74,15 @@ namespace vke
         bool indexed{false};
         bool buffer_loaded{false};
 
+        friend class Renderer;
+
     public:
         Geometry() : m_vbo{new Buffer},
                      m_ibo{new Buffer} {}
-        inline bool is_data_loaded() { return loaded; }
-        inline bool is_buffer_loaded() { return buffer_loaded; }
-        inline bool is_indexed() { return indexed; }
-        inline void set_buffer_loaded(bool t) { buffer_loaded = t; }
-        inline Buffer *const get_vbo() const { return m_vbo; }
-        inline Buffer *const get_ibo() const { return m_ibo; }
+        inline bool is_data_loaded() const { return loaded; }
+        inline bool is_buffer_loaded() const { return buffer_loaded; }
+        inline bool is_indexed() const { return indexed; }
+        
         inline std::vector<uint16_t> const get_vertex_index() const
         {
             return m_vertexIndex;

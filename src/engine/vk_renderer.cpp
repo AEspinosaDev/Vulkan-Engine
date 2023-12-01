@@ -1,5 +1,4 @@
 
-#define VMA_IMPLEMENTATION
 #include "vk_renderer.h"
 
 namespace vke
@@ -103,7 +102,7 @@ namespace vke
 									&m_gpu,
 									&m_device,
 									&m_graphicsQueue, m_window->get_surface(),
-									&m_presentQueue, &m_enableValidationLayers);
+									&m_presentQueue, &m_memory, &m_enableValidationLayers);
 
 		booter.boot_vulkan();
 
@@ -111,12 +110,7 @@ namespace vke
 
 		booter.setup_devices();
 
-		// To booter
-		VmaAllocatorCreateInfo allocatorInfo = {};
-		allocatorInfo.physicalDevice = m_gpu;
-		allocatorInfo.device = m_device;
-		allocatorInfo.instance = m_instance;
-		vmaCreateAllocator(&allocatorInfo, &m_memory);
+		booter.setup_memory();
 
 		create_swapchain();
 
@@ -252,7 +246,8 @@ namespace vke
 		// create a descriptor pool that will hold 10 uniform buffers
 		std::vector<VkDescriptorPoolSize> sizes =
 			{
-				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}};
+				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
+				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10}};
 
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -263,21 +258,24 @@ namespace vke
 
 		VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_descriptorPool));
 
-		// information about the binding.
-		VkDescriptorSetLayoutBinding camBufferBinding = {};
-		camBufferBinding.binding = 0;
-		camBufferBinding.descriptorCount = 1;
-		camBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		camBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		// binding for camera data at 0
+		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
+		// binding for scene data at 1
+		VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+
+		VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
 
 		VkDescriptorSetLayoutCreateInfo setinfo = {};
-		setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		setinfo.pNext = nullptr;
-		setinfo.bindingCount = 1;
+		setinfo.bindingCount = 2;
 		setinfo.flags = 0;
-		setinfo.pBindings = &camBufferBinding;
+		setinfo.pNext = nullptr;
+		setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		setinfo.pBindings = bindings;
 
 		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &m_globalSetLayout));
+
+		const size_t sceneParamBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu);
+		create_buffer(&m_params.sceneUniformBuffer, sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
@@ -294,27 +292,22 @@ namespace vke
 			VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
 											  &m_frames[i].globalDescriptor));
 
-			VkDescriptorBufferInfo binfo;
-			// CAMERA
-			binfo.buffer = m_frames[i].cameraUniformBuffer.buffer;
-			binfo.offset = 0;
-			binfo.range = sizeof(CameraUniforms);
+			VkDescriptorBufferInfo cameraInfo;
+			cameraInfo.buffer = m_frames[i].cameraUniformBuffer.buffer;
+			cameraInfo.offset = 0;
+			cameraInfo.range = sizeof(CameraUniforms);
 
-			VkWriteDescriptorSet setWrite = {};
-			setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			setWrite.pNext = nullptr;
+			VkDescriptorBufferInfo sceneInfo;
+			sceneInfo.buffer = m_params.sceneUniformBuffer.buffer;
+			sceneInfo.offset = 0;
+			sceneInfo.range = sizeof(SceneUniforms);
 
-			// we are going to write into binding number 0
-			setWrite.dstBinding = 0;
-			// of the global descriptor
-			setWrite.dstSet = m_frames[i].globalDescriptor;
+			VkWriteDescriptorSet cameraWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_frames[i].globalDescriptor, &cameraInfo, 0);
+			VkWriteDescriptorSet sceneWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].globalDescriptor, &sceneInfo, 1);
 
-			setWrite.descriptorCount = 1;
-			// and the type is uniform buffer
-			setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			setWrite.pBufferInfo = &binfo;
+			VkWriteDescriptorSet setWrites[] = {cameraWrite, sceneWrite};
 
-			vkUpdateDescriptorSets(m_device, 1, &setWrite, 0, nullptr);
+			vkUpdateDescriptorSets(m_device, 2, setWrites, 0, nullptr);
 		}
 
 		m_deletionQueue.push_function([=]()
@@ -339,20 +332,14 @@ namespace vke
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		// UNIFORMS
-		// camera view
-		if (camera->is_dirty())
-			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
-		CameraUniforms camData;
-		camData.view = camera->get_view();
-		camData.proj = camera->get_projection();
-		camData.viewProj = camera->get_projection() * camera->get_view();
-		upload_buffer(&m_frames[m_currentFrame].cameraUniformBuffer, &camData, sizeof(CameraUniforms));
+		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
+
+		upload_global_uniform_buffers(camera,&offset);
 
 		// Like bind program
 		m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_currentPipeline);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 1, &offset);
 
 		// Viewport setup
 		VkViewport viewport{};
@@ -521,24 +508,24 @@ namespace vke
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *m)
 	{
 		Geometry *g = m->get_geometry();
-		if (!g->is_data_loaded())
+		if (!g->loaded)
 			return;
 
-		if (!g->is_buffer_loaded())
+		if (!g->buffer_loaded)
 			setup_geometry_buffers(g);
 
-		VkBuffer vertexBuffers[] = {g->get_vbo()->buffer};
+		VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
 		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-		if (g->is_indexed())
+		if (g->indexed)
 		{
-			vkCmdBindIndexBuffer(commandBuffer, g->get_ibo()->buffer, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->get_vertex_index().size()), 1, 0, 0, 0);
+			vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
 		}
 		else
 		{
-			vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->get_vertex_data().size()), 1, 0, 0);
+			vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
 		}
 	}
 	void Renderer::upload_buffer(Buffer *buffer, const void *bufferData, size_t size)
@@ -546,6 +533,15 @@ namespace vke
 		void *data;
 		vmaMapMemory(m_memory, buffer->allocation, &data);
 		memcpy(data, bufferData, size);
+		vmaUnmapMemory(m_memory, buffer->allocation);
+	}
+
+	void Renderer::upload_buffer(Buffer *buffer, const void *bufferData, size_t size, size_t offset)
+	{
+		char *data;
+		vmaMapMemory(m_memory, buffer->allocation, (void **)&data);
+		data += offset;
+		memcpy(data, bufferData, sizeof(SceneUniforms));
 		vmaUnmapMemory(m_memory, buffer->allocation);
 	}
 
@@ -574,14 +570,35 @@ namespace vke
 
 	void Renderer::setup_geometry_buffers(Geometry *g)
 	{
-		create_buffer(g->get_vbo(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		upload_buffer(g->get_vbo(), g->get_vertex_data().data(), sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size());
-		if (g->is_indexed())
+		create_buffer(g->m_vbo, sizeof(g->m_vertexData[0]) * g->m_vertexData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		upload_buffer(g->m_vbo, g->m_vertexData.data(), sizeof(g->m_vertexData[0]) * g->m_vertexData.size());
+		if (g->indexed)
 		{
-			create_buffer(g->get_ibo(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-			upload_buffer(g->get_ibo(), g->get_vertex_index().data(), sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size());
+			create_buffer(g->m_ibo, sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			upload_buffer(g->m_ibo, g->m_vertexIndex.data(), sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size());
 		}
-		g->set_buffer_loaded(true);
+		g->buffer_loaded = true;
 	}
+	void Renderer::upload_global_uniform_buffers(Camera* camera, uint32_t* offsets)
+	{
+		// camera buffer
+		if (camera->is_dirty())
+			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
+		CameraUniforms camData;
+		camData.view = camera->get_view();
+		camData.proj = camera->get_projection();
+		camData.viewProj = camera->get_projection() * camera->get_view();
+		upload_buffer(&m_frames[m_currentFrame].cameraUniformBuffer, &camData, sizeof(CameraUniforms));
 
+		// scene buffer
+		// if (scene->is_dirty())
+		{
+			// scene.getParams turns clean
+			SceneUniforms sceneParams;
+			sceneParams.fogDistances = {1, 0, 0, 1};
+			sceneParams.fogColor = {1, 0, 0, 1};
+			sceneParams.ambientColor = {1, 1, 1, 1};
+			upload_buffer(&m_params.sceneUniformBuffer, &sceneParams, sizeof(SceneUniforms), offsets[0]);
+		}
+	}
 }

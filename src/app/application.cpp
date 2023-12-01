@@ -45,7 +45,7 @@ void VulkanRenderer::setup()
 
     m_controller = new vke::CameraController(camera);
 
-    m_renderer.
+    // m_renderer.
 
     // WINDOW CALLBACKS
     glfwSetWindowUserPointer(m_window->get_window_obj(), this);

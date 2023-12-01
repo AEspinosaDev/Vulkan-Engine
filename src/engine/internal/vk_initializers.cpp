@@ -1,5 +1,6 @@
 ﻿#include "vk_initializers.h"
-namespace vke {
+namespace vke
+{
 
 	VkCommandPoolCreateInfo vkinit::command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags /*= 0*/)
 	{
@@ -69,7 +70,7 @@ namespace vke {
 		return info;
 	}
 
-	VkSubmitInfo vkinit::submit_info(VkCommandBuffer* cmd)
+	VkSubmitInfo vkinit::submit_info(VkCommandBuffer *cmd)
 	{
 		VkSubmitInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -124,32 +125,34 @@ namespace vke {
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		info.pNext = nullptr;
 
-		//shader stage
+		// shader stage
 		info.stage = stage;
-		//module containing the code for this shader stage
+		// module containing the code for this shader stage
 		info.module = shaderModule;
-		//the entry point of the shader
+		// the entry point of the shader
 		info.pName = "main";
 		return info;
 	}
-	VkPipelineVertexInputStateCreateInfo vkinit::vertex_input_state_create_info() {
+	VkPipelineVertexInputStateCreateInfo vkinit::vertex_input_state_create_info()
+	{
 		VkPipelineVertexInputStateCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		info.pNext = nullptr;
 
-		//no vertex bindings or attributes
+		// no vertex bindings or attributes
 		info.vertexBindingDescriptionCount = 0;
 		info.vertexAttributeDescriptionCount = 0;
 		return info;
 	}
 
-	VkPipelineInputAssemblyStateCreateInfo vkinit::input_assembly_create_info(VkPrimitiveTopology topology) {
+	VkPipelineInputAssemblyStateCreateInfo vkinit::input_assembly_create_info(VkPrimitiveTopology topology)
+	{
 		VkPipelineInputAssemblyStateCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		info.pNext = nullptr;
 
 		info.topology = topology;
-		//we are not going to use primitive restart on the entire tutorial so leave it on false
+		// we are not going to use primitive restart on the entire tutorial so leave it on false
 		info.primitiveRestartEnable = VK_FALSE;
 		return info;
 	}
@@ -160,15 +163,15 @@ namespace vke {
 		info.pNext = nullptr;
 
 		info.depthClampEnable = VK_FALSE;
-		//rasterizer discard allows objects with holes, default to no
+		// rasterizer discard allows objects with holes, default to no
 		info.rasterizerDiscardEnable = VK_FALSE;
 
 		info.polygonMode = polygonMode;
 		info.lineWidth = lineWidth;
-		//no backface cull
+		// no backface cull
 		info.cullMode = cullMode;
 		info.frontFace = face;
-		//no depth bias
+		// no depth bias
 		info.depthBiasEnable = VK_FALSE;
 		info.depthBiasConstantFactor = 0.0f;
 		info.depthBiasClamp = 0.0f;
@@ -183,7 +186,7 @@ namespace vke {
 		info.pNext = nullptr;
 
 		info.sampleShadingEnable = VK_FALSE;
-		//multisampling defaulted to no multisampling (1 sample per pixel)
+		// multisampling defaulted to no multisampling (1 sample per pixel)
 		info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 		info.minSampleShading = 1.0f;
 		info.pSampleMask = nullptr;
@@ -191,25 +194,54 @@ namespace vke {
 		info.alphaToOneEnable = VK_FALSE;
 		return info;
 	}
-	VkPipelineColorBlendAttachmentState vkinit::color_blend_attachment_state() {
+	VkPipelineColorBlendAttachmentState vkinit::color_blend_attachment_state()
+	{
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-			VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+											  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment.blendEnable = VK_FALSE;
 		return colorBlendAttachment;
 	}
-	VkPipelineLayoutCreateInfo vkinit::pipeline_layout_create_info() {
+	VkPipelineLayoutCreateInfo vkinit::pipeline_layout_create_info()
+	{
 		VkPipelineLayoutCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		info.pNext = nullptr;
 
-		//empty defaults
+		// empty defaults
 		info.flags = 0;
 		info.setLayoutCount = 0;
 		info.pSetLayouts = nullptr;
 		info.pushConstantRangeCount = 0;
 		info.pPushConstantRanges = nullptr;
 		return info;
+	}
+
+	VkDescriptorSetLayoutBinding vkinit::descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding)
+	{
+		VkDescriptorSetLayoutBinding setbind = {};
+		setbind.binding = binding;
+		setbind.descriptorCount = 1;
+		setbind.descriptorType = type;
+		setbind.pImmutableSamplers = nullptr;
+		setbind.stageFlags = stageFlags;
+
+		return setbind;
+	}
+
+	VkWriteDescriptorSet vkinit::write_descriptor_buffer(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorBufferInfo *bufferInfo, uint32_t binding)
+	{
+		VkWriteDescriptorSet write = {};
+		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		write.pNext = nullptr;
+
+		write.dstBinding = binding;
+		write.dstSet = dstSet;
+		write.descriptorCount = 1;
+		write.descriptorType = type;
+		write.pBufferInfo = bufferInfo;
+
+		return write;
 	}
 
 }

@@ -10,7 +10,7 @@ namespace vke
     class Scene : public Object3D
     {
     private:
-        std::vector<Mesh *> m_meshes;
+        // std::vector<Mesh *> m_meshes;
         Camera *m_currentCamera;
         // std::vector<Light*> m_lights;
         // delete m_parent;
@@ -20,16 +20,17 @@ namespace vke
         ~Scene();
         inline void add(Object3D *obj)
         {
-            switch (obj->get_type())
-            {
-            case MESH:
-                m_meshes.push_back(obj);
-                break;
-            case LIGHT:
-                //
-                break;
-            }
+            // switch (obj->get_type())
+            // {
+            // case MESH:
+            //     m_meshes.push_back(obj);
+            //     break;
+            // case LIGHT:
+            //     //
+            //     break;
+            // }
             add_child(obj);
+            isDirty = true;
         }
     };
 

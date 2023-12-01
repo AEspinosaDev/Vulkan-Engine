@@ -24,6 +24,8 @@ namespace vke
 		bool m_fullscreen;
 		glm::ivec2 m_screenPos = glm::ivec2(45, 45);
 
+		friend class Renderer;
+
 	public:
 		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_width(w), m_height(h), m_extent(new VkExtent2D{}), m_surface(new VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
 		~Window()

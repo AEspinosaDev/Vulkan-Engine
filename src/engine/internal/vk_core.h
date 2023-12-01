@@ -21,11 +21,7 @@
 #include <sstream>
 #include <algorithm> 
 
-#include "vk_engine.h"
-
-
-
-
+//Utils
 #define DEBUG_LOG(msg) { std::cout << msg << std::endl;}
 #define VK_CHECK(x)                                                 \
 	do                                                              \
@@ -38,6 +34,13 @@
 		}                                                           \
 	} while (0)
 
+
+//Ahead declaration of some key classes	
+namespace vke{
+	class Renderer;
+}
+
 #endif
+
 
 

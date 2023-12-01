@@ -1,11 +1,13 @@
 #ifndef VK_INITIALIZERS_H
 #define VK_INITIALIZERS_H
 
-#include  "vk_core.h"
+#include "vk_core.h"
 #include "vk_bootstrap.h"
-namespace vke {
+namespace vke
+{
 
-	namespace vkinit {
+	namespace vkinit
+	{
 
 		VkCommandPoolCreateInfo command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
 
@@ -19,7 +21,7 @@ namespace vke {
 
 		VkSemaphoreCreateInfo semaphore_create_info(VkSemaphoreCreateFlags flags = 0);
 
-		VkSubmitInfo submit_info(VkCommandBuffer* cmd);
+		VkSubmitInfo submit_info(VkCommandBuffer *cmd);
 
 		VkPresentInfoKHR present_info();
 
@@ -39,6 +41,10 @@ namespace vke {
 
 		VkPipelineLayoutCreateInfo pipeline_layout_create_info();
 
+		VkDescriptorSetLayoutBinding descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding);
+
+		VkWriteDescriptorSet write_descriptor_buffer(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorBufferInfo *bufferInfo, uint32_t binding);
+		
 
 	}
 

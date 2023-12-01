@@ -1,3 +1,4 @@
+#define VMA_IMPLEMENTATION
 #include "vk_bootstrap.h"
 
 namespace vke {
@@ -10,9 +11,9 @@ namespace vke {
 
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName = "Vulkan Renderer";
+		appInfo.pApplicationName = "UserDeclare";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName = "No Engine";
+		appInfo.pEngineName = "VK Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -276,4 +277,12 @@ namespace vke {
 		create_logical_device();
 	}
 
+    void vkboot::VulkanBooter::setup_memory()
+    {
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = *m_gpu;
+		allocatorInfo.device = *m_device;
+		allocatorInfo.instance = *m_instance;
+		vmaCreateAllocator(&allocatorInfo, m_memory);
+    }
 }
