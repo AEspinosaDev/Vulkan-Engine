@@ -10,9 +10,9 @@ namespace vke {
 
         glfwWindowHint(GLFW_RESIZABLE, m_resizeable);
 
-        m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
+        m_GLFWwindow = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
-        glfwSetWindowPos(m_window, (int)m_screenPos.x, (int)m_screenPos.y);
+        glfwSetWindowPos(m_GLFWwindow, (int)m_screenPos.x, (int)m_screenPos.y);
     }
 
     void Window::set_keyboard_callback(std::function<void()> &&function)

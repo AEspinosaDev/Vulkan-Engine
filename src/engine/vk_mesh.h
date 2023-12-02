@@ -3,6 +3,7 @@
 
 #include "vk_object3D.h"
 #include "vk_geometry.h"
+#include "vk_material.h"
 
 namespace vke
 {
@@ -10,11 +11,11 @@ namespace vke
 	class Mesh : public Object3D
 	{
 		Geometry *m_geometry;
-		// Material* m_material;
+		Material *m_material;
 
 	public:
-		Mesh() : Object3D(MESH), m_geometry(nullptr) {}
-		Mesh(Geometry *geom) : Object3D(MESH), m_geometry(geom) {}
+		Mesh() : Object3D(MESH), m_geometry(nullptr), m_material(nullptr) {}
+		Mesh(Geometry *geom, Material *mat) : Object3D(MESH), m_geometry(geom), m_material(mat) {}
 		~Mesh()
 		{
 			delete m_geometry;
@@ -25,6 +26,13 @@ namespace vke
 			if (m_geometry != nullptr)
 				delete m_geometry;
 			m_geometry = g;
+		}
+		Material *get_material() const { return m_material; }
+		void set_material(Material *m)
+		{
+			if (m_material != nullptr)
+				delete m_material;
+			m_material = m;
 		}
 		void load_file(const std::string fileName);
 	};

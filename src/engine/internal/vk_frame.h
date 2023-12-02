@@ -21,11 +21,12 @@ namespace vke
 
         // Descriptors
         VkDescriptorSet globalDescriptor;
-        Buffer cameraUniformBuffer;
+        VkDescriptorSet objectDescriptor;
 
-        // AllocatedBuffer objectBuffer;
-        // VkDescriptorSet objectDescriptor;
-        // DeletionQueue _frameDeletionQueue;
+        //Uniform buffers
+        Buffer cameraUniformBuffer;
+        Buffer objectUniformBuffer;
+
 
         void init(VkDevice device, VkPhysicalDevice gpu, VkSurfaceKHR surface);
         void cleanup(VkDevice device);

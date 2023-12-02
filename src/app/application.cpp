@@ -32,7 +32,7 @@ void VulkanRenderer::setup()
              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
             {0, 1, 2, 2, 3, 0});
-    vke::Mesh *m = new vke::Mesh(g);
+    vke::Mesh *m = new vke::Mesh(g,new vke::Material());
 
     meshes.push_back(m);
 

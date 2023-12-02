@@ -20,6 +20,11 @@ namespace vke
         glm::vec4 sunlightDirection; // w for sun power
         glm::vec4 sunlightColor;
     };
+    
+    struct ObjectUniforms
+    {
+        glm::mat4 model;
+    };
 
 }
 #endif

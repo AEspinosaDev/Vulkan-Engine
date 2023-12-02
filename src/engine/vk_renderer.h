@@ -13,6 +13,7 @@
 #include "vk_window.h"
 #include "vk_mesh.h"
 #include "vk_camera.h"
+#include "vk_material.h"
 
 namespace vke
 {
@@ -39,7 +40,7 @@ namespace vke
 	{
 #pragma region Properties
 
-		struct UserParams
+		struct Settings
 		{
 			
 			AntialiasingType AAtype{NONE};
@@ -58,7 +59,7 @@ namespace vke
 		};
 
 		VmaAllocator m_memory;
-		UserParams m_params;
+		Settings m_settings;
 
 		Window *m_window;
 		VkInstance m_instance{};
@@ -72,16 +73,12 @@ namespace vke
 
 		const int MAX_FRAMES_IN_FLIGHT;
 		Frame m_frames[2];
-		///
 		VkDescriptorSetLayout m_globalSetLayout;
+		VkDescriptorSetLayout m_objectSetLayout;
 		VkDescriptorPool m_descriptorPool;
 
 		std::vector<VkFramebuffer> m_framebuffers;
-		VkPipeline *m_currentPipeline{nullptr};
-		VkPipelineLayout m_pipelineLayout{};
-		VkPipelineLayout m_meshPipelineLayout{};
-		std::unordered_map<std::string, VkPipeline> m_pipelines;
-
+		
 		vkutils::DeletionQueue m_deletionQueue;
 
 #ifdef NDEBUG
@@ -94,27 +91,30 @@ namespace vke
 		int m_selectedShader{0};
 		uint32_t m_currentFrame{0};
 
+		Material* m_lastMaterial{nullptr};
+		Geometry* m_lastGeometry{nullptr};
+
 #pragma endregion
 #pragma region Getters & Setters
 	public:
-		inline glm::vec4 get_clearcolor() const { return m_params.clearColor; }
+		inline glm::vec4 get_clearcolor() const { return m_settings.clearColor; }
 
 		inline void set_clearcolor(glm::vec4 c)
 		{
-			m_params.clearColor = c;
+			m_settings.clearColor = c;
 		}
 
 		inline Window *const get_window() const { return m_window; }
 
 		inline void set_autoclear(bool clrColor, bool clrDepth = true, bool clrStencil = true)
 		{
-			m_params.autoClearColor = clrColor;
-			m_params.autoClearDepth = clrDepth;
-			m_params.autoClearStencil = clrStencil;
+			m_settings.autoClearColor = clrColor;
+			m_settings.autoClearDepth = clrDepth;
+			m_settings.autoClearStencil = clrStencil;
 		}
 
-		inline void enable_depth_test(bool op){m_params.depthTest=op;}
-		inline void enable_depth_writes(bool op){m_params.depthWrite=op;}
+		inline void enable_depth_test(bool op){m_settings.depthTest=op;}
+		inline void enable_depth_writes(bool op){m_settings.depthWrite=op;}
 
 		inline void set_shader()
 		{
@@ -124,7 +124,7 @@ namespace vke
 #pragma endregion
 #pragma region Core Functions
 		Renderer(Window *window) : m_window(window),
-								   MAX_FRAMES_IN_FLIGHT(m_params.bufferingType)
+								   MAX_FRAMES_IN_FLIGHT(m_settings.bufferingType)
 		{
 		}
 		/**
@@ -168,6 +168,8 @@ namespace vke
 		void init_descriptors();
 
 		void init_pipelines();
+
+		void init_pipeline(Material* m);
 
 		void recreate_swap_chain();
 

@@ -1,11 +1,12 @@
 #include "vk_pipeline.h"
 
-namespace vke {
+namespace vke
+{
 
 	VkPipeline PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass)
 	{
-		//make viewport state from our stored viewport and scissor.
-			  //at the moment we wont support multiple viewports or scissors
+		// make viewport state from our stored viewport and scissor.
+		// at the moment we wont support multiple viewports or scissors
 		VkPipelineViewportStateCreateInfo viewportState = {};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.pNext = nullptr;
@@ -16,18 +17,16 @@ namespace vke {
 		viewportState.pScissors = &scissor;
 
 		std::vector<VkDynamicState> dynamicStates = {
-			   VK_DYNAMIC_STATE_VIEWPORT,
-			   VK_DYNAMIC_STATE_SCISSOR
-		};
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR};
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicState.pDynamicStates = dynamicStates.data();
 
-
-		//setup dummy color blending. We arent using transparent objects yet
-		//the blending is just "no blend", but we do write to the color attachment
+		// setup dummy color blending. We arent using transparent objects yet
+		// the blending is just "no blend", but we do write to the color attachment
 		VkPipelineColorBlendStateCreateInfo colorBlending = {};
 		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 		colorBlending.pNext = nullptr;
@@ -37,8 +36,8 @@ namespace vke {
 		colorBlending.attachmentCount = 1;
 		colorBlending.pAttachments = &colorBlendAttachment;
 
-		//build the actual pipeline
-		//we now use all of the info structs we have been writing into into this one to create the pipeline
+		// build the actual pipeline
+		// we now use all of the info structs we have been writing into into this one to create the pipeline
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.pNext = nullptr;
@@ -57,10 +56,14 @@ namespace vke {
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
+		//VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
+		// pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+		// VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 
 		VkPipeline newPipeline;
 		if (vkCreateGraphicsPipelines(
-			device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
+				device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
+		{
 			std::cout << "failed to create pipline\n";
 			return VK_NULL_HANDLE; // failed to create graphics pipeline
 		}
@@ -68,8 +71,6 @@ namespace vke {
 		{
 			return newPipeline;
 		}
-
-
 	}
 
 	VkShaderModule Shader::create_shader_module(VkDevice device, const std::vector<uint32_t> code)
@@ -80,52 +81,66 @@ namespace vke {
 		createInfo.pCode = code.data();
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to create shader module!");
 		}
 		return shaderModule;
 	}
 
-	Shader Shader::read_file(const std::string& filePath)
+	Shader Shader::read_file(const std::string &filePath)
 	{
 		std::ifstream stream(filePath);
 
 		enum class ShaderType
 		{
-			NONE = -1, VERTEX = 0, FRAGMENT = 1, GEOMETRY = 2, TESSELATION = 3
+			NONE = -1,
+			VERTEX = 0,
+			FRAGMENT = 1,
+			GEOMETRY = 2,
+			TESSELATION = 3
 		};
 
 		std::string line;
 		std::stringstream ss[4];
 		ShaderType type = ShaderType::NONE;
 
-		while (getline(stream, line)) {
-			if (line.find("#shader") != std::string::npos) {
-				if (line.find("vertex") != std::string::npos) type = ShaderType::VERTEX;
-				else if (line.find("fragment") != std::string::npos) type = ShaderType::FRAGMENT;
-				else if (line.find("geometry") != std::string::npos) type = ShaderType::GEOMETRY;
-				else if (line.find("tesselation") != std::string::npos) type = ShaderType::TESSELATION;
+		while (getline(stream, line))
+		{
+			if (line.find("#shader") != std::string::npos)
+			{
+				if (line.find("vertex") != std::string::npos)
+					type = ShaderType::VERTEX;
+				else if (line.find("fragment") != std::string::npos)
+					type = ShaderType::FRAGMENT;
+				else if (line.find("geometry") != std::string::npos)
+					type = ShaderType::GEOMETRY;
+				else if (line.find("tesselation") != std::string::npos)
+					type = ShaderType::TESSELATION;
 			}
-			else {
+			else
+			{
 				ss[(int)type] << line << '\n';
 			}
 		}
-		return { filePath,ss[0].str(), ss[1].str(), ss[2].str(),ss[3].str() };
+		return {filePath, ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str()};
 	}
 
 	std::vector<uint32_t> Shader::compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize)
 	{
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;
-		if (optimize) {
+		if (optimize)
+		{
 			options.SetOptimizationLevel(shaderc_optimization_level_size);
 		}
 		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(src, kind, shaderName.c_str(), options);
-		if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+		if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+		{
 			DEBUG_LOG("Error compiling module - " << result.GetErrorMessage());
 		}
 
-		std::vector<uint32_t> spirv = { result.cbegin(),result.cend() };
+		std::vector<uint32_t> spirv = {result.cbegin(), result.cend()};
 
 		return spirv;
 	}

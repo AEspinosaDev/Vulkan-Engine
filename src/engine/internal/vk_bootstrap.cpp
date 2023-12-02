@@ -1,11 +1,13 @@
 #define VMA_IMPLEMENTATION
 #include "vk_bootstrap.h"
 
-namespace vke {
+namespace vke
+{
 
 	void vkboot::VulkanBooter::create_instance()
 	{
-		if (m_validation && !vkutils::check_validation_layer_suport(m_validationLayers)) {
+		if (m_validation && !vkutils::check_validation_layer_suport(m_validationLayers))
+		{
 			throw std::runtime_error(" validation layers requested, but not available!");
 		}
 
@@ -27,33 +29,37 @@ namespace vke {
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-		if (m_validation) {
+		if (m_validation)
+		{
 			createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
 			createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
 			vkutils::populate_debug_messenger_create_info(debugCreateInfo);
-			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
 		}
-		else {
+		else
+		{
 			createInfo.enabledLayerCount = 0;
 
 			createInfo.pNext = nullptr;
 		}
 
-		if (vkCreateInstance(&createInfo, nullptr, m_instance) != VK_SUCCESS) {
+		if (vkCreateInstance(&createInfo, nullptr, m_instance) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to create instance!");
 		}
 	}
 
-	std::vector<const char*> vkboot::VulkanBooter::get_required_extensions()
+	std::vector<const char *> vkboot::VulkanBooter::get_required_extensions()
 	{
 		uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions;
+		const char **glfwExtensions;
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+		std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (m_validation) {
+		if (m_validation)
+		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
 #ifndef NDEBUG
@@ -68,12 +74,14 @@ namespace vke {
 
 	void vkboot::VulkanBooter::setup_debug_messenger()
 	{
-		if (!m_validation) return;
+		if (!m_validation)
+			return;
 
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		vkutils::populate_debug_messenger_create_info(createInfo);
 
-		if (vkutils::create_debug_utils_messenger_EXT(*m_instance, &createInfo, nullptr, m_debugMessenger) != VK_SUCCESS) {
+		if (vkutils::create_debug_utils_messenger_EXT(*m_instance, &createInfo, nullptr, m_debugMessenger) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to set up debug messenger!");
 		}
 	}
@@ -84,7 +92,8 @@ namespace vke {
 
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(*m_instance, &deviceCount, nullptr);
-		if (deviceCount == 0) {
+		if (deviceCount == 0)
+		{
 			throw std::runtime_error("failed to find GPUs with Vulkan support!");
 		}
 		std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -92,7 +101,8 @@ namespace vke {
 
 		std::multimap<int, VkPhysicalDevice> candidates;
 
-		for (const auto& device : devices) {
+		for (const auto &device : devices)
+		{
 			int score = rate_device_suitability(device);
 
 			candidates.insert(std::make_pair(score, device));
@@ -102,24 +112,25 @@ namespace vke {
 #endif // !NDEBUG
 
 		// Check if the best candidate is suitable at all
-		if (candidates.rbegin()->first > 0) {
+		if (candidates.rbegin()->first > 0)
+		{
 			*m_gpu = candidates.rbegin()->second;
 		}
-		else {
+		else
+		{
 			throw std::runtime_error("failed to find a suitable GPU!");
 		}
-
-
 	}
 	void vkboot::VulkanBooter::create_logical_device()
 	{
 		vkboot::QueueFamilyIndices indices = vkboot::find_queue_families(*m_gpu, *m_surface);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 		float queuePriority = 1.0f;
-		for (uint32_t queueFamily : uniqueQueueFamilies) {
+		for (uint32_t queueFamily : uniqueQueueFamilies)
+		{
 			VkDeviceQueueCreateInfo queueCreateInfo{};
 			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -127,7 +138,6 @@ namespace vke {
 			queueCreateInfo.pQueuePriorities = &queuePriority;
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
-
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		VkDeviceCreateInfo createInfo{};
@@ -140,26 +150,34 @@ namespace vke {
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
 
-		if (m_validation) {
+		// VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
+		// shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+		// shader_draw_parameters_features.pNext = nullptr;
+		// shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+		// createInfo.pNext = &shader_draw_parameters_features;
+
+		if (m_validation)
+		{
 			createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
 			createInfo.ppEnabledLayerNames = m_validationLayers.data();
 		}
-		else {
+		else
+		{
 			createInfo.enabledLayerCount = 0;
 		}
-		if (vkCreateDevice(*m_gpu, &createInfo, nullptr, m_device) != VK_SUCCESS) {
+		if (vkCreateDevice(*m_gpu, &createInfo, nullptr, m_device) != VK_SUCCESS)
+		{
 			throw std::runtime_error("failed to create logical device!");
 		}
 		vkGetDeviceQueue(*m_device, indices.graphicsFamily.value(), 0, m_graphicsQueue);
 		vkGetDeviceQueue(*m_device, indices.presentFamily.value(), 0, m_presentQueue);
 	}
 
-
 	int vkboot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 	{
 		VkPhysicalDeviceProperties deviceProperties;
 
-		//VR, 64B floats and multi-viewport
+		// VR, 64B floats and multi-viewport
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
@@ -167,7 +185,8 @@ namespace vke {
 		int score = 0;
 
 		// Discrete GPUs have a significant performance advantage
-		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		{
 			score += 1000;
 		}
 
@@ -177,18 +196,21 @@ namespace vke {
 		vkboot::QueueFamilyIndices indices = find_queue_families(device, *m_surface);
 
 		// Application can't function without geometry shaders
-		if (!deviceFeatures.geometryShader || !indices.isComplete()) {
+		if (!deviceFeatures.geometryShader || !indices.isComplete())
+		{
 			return 0;
 		}
 		bool swapChainAdequate = false;
-		if (check_device_extension_support(device)) {
+		if (check_device_extension_support(device))
+		{
 			vkboot::SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, *m_surface);
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-			if (!swapChainAdequate) return 0;
+			if (!swapChainAdequate)
+				return 0;
 		}
-		else {
+		else
+		{
 			return 0;
-
 		}
 
 		return score;
@@ -204,13 +226,13 @@ namespace vke {
 
 		std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
 
-		for (const auto& extension : availableExtensions) {
+		for (const auto &extension : availableExtensions)
+		{
 			requiredExtensions.erase(extension.extensionName);
 		}
 
 		return requiredExtensions.empty();
 	}
-
 
 	vkboot::QueueFamilyIndices vkboot::find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface)
 	{
@@ -223,16 +245,20 @@ namespace vke {
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
 		int i = 0;
-		for (const auto& queueFamily : queueFamilies) {
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+		for (const auto &queueFamily : queueFamilies)
+		{
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
 				indices.graphicsFamily = i;
 			}
 			VkBool32 presentSupport = false;
 			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-			if (presentSupport) {
+			if (presentSupport)
+			{
 				indices.presentFamily = i;
 			}
-			if (indices.isComplete()) {
+			if (indices.isComplete())
+			{
 				break;
 			}
 
@@ -250,20 +276,21 @@ namespace vke {
 		uint32_t formatCount;
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
-		if (formatCount != 0) {
+		if (formatCount != 0)
+		{
 			details.formats.resize(formatCount);
 			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
 		}
 		uint32_t presentModeCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
-		if (presentModeCount != 0) {
+		if (presentModeCount != 0)
+		{
 			details.presentModes.resize(presentModeCount);
 			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
 		}
 		return details;
 	}
-
 
 	void vkboot::VulkanBooter::boot_vulkan()
 	{
@@ -277,12 +304,12 @@ namespace vke {
 		create_logical_device();
 	}
 
-    void vkboot::VulkanBooter::setup_memory()
-    {
+	void vkboot::VulkanBooter::setup_memory()
+	{
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.physicalDevice = *m_gpu;
 		allocatorInfo.device = *m_device;
 		allocatorInfo.instance = *m_instance;
 		vmaCreateAllocator(&allocatorInfo, m_memory);
-    }
+	}
 }

@@ -122,7 +122,7 @@ namespace vke
 
 		init_descriptors();
 
-		init_pipelines();
+		// init_pipelines();
 
 		m_initialized = true;
 	}
@@ -247,7 +247,8 @@ namespace vke
 		std::vector<VkDescriptorPoolSize> sizes =
 			{
 				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
-				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10}};
+				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
+				{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10}};
 
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -258,13 +259,10 @@ namespace vke
 
 		VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_descriptorPool));
 
-		// binding for camera data at 0
+		// SET 0 GLOBAL
 		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
-		// binding for scene data at 1
 		VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-
 		VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
-
 		VkDescriptorSetLayoutCreateInfo setinfo = {};
 		setinfo.bindingCount = 2;
 		setinfo.flags = 0;
@@ -274,12 +272,24 @@ namespace vke
 
 		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &m_globalSetLayout));
 
+		// SET 1 PER-OBJECT
+		VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
+		VkDescriptorSetLayoutCreateInfo set2info = {};
+		set2info.bindingCount = 1;
+		set2info.flags = 0;
+		set2info.pNext = nullptr;
+		set2info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		set2info.pBindings = &objectBufferBinding;
+
+		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &set2info, nullptr, &m_objectSetLayout));
+
 		const size_t sceneParamBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu);
-		create_buffer(&m_params.sceneUniformBuffer, sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		create_buffer(&m_settings.sceneUniformBuffer, sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			create_buffer(&m_frames[i].cameraUniformBuffer, sizeof(CameraUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			create_buffer(&m_frames[i].objectUniformBuffer, sizeof(ObjectUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 			// allocate one descriptor set for each frame
 			VkDescriptorSetAllocateInfo allocInfo = {};
@@ -292,27 +302,43 @@ namespace vke
 			VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
 											  &m_frames[i].globalDescriptor));
 
+			VkDescriptorSetAllocateInfo objectAllocInfo = {};
+			objectAllocInfo.pNext = nullptr;
+			objectAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			objectAllocInfo.descriptorPool = m_descriptorPool;
+			objectAllocInfo.descriptorSetCount = 1;
+			objectAllocInfo.pSetLayouts = &m_objectSetLayout;
+
+			VK_CHECK(vkAllocateDescriptorSets(m_device, &objectAllocInfo, &m_frames[i].objectDescriptor));
+
 			VkDescriptorBufferInfo cameraInfo;
 			cameraInfo.buffer = m_frames[i].cameraUniformBuffer.buffer;
 			cameraInfo.offset = 0;
 			cameraInfo.range = sizeof(CameraUniforms);
 
 			VkDescriptorBufferInfo sceneInfo;
-			sceneInfo.buffer = m_params.sceneUniformBuffer.buffer;
+			sceneInfo.buffer = m_settings.sceneUniformBuffer.buffer;
 			sceneInfo.offset = 0;
 			sceneInfo.range = sizeof(SceneUniforms);
 
+			VkDescriptorBufferInfo objectInfo;
+			objectInfo.buffer = m_frames[i].objectUniformBuffer.buffer;
+			objectInfo.offset = 0;
+			objectInfo.range = sizeof(ObjectUniforms);
+
 			VkWriteDescriptorSet cameraWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_frames[i].globalDescriptor, &cameraInfo, 0);
 			VkWriteDescriptorSet sceneWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].globalDescriptor, &sceneInfo, 1);
+			VkWriteDescriptorSet objectWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_frames[i].objectDescriptor, &objectInfo, 0);
 
-			VkWriteDescriptorSet setWrites[] = {cameraWrite, sceneWrite};
+			VkWriteDescriptorSet setWrites[] = {cameraWrite, sceneWrite, objectWrite};
 
-			vkUpdateDescriptorSets(m_device, 2, setWrites, 0, nullptr);
+			vkUpdateDescriptorSets(m_device, 3, setWrites, 0, nullptr);
 		}
 
 		m_deletionQueue.push_function([=]()
 									  {
 										vkDestroyDescriptorSetLayout(m_device, m_globalSetLayout, nullptr); 
+										vkDestroyDescriptorSetLayout(m_device, m_objectSetLayout, nullptr); 
 										vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr); });
 	}
 
@@ -325,22 +351,6 @@ namespace vke
 		}
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
 
-		// Clear COLOR | DEPTH | STENCIL ??
-		VkClearValue clearColor = {{{m_params.clearColor.r, m_params.clearColor.g, m_params.clearColor.b, m_params.clearColor.a}}};
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-
-		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
-
-		upload_global_uniform_buffers(camera,&offset);
-
-		// Like bind program
-		m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_currentPipeline);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 1, &offset);
-
 		// Viewport setup
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -350,11 +360,26 @@ namespace vke
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
 		VkRect2D scissor{};
 		scissor.offset = {0, 0};
 		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		// Clear COLOR | DEPTH | STENCIL ??
+		VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
+
+		upload_global_uniform_buffers(camera, &offset);
+
+		ObjectUniforms objectData;
+		// meshes[0]->set_position({0.0,0.0,2.0});
+		objectData.model = meshes[0]->get_model_matrix();
+		upload_buffer(&m_frames[m_currentFrame].objectUniformBuffer, &objectData, sizeof(ObjectUniforms));
 
 		draw_meshes(commandBuffer, meshes);
 
@@ -366,22 +391,11 @@ namespace vke
 		}
 	}
 
-	void Renderer::init_pipelines()
+	void Renderer::init_pipeline(Material *m)
 	{
 
-		std::string shaderDir(SHADER_DIR);
-
-		// Populate shader list
-		std::vector<Shader> shaders;
-		// resources easy route!!!
-		shaders.push_back(Shader::read_file(shaderDir + "test.glsl"));
-		shaders.push_back(Shader::read_file(shaderDir + "red.glsl"));
-
-		// Create standard pipelines info
 		PipelineBuilder builder;
-
 		builder.vertexInputInfo = vkinit::vertex_input_state_create_info();
-
 		builder.inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
 		auto bindingDescription = Vertex::getBindingDescription();
@@ -409,61 +423,65 @@ namespace vke
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
 		// hook the global set layout
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &m_globalSetLayout;
+		pipelineLayoutInfo.setLayoutCount = 2;
+		VkDescriptorSetLayout setLayouts[] = {m_globalSetLayout, m_objectSetLayout};
+		pipelineLayoutInfo.pSetLayouts = setLayouts;
 
-		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		// VkPipelineCache
+
+		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m->m_pipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
-		builder.pipelineLayout = m_pipelineLayout;
+		builder.pipelineLayout = m->m_pipelineLayout;
 
 		// Compile shaders
-		int i = 0;
-		for (auto &shader : shaders)
+		std::string shaderDir(SHADER_DIR);
+		// Populate shader list
+		auto shader = Shader::read_file(shaderDir + "test.glsl");
+
+		VkShaderModule vertShaderModule{}, fragShaderModule{}, geomShaderModule{}, tessShaderModule{};
+		if (shader.vertSource != "")
 		{
-			VkShaderModule vertShaderModule{}, fragShaderModule{}, geomShaderModule{}, tessShaderModule{};
-			if (shader.vertSource != "")
-			{
-				vertShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
-				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule));
-			}
-			if (shader.fragSource != "")
-			{
-				fragShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
-				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule));
-			}
-			if (shader.geomSource != "")
-			{
-				geomShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
-				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, geomShaderModule));
-			}
-			if (shader.tessSource != "")
-			{
-				tessShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.tessSource, shader.name + "tess", shaderc_tess_control_shader, true));
-				builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, tessShaderModule));
-			}
-
-			m_pipelines[std::to_string(i)] = builder.build_pipeline(m_device, m_renderPass);
-
-			vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
-			vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
-			vkDestroyShaderModule(m_device, geomShaderModule, nullptr);
-			vkDestroyShaderModule(m_device, tessShaderModule, nullptr);
-
-			builder.shaderStages.clear();
-			i++;
+			vertShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule));
+		}
+		if (shader.fragSource != "")
+		{
+			fragShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule));
+		}
+		if (shader.geomSource != "")
+		{
+			geomShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, geomShaderModule));
+		}
+		if (shader.tessSource != "")
+		{
+			tessShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.tessSource, shader.name + "tess", shaderc_tess_control_shader, true));
+			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, tessShaderModule));
 		}
 
-		m_deletionQueue.push_function([=]()
-									  {
-			for (auto &pipeline : m_pipelines)
-			{
-				vkDestroyPipeline(m_device, pipeline.second, nullptr);
-			}
-			vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr); });
+		m->m_pipeline = builder.build_pipeline(m_device, m_renderPass);
+
+		vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, geomShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, tessShaderModule, nullptr);
+
+		builder.shaderStages.clear();
+		m->m_pipelineAssigned = true;
+
+		// m_deletionQueue.push_function([=]()
+		// 							  {
+		// 	for (auto &pipeline : m_pipelines)
+		// 	{
+		// 		vkDestroyPipeline(m_device, pipeline.second, nullptr);
+		// 	}
+		// 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr); });
 	}
+
 
 	void Renderer::recreate_swap_chain()
 	{
@@ -507,9 +525,22 @@ namespace vke
 
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *m)
 	{
-		Geometry *g = m->get_geometry();
-		if (!g->loaded)
+		if (!m->get_material() || !m->get_geometry() || !m->get_geometry()->loaded)
 			return;
+
+		Geometry *g = m->get_geometry();
+
+		if (m->get_material()->m_pipelineAssigned == false)
+		{
+			init_pipeline(m->get_material());
+		}
+
+		// Like bind program
+		// m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipeline);
+		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 1, &offset);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 0, nullptr);
 
 		if (!g->buffer_loaded)
 			setup_geometry_buffers(g);
@@ -579,7 +610,7 @@ namespace vke
 		}
 		g->buffer_loaded = true;
 	}
-	void Renderer::upload_global_uniform_buffers(Camera* camera, uint32_t* offsets)
+	void Renderer::upload_global_uniform_buffers(Camera *camera, uint32_t *offsets)
 	{
 		// camera buffer
 		if (camera->is_dirty())
@@ -598,7 +629,7 @@ namespace vke
 			sceneParams.fogDistances = {1, 0, 0, 1};
 			sceneParams.fogColor = {1, 0, 0, 1};
 			sceneParams.ambientColor = {1, 1, 1, 1};
-			upload_buffer(&m_params.sceneUniformBuffer, &sceneParams, sizeof(SceneUniforms), offsets[0]);
+			upload_buffer(&m_settings.sceneUniformBuffer, &sceneParams, sizeof(SceneUniforms), offsets[0]);
 		}
 	}
 }
