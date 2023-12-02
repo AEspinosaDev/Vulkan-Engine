@@ -1,7 +1,7 @@
 #ifndef VK_MATERIAL
 #define VK_MATERIAL
 
-#include "internal/vk_core.h"
+#include "../private/vk_core.h"
 
 namespace vke
 {

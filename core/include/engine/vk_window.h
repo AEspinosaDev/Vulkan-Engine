@@ -1,8 +1,8 @@
 #ifndef VK_WINDOW_H
 #define VK_WINDOW_H
 
-#include "internal/vk_core.h"
-#include "internal/vk_utils.h"
+#include "../private/vk_core.h"
+#include "../private/vk_utils.h"
 
 namespace vke
 {

@@ -1,8 +1,8 @@
 #ifndef VK_GEOMETRY_H
 #define VK_GEOMETRY_H
 
-#include "internal/vk_utils.h"
-#include "internal/vk_buffer.h"
+#include "../private/vk_core.h"
+#include "../private/vk_buffer.h"
 
 namespace vke
 {

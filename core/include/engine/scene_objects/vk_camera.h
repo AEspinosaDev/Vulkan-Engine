@@ -1,7 +1,7 @@
 #ifndef VK_CAMERA_H
 #define VK_CAMERA_H
 
-#include "vk_object3D.h"
+#include "../vk_object3D.h"
 
 namespace vke
 {

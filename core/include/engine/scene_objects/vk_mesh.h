@@ -1,9 +1,9 @@
 #ifndef VK_MESH_H
 #define VK_MESH_H
 
-#include "vk_object3D.h"
-#include "vk_geometry.h"
-#include "vk_material.h"
+#include "../vk_object3D.h"
+#include "../vk_geometry.h"
+#include "../vk_material.h"
 
 namespace vke
 {

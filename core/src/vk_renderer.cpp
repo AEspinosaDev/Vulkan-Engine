@@ -1,5 +1,5 @@
 
-#include "vk_renderer.h"
+#include "engine/vk_renderer.h"
 
 namespace vke
 {
@@ -376,11 +376,6 @@ namespace vke
 
 		upload_global_uniform_buffers(camera, &offset);
 
-		ObjectUniforms objectData;
-		// meshes[0]->set_position({0.0,0.0,2.0});
-		objectData.model = meshes[0]->get_model_matrix();
-		upload_buffer(&m_frames[m_currentFrame].objectUniformBuffer, &objectData, sizeof(ObjectUniforms));
-
 		draw_meshes(commandBuffer, meshes);
 
 		vkCmdEndRenderPass(commandBuffer);
@@ -482,7 +477,6 @@ namespace vke
 		// 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr); });
 	}
 
-
 	void Renderer::recreate_swap_chain()
 	{
 		int width = 0, height = 0;
@@ -534,6 +528,10 @@ namespace vke
 		{
 			init_pipeline(m->get_material());
 		}
+
+		ObjectUniforms objectData;
+		objectData.model = m->get_model_matrix();
+		upload_buffer(&m_frames[m_currentFrame].objectUniformBuffer, &objectData, sizeof(ObjectUniforms));
 
 		// Like bind program
 		// m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];

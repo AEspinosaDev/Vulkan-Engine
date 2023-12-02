@@ -39,7 +39,7 @@ get_filename_component(VULKAN_SDK_ROOT ${Vulkan_LIBRARY} DIRECTORY)
 # Include CMake FetchContent
 include(FetchContent)
 # Set the directory where FetchContent will download and build content
-set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/build_dependencies")
+set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/dependencies")
 
 # GLFW
 #Exclude addons
@@ -67,8 +67,8 @@ FetchContent_MakeAvailable(glm)
 # Configure vulkan path
 link_directories(${VULKAN_SDK_ROOT})
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/src/engine)
-add_subdirectory(${CMAKE_SOURCE_DIR}/src/app)
+add_subdirectory(${CMAKE_SOURCE_DIR}/core)
+add_subdirectory(${CMAKE_SOURCE_DIR}/app)
 
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -76,9 +76,3 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug)
 # Set the output directory for release build
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
-
-# Set configuration
-set(SHADER_DIR "${CMAKE_SOURCE_DIR}/resources/shaders/")
-set(TEXTURE_DIR "${CMAKE_SOURCE_DIR}/resources/textures/")
-set(MODEL_DIR "${CMAKE_SOURCE_DIR}/resources/meshes/")
-configure_file(config.h.in ${CMAKE_SOURCE_DIR}/src/config.h)

@@ -1,8 +1,9 @@
 #ifndef VK_APPLICATION_H
 #define VK_APPLICATION_H
 
-#include <vk_renderer.h>
-#include <utilities/vk_controller.h>
+#include <engine/vk_renderer.h>
+#include <engine/utilities/vk_controller.h>
+
 
 /**
  * Example app
@@ -14,6 +15,8 @@ class VulkanRenderer
     std::vector<vke::Mesh *> meshes;
     vke::Camera *camera;
     vke::CameraController *m_controller;
+    
+    
     // vkeng::Scene m_scene;
     // imgui::gui m_gui;
     float m_deltaTime{0.0f};
@@ -36,7 +39,7 @@ private:
     {
          if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
-           m_window->set_window_should_close(true);
+            m_window->set_window_should_close(true);
         }
 
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)

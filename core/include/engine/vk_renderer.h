@@ -1,19 +1,20 @@
 #ifndef VK_RENDERER_H
 #define VK_RENDERER_H
 
-#include "../config.h"
-#include "internal/vk_core.h"
-#include "internal/vk_utils.h"
-#include "internal/vk_bootstrap.h"
-#include "internal/vk_initializers.h"
-#include "internal/vk_swapchain.h"
-#include "internal/vk_pipeline.h"
-#include "internal/vk_frame.h"
-#include "internal/vk_uniforms.h"
+#include "../private/vk_core.h"
+#include "../private/vk_utils.h"
+#include "../private/vk_bootstrap.h"
+#include "../private/vk_initializers.h"
+#include "../private/vk_swapchain.h"
+#include "../private/vk_pipeline.h"
+#include "../private/vk_frame.h"
+#include "../private/vk_uniforms.h"
+
+#include "config.h"
 #include "vk_window.h"
-#include "vk_mesh.h"
-#include "vk_camera.h"
 #include "vk_material.h"
+#include "scene_objects/vk_mesh.h"
+#include "scene_objects/vk_camera.h"
 
 namespace vke
 {

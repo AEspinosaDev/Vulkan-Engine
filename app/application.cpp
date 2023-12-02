@@ -32,9 +32,22 @@ void VulkanRenderer::setup()
              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
             {0, 1, 2, 2, 3, 0});
-    vke::Mesh *m = new vke::Mesh(g,new vke::Material());
+    auto mat = new vke::Material();
+    vke::Mesh *m = new vke::Mesh(g,mat);
 
     meshes.push_back(m);
+
+     vke::Geometry *g2 = new vke::Geometry();
+    g2->fill({{{-0.5f, -0.5f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+             {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+             {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+             {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
+            {0, 1, 2, 2, 3, 0});
+    vke::Mesh *m2 = new vke::Mesh(g2,mat);
+
+    meshes.push_back(m2);
+
+    m2->set_position({1.0,1.0,2.0});
 
     camera = new vke::Camera();
 

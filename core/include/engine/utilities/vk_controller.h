@@ -1,8 +1,8 @@
 #ifndef VK_CONTROLLER_H
 #define VK_CONTROLLER_H
 
-#include "../internal/vk_core.h"
-#include "../vk_camera.h"
+#include "../private/vk_core.h"
+#include "../scene_objects/vk_camera.h"
 
 namespace vke
 {
