@@ -16,7 +16,7 @@ void VulkanRenderer::run()
     {
 
         // I-O
-         vke::Window::poll_events();
+        vke::Window::poll_events();
 
         tick();
     }
@@ -33,21 +33,34 @@ void VulkanRenderer::setup()
              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
             {0, 1, 2, 2, 3, 0});
     auto mat = new vke::Material();
-    vke::Mesh *m = new vke::Mesh(g,mat);
+    vke::Mesh *m = new vke::Mesh(g, mat);
 
     meshes.push_back(m);
 
-     vke::Geometry *g2 = new vke::Geometry();
-    g2->fill({{{-0.5f, -0.5f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-             {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-             {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-             {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
-            {0, 1, 2, 2, 3, 0});
-    vke::Mesh *m2 = new vke::Mesh(g2,mat);
+    vke::Geometry *g2 = new vke::Geometry();
+    g2->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+              {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}}},
+             {0, 1, 2, 2, 3, 0});
+    vke::Mesh *m2 = new vke::Mesh(g2, mat);
 
     meshes.push_back(m2);
 
-    m2->set_position({1.0,1.0,2.0});
+    m2->set_position({2.0, 2.0, 2.0});
+
+    
+    vke::Geometry *g3 = new vke::Geometry();
+    g3->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+              {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}}},
+             {0, 1, 2, 2, 3, 0});
+    vke::Mesh *m3 = new vke::Mesh(g3, mat);
+
+    meshes.push_back(m3);
+
+    m3->set_position({-2.0, 2.0, 2.0});
 
     camera = new vke::Camera();
 
@@ -56,7 +69,7 @@ void VulkanRenderer::setup()
     camera->set_near(0.01f);
     camera->set_field_of_view(70.0f);
 
-    m_controller = new vke::CameraController(camera);
+    m_controller = new vke::Controller(camera);
 
     // m_renderer.
 
@@ -69,11 +82,15 @@ void VulkanRenderer::setup()
                        { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
     glfwSetCursorPosCallback(m_window->get_window_obj(), [](GLFWwindow *w, double xpos, double ypos)
                              { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->mouse_callback(w, xpos, ypos); });
+
+    // m_lastTime = std::chrono::high_resolution_clock::now();
 }
 
 void VulkanRenderer::tick()
 {
-    float currentTime = vke::Window::get_time_elapsed();
+    // auto currentTime = std::chrono::high_resolution_clock::now();
+    float currentTime = (float)vke::Window::get_time_elapsed();
+    // m_deltaTime = std::chrono::duration<float, std::chrono::period>(currentTime - m_lastTime).count();
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
 

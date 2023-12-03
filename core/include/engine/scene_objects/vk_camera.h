@@ -16,14 +16,12 @@ namespace vke
         float m_fov;
         float m_near;
         float m_far;
-        float m_yaw;
-        float m_pitch;
         float m_zoom;
 
         bool perspective;
 
     public:
-        Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D(p, OTHER), m_yaw(-90.0f), m_pitch(0.0f), m_fov(45.0f), m_near(.1f), m_far(100.0f) {}
+        Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D(p, OTHER), m_fov(45.0f), m_near(.1f), m_far(100.0f) { set_rotation({-90,0,0});}
 
         inline void set_field_of_view(float fov) { m_fov = fov; }
         inline float get_field_of_view() { return m_fov; }
@@ -38,10 +36,7 @@ namespace vke
         inline void set_far(float f) { m_far = f; }
         inline float get_near() { return m_near; }
         inline void set_near(float n) { m_near = n; }
-        inline float get_pitch(){ return m_pitch;}
-        inline void set_pitch(float p){m_pitch=p;}
-        inline void set_yaw(float p){m_yaw=p;}
-        inline float get_yaw(){ return m_yaw;}
+      
         inline glm::mat4 get_model_matrix()
         {
             if (isDirty)
@@ -51,17 +46,7 @@ namespace vke
             }
             return m_view;
         }
-        inline void update_vectors()
-        {
-            // Pitch/Yaw setup
-            glm::vec3 direction;
-            direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-            direction.y = sin(glm::radians(m_pitch));
-            direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-            m_transform.forward = -glm::normalize(direction);
-            m_transform.rotation = acos(direction);
-            isDirty = true;
-        }
     };
+       
 }
 #endif // VK_CAMERA_H

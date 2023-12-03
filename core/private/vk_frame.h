@@ -19,9 +19,12 @@ namespace vke
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
 
-        // Descriptors
+        //Descriptors
         VkDescriptorSet globalDescriptor;
         VkDescriptorSet objectDescriptor;
+
+        // Buffer frameUniformBuffer;
+        // DescriptorAllocator* descriptorAllocator;
 
         //Uniform buffers
         Buffer cameraUniformBuffer;

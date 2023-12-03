@@ -108,6 +108,18 @@ namespace vke
         virtual void set_rotation(const glm::vec3 p)
         {
             m_transform.rotation = p;
+
+            // Update forward
+            glm::vec3 direction;
+            direction.x = cos(glm::radians(p.x)) * cos(glm::radians(p.y));
+            direction.y = sin(glm::radians(p.y));
+            direction.z = sin(glm::radians(p.x)) * cos(glm::radians(p.y));
+            m_transform.forward = -glm::normalize(direction);
+            // Update up
+
+            // Update right
+            m_transform.right = glm::cross(m_transform.forward, m_transform.up);
+
             isDirty = true;
         }
 
@@ -128,6 +140,14 @@ namespace vke
             enabled = s;
             isDirty = true;
         }
+
+        virtual inline float get_pitch() { return m_transform.rotation.y; }
+
+        virtual inline void set_pitch(float p) { set_rotation({m_transform.rotation.x, p, m_transform.rotation.z}); }
+
+        virtual inline void set_yaw(float p) { set_rotation({p, m_transform.rotation.y, m_transform.rotation.z}); }
+
+        virtual inline float get_yaw() { return m_transform.rotation.x; }
 
         virtual inline bool is_active() { return enabled; }
 

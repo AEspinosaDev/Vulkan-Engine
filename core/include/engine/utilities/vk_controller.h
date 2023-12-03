@@ -2,7 +2,7 @@
 #define VK_CONTROLLER_H
 
 #include "../private/vk_core.h"
-#include "../scene_objects/vk_camera.h"
+#include "../vk_object3D.h"
 
 namespace vke
 {
@@ -12,12 +12,35 @@ namespace vke
         WASD,
     };
 
-    class CameraController
+    struct KeyMappings
+    {
+        int moveLeft = GLFW_KEY_A;
+        int moveRight = GLFW_KEY_D;
+        int moveForward = GLFW_KEY_W;
+        int moveBackward = GLFW_KEY_S;
+        int moveUp = GLFW_KEY_E;
+        int moveDown = GLFW_KEY_Q;
+
+        int mouseLeft = GLFW_MOUSE_BUTTON_1;
+        int mouseMiddle = GLFW_MOUSE_BUTTON_2;
+        int mouseRight = GLFW_MOUSE_BUTTON_3;
+
+        int reset = GLFW_KEY_R;
+    };
+
+    class Controller
     {
     protected:
-        Camera *m_camera;
-        float m_cameraSpeed;
+        Object3D *m_objPtr;
+        float m_speed;
         MovementType m_type;
+        KeyMappings m_mappings;
+
+        enum KeyActions{
+            PRESS = GLFW_PRESS,
+            RELEASE = GLFW_RELEASE,
+            REPEAT = GLFW_REPEAT,
+        };
 
         //MOUSE
         float m_mouseSensitivity;
@@ -33,19 +56,21 @@ namespace vke
         Transform m_initialState;
 
     public:
-        CameraController(Camera *cam, MovementType m = WASD) : m_camera(cam), m_type(m), m_cameraSpeed(100.0f),
+        Controller(Object3D *obj, MovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(100.0f),
                                                                m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
                                                                m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
                                                                m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
-                                                               m_initialState(cam->get_transform()) {}
+                                                               m_initialState(obj->get_transform()), m_mappings(km) {}
 
         inline MovementType get_type() { return m_type; }
-        inline float get_speed() const { return m_cameraSpeed; }
-        inline void set_speed(float s) { m_cameraSpeed = s; }
+        inline float get_speed() const { return m_speed; }
+        inline void set_speed(float s) { m_speed = s; }
         inline float get_mouse_sensitivity() const { return m_mouseSensitivity; }
         inline void set_mouse_sensitivity(float s) { m_mouseSensitivity = s; }
+        inline Object3D* get_object() const {return m_objPtr;}
+        inline void set_object(Object3D* obj) {m_objPtr=obj;}
 
-        virtual void handle_keyboard(GLFWwindow *window, const float deltaTime);
+        virtual void handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime);
         virtual void handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch = true);
         virtual void handle_mouse_scroll()
         { /*WIP*/

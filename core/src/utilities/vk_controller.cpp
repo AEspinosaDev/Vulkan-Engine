@@ -1,30 +1,28 @@
 #include "engine/utilities/vk_controller.h"
 namespace vke
 {
-    void CameraController::handle_keyboard(GLFWwindow *window, const float deltaTime)
+    void Controller::handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime)
     {
-        auto speed = m_cameraSpeed * deltaTime;
+        auto speed = m_speed * deltaTime;
 
         if (m_type == WASD)
         {
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-                m_camera->set_position(m_camera->get_position() + m_camera->get_transform().forward * speed);
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-                m_camera->set_position(m_camera->get_position() - m_camera->get_transform().forward * speed);
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-                m_camera->set_position(m_camera->get_position() - glm::normalize(glm::cross(m_camera->get_transform().forward, m_camera->get_transform().up)) * speed);
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-                m_camera->set_position(m_camera->get_position() + glm::normalize(glm::cross(m_camera->get_transform().forward, m_camera->get_transform().up)) * speed);
-            if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-                m_camera->set_position(m_camera->get_position() - glm::normalize(m_camera->get_transform().up) * speed);
-            if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-                m_camera->set_position(m_camera->get_position() + glm::normalize(m_camera->get_transform().up) * speed);
+            if (glfwGetKey(window, m_mappings.moveForward) == PRESS)
+                m_objPtr->set_position(m_objPtr->get_position() + m_objPtr->get_transform().forward * speed);
+            if (glfwGetKey(window, m_mappings.moveBackward) == PRESS)
+                m_objPtr->set_position(m_objPtr->get_position() - m_objPtr->get_transform().forward * speed);
+            if (glfwGetKey(window, m_mappings.moveLeft) == PRESS)
+                m_objPtr->set_position(m_objPtr->get_position() - glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
+            if (glfwGetKey(window, m_mappings.moveRight) == PRESS)
+                m_objPtr->set_position(m_objPtr->get_position() + glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
+            if (glfwGetKey(window, m_mappings.moveDown) == PRESS)
+                m_objPtr->set_position(m_objPtr->get_position() - glm::normalize(m_objPtr->get_transform().up) * speed);
+            if (glfwGetKey(window, m_mappings.moveUp) == PRESS)
+                m_objPtr->set_position(m_objPtr->get_position() + glm::normalize(m_objPtr->get_transform().up) * speed);
 
-            if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+            if (glfwGetKey(window, m_mappings.reset) == PRESS)
             {
-                m_camera->set_transform(m_initialState);
-                m_camera->set_pitch(0.0f);
-                m_camera->set_yaw(0.0f);
+                m_objPtr->set_transform(m_initialState);
             }
         }
         if (m_type == ORBITAL)
@@ -32,10 +30,10 @@ namespace vke
         }
     }
 
-    void CameraController::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch)
+    void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch)
     {
         // Pressing
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
+        if (glfwGetMouseButton(window, m_mappings.mouseLeft) == PRESS)
         {
             m_isMouseLeftPressed = true;
             if (m_firstMouse)
@@ -55,40 +53,40 @@ namespace vke
                 m_mouseDeltaX *= m_mouseSensitivity;
                 m_mouseDeltaY *= m_mouseSensitivity;
 
-                m_camera->set_yaw(m_camera->get_yaw() + m_mouseDeltaX);
-                m_camera->set_pitch(m_camera->get_pitch() + m_mouseDeltaY);
+                float yaw = m_objPtr->get_rotation().x + m_mouseDeltaX;
+                float pitch = m_objPtr->get_rotation().y + m_mouseDeltaY;
 
                 if (constrainPitch)
                 {
-                    if (m_camera->get_pitch() > 89.0f)
-                        m_camera->set_pitch(89.0f);
-                    if (m_camera->get_pitch() < -89.0f)
-                        m_camera->set_pitch(-89.0f);
+                    if (pitch > 89.0f)
+                        pitch = 89.0f;
+                    if (pitch < -89.0f)
+                        pitch = -89.0f;
                 }
 
-                m_camera->update_vectors();
+                m_objPtr->set_rotation({yaw, pitch, 0.0});
             }
             if (m_type == ORBITAL)
             {
             }
         }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+        if (glfwGetMouseButton(window, m_mappings.mouseMiddle) == PRESS)
         {
             m_isMouseMiddlePressed = true;
         }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS)
+        if (glfwGetMouseButton(window, m_mappings.mouseRight) == PRESS)
         {
             m_isMouseRightPressed = true;
         }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE)
+        if (glfwGetMouseButton(window, m_mappings.mouseLeft) == RELEASE)
         {
             m_firstMouse = true;
             m_isMouseLeftPressed = false;
         }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+        if (glfwGetMouseButton(window, m_mappings.mouseMiddle) == RELEASE)
         {
         }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_3) == GLFW_RELEASE)
+        if (glfwGetMouseButton(window, m_mappings.mouseRight) == RELEASE)
         {
             m_isMouseRightPressed = false;
         }

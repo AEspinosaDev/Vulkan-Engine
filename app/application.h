@@ -3,6 +3,7 @@
 
 #include <engine/vk_renderer.h>
 #include <engine/utilities/vk_controller.h>
+#include <chrono>
 
 
 /**
@@ -14,12 +15,13 @@ class VulkanRenderer
     vke::Renderer *m_renderer;
     std::vector<vke::Mesh *> meshes;
     vke::Camera *camera;
-    vke::CameraController *m_controller;
+    vke::Controller *m_controller;
     
     
     // vkeng::Scene m_scene;
     // imgui::gui m_gui;
     float m_deltaTime{0.0f};
+    // std::chrono::steady_clock::time_point m_lastTime;
     float m_lastTime{0.0f};
 
 public:
@@ -52,7 +54,7 @@ private:
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
 
-        m_controller->handle_keyboard(window, m_deltaTime);
+        m_controller->handle_keyboard(window,key,action, m_deltaTime);
     }
 
     void mouse_callback(GLFWwindow* window, double xpos, double ypos)

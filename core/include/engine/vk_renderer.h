@@ -9,6 +9,7 @@
 #include "../private/vk_pipeline.h"
 #include "../private/vk_frame.h"
 #include "../private/vk_uniforms.h"
+#include "../private/vk_descriptors.h"
 
 #include "config.h"
 #include "vk_window.h"
@@ -43,7 +44,7 @@ namespace vke
 
 		struct Settings
 		{
-			
+
 			AntialiasingType AAtype{NONE};
 			BufferingType bufferingType{_DOUBLE};
 
@@ -56,7 +57,6 @@ namespace vke
 
 			SceneUniforms sceneUniforms;
 			Buffer sceneUniformBuffer;
-
 		};
 
 		VmaAllocator m_memory;
@@ -74,12 +74,17 @@ namespace vke
 
 		const int MAX_FRAMES_IN_FLIGHT;
 		Frame m_frames[2];
+
 		VkDescriptorSetLayout m_globalSetLayout;
 		VkDescriptorSetLayout m_objectSetLayout;
+
 		VkDescriptorPool m_descriptorPool;
 
+		DescriptorAllocator *m_descriptorAllocator;
+		DescriptorLayoutCache *m_descriptorLayoutCache;
+
 		std::vector<VkFramebuffer> m_framebuffers;
-		
+
 		vkutils::DeletionQueue m_deletionQueue;
 
 #ifdef NDEBUG
@@ -92,8 +97,8 @@ namespace vke
 		int m_selectedShader{0};
 		uint32_t m_currentFrame{0};
 
-		Material* m_lastMaterial{nullptr};
-		Geometry* m_lastGeometry{nullptr};
+		Material *m_lastMaterial{nullptr};
+		Geometry *m_lastGeometry{nullptr};
 
 #pragma endregion
 #pragma region Getters & Setters
@@ -114,8 +119,8 @@ namespace vke
 			m_settings.autoClearStencil = clrStencil;
 		}
 
-		inline void enable_depth_test(bool op){m_settings.depthTest=op;}
-		inline void enable_depth_writes(bool op){m_settings.depthWrite=op;}
+		inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
+		inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
 
 		inline void set_shader()
 		{
@@ -170,7 +175,7 @@ namespace vke
 
 		void init_pipelines();
 
-		void init_pipeline(Material* m);
+		void init_pipeline(Material *m);
 
 		void recreate_swap_chain();
 
@@ -183,21 +188,16 @@ namespace vke
 
 		void draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes);
 
-		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *m);
+		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *m,int meshNum);
 
 #pragma endregion
 #pragma region BufferManagement
 
 		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
-		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size);
-
-		void upload_buffer(Buffer *buffer, const void *bufferData, size_t size,size_t offset);
-
 		void setup_geometry_buffers(Geometry *g);
 
-		void upload_global_uniform_buffers(Camera* camera, uint32_t* offsets);
-
+		void upload_global_uniform_buffers(Camera *camera, uint32_t *offsets);
 	};
 
 }
