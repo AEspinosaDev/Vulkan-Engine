@@ -72,6 +72,7 @@ void VulkanRenderer::setup()
     m_controller = new vke::Controller(camera);
 
     // m_renderer.
+    // m_window->set_keyboard_callback(&VulkanRenderer::keyboard_callback);
 
     // WINDOW CALLBACKS
     glfwSetWindowUserPointer(m_window->get_window_obj(), this);
@@ -93,6 +94,9 @@ void VulkanRenderer::tick()
     // m_deltaTime = std::chrono::duration<float, std::chrono::period>(currentTime - m_lastTime).count();
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
+    float fps = 1.0/m_deltaTime;
+    std::string newTitle = "VK ENGINE         fps = "+std::to_string(fps);
+    m_window->set_title( newTitle.c_str());
 
     m_renderer->render(meshes, camera);
 }

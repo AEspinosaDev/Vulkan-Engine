@@ -72,11 +72,17 @@ namespace vke
 		inline VkExtent2D *const get_extent() const { return m_extent; }
 		inline VkSurfaceKHR *const get_surface() const { return m_surface; }
 		inline int get_window_should_close() { return glfwWindowShouldClose(m_GLFWwindow); }
-		inline void set_window_should_close(bool op) {  glfwSetWindowShouldClose(m_GLFWwindow, op); }
+		inline void set_window_should_close(bool op) { glfwSetWindowShouldClose(m_GLFWwindow, op); }
+		inline void set_title(const char *title)
+		{
+			m_title = title;
+			glfwSetWindowTitle(m_GLFWwindow, title);
+		}
+		inline std::string get_title() { return m_title; }
 
-		void set_keyboard_callback(std::function<void()> &&function);
-		void set_mouse_callback(std::function<void()> &&function);
-		void set_window_callback(std::function<void()> &&function);
+		void set_keyboard_callback(std::function<void(GLFWwindow *, int, int, int, int)> callback);
+		// void set_mouse_callback(std::function<void()> &&function);
+		// void set_window_callback(std::function<void()> &&function);
 
 		inline static void poll_events() { glfwPollEvents(); }
 		inline static double get_time_elapsed() { return glfwGetTime(); }

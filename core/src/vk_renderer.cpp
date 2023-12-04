@@ -242,23 +242,6 @@ namespace vke
 
 	void Renderer::init_descriptors()
 	{
-		// // It holds pools
-		// m_descriptorAllocator = new DescriptorAllocator{};
-		// m_descriptorAllocator->init(m_device);
-
-		// // It holds descriptors
-		// m_descriptorLayoutCache = new DescriptorLayoutCache{};
-		// m_descriptorLayoutCache->init(m_device);
-
-		// For textures in the future
-		//  VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-		//  VkDescriptorSetLayoutCreateInfo set3info = {};
-		//  set3info.bindingCount = 1;
-		//  set3info.flags = 0;
-		//  set3info.pNext = nullptr;
-		//  set3info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		//  set3info.pBindings = &textureBind;
-		//  _singleTextureSetLayout = _descriptorLayoutCache->create_descriptor_layout(&set3info);
 
 		// create a descriptor pool that will hold 10 uniform buffers
 		std::vector<VkDescriptorPoolSize> sizes =
@@ -277,7 +260,7 @@ namespace vke
 		VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_descriptorPool));
 
 		// SET 0 GLOBAL
-		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
+		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
 		VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 		VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
 		VkDescriptorSetLayoutCreateInfo setinfo = {};
@@ -300,20 +283,14 @@ namespace vke
 
 		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &set2info, nullptr, &m_objectSetLayout));
 
-		const size_t sceneParamBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu);
-		create_buffer(&m_settings.sceneUniformBuffer, sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		const size_t cameraUniformsBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu);
+		create_buffer(&m_cameraUniformBuffer, cameraUniformsBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		const size_t sceneUniformsBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu);
+		create_buffer(&m_sceneUniformBuffer, sceneUniformsBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 
-			// m_frames[i].descriptorAllocator = DescriptorAllocator{};
-			// m_frames[i].dynamicDescriptorAllocator->init(m_device);
-
-			// // 1 megabyte of dynamic data buffer
-			// auto dynamicDataBuffer = create_buffer(1000000, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-			// m_frames[i].frameUniformBuffer.init(_allocator, dynamicDataBuffer, _gpuProperties.limits.minUniformBufferOffsetAlignment);
-
-			create_buffer(&m_frames[i].cameraUniformBuffer, sizeof(CameraUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 			create_buffer(&m_frames[i].objectUniformBuffer, 3 * vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 			// allocate one descriptor set for each frame
@@ -336,13 +313,14 @@ namespace vke
 
 			VK_CHECK(vkAllocateDescriptorSets(m_device, &objectAllocInfo, &m_frames[i].objectDescriptor));
 
+			//Data that each descriptor buffer will fetch/write
 			VkDescriptorBufferInfo cameraInfo;
-			cameraInfo.buffer = m_frames[i].cameraUniformBuffer.buffer;
+			cameraInfo.buffer = m_cameraUniformBuffer.buffer;
 			cameraInfo.offset = 0;
 			cameraInfo.range = sizeof(CameraUniforms);
 
 			VkDescriptorBufferInfo sceneInfo;
-			sceneInfo.buffer = m_settings.sceneUniformBuffer.buffer;
+			sceneInfo.buffer = m_sceneUniformBuffer.buffer;
 			sceneInfo.offset = 0;
 			sceneInfo.range = sizeof(SceneUniforms);
 
@@ -351,7 +329,8 @@ namespace vke
 			objectInfo.offset = 0;
 			objectInfo.range = sizeof(ObjectUniforms);
 
-			VkWriteDescriptorSet cameraWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_frames[i].globalDescriptor, &cameraInfo, 0);
+			//Point the descriptor to a buffer
+			VkWriteDescriptorSet cameraWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].globalDescriptor, &cameraInfo, 0);
 			VkWriteDescriptorSet sceneWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].globalDescriptor, &sceneInfo, 1);
 			VkWriteDescriptorSet objectWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].objectDescriptor, &objectInfo, 0);
 
@@ -397,9 +376,7 @@ namespace vke
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
-
-		upload_global_uniform_buffers(camera, &offset);
+		upload_global_uniform_buffers(camera);
 
 		draw_meshes(commandBuffer, meshes);
 
@@ -531,22 +508,8 @@ namespace vke
 
 	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes)
 	{
-		// Reorder by transparency
-		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu);
-		std::vector<ObjectUniforms> matrixes;
-		int i = 0;
-		for (Mesh *m : meshes)
-		{
-			ObjectUniforms objectData;
-			objectData.model = m->get_model_matrix();
-			matrixes.push_back(objectData);
-		}
-		// m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, matrixes.data(), sizeof(ObjectUniforms)*2 );
-		// m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, matrixes.data(), sizeof(ObjectUniforms)*matrixes.size(),{0});
-		// m_settings.sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms), offsets[0]);
-		// m_settings.sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms), offsets[0]);
 
-		i = 0;
+		int i = 0;
 		for (Mesh *m : meshes)
 		{
 			if (m)
@@ -560,7 +523,11 @@ namespace vke
 
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *m, int meshNum)
 	{
-		if (!m->get_material() || !m->get_geometry() || !m->get_geometry()->loaded)
+		if (!m->get_geometry() || !m->get_geometry()->loaded)
+			return;
+
+		if (!m->get_material())
+			// bind default material
 			return;
 
 		Geometry *g = m->get_geometry();
@@ -570,20 +537,23 @@ namespace vke
 			init_pipeline(m->get_material());
 		}
 
+		// Offset calculation
+		uint32_t objectOffset = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum;
+		uint32_t globalOffsetCamera = vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) * m_currentFrame;
+		uint32_t globalOffsetScene = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
+		uint32_t globalOffsets[2] =  {globalOffsetCamera,globalOffsetScene};
+		
 		// ObjectUniforms objectData;
-		// objectData.model = m->get_model_matrix();
-		// upload_buffer(&m_frames[m_currentFrame].objectUniformBuffer, &objectData, sizeof(ObjectUniforms));
-		uint32_t offset2 = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
-		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory,&objectData, sizeof(ObjectUniforms),offset2);
-		uint32_t offseets[2] = { vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu)*0, vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu)*1 };
-		// Like bind program
-		// m_currentPipeline = m_selectedShader == 0 ? &m_pipelines["0"] : &m_pipelines["1"];
+		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipeline);
-		uint32_t offset = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 1, &offset);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &offset2);
+
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 2, globalOffsets );
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
+
+		// BIND OBJECT BUFFERS
 
 		if (!g->buffer_loaded)
 			setup_geometry_buffers(g);
@@ -637,17 +607,20 @@ namespace vke
 		}
 		g->buffer_loaded = true;
 	}
-	void Renderer::upload_global_uniform_buffers(Camera *camera, uint32_t *offsets)
+	void Renderer::upload_global_uniform_buffers(Camera *camera)
 	{
 		// camera buffer
+		
 		if (camera->is_dirty())
 			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
 		CameraUniforms camData;
 		camData.view = camera->get_view();
 		camData.proj = camera->get_projection();
 		camData.viewProj = camera->get_projection() * camera->get_view();
-		m_frames[m_currentFrame].cameraUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms));
-		// scene buffer
+
+		m_cameraUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 
+		vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) * m_currentFrame);
+
 		// if (scene->is_dirty())
 		{
 			// scene.getParams turns clean
@@ -655,7 +628,9 @@ namespace vke
 			sceneParams.fogDistances = {1, 0, 0, 1};
 			sceneParams.fogColor = {1, 0, 0, 1};
 			sceneParams.ambientColor = {1, 1, 1, 1};
-			m_settings.sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms), offsets[0]);
+
+			m_sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms), 
+			vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame);
 		}
 	}
 }

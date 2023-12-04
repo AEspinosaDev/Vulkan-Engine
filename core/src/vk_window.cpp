@@ -1,12 +1,13 @@
 #include "engine/vk_window.h"
 
-namespace vke {
+namespace vke
+{
 
     void Window::init()
     {
         glfwInit();
-        
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); //Set for vulkan context
+
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Set for vulkan context
 
         glfwWindowHint(GLFW_RESIZABLE, m_resizeable);
 
@@ -15,9 +16,9 @@ namespace vke {
         glfwSetWindowPos(m_GLFWwindow, (int)m_screenPos.x, (int)m_screenPos.y);
     }
 
-    void Window::set_keyboard_callback(std::function<void()> &&function)
+    void Window::set_keyboard_callback(std::function<void(GLFWwindow *, int, int, int, int)> callback)
     {
-        //   glfwSetKeyCallback(m_window, [](GLFWwindow *w, int key, int scancode, int action, int mods)
-        //                { function(w, key, scancode, action, mods); });
+        // glfwSetKeyCallback(m_GLFWwindow, [](GLFWwindow *w, int key, int scancode, int action, int mods)
+        //                    { callback(w, key, scancode, action, mods); });
     }
 }

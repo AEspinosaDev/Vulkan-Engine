@@ -21,13 +21,8 @@ namespace vke
 
         //Descriptors
         VkDescriptorSet globalDescriptor;
+        
         VkDescriptorSet objectDescriptor;
-
-        // Buffer frameUniformBuffer;
-        // DescriptorAllocator* descriptorAllocator;
-
-        //Uniform buffers
-        Buffer cameraUniformBuffer;
         Buffer objectUniformBuffer;
 
 

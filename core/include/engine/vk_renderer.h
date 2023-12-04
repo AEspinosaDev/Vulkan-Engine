@@ -54,9 +54,6 @@ namespace vke
 			bool autoClearStencil{true};
 			bool depthTest{true};
 			bool depthWrite{true};
-
-			SceneUniforms sceneUniforms;
-			Buffer sceneUniformBuffer;
 		};
 
 		VmaAllocator m_memory;
@@ -67,23 +64,26 @@ namespace vke
 		Swapchain m_swapchain;
 		VkPhysicalDevice m_gpu{};
 		VkDevice m_device{};
-		VkRenderPass m_renderPass{};
 		VkQueue m_graphicsQueue{};
 		VkQueue m_presentQueue{};
 		VkDebugUtilsMessengerEXT m_debugMessenger{};
 
+		VkRenderPass m_renderPass{};
+
+		std::vector<VkFramebuffer> m_framebuffers;
+		std::vector<VkPipeline> m_defaultPipelines;
+
 		const int MAX_FRAMES_IN_FLIGHT;
 		Frame m_frames[2];
 
+		VkDescriptorPool m_descriptorPool;
 		VkDescriptorSetLayout m_globalSetLayout;
 		VkDescriptorSetLayout m_objectSetLayout;
+		Buffer m_sceneUniformBuffer;
+		Buffer m_cameraUniformBuffer;
+		Buffer m_globalUniformsBuffer;
 
-		VkDescriptorPool m_descriptorPool;
-
-		DescriptorAllocator *m_descriptorAllocator;
-		DescriptorLayoutCache *m_descriptorLayoutCache;
-
-		std::vector<VkFramebuffer> m_framebuffers;
+		SceneUniforms m_sceneUniforms; //This data will be on the scene class!!!!!
 
 		vkutils::DeletionQueue m_deletionQueue;
 
@@ -142,7 +142,7 @@ namespace vke
 			init_vulkan();
 		}
 		/**
-		 * Standalone preimplemented render loop for the renderer.
+		 * Standalone pre-implemented render loop for the renderer.
 		 */
 		void run(std::vector<Mesh *> meshes, Camera *camera);
 		/**
@@ -173,7 +173,7 @@ namespace vke
 
 		void init_descriptors();
 
-		void init_pipelines();
+		void init_default_pipelines();
 
 		void init_pipeline(Material *m);
 
@@ -188,7 +188,7 @@ namespace vke
 
 		void draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes);
 
-		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *m,int meshNum);
+		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *m, int meshNum);
 
 #pragma endregion
 #pragma region BufferManagement
@@ -197,7 +197,7 @@ namespace vke
 
 		void setup_geometry_buffers(Geometry *g);
 
-		void upload_global_uniform_buffers(Camera *camera, uint32_t *offsets);
+		void upload_global_uniform_buffers(Camera *camera);
 	};
 
 }
