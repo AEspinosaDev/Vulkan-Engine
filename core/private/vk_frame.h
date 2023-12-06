@@ -19,10 +19,9 @@ namespace vke
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
 
-        //Descriptors
         VkDescriptorSet globalDescriptor;
-        
         VkDescriptorSet objectDescriptor;
+        
         Buffer objectUniformBuffer;
 
 

@@ -243,107 +243,44 @@ namespace vke
 	void Renderer::init_descriptors()
 	{
 
-		// create a descriptor pool that will hold 10 uniform buffers
-		std::vector<VkDescriptorPoolSize> sizes =
-			{
-				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
-				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
-				{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10}};
+		m_descriptorMng.init(m_device);
+		m_descriptorMng.create_pool(10, 10, 10, 10);
 
-		VkDescriptorPoolCreateInfo pool_info = {};
-		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		pool_info.flags = 0;
-		pool_info.maxSets = 10;
-		pool_info.poolSizeCount = (uint32_t)sizes.size();
-		pool_info.pPoolSizes = sizes.data();
-
-		VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_descriptorPool));
-
-		// SET 0 GLOBAL
+		// GLOBAL
 		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
 		VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 		VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
-		VkDescriptorSetLayoutCreateInfo setinfo = {};
-		setinfo.bindingCount = 2;
-		setinfo.flags = 0;
-		setinfo.pNext = nullptr;
-		setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		setinfo.pBindings = bindings;
+		m_descriptorMng.create_set_layout(0, bindings, 2);
 
-		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &m_globalSetLayout));
-
-		// SET 1 PER-OBJECT
+		// PER-OBJECT
 		VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
-		VkDescriptorSetLayoutCreateInfo set2info = {};
-		set2info.bindingCount = 1;
-		set2info.flags = 0;
-		set2info.pNext = nullptr;
-		set2info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		set2info.pBindings = &objectBufferBinding;
+		m_descriptorMng.create_set_layout(1, &objectBufferBinding, 1);
 
-		VK_CHECK(vkCreateDescriptorSetLayout(m_device, &set2info, nullptr, &m_objectSetLayout));
+		const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
+		const size_t globalUBOSize = MAX_FRAMES_IN_FLIGHT * strideSize;
+		create_buffer(&m_globalUniformsBuffer, globalUBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, strideSize);
 
-		const size_t cameraUniformsBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu);
-		create_buffer(&m_cameraUniformBuffer, cameraUniformsBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		const size_t sceneUniformsBufferSize = MAX_FRAMES_IN_FLIGHT * vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu);
-		create_buffer(&m_sceneUniformBuffer, sceneUniformsBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		m_descriptorMng.allocate_descriptor_set(0, &m_globalDescriptor);
+
+		m_descriptorMng.set_descriptor_write(m_globalUniformsBuffer.buffer, sizeof(CameraUniforms), 0,
+											 m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+
+		m_descriptorMng.set_descriptor_write(m_globalUniformsBuffer.buffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
+											 m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 
-			create_buffer(&m_frames[i].objectUniformBuffer, 3 * vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			const size_t strideSize = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu);
+			create_buffer(&m_frames[i].objectUniformBuffer, 3 * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, strideSize);
 
-			// allocate one descriptor set for each frame
-			VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo.pNext = nullptr;
-			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocInfo.descriptorPool = m_descriptorPool;
-			allocInfo.descriptorSetCount = 1;
-			allocInfo.pSetLayouts = &m_globalSetLayout;
+			m_descriptorMng.allocate_descriptor_set(1, &m_frames[i].objectDescriptor);
 
-			VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
-											  &m_frames[i].globalDescriptor));
-
-			VkDescriptorSetAllocateInfo objectAllocInfo = {};
-			objectAllocInfo.pNext = nullptr;
-			objectAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			objectAllocInfo.descriptorPool = m_descriptorPool;
-			objectAllocInfo.descriptorSetCount = 1;
-			objectAllocInfo.pSetLayouts = &m_objectSetLayout;
-
-			VK_CHECK(vkAllocateDescriptorSets(m_device, &objectAllocInfo, &m_frames[i].objectDescriptor));
-
-			//Data that each descriptor buffer will fetch/write
-			VkDescriptorBufferInfo cameraInfo;
-			cameraInfo.buffer = m_cameraUniformBuffer.buffer;
-			cameraInfo.offset = 0;
-			cameraInfo.range = sizeof(CameraUniforms);
-
-			VkDescriptorBufferInfo sceneInfo;
-			sceneInfo.buffer = m_sceneUniformBuffer.buffer;
-			sceneInfo.offset = 0;
-			sceneInfo.range = sizeof(SceneUniforms);
-
-			VkDescriptorBufferInfo objectInfo;
-			objectInfo.buffer = m_frames[i].objectUniformBuffer.buffer;
-			objectInfo.offset = 0;
-			objectInfo.range = sizeof(ObjectUniforms);
-
-			//Point the descriptor to a buffer
-			VkWriteDescriptorSet cameraWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].globalDescriptor, &cameraInfo, 0);
-			VkWriteDescriptorSet sceneWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].globalDescriptor, &sceneInfo, 1);
-			VkWriteDescriptorSet objectWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, m_frames[i].objectDescriptor, &objectInfo, 0);
-
-			VkWriteDescriptorSet setWrites[] = {cameraWrite, sceneWrite, objectWrite};
-
-			vkUpdateDescriptorSets(m_device, 3, setWrites, 0, nullptr);
+			m_descriptorMng.set_descriptor_write(m_frames[i].objectUniformBuffer.buffer, sizeof(ObjectUniforms), 0, m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 		}
 
 		m_deletionQueue.push_function([=]()
-									  {
-										vkDestroyDescriptorSetLayout(m_device, m_globalSetLayout, nullptr); 
-										vkDestroyDescriptorSetLayout(m_device, m_objectSetLayout, nullptr); 
-										vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr); });
+									  { m_descriptorMng.cleanup(); });
 	}
 
 	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
@@ -421,7 +358,7 @@ namespace vke
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
 		// hook the global set layout
 		pipelineLayoutInfo.setLayoutCount = 2;
-		VkDescriptorSetLayout setLayouts[] = {m_globalSetLayout, m_objectSetLayout};
+		VkDescriptorSetLayout setLayouts[] = {m_descriptorMng.m_layouts[0], m_descriptorMng.m_layouts[1]};
 		pipelineLayoutInfo.pSetLayouts = setLayouts;
 
 		// VkPipelineCache
@@ -539,10 +476,11 @@ namespace vke
 
 		// Offset calculation
 		uint32_t objectOffset = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum;
-		uint32_t globalOffsetCamera = vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) * m_currentFrame;
-		uint32_t globalOffsetScene = vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame;
-		uint32_t globalOffsets[2] =  {globalOffsetCamera,globalOffsetScene};
-		
+		uint32_t globalOffsetCamera = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu)) * m_currentFrame;
+		uint32_t globalOffsetScene = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu)) * m_currentFrame;
+		uint32_t globalOffset = vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms) + sizeof(SceneUniforms), m_gpu) * m_currentFrame;
+		uint32_t globalOffsets[2] = {globalOffsetCamera, globalOffsetScene};
+
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
@@ -550,7 +488,8 @@ namespace vke
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipeline);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 2, globalOffsets );
+		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 2, globalOffsets);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
 
 		// BIND OBJECT BUFFERS
@@ -573,7 +512,7 @@ namespace vke
 		}
 	}
 
-	void Renderer::create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+	void Renderer::create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
 	{
 
 		VkBufferCreateInfo bufferInfo = {};
@@ -590,6 +529,8 @@ namespace vke
 								 &buffer->buffer,
 								 &buffer->allocation,
 								 nullptr));
+
+		buffer->strideSize = istrideSize;
 
 		m_deletionQueue.push_function([=]()
 									  { vmaDestroyBuffer(m_memory, buffer->buffer,
@@ -610,7 +551,7 @@ namespace vke
 	void Renderer::upload_global_uniform_buffers(Camera *camera)
 	{
 		// camera buffer
-		
+
 		if (camera->is_dirty())
 			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
 		CameraUniforms camData;
@@ -618,8 +559,10 @@ namespace vke
 		camData.proj = camera->get_projection();
 		camData.viewProj = camera->get_projection() * camera->get_view();
 
-		m_cameraUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 
-		vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) * m_currentFrame);
+		// m_cameraUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
+		// 								  vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) * m_currentFrame);
+		m_globalUniformsBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
+										   m_globalUniformsBuffer.strideSize * m_currentFrame);
 
 		// if (scene->is_dirty())
 		{
@@ -629,8 +572,10 @@ namespace vke
 			sceneParams.fogColor = {1, 0, 0, 1};
 			sceneParams.ambientColor = {1, 1, 1, 1};
 
-			m_sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms), 
-			vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame);
+			// m_sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
+			// 								 vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame);
+			m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
+											   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 		}
 	}
 }

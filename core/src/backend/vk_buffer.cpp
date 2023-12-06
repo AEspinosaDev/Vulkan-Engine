@@ -16,3 +16,49 @@ void vke::Buffer::upload_data(VmaAllocator memory, const void *bufferData, size_
     memcpy(data, bufferData, size);
     vmaUnmapMemory(memory, allocation);
 }
+
+void vke::Buffer::init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
+{
+
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.pNext = nullptr;
+
+    bufferInfo.size = allocSize;
+    bufferInfo.usage = usage;
+
+    VmaAllocationCreateInfo vmaallocInfo = {};
+    vmaallocInfo.usage = memoryUsage;
+
+    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo,
+                             &buffer,
+                             &allocation,
+                             nullptr));
+
+    strideSize = istrideSize;
+
+    // deletionQueue.push_function([=]()
+    // 							  { vmaDestroyBuffer(memory, buffer,
+    // 												 allocation); });
+}
+
+void vke::Buffer::init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, uint32_t *istrideDataSizes)
+{
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.pNext = nullptr;
+
+    bufferInfo.size = allocSize;
+    bufferInfo.usage = usage;
+
+    VmaAllocationCreateInfo vmaallocInfo = {};
+    vmaallocInfo.usage = memoryUsage;
+
+    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo,
+                             &buffer,
+                             &allocation,
+                             nullptr));
+
+    strideSize = istrideSize;
+    strideDataSizes = istrideDataSizes;
+}

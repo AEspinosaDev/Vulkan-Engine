@@ -1,21 +1,49 @@
 #ifndef VK_DESCRIPTORS
 #define VK_DESCRIPTORS
 
+#include <unordered_map>
 #include "vk_core.h"
+#include "vk_initializers.h"
 
 namespace vke
 {
-    //descriptormANAGER.
+    struct Descriptor{
+        VkDescriptorSet descriptorSet;
 
-    //has a pool
+        // Buffer* binded_buffers;
+        uint32_t layoutIdx;
 
-    //create sets and bindings
 
-    //global uniform buffers
+    };
 
-    //function that make descriptor points to a bufffer and its offset  vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_frames[i].globalDescriptor, &cameraInfo, 0);
+    class DescriptorManager
+    {
+        VkDevice m_device;
 
-    //funcitonm that says the data that decriptor will write in buffer = VkDescriptorBufferInfo
+    public:
+        VkDescriptorPool m_pool{};
+        std::unordered_map<uint32_t, VkDescriptorSetLayout> m_layouts;
+
+        inline void init(VkDevice dvc) { m_device = dvc; }
+
+        void create_pool(
+            uint32_t numUBO,
+            uint32_t numUBODynamic,
+            uint32_t numUBOStorage,
+            uint32_t maxSets);
+
+        void create_set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount);
+
+        void allocate_descriptor_set(uint32_t layoutSetIndex, VkDescriptorSet *descriptor);
+
+        void set_descriptor_write(VkBuffer buffer, VkDeviceSize dataSize,VkDeviceSize readOffset,VkDescriptorSet descriptor, VkDescriptorType type, uint32_t binding);
+
+        // void bind_descriptor_set(descriptor , offset, etc);
+        // void bindDescrpitprot to material
+        void cleanup();
+    };
+
+    // Descriptor set pointing to buffers binded;????????
 }
 
 #endif

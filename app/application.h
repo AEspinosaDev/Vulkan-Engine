@@ -44,11 +44,6 @@ private:
             m_window->set_window_should_close(true);
         }
 
-        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
-        {
-            m_renderer->set_shader();
-        }
-
         if (glfwGetKey(window, GLFW_KEY_F11) == GLFW_PRESS)
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);

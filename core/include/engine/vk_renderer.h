@@ -1,6 +1,8 @@
 #ifndef VK_RENDERER_H
 #define VK_RENDERER_H
 
+#include <unordered_map>
+
 #include "../private/vk_core.h"
 #include "../private/vk_utils.h"
 #include "../private/vk_bootstrap.h"
@@ -71,16 +73,14 @@ namespace vke
 		VkRenderPass m_renderPass{};
 
 		std::vector<VkFramebuffer> m_framebuffers;
-		std::vector<VkPipeline> m_defaultPipelines;
+		std::unordered_map<std::string,VkPipeline> m_defaultPipelines;
 
 		const int MAX_FRAMES_IN_FLIGHT;
 		Frame m_frames[2];
 
-		VkDescriptorPool m_descriptorPool;
-		VkDescriptorSetLayout m_globalSetLayout;
-		VkDescriptorSetLayout m_objectSetLayout;
-		Buffer m_sceneUniformBuffer;
-		Buffer m_cameraUniformBuffer;
+		DescriptorManager m_descriptorMng;
+
+		VkDescriptorSet m_globalDescriptor;
 		Buffer m_globalUniformsBuffer;
 
 		SceneUniforms m_sceneUniforms; //This data will be on the scene class!!!!!
@@ -94,7 +94,6 @@ namespace vke
 #endif
 		bool m_framebufferResized{false};
 		bool m_initialized{false};
-		int m_selectedShader{0};
 		uint32_t m_currentFrame{0};
 
 		Material *m_lastMaterial{nullptr};
@@ -122,10 +121,6 @@ namespace vke
 		inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
 		inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
 
-		inline void set_shader()
-		{
-			m_selectedShader = m_selectedShader == 0 ? 1 : 0;
-		}
 
 #pragma endregion
 #pragma region Core Functions
@@ -193,7 +188,7 @@ namespace vke
 #pragma endregion
 #pragma region BufferManagement
 
-		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,uint32_t istrideSize = 0);
 
 		void setup_geometry_buffers(Geometry *g);
 
