@@ -17,7 +17,7 @@ void vke::Buffer::upload_data(VmaAllocator memory, const void *bufferData, size_
     vmaUnmapMemory(memory, allocation);
 }
 
-void vke::Buffer::init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
+void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
 {
 
     VkBufferCreateInfo bufferInfo = {};
@@ -37,12 +37,9 @@ void vke::Buffer::init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsa
 
     strideSize = istrideSize;
 
-    // deletionQueue.push_function([=]()
-    // 							  { vmaDestroyBuffer(memory, buffer,
-    // 												 allocation); });
 }
 
-void vke::Buffer::init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, uint32_t *istrideDataSizes)
+void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, uint32_t *istrideDataSizes)
 {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -60,5 +57,11 @@ void vke::Buffer::init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsa
                              nullptr));
 
     strideSize = istrideSize;
-    strideDataSizes = istrideDataSizes;
+    // stridePartitions.data() = istrideDataSizes;
+}
+
+void vke::Buffer::cleanup(VmaAllocator memory)
+{
+    vmaDestroyBuffer(memory, buffer,
+                     allocation);
 }

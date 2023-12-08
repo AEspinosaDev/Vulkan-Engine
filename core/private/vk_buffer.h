@@ -14,14 +14,17 @@ namespace vke
         /*For dynamic descriptor binding operation*/
         uint32_t strideSize{0};
         /*For buffer info writing operation*/
-        uint32_t* strideDataSizes{nullptr};
+        std::vector<int> stridePartitions;
 
+        void init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,uint32_t istrideSize = 0);
+        void init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,uint32_t istrideSize,  uint32_t* istrideDataSizes);
+        
         void upload_data(VmaAllocator memory, const void *bufferData, size_t size);
 
         void upload_data(VmaAllocator memory, const void *bufferData, size_t size, size_t offset);
 
-        void init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,uint32_t istrideSize = 0);
-        void init_buffer(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,uint32_t istrideSize,  uint32_t* istrideDataSizes);
+
+        void cleanup(VmaAllocator memory);
     };
 }
 

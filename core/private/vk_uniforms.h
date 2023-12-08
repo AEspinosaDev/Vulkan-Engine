@@ -14,11 +14,11 @@ namespace vke
 
     struct SceneUniforms
     {
-        glm::vec4 fogColor;     // w is for exponent
-        glm::vec4 fogDistances; // x for min, y for max, zw unused.
+        glm::vec4 fogColor; // w is for exponent
+        glm::vec4 fogParams; // x for near, y for far, z for intensity, w unused.
         glm::vec4 ambientColor;
-        glm::vec4 sunlightDirection; // w for sun power
-        glm::vec4 sunlightColor;
+        glm::vec4 lightDirection; // w for sun power
+        glm::vec4 lightColor;
     };
     
     struct ObjectUniforms

@@ -20,7 +20,7 @@ namespace vke
 
         VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_pool));
     }
-    void DescriptorManager::create_set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount)
+    void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount)
     {
         VkDescriptorSetLayout layout;
         VkDescriptorSetLayoutCreateInfo setinfo = {};
@@ -34,7 +34,7 @@ namespace vke
 
         m_layouts[layoutSetIndex] = layout;
     }
-    void DescriptorManager::allocate_descriptor_set(uint32_t layoutSetIndex, VkDescriptorSet *descriptor)
+    void DescriptorManager::allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet *descriptor)
     {
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.pNext = nullptr;
@@ -43,17 +43,23 @@ namespace vke
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = &m_layouts[layoutSetIndex];
 
+        descriptor->layoutID = layoutSetIndex;
+
         VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
-                                          descriptor));
+                                          &descriptor->descriptorSet));
     }
-    void DescriptorManager::set_descriptor_write(VkBuffer buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, VkDescriptorSet descriptor, VkDescriptorType type, uint32_t binding)
+    void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
     {
         VkDescriptorBufferInfo info;
-        info.buffer = buffer;
+        info.buffer = buffer->buffer;
         info.offset = readOffset;
         info.range = dataSize;
 
-        VkWriteDescriptorSet writeSetting = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, descriptor, &info, binding);
+        VkWriteDescriptorSet writeSetting = vkinit::write_descriptor_buffer(type, descriptor->descriptorSet, &info, binding);
+
+        descriptor->bindings+=1;
+        descriptor->binded_buffers.push_back(buffer);
+        descriptor->isDynamic = type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
         vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
     }
@@ -64,5 +70,26 @@ namespace vke
             vkDestroyDescriptorSetLayout(m_device, layout.second, nullptr);
         }
         vkDestroyDescriptorPool(m_device, m_pool, nullptr);
+    }
+
+    void DescriptorManager::bind_descriptor_sets(VkCommandBuffer commandBuffer,
+                                                 VkPipelineBindPoint pipelineBindPoint,
+                                                 VkPipelineLayout pipelineLayout,
+                                                 uint32_t firstSet,
+                                                 const std::vector<DescriptorSet> descriptorSets)
+    {
+        // std::vector<uint32_t> offsets;
+
+        // for (DescriptorSet &descriptor : descriptorSets)
+        // {
+        //     // TO DO
+        // }
+
+        // vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet, descriptorSets.size(), descriptorSets.data(), 3, descriptorOffsets);
+    }
+    void DescriptorSet::bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout pipelineLayout, uint32_t firstSet, const std::vector<uint32_t> offsets)
+    {
+        // for
+        // vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet,1, descriptorSet, isDynamic? bind: 0, offsets.data());
     }
 }

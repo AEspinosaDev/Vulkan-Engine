@@ -93,6 +93,7 @@ namespace vke
         }
         ~Geometry()
         {
+            
             delete m_vbo;
             delete m_ibo;
         }

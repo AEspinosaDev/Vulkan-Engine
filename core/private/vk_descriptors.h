@@ -4,26 +4,33 @@
 #include <unordered_map>
 #include "vk_core.h"
 #include "vk_initializers.h"
+#include "vk_buffer.h"
 
 namespace vke
 {
-    struct Descriptor{
-        VkDescriptorSet descriptorSet;
+    struct DescriptorSet
+    {
+        VkDescriptorSet descriptorSet{};
 
-        // Buffer* binded_buffers;
-        uint32_t layoutIdx;
+        std::vector<Buffer*> binded_buffers;
+        uint32_t layoutID;
+        uint32_t bindings;
+        bool isDynamic;
 
-
+        void bind(VkCommandBuffer commandBuffer,
+                  VkPipelineBindPoint pipelineBindPoint,
+                  VkPipelineLayout pipelineLayout,
+                  uint32_t firstSet,
+                  const std::vector<uint32_t> offsets);
     };
 
     class DescriptorManager
     {
         VkDevice m_device;
-
-    public:
         VkDescriptorPool m_pool{};
         std::unordered_map<uint32_t, VkDescriptorSetLayout> m_layouts;
 
+    public:
         inline void init(VkDevice dvc) { m_device = dvc; }
 
         void create_pool(
@@ -32,18 +39,23 @@ namespace vke
             uint32_t numUBOStorage,
             uint32_t maxSets);
 
-        void create_set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount);
+        void set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount);
 
-        void allocate_descriptor_set(uint32_t layoutSetIndex, VkDescriptorSet *descriptor);
+        inline VkDescriptorSetLayout get_layout(uint32_t layoutSetIndex) { return m_layouts[layoutSetIndex]; }
 
-        void set_descriptor_write(VkBuffer buffer, VkDeviceSize dataSize,VkDeviceSize readOffset,VkDescriptorSet descriptor, VkDescriptorType type, uint32_t binding);
+        void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet *descriptor);
 
-        // void bind_descriptor_set(descriptor , offset, etc);
-        // void bindDescrpitprot to material
+        void set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding);
+
+        void bind_descriptor_sets(VkCommandBuffer commandBuffer,
+                                  VkPipelineBindPoint pipelineBindPoint,
+                                  VkPipelineLayout pipelineLayout,
+                                  uint32_t firstSet,
+                                  const std::vector<DescriptorSet> descriptorSets);
+
         void cleanup();
     };
 
-    // Descriptor set pointing to buffers binded;????????
 }
 
 #endif

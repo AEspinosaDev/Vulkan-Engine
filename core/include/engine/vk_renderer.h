@@ -31,10 +31,10 @@ namespace vke
 
 	enum AntialiasingType
 	{
-		NONE = 1,
-		MSAA_4 = 4,
-		MSAA_8 = 8,
-		MSAA_16 = 16,
+		_NONE = 1,
+		_MSAA_4 = 4,
+		_MSAA_8 = 8,
+		_MSAA_16 = 16,
 	};
 
 	/**
@@ -47,7 +47,7 @@ namespace vke
 		struct Settings
 		{
 
-			AntialiasingType AAtype{NONE};
+			AntialiasingType AAtype{_NONE};
 			BufferingType bufferingType{_DOUBLE};
 
 			glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
@@ -58,8 +58,8 @@ namespace vke
 			bool depthWrite{true};
 		};
 
-		VmaAllocator m_memory;
-		Settings m_settings;
+		VmaAllocator m_memory{};
+		Settings m_settings{};
 
 		Window *m_window;
 		VkInstance m_instance{};
@@ -73,17 +73,18 @@ namespace vke
 		VkRenderPass m_renderPass{};
 
 		std::vector<VkFramebuffer> m_framebuffers;
-		std::unordered_map<std::string,VkPipeline> m_defaultPipelines;
+		std::unordered_map<std::string, VkPipeline> m_defaultPipelines;
+		std::vector<Frame> m_frames;
 
-		const int MAX_FRAMES_IN_FLIGHT;
-		Frame m_frames[2];
+		const int MAX_FRAMES_IN_FLIGHT{2};
+		const int MAX_OBJECTS_IN_FLIGHT{10};
+		const int MAX_LIGHTS_IN_FLIGHT{10};
 
-		DescriptorManager m_descriptorMng;
 
-		VkDescriptorSet m_globalDescriptor;
-		Buffer m_globalUniformsBuffer;
+		DescriptorManager m_descriptorMng{};
 
-		SceneUniforms m_sceneUniforms; //This data will be on the scene class!!!!!
+		DescriptorSet m_globalDescriptor{};
+		Buffer m_globalUniformsBuffer{};
 
 		vkutils::DeletionQueue m_deletionQueue;
 
@@ -121,13 +122,9 @@ namespace vke
 		inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
 		inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
 
-
 #pragma endregion
 #pragma region Core Functions
-		Renderer(Window *window) : m_window(window),
-								   MAX_FRAMES_IN_FLIGHT(m_settings.bufferingType)
-		{
-		}
+		Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 		/**
 		 * Inits the renderer. Call it before using any other function related to this class.
 		 */
@@ -188,11 +185,9 @@ namespace vke
 #pragma endregion
 #pragma region BufferManagement
 
-		void create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,uint32_t istrideSize = 0);
+		void upload_geometry_data(Geometry *g);
 
-		void setup_geometry_buffers(Geometry *g);
-
-		void upload_global_uniform_buffers(Camera *camera);
+		void upload_global_data(Camera *camera);
 	};
 
 }

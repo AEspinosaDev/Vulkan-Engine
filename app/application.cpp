@@ -36,6 +36,9 @@ void VulkanRenderer::setup()
     vke::Mesh *m = new vke::Mesh(g, mat);
 
     meshes.push_back(m);
+    m->set_scale(5.0);
+    m->set_position({0.0, -1.0, 0.0});
+    m->set_rotation(glm::radians(glm::vec3{90.0,0.0,0.0}));
 
     vke::Geometry *g2 = new vke::Geometry();
     g2->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -47,9 +50,7 @@ void VulkanRenderer::setup()
 
     meshes.push_back(m2);
 
-    m2->set_position({2.0, 2.0, 2.0});
 
-    
     vke::Geometry *g3 = new vke::Geometry();
     g3->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
               {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -94,9 +95,9 @@ void VulkanRenderer::tick()
     // m_deltaTime = std::chrono::duration<float, std::chrono::period>(currentTime - m_lastTime).count();
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
-    float fps = 1.0/m_deltaTime;
-    std::string newTitle = "VK ENGINE         fps = "+std::to_string(fps);
-    m_window->set_title( newTitle.c_str());
+    float fps = 1.0 / m_deltaTime;
+    std::string newTitle = "VK ENGINE         fps = " + std::to_string(fps);
+    m_window->set_title(newTitle.c_str());
 
     m_renderer->render(meshes, camera);
 }

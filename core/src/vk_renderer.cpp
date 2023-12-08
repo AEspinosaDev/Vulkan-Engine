@@ -250,33 +250,37 @@ namespace vke
 		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
 		VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 		VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
-		m_descriptorMng.create_set_layout(0, bindings, 2);
+		m_descriptorMng.set_layout(0, bindings, 2);
 
 		// PER-OBJECT
 		VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
-		m_descriptorMng.create_set_layout(1, &objectBufferBinding, 1);
+		m_descriptorMng.set_layout(1, &objectBufferBinding, 1);
 
 		const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
 		const size_t globalUBOSize = MAX_FRAMES_IN_FLIGHT * strideSize;
-		create_buffer(&m_globalUniformsBuffer, globalUBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, strideSize);
+		m_globalUniformsBuffer.init(m_memory, globalUBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, strideSize);
+		m_deletionQueue.push_function([=]()
+									  { m_globalUniformsBuffer.cleanup(m_memory); });
 
 		m_descriptorMng.allocate_descriptor_set(0, &m_globalDescriptor);
 
-		m_descriptorMng.set_descriptor_write(m_globalUniformsBuffer.buffer, sizeof(CameraUniforms), 0,
-											 m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+		m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(CameraUniforms), 0,
+											 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
-		m_descriptorMng.set_descriptor_write(m_globalUniformsBuffer.buffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
-											 m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+		m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
+											 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 
 			const size_t strideSize = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu);
-			create_buffer(&m_frames[i].objectUniformBuffer, 3 * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, strideSize);
+			m_frames[i].objectUniformBuffer.init(m_memory, MAX_OBJECTS_IN_FLIGHT * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, strideSize);
+			m_deletionQueue.push_function([=]()
+										  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
 
 			m_descriptorMng.allocate_descriptor_set(1, &m_frames[i].objectDescriptor);
 
-			m_descriptorMng.set_descriptor_write(m_frames[i].objectUniformBuffer.buffer, sizeof(ObjectUniforms), 0, m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+			m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(ObjectUniforms), 0, &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 		}
 
 		m_deletionQueue.push_function([=]()
@@ -313,7 +317,7 @@ namespace vke
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		upload_global_uniform_buffers(camera);
+		upload_global_data(camera);
 
 		draw_meshes(commandBuffer, meshes);
 
@@ -358,7 +362,7 @@ namespace vke
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
 		// hook the global set layout
 		pipelineLayoutInfo.setLayoutCount = 2;
-		VkDescriptorSetLayout setLayouts[] = {m_descriptorMng.m_layouts[0], m_descriptorMng.m_layouts[1]};
+		VkDescriptorSetLayout setLayouts[] = {m_descriptorMng.get_layout(0), m_descriptorMng.get_layout(1)};
 		pipelineLayoutInfo.pSetLayouts = setLayouts;
 
 		// VkPipelineCache
@@ -467,8 +471,6 @@ namespace vke
 			// bind default material
 			return;
 
-		Geometry *g = m->get_geometry();
-
 		if (m->get_material()->m_pipelineAssigned == false)
 		{
 			init_pipeline(m->get_material());
@@ -476,10 +478,9 @@ namespace vke
 
 		// Offset calculation
 		uint32_t objectOffset = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum;
-		uint32_t globalOffsetCamera = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu)) * m_currentFrame;
-		uint32_t globalOffsetScene = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu)) * m_currentFrame;
-		uint32_t globalOffset = vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms) + sizeof(SceneUniforms), m_gpu) * m_currentFrame;
-		uint32_t globalOffsets[2] = {globalOffsetCamera, globalOffsetScene};
+		uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
+		// uint32_t globalOffsets[2] = {globalOffset, globalOffset};
+		uint32_t descriptorOffsets[] = {globalOffset, globalOffset, objectOffset};
 
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
@@ -488,14 +489,16 @@ namespace vke
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipeline);
 
-		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_frames[m_currentFrame].globalDescriptor, 2, globalOffsets);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
+		VkDescriptorSet descriptors[] = {m_globalDescriptor.descriptorSet, m_frames[m_currentFrame].objectDescriptor.descriptorSet};
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 2, descriptors, 3, descriptorOffsets);
+		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
+		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
 
 		// BIND OBJECT BUFFERS
+		Geometry *g = m->get_geometry();
 
 		if (!g->buffer_loaded)
-			setup_geometry_buffers(g);
+			upload_geometry_data(g);
 
 		VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
 		VkDeviceSize offsets[] = {0};
@@ -512,45 +515,23 @@ namespace vke
 		}
 	}
 
-	void Renderer::create_buffer(Buffer *buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
+	void Renderer::upload_geometry_data(Geometry *g)
 	{
-
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.pNext = nullptr;
-
-		bufferInfo.size = allocSize;
-		bufferInfo.usage = usage;
-
-		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = memoryUsage;
-
-		VK_CHECK(vmaCreateBuffer(m_memory, &bufferInfo, &vmaallocInfo,
-								 &buffer->buffer,
-								 &buffer->allocation,
-								 nullptr));
-
-		buffer->strideSize = istrideSize;
-
-		m_deletionQueue.push_function([=]()
-									  { vmaDestroyBuffer(m_memory, buffer->buffer,
-														 buffer->allocation); });
-	};
-
-	void Renderer::setup_geometry_buffers(Geometry *g)
-	{
-		create_buffer(g->m_vbo, sizeof(g->m_vertexData[0]) * g->m_vertexData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		g->m_vbo->init(m_memory, sizeof(g->m_vertexData[0]) * g->m_vertexData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		g->m_vbo->upload_data(m_memory, g->m_vertexData.data(), sizeof(g->m_vertexData[0]) * g->m_vertexData.size());
+		m_deletionQueue.push_function([=]()
+									  { g->m_vbo->cleanup(m_memory); });
 		if (g->indexed)
 		{
-			create_buffer(g->m_ibo, sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			g->m_ibo->init(m_memory, sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 			g->m_ibo->upload_data(m_memory, g->m_vertexIndex.data(), sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size());
+			m_deletionQueue.push_function([=]()
+										  { g->m_ibo->cleanup(m_memory); });
 		}
 		g->buffer_loaded = true;
 	}
-	void Renderer::upload_global_uniform_buffers(Camera *camera)
+	void Renderer::upload_global_data(Camera *camera)
 	{
-		// camera buffer
 
 		if (camera->is_dirty())
 			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
@@ -568,12 +549,10 @@ namespace vke
 		{
 			// scene.getParams turns clean
 			SceneUniforms sceneParams;
-			sceneParams.fogDistances = {1, 0, 0, 1};
-			sceneParams.fogColor = {1, 0, 0, 1};
-			sceneParams.ambientColor = {1, 1, 1, 1};
+			sceneParams.fogParams = {.1f, 100.0f, 2.5f, 1};
+			sceneParams.fogColor = {0.75, 0.75, 0.75, 1};
+			sceneParams.ambientColor = {0.5, 0.2, 0.7, 1};
 
-			// m_sceneUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
-			// 								 vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu) * m_currentFrame);
 			m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 											   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 		}

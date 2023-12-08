@@ -4,6 +4,7 @@
 #include "vk_buffer.h"
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
+#include "vk_descriptors.h"
 
 namespace vke
 {
@@ -19,11 +20,8 @@ namespace vke
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
 
-        VkDescriptorSet globalDescriptor;
-        VkDescriptorSet objectDescriptor;
-        
+        DescriptorSet objectDescriptor;
         Buffer objectUniformBuffer;
-
 
         void init(VkDevice device, VkPhysicalDevice gpu, VkSurfaceKHR surface);
         void cleanup(VkDevice device);

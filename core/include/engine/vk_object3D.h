@@ -131,6 +131,12 @@ namespace vke
             isDirty = true;
         }
 
+        virtual void set_scale(const float s)
+        {
+            m_transform.scale = glm::vec3(s);
+            isDirty = true;
+        }
+
         virtual inline glm::vec3 get_scale() { return m_transform.scale; }
 
         virtual inline Transform get_transform() { return m_transform; }
