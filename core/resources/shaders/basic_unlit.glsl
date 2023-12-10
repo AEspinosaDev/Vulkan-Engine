@@ -45,11 +45,14 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
 layout(location = 0) out vec4 outColor;
 
+float computeFog() {
+    float z = (2.0 * scene.fogParams.x) / (scene.fogParams.y + scene.fogParams.x - gl_FragCoord.z * (scene.fogParams.y - scene.fogParams.x));
+    return exp(-scene.fogParams.z * z);
+}
+
 void main() {
 
-    float z = (2.0 * scene.fogParams.x) / (scene.fogParams.y + scene.fogParams.x - gl_FragCoord.z * (scene.fogParams.y - scene.fogParams.x));
-
-    float f = exp(- scene.fogParams.z * z);
+    float f = computeFog();
 
     vec3 color = f * fragColor.rgb + (1 - f) * scene.fogColor.rgb;
 

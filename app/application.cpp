@@ -25,6 +25,16 @@ void VulkanRenderer::run()
 
 void VulkanRenderer::setup()
 {
+    camera = new vke::Camera();
+    m_scene = new vke::Scene(camera);
+
+    camera->set_position(glm::vec3(0.0f, 0.0f, -1.0f));
+    camera->set_far(100.0f);
+    camera->set_near(0.1f);
+    camera->set_field_of_view(70.0f);
+
+    // m_scene->set_position({0.0, 10.0, 0.0});
+    // m_scene->set_rotation({0.7,1.5, 0.0});
 
     vke::Geometry *g = new vke::Geometry();
     g->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -36,7 +46,8 @@ void VulkanRenderer::setup()
     mat->set_color({1.0, 0.0, 0.0, 1.0});
     vke::Mesh *m = new vke::Mesh(g, mat);
 
-    meshes.push_back(m);
+    // meshes.push_back(m);
+    m_scene->add(m);
     m->set_scale(5.0);
     m->set_position({0.0, -1.0, 0.0});
     m->set_rotation(glm::radians(glm::vec3{90.0, 0.0, 0.0}));
@@ -51,7 +62,7 @@ void VulkanRenderer::setup()
     mat2->set_color({0.0, 1.0, 0.0, 1.0});
     vke::Mesh *m2 = new vke::Mesh(g2, mat2);
 
-    meshes.push_back(m2);
+    m_scene->add(m2);
 
     vke::Geometry *g3 = new vke::Geometry();
     g3->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -63,18 +74,13 @@ void VulkanRenderer::setup()
     mat3->set_color({0.0, 0.0, 1.0, 1.0});
     vke::Mesh *m3 = new vke::Mesh(g3, mat3);
 
-    meshes.push_back(m3);
+    m_scene->add(m3);
 
     m3->set_position({-2.0, 2.0, 2.0});
-
-    camera = new vke::Camera();
-
-    camera->set_position(glm::vec3(0.0f, 0.0f, -1.0f));
-    camera->set_far(200.0f);
-    camera->set_near(0.01f);
-    camera->set_field_of_view(70.0f);
+    m3->load_file("../core/resources/meshes/cube.obj");
 
     m_controller = new vke::Controller(camera);
+    // m_controller = new vke::Controller(camera, vke::ORBITAL);
 
     // m_renderer.
     // m_window->set_keyboard_callback(&VulkanRenderer::keyboard_callback);
@@ -100,8 +106,11 @@ void VulkanRenderer::tick()
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
     float fps = 1.0 / m_deltaTime;
+
     std::string newTitle = "VK ENGINE         fps = " + std::to_string(fps);
     m_window->set_title(newTitle.c_str());
 
-    m_renderer->render(meshes, camera);
+    m_renderer->render(m_scene);
+
+    // std::cout << m_scene->get_rotation().x << " " << m_scene->get_rotation().y << std::endl;
 }

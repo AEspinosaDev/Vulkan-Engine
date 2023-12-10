@@ -48,10 +48,11 @@ namespace vke
             m_mouseLastX = xpos;
             m_mouseLastY = ypos;
 
+            m_mouseDeltaX *= m_mouseSensitivity;
+            m_mouseDeltaY *= m_mouseSensitivity;
+
             if (m_type == WASD)
             {
-                m_mouseDeltaX *= m_mouseSensitivity;
-                m_mouseDeltaY *= m_mouseSensitivity;
 
                 float yaw = m_objPtr->get_rotation().x + m_mouseDeltaX;
                 float pitch = m_objPtr->get_rotation().y + m_mouseDeltaY;
@@ -68,6 +69,21 @@ namespace vke
             }
             if (m_type == ORBITAL)
             {
+              
+
+                float yaw = m_objPtr->get_parent()->get_rotation().x + m_mouseDeltaX;
+                float pitch = m_objPtr->get_parent()->get_rotation().y + m_mouseDeltaY;
+
+                if (constrainPitch)
+                {
+                    if (pitch > 89.0f)
+                        pitch = 89.0f;
+                    if (pitch < -89.0f)
+                        pitch = -89.0f;
+                }
+
+                //m_objPtr->get_parent()->set_rotation({0.0, 1.5, 0.0});
+                //  m_objPtr->get_parent()->set_rotation({yaw, pitch, 0.0});
             }
         }
         if (glfwGetMouseButton(window, m_mappings.mouseMiddle) == PRESS)

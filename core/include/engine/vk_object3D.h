@@ -45,7 +45,8 @@ namespace vke
     {
         MESH = 0,
         LIGHT = 1,
-        OTHER = 2
+        CAMERA = 2,
+        OTHER
     };
 
     class Object3D
@@ -180,10 +181,9 @@ namespace vke
                 m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.y, glm::vec3(0, 1, 0));
                 m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.z, glm::vec3(0, 0, 1));
                 m_transform.worldMatrix = glm::scale(m_transform.worldMatrix, m_transform.scale);
-                // iterate though parents for multypling model matrix
-                //   and set children to dirty  for them to do the same!!!!!!!!
-                //  .............
+
                 //  Dirty flag
+                m_transform.worldMatrix = m_parent ? m_parent->get_model_matrix() * m_transform.worldMatrix : m_transform.worldMatrix;
 
                 isDirty = false;
             }

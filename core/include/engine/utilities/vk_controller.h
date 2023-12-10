@@ -53,6 +53,8 @@ namespace vke
         bool m_isMouseMiddlePressed;
         bool m_isMouseRightPressed;
 
+        glm::vec3 m_orbitalCenter;
+
         Transform m_initialState;
 
     public:
@@ -60,7 +62,8 @@ namespace vke
                                                                m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
                                                                m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
                                                                m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
-                                                               m_initialState(obj->get_transform()), m_mappings(km) {}
+                                                               m_initialState(obj->get_transform()), m_mappings(km),
+                                                               m_orbitalCenter({0.0,0.0,0.0}) {}
 
         inline MovementType get_type() { return m_type; }
         inline float get_speed() const { return m_speed; }

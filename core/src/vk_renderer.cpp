@@ -3,13 +3,13 @@
 
 namespace vke
 {
-	void Renderer::run(std::vector<Mesh *> meshes, Camera *camera)
+	void Renderer::run(Scene *const scene)
 	{
 		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
 			// I-O
 			m_window->poll_events();
-			render(meshes, camera);
+			render(scene);
 		}
 		shutdown();
 	}
@@ -20,7 +20,7 @@ namespace vke
 		cleanup();
 	}
 
-	void Renderer::render(std::vector<Mesh *> meshes, Camera *camera)
+	void Renderer::render(Scene *const scene)
 	{
 		// if(scene is dirty){
 		// 	iterate scene tree and update mesh and lights vectors
@@ -44,7 +44,7 @@ namespace vke
 		VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
 		VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, /*VkCommandBufferResetFlagBits*/ 0));
 
-		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, meshes, camera);
+		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex,scene);
 
 		// prepare the submission to the queue.
 		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
@@ -84,7 +84,7 @@ namespace vke
 		{
 			m_window->set_resized(false);
 			recreate_swap_chain();
-			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
+			scene->get_active_camera()->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
 		}
 		else if (result != VK_SUCCESS)
 		{
@@ -163,30 +163,23 @@ namespace vke
 			m_window->get_extent()->height,
 			1};
 
-		// hardcoding the depth format to 32 bit float
 		m_depthFormat = VK_FORMAT_D32_SFLOAT;
 
-		// the depth image will be an image with the format we selected and Depth Attachment usage flag
 		VkImageCreateInfo dimg_info = vkinit::image_create_info(m_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
 
-		// for the depth image, we want to allocate it from GPU local memory
 		VmaAllocationCreateInfo dimg_allocinfo = {};
 		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		// allocate and create the image
 		vmaCreateImage(m_memory, &dimg_info, &dimg_allocinfo, &m_depthImage.image, &m_depthImage.allocation, nullptr);
-
-		// build an image-view for the depth image to use for rendering
 		VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(m_depthFormat, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 		VK_CHECK(vkCreateImageView(m_device, &dview_info, nullptr, &m_depthView));
 
-		// // add to deletion queues
-		// _mainDeletionQueue.push_function([=]()
-		// 								 {
-		// vkDestroyImageView(_device, _depthImageView, nullptr);
-		// vmaDestroyImage(_allocator, _depthImage._image, _depthImage._allocation); });
+		// m_deletionQueue.push_function([=]()
+		// 							  {
+		// vkDestroyImageView(m_device, m_depthView, nullptr);
+		// vmaDestroyImage(m_memory, m_depthImage.image, m_depthImage.allocation); });
 	}
 
 	void Renderer::init_default_renderpass()
@@ -367,26 +360,7 @@ namespace vke
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	std::vector<VkClearValue> Renderer::clear()
-	{
-		std::vector<VkClearValue> clearValues;
-
-		if (m_settings.autoClearColor)
-		{
-			VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
-			clearValues.push_back(clearColor);
-		}
-		if (m_settings.autoClearDepth)
-		{
-			VkClearValue clearDepth;
-			clearDepth.depthStencil.depth = 1.f;
-			clearValues.push_back(clearDepth);
-		}
-
-		return clearValues;
-		
-	}
-	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
+	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene *const scene)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 
@@ -399,15 +373,19 @@ namespace vke
 
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
 
-		auto clearValues = clear();
-		renderPassInfo.clearValueCount = clearValues.size();
-		renderPassInfo.pClearValues = clearValues.data();
+		// CLEAR SETUP
+		VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
+		VkClearValue clearDepth;
+		clearDepth.depthStencil.depth = 1.f;
+		VkClearValue clearValues[] = {clearColor, clearDepth};
+		renderPassInfo.clearValueCount = 2;
+		renderPassInfo.pClearValues = clearValues;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		upload_global_data(camera);
+		upload_global_data(scene);
 
-		draw_meshes(commandBuffer, meshes);
+		draw_meshes(commandBuffer, scene->get_meshes());
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -450,8 +428,8 @@ namespace vke
 
 		std::string shaderDir(SHADER_DIR);
 
-		m_shaderPasses["basic_unlit"] = new ShaderPass(shaderDir + "test.glsl");
-		// m_shaderPasses["phong_untextured"] = ShaderPass(source);
+		m_shaderPasses["basic_unlit"] = new ShaderPass(shaderDir + "basic_unlit.glsl");
+		// m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
 
 		for (auto pair : m_shaderPasses)
 		{
@@ -517,7 +495,7 @@ namespace vke
 		m_swapchain.cleanup(&m_device);
 	}
 
-	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes)
+	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes)
 	{
 
 		int i = 0;
@@ -532,7 +510,7 @@ namespace vke
 		// Draw helpers ...
 	}
 
-	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *m, int meshNum)
+	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum)
 	{
 		if (!m->get_geometry() || !m->get_geometry()->loaded)
 			return;
@@ -587,7 +565,7 @@ namespace vke
 		}
 	}
 
-	void Renderer::upload_geometry_data(Geometry *g)
+	void Renderer::upload_geometry_data(Geometry *const g)
 	{
 		g->m_vbo->init(m_memory, sizeof(g->m_vertexData[0]) * g->m_vertexData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		g->m_vbo->upload_data(m_memory, g->m_vertexData.data(), sizeof(g->m_vertexData[0]) * g->m_vertexData.size());
@@ -602,9 +580,10 @@ namespace vke
 		}
 		g->buffer_loaded = true;
 	}
-	void Renderer::upload_global_data(Camera *camera)
+	void Renderer::upload_global_data(Scene *const scene)
 	{
 
+		Camera *camera = scene->get_active_camera();
 		if (camera->is_dirty())
 			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
 		CameraUniforms camData;
@@ -615,16 +594,12 @@ namespace vke
 		m_globalUniformsBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
 										   m_globalUniformsBuffer.strideSize * m_currentFrame);
 
-		// if (scene->is_dirty())
-		{
-			// scene.getParams turns clean
-			SceneUniforms sceneParams;
-			sceneParams.fogParams = {.1f, 100.0f, 2.5f, 1};
-			sceneParams.fogColor = {0.75, 0.75, 0.75, 1};
-			sceneParams.ambientColor = {0.5, 0.2, 0.7, 1};
+		SceneUniforms sceneParams;
+		sceneParams.fogParams = {camera->get_near(),camera->get_far(),scene->get_fog_intensity(),1.0f};
+		sceneParams.fogColor = glm::vec4(scene->get_fog_color(),1.0f);
+		sceneParams.ambientColor = {0.5, 0.2, 0.7, 1};
 
-			m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
-											   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
-		}
+		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
+										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 	}
 }

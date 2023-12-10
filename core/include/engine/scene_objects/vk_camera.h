@@ -21,7 +21,7 @@ namespace vke
         bool perspective;
 
     public:
-        Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D(p, OTHER), m_fov(45.0f), m_near(.1f), m_far(100.0f) { set_rotation({-90,0,0});}
+        Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D(p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f) { set_rotation({-90,0,0});}
 
         inline void set_field_of_view(float fov) { m_fov = fov; }
         inline float get_field_of_view() { return m_fov; }

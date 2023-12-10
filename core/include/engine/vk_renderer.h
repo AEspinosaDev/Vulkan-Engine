@@ -14,8 +14,7 @@
 #include "config.h"
 #include "vk_window.h"
 #include "vk_material.h"
-#include "scene_objects/vk_mesh.h"
-#include "scene_objects/vk_camera.h"
+#include "scene_objects/vk_scene.h"
 
 // TESTING
 #include "materials/vk_basic_unlit.h"
@@ -139,12 +138,11 @@ namespace vke
 		/**
 		 * Standalone pre-implemented render loop for the renderer.
 		 */
-		void run(std::vector<Mesh *> meshes, Camera *camera);
+		void run(Scene *const scene);
 		/**
-		 * Renders a scene given a camera on the default backbuffer.
+		 * Renders a scene on the default backbuffer.
 		 */
-		void render(std::vector<Mesh *> meshes, Camera *camera);
-		// void render(Scene* scene, Camera *camera);
+		void render(Scene *const scene);
 		/**
 		 * Shut the renderer down.
 		 */
@@ -179,20 +177,18 @@ namespace vke
 
 		void set_viewport(VkCommandBuffer commandBuffer);
 
-		void render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera);
+		void render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene* const scene);
 
-		void draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes);
+		void draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes);
 
-		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *m, int meshNum);
+		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum);
 
-		std::vector<VkClearValue> clear();
-		
 #pragma endregion
 #pragma region BufferManagement
 
-		void upload_geometry_data(Geometry *g);
+		void upload_geometry_data(Geometry *const g);
 
-		void upload_global_data(Camera *camera);
+		void upload_global_data(Scene *const scene);
 	};
 
 }

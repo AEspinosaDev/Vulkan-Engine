@@ -39,6 +39,7 @@ namespace vke
 		VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
 
 		std::vector<ShaderStage> stages;
+		std::vector<int> descriptorSetLayoutIDs;
 
 		ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile) {}
 	};
@@ -64,7 +65,7 @@ namespace vke
 		VkPipelineColorBlendAttachmentState colorBlendAttachment;
 		// Sampling
 		VkPipelineMultisampleStateCreateInfo multisampling;
-		// Depth 
+		// Depth
 		VkPipelineDepthStencilStateCreateInfo depthStencil;
 
 		VkPipelineLayout pipelineLayout;

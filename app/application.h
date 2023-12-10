@@ -14,16 +14,13 @@ class VulkanRenderer
 {
     vke::Window *m_window;
     vke::Renderer *m_renderer;
-    std::vector<vke::Mesh *> meshes;
+    vke::Scene* m_scene;
     vke::Camera *camera;
     vke::Controller *m_controller;
     
-    
-    // vkeng::Scene m_scene;
-    // imgui::gui m_gui;
     float m_deltaTime{0.0f};
-    // std::chrono::steady_clock::time_point m_lastTime;
     float m_lastTime{0.0f};
+    // std::chrono::steady_clock::time_point m_lastTime;
 
 public:
     void
