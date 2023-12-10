@@ -32,13 +32,14 @@ void VulkanRenderer::setup()
              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
             {0, 1, 2, 2, 3, 0});
-    auto mat = new vke::Material();
+    auto mat = new vke::BasicUnlitMaterial();
+    mat->set_color({1.0, 0.0, 0.0, 1.0});
     vke::Mesh *m = new vke::Mesh(g, mat);
 
     meshes.push_back(m);
     m->set_scale(5.0);
     m->set_position({0.0, -1.0, 0.0});
-    m->set_rotation(glm::radians(glm::vec3{90.0,0.0,0.0}));
+    m->set_rotation(glm::radians(glm::vec3{90.0, 0.0, 0.0}));
 
     vke::Geometry *g2 = new vke::Geometry();
     g2->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -46,10 +47,11 @@ void VulkanRenderer::setup()
               {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
               {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}}},
              {0, 1, 2, 2, 3, 0});
-    vke::Mesh *m2 = new vke::Mesh(g2, mat);
+    auto mat2 = new vke::BasicUnlitMaterial();
+    mat2->set_color({0.0, 1.0, 0.0, 1.0});
+    vke::Mesh *m2 = new vke::Mesh(g2, mat2);
 
     meshes.push_back(m2);
-
 
     vke::Geometry *g3 = new vke::Geometry();
     g3->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -57,7 +59,9 @@ void VulkanRenderer::setup()
               {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
               {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}}},
              {0, 1, 2, 2, 3, 0});
-    vke::Mesh *m3 = new vke::Mesh(g3, mat);
+    auto mat3 = new vke::BasicUnlitMaterial();
+    mat3->set_color({0.0, 0.0, 1.0, 1.0});
+    vke::Mesh *m3 = new vke::Mesh(g3, mat3);
 
     meshes.push_back(m3);
 

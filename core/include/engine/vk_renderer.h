@@ -1,8 +1,6 @@
 #ifndef VK_RENDERER_H
 #define VK_RENDERER_H
 
-#include <unordered_map>
-
 #include "../private/vk_core.h"
 #include "../private/vk_utils.h"
 #include "../private/vk_bootstrap.h"
@@ -18,6 +16,9 @@
 #include "vk_material.h"
 #include "scene_objects/vk_mesh.h"
 #include "scene_objects/vk_camera.h"
+
+// TESTING
+#include "materials/vk_basic_unlit.h"
 
 namespace vke
 {
@@ -71,20 +72,22 @@ namespace vke
 		VkDebugUtilsMessengerEXT m_debugMessenger{};
 
 		VkRenderPass m_renderPass{};
-
 		std::vector<VkFramebuffer> m_framebuffers;
-		std::unordered_map<std::string, VkPipeline> m_defaultPipelines;
+		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 		std::vector<Frame> m_frames;
 
 		const int MAX_FRAMES_IN_FLIGHT{2};
 		const int MAX_OBJECTS_IN_FLIGHT{10};
 		const int MAX_LIGHTS_IN_FLIGHT{10};
 
-
 		DescriptorManager m_descriptorMng{};
 
 		DescriptorSet m_globalDescriptor{};
 		Buffer m_globalUniformsBuffer{};
+
+		VkFormat m_depthFormat;
+		VkImageView m_depthView;
+		Image m_depthImage;
 
 		vkutils::DeletionQueue m_deletionQueue;
 
@@ -165,9 +168,7 @@ namespace vke
 
 		void init_descriptors();
 
-		void init_default_pipelines();
-
-		void init_pipeline(Material *m);
+		void init_default_shaderpasses();
 
 		void recreate_swap_chain();
 
@@ -176,12 +177,16 @@ namespace vke
 #pragma endregion
 #pragma region Drawing
 
+		void set_viewport(VkCommandBuffer commandBuffer);
+
 		void render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera);
 
 		void draw_meshes(VkCommandBuffer commandBuffer, std::vector<Mesh *> meshes);
 
 		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *m, int meshNum);
 
+		std::vector<VkClearValue> clear();
+		
 #pragma endregion
 #pragma region BufferManagement
 

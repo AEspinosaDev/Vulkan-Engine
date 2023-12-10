@@ -54,9 +54,13 @@ namespace vke
 		};
 
 		size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice gpu);
+
 		uint32_t find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
 		bool check_validation_layer_suport(std::vector<const char *> validationLayers);
+
 		void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+
 		inline static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -68,9 +72,13 @@ namespace vke
 
 			return VK_FALSE;
 		}
+		
 		VkResult create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger);
+		
 		void destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator);
+		
 		void log_available_extensions(std::vector<VkExtensionProperties> ext);
+		
 		void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 	};
 

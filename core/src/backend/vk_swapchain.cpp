@@ -55,6 +55,8 @@ namespace vke {
 
 		create_image_views(device);
 
+		
+
 	}
 
 
@@ -133,6 +135,8 @@ namespace vke {
 
 			VK_CHECK(vkCreateImageView(*device, &createInfo, nullptr, &m_swapchainImageViews[i]));
 		}
+
+		
 
 	}
 

@@ -19,11 +19,12 @@ layout(set = 0, binding = 0) uniform CameraUniforms {
 } camera;
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
+    vec4 color;
 } object;
 
 void main() {
     gl_Position = camera.viewProj * object.model * mat4(1.0) * vec4(pos, 1.0);
-    fragColor = color;
+    fragColor = object.color.rgb;
 }
 
 #shader fragment
@@ -38,6 +39,9 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec4 lightDirection; //w for sun power
     vec4 lightColor;
 } scene;
+layout(set = 1, binding = 1) uniform MaterialUniforms {
+    vec4 color;
+} object;
 
 layout(location = 0) out vec4 outColor;
 
@@ -47,7 +51,7 @@ void main() {
 
     float f = exp(- scene.fogParams.z * z);
 
-    vec3 color = f * scene.ambientColor.rgb + (1 - f) * scene.fogColor.rgb;
+    vec3 color = f * fragColor.rgb + (1 - f) * scene.fogColor.rgb;
 
     outColor = vec4(color, 1.0);
 }

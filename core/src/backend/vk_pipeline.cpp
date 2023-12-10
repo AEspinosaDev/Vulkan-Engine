@@ -42,8 +42,14 @@ namespace vke
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.pNext = nullptr;
 
-		pipelineInfo.stageCount = shaderStages.size();
-		pipelineInfo.pStages = shaderStages.data();
+		std::vector<VkPipelineShaderStageCreateInfo> stages;
+		for (auto &stage : shaderPass->stages)
+		{
+			stages.push_back(vkinit::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
+		}
+
+		pipelineInfo.stageCount = stages.size();
+		pipelineInfo.pStages = stages.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
 		pipelineInfo.pViewportState = &viewportState;
@@ -51,14 +57,11 @@ namespace vke
 		pipelineInfo.pMultisampleState = &multisampling;
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicState;
+		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.layout = pipelineLayout;
 		pipelineInfo.renderPass = pass;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-		//VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
-		// pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		// VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 
 		VkPipeline newPipeline;
 		if (vkCreateGraphicsPipelines(
@@ -73,7 +76,7 @@ namespace vke
 		}
 	}
 
-	VkShaderModule Shader::create_shader_module(VkDevice device, const std::vector<uint32_t> code)
+	ShaderStage ShaderSource::create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code)
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -85,11 +88,17 @@ namespace vke
 		{
 			throw std::runtime_error("failed to create shader module!");
 		}
-		return shaderModule;
+
+		ShaderStage stage;
+		stage.shaderModule = shaderModule;
+		stage.stage = stageType;
+
+		return stage;
 	}
 
-	Shader Shader::read_file(const std::string &filePath)
+	ShaderSource ShaderSource::read_file(const std::string &filePath)
 	{
+
 		std::ifstream stream(filePath);
 
 		enum class ShaderType
@@ -126,7 +135,7 @@ namespace vke
 		return {filePath, ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str()};
 	}
 
-	std::vector<uint32_t> Shader::compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize)
+	std::vector<uint32_t> ShaderSource::compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize)
 	{
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;

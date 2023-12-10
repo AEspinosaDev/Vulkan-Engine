@@ -1,56 +1,76 @@
 #ifndef VK_PIPELINE_H
 #define VK_PIPELINE_H
 
-#include  "vk_core.h"
+#include "vk_core.h"
+#include "vk_initializers.h"
 
-
-namespace vke {
+namespace vke
+{
+	struct ShaderStage
+	{
+		VkShaderModule shaderModule;
+		VkShaderStageFlagBits stage;
+	};
 	/*
 	/Shader useful info
 	*/
-	struct Shader
+	struct ShaderSource
 	{
-		std::string								name;
+		std::string name;
 
-		std::string								vertSource;
-		std::string								fragSource;
-		std::string								geomSource;
-		std::string								tessSource;
+		std::string vertSource;
+		std::string fragSource;
+		std::string geomSource;
+		std::string tessSource;
 
-		static VkShaderModule create_shader_module(VkDevice device, const std::vector<uint32_t> code);
-		static Shader read_file(const std::string& filePath);
+		static ShaderSource read_file(const std::string &filePath);
+
 		static std::vector<uint32_t> compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize);
+
+		static ShaderStage create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code);
+	};
+
+	struct ShaderPass
+	{
+
+		const std::string SHADER_FILE;
+
+		VkPipeline pipeline{VK_NULL_HANDLE};
+		VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
+
+		std::vector<ShaderStage> stages;
+
+		ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile) {}
 	};
 
 	/*
 	/Pipeline data and creation wrapper
 	*/
-	struct PipelineBuilder {
+	struct PipelineBuilder
+	{
 
 		VkViewport viewport;
 		VkRect2D scissor;
 
-		//Shaders
-		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-		//Vertex attributes
+		// ShadersPass
+		ShaderPass *shaderPass;
+		// Vertex attributes
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-		//Primitive type
+		// Primitive type
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly;
-		//Poligon mode, culling and order
+		// Poligon mode, culling and order
 		VkPipelineRasterizationStateCreateInfo rasterizer;
-		//Blending
+		// Blending
 		VkPipelineColorBlendAttachmentState colorBlendAttachment;
-		//Sampling
+		// Sampling
 		VkPipelineMultisampleStateCreateInfo multisampling;
+		// Depth 
+		VkPipelineDepthStencilStateCreateInfo depthStencil;
 
-		//Maybe a map containing pipelines and layouts?
 		VkPipelineLayout pipelineLayout;
 
 		VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
-
-
 	};
-
 
 }
 #endif

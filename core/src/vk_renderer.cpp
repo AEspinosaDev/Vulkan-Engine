@@ -122,7 +122,7 @@ namespace vke
 
 		init_descriptors();
 
-		// init_pipelines();
+		init_default_shaderpasses();
 
 		m_initialized = true;
 	}
@@ -156,6 +156,37 @@ namespace vke
 									  {
 										  // vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 										  cleanup_swap_chain(); });
+
+		// depth image size will match the window
+		VkExtent3D depthImageExtent = {
+			m_window->get_extent()->width,
+			m_window->get_extent()->height,
+			1};
+
+		// hardcoding the depth format to 32 bit float
+		m_depthFormat = VK_FORMAT_D32_SFLOAT;
+
+		// the depth image will be an image with the format we selected and Depth Attachment usage flag
+		VkImageCreateInfo dimg_info = vkinit::image_create_info(m_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
+
+		// for the depth image, we want to allocate it from GPU local memory
+		VmaAllocationCreateInfo dimg_allocinfo = {};
+		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		// allocate and create the image
+		vmaCreateImage(m_memory, &dimg_info, &dimg_allocinfo, &m_depthImage.image, &m_depthImage.allocation, nullptr);
+
+		// build an image-view for the depth image to use for rendering
+		VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(m_depthFormat, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		VK_CHECK(vkCreateImageView(m_device, &dview_info, nullptr, &m_depthView));
+
+		// // add to deletion queues
+		// _mainDeletionQueue.push_function([=]()
+		// 								 {
+		// vkDestroyImageView(_device, _depthImageView, nullptr);
+		// vmaDestroyImage(_allocator, _depthImage._image, _depthImage._allocation); });
 	}
 
 	void Renderer::init_default_renderpass()
@@ -164,6 +195,22 @@ namespace vke
 		// multisampled number
 		// stencil
 		// depth
+
+		VkAttachmentDescription depth_attachment = {};
+		// Depth attachment
+		depth_attachment.flags = 0;
+		depth_attachment.format = m_depthFormat;
+		depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference depthAttachmentRef = {};
+		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = *m_swapchain.get_image_format();
@@ -178,27 +225,41 @@ namespace vke
 		VkAttachmentReference colorAttachmentRef{};
 		colorAttachmentRef.attachment = 0;
 		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
+		VkSubpassDescription subpass = {};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.dstSubpass = 0;
 		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dependency.srcAccessMask = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+		VkSubpassDependency depthDependency{};
+		depthDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		depthDependency.dstSubpass = 0;
+		depthDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		;
+		depthDependency.srcAccessMask = 0;
+		depthDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		;
+		depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		VkAttachmentDescription attachments[2] = {colorAttachment, depth_attachment};
+		VkSubpassDependency dependencies[2] = {dependency, depthDependency};
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 1;
-		renderPassInfo.pAttachments = &colorAttachment;
+		renderPassInfo.attachmentCount = 2;
+		renderPassInfo.pAttachments = attachments;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
+		renderPassInfo.dependencyCount = 2;
+		renderPassInfo.pDependencies = dependencies;
 
 		if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
 		{
@@ -218,10 +279,12 @@ namespace vke
 		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, *m_window->get_extent());
 		for (size_t i = 0; i < size; i++)
 		{
-			VkImageView attachments[] = {
-				m_swapchain.get_image_views()[i]};
+			VkImageView attachments[2] = {
+				m_swapchain.get_image_views()[i],
+				m_depthView};
 
 			fb_info.pAttachments = attachments;
+			fb_info.attachmentCount = 2;
 
 			if (vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
 			{
@@ -287,15 +350,8 @@ namespace vke
 									  { m_descriptorMng.cleanup(); });
 	}
 
-	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
+	void Renderer::set_viewport(VkCommandBuffer commandBuffer)
 	{
-		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
-		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
-
 		// Viewport setup
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -309,11 +365,43 @@ namespace vke
 		scissor.offset = {0, 0};
 		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	}
 
-		// Clear COLOR | DEPTH | STENCIL ??
-		VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
+	std::vector<VkClearValue> Renderer::clear()
+	{
+		std::vector<VkClearValue> clearValues;
+
+		if (m_settings.autoClearColor)
+		{
+			VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
+			clearValues.push_back(clearColor);
+		}
+		if (m_settings.autoClearDepth)
+		{
+			VkClearValue clearDepth;
+			clearDepth.depthStencil.depth = 1.f;
+			clearValues.push_back(clearDepth);
+		}
+
+		return clearValues;
+		
+	}
+	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Mesh *> meshes, Camera *camera)
+	{
+		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
+
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to begin recording command buffer!");
+		}
+
+		set_viewport(commandBuffer);
+
+		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
+
+		auto clearValues = clear();
+		renderPassInfo.clearValueCount = clearValues.size();
+		renderPassInfo.pClearValues = clearValues.data();
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -329,9 +417,8 @@ namespace vke
 		}
 	}
 
-	void Renderer::init_pipeline(Material *m)
+	void Renderer::init_default_shaderpasses()
 	{
-
 		PipelineBuilder builder;
 		builder.vertexInputInfo = vkinit::vertex_input_state_create_info();
 		builder.inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -359,65 +446,48 @@ namespace vke
 
 		builder.colorBlendAttachment = vkinit::color_blend_attachment_state();
 
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-		// hook the global set layout
-		pipelineLayoutInfo.setLayoutCount = 2;
-		VkDescriptorSetLayout setLayouts[] = {m_descriptorMng.get_layout(0), m_descriptorMng.get_layout(1)};
-		pipelineLayoutInfo.pSetLayouts = setLayouts;
+		builder.depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
-		// VkPipelineCache
-
-		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m->m_pipelineLayout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create pipeline layout!");
-		}
-
-		builder.pipelineLayout = m->m_pipelineLayout;
-
-		// Compile shaders
 		std::string shaderDir(SHADER_DIR);
-		// Populate shader list
-		auto shader = Shader::read_file(shaderDir + "test.glsl");
 
-		VkShaderModule vertShaderModule{}, fragShaderModule{}, geomShaderModule{}, tessShaderModule{};
-		if (shader.vertSource != "")
+		m_shaderPasses["basic_unlit"] = new ShaderPass(shaderDir + "test.glsl");
+		// m_shaderPasses["phong_untextured"] = ShaderPass(source);
+
+		for (auto pair : m_shaderPasses)
 		{
-			vertShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
-			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule));
-		}
-		if (shader.fragSource != "")
-		{
-			fragShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
-			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule));
-		}
-		if (shader.geomSource != "")
-		{
-			geomShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
-			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, geomShaderModule));
-		}
-		if (shader.tessSource != "")
-		{
-			tessShaderModule = Shader::create_shader_module(m_device, Shader::compile_shader(shader.tessSource, shader.name + "tess", shaderc_tess_control_shader, true));
-			builder.shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_GEOMETRY_BIT, tessShaderModule));
-		}
+			ShaderPass *pass = pair.second;
+			auto shader = ShaderSource::read_file(pass->SHADER_FILE);
 
-		m->m_pipeline = builder.build_pipeline(m_device, m_renderPass);
+			if (shader.vertSource != "")
+			{
+				ShaderStage vertShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_VERTEX_BIT, ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
+				pass->stages.push_back(vertShaderStage);
+			}
+			if (shader.fragSource != "")
+			{
+				ShaderStage fragShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_FRAGMENT_BIT, ShaderSource::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
+				pass->stages.push_back(fragShaderStage);
+			}
+			if (shader.geomSource != "")
+			{
+				ShaderStage geomShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_GEOMETRY_BIT, ShaderSource::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
+				pass->stages.push_back(geomShaderStage);
+			}
 
-		vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
-		vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
-		vkDestroyShaderModule(m_device, geomShaderModule, nullptr);
-		vkDestroyShaderModule(m_device, tessShaderModule, nullptr);
+			VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
+			pipelineLayoutInfo.setLayoutCount = 2;
+			VkDescriptorSetLayout setLayouts[] = {m_descriptorMng.get_layout(0), m_descriptorMng.get_layout(1)};
+			pipelineLayoutInfo.pSetLayouts = setLayouts;
 
-		builder.shaderStages.clear();
-		m->m_pipelineAssigned = true;
+			if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pass->pipelineLayout) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create pipeline layout!");
+			}
+			builder.pipelineLayout = pass->pipelineLayout;
 
-		// m_deletionQueue.push_function([=]()
-		// 							  {
-		// 	for (auto &pipeline : m_pipelines)
-		// 	{
-		// 		vkDestroyPipeline(m_device, pipeline.second, nullptr);
-		// 	}
-		// 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr); });
+			builder.shaderPass = pass;
+			pass->pipeline = builder.build_pipeline(m_device, m_renderPass);
+		}
 	}
 
 	void Renderer::recreate_swap_chain()
@@ -471,26 +541,28 @@ namespace vke
 			// bind default material
 			return;
 
-		if (m->get_material()->m_pipelineAssigned == false)
+		Material *mat = m->get_material();
+
+		if (!mat->m_shaderPass)
 		{
-			init_pipeline(m->get_material());
+			mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
 		}
 
 		// Offset calculation
 		uint32_t objectOffset = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum;
 		uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
-		// uint32_t globalOffsets[2] = {globalOffset, globalOffset};
 		uint32_t descriptorOffsets[] = {globalOffset, globalOffset, objectOffset};
 
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
+		objectData.color = static_cast<BasicUnlitMaterial *>(mat)->get_color();
 		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
 
 		VkDescriptorSet descriptors[] = {m_globalDescriptor.descriptorSet, m_frames[m_currentFrame].objectDescriptor.descriptorSet};
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 2, descriptors, 3, descriptorOffsets);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 2, descriptors, 3, descriptorOffsets);
 		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
 		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
 
@@ -540,8 +612,6 @@ namespace vke
 		camData.proj = camera->get_projection();
 		camData.viewProj = camera->get_projection() * camera->get_view();
 
-		// m_cameraUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
-		// 								  vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) * m_currentFrame);
 		m_globalUniformsBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
 										   m_globalUniformsBuffer.strideSize * m_currentFrame);
 
