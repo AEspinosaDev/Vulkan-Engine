@@ -90,8 +90,8 @@ void VulkanRenderer::setup()
 
     glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow *w, int width, int heigth)
                                    { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
-    glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow *w, int key, int scancode, int action, int mods)
-                       { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
+    // glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow *w, int key, int scancode, int action, int mods)
+    //                    { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
     glfwSetCursorPosCallback(m_window->get_window_obj(), [](GLFWwindow *w, double xpos, double ypos)
                              { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->mouse_callback(w, xpos, ypos); });
 
@@ -106,6 +106,8 @@ void VulkanRenderer::tick()
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
     float fps = 1.0 / m_deltaTime;
+
+    keyboard_callback(m_window->get_window_obj(), 0, 0, 0, 0);
 
     std::string newTitle = "VK ENGINE         fps = " + std::to_string(fps);
     m_window->set_title(newTitle.c_str());

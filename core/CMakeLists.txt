@@ -26,30 +26,54 @@ target_include_directories(VKEngine PRIVATE ${glm_SOURCE_DIR})
 set_target_properties(VKEngine PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 
-source_group("Source Files\\utilities" FILES ${UTIL_SOURCES})
+
 
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!
-set(CORE_H include/engine/*.h)
-set(UTIL_H include/engine/utilities/*.h)
-set(MATERIAL_H include/engine/materials/*.h)
-set(OBJECTS_H include/engine/scene_objects/*.h)
-set(PRIVATE_H private/*.h)
-source_group("Header Files\\utilities" FILES ${UTIL_H})
-source_group("Header Files\\scene_objects" FILES ${OBJECTS_H})
-source_group("Header Files\\materials" FILES ${MATERIAL_H})
-source_group("Header Files\\" FILES ${CORE_H})
-source_group("Header Files\\private" FILES ${PRIVATE_H})
-set(CORE_SRC src/*.cpp)
-set(UTIL_SRC src/utilities/*.cpp)
-set(MATERIAL_SRC src/materials/*.cpp)
-set(OBJECTS_SRC src/scene_objects/*.cpp)
-set(BACKEND_SRC src/backend/*.cpp)
-source_group("Source Files\\utilities" FILES ${UTIL_SRC})
-source_group("Source Files\\scene_objects" FILES ${OBJECTS_SRC})
-source_group("Source Files\\materials" FILES ${MATERIAL_SRC})
-source_group("Source Files\\" FILES ${CORE_SRC})
-source_group("Source Files\\backend" FILES ${BACKEND_SRC})
-
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    file(GLOB scene_objects_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/scene_objects/*.h
+    )
+    file(GLOB materials_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/materials/*.h
+    )
+    file(GLOB utilities_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/utilities/*.h
+    )
+    file(GLOB core_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/*.h
+    )
+    file(GLOB priv_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/private/*.h
+    )
+    source_group("Header Files\\Utilities" FILES ${utilities_h})
+    source_group("Header Files\\Scene Objects" FILES ${scene_objects_h})
+    source_group("Header Files\\Materials" FILES ${materials_h})
+    source_group("Header Files\\" FILES ${core_h})
+    source_group("Header Files\\Backend" FILES ${priv_h})
+    
+    
+    file(GLOB scene_objects_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene_objects/*.cpp
+    )
+    file(GLOB materials_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/materials/*.cpp
+    )
+    file(GLOB utilities_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/*.cpp
+    )
+    file(GLOB core_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    )
+    file(GLOB priv_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/*.cpp
+    )
+    
+    source_group("Source Files\\Utilities" FILES ${utilities_cpp})
+    source_group("Source Files\\Scene Objects" FILES ${scene_objects_cpp})
+    source_group("Source Files\\Materials" FILES ${materials_cpp})
+    source_group("Source Files\\" FILES ${core_cpp})
+    source_group("Source Files\\Backend" FILES ${priv_cpp})
+endif()
 
 # Set configuration
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/")

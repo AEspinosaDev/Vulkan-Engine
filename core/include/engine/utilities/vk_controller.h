@@ -58,7 +58,7 @@ namespace vke
         Transform m_initialState;
 
     public:
-        Controller(Object3D *obj, MovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(100.0f),
+        Controller(Object3D *obj, MovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(5.0f),
                                                                m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
                                                                m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
                                                                m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
