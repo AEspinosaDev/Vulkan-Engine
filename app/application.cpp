@@ -1,4 +1,5 @@
 #include "application.h"
+#include <filesystem>
 
 void VulkanRenderer::init()
 {
@@ -33,51 +34,40 @@ void VulkanRenderer::setup()
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
 
-    // m_scene->set_position({0.0, 10.0, 0.0});
     // m_scene->set_rotation({0.7,1.5, 0.0});
 
-    vke::Geometry *g = new vke::Geometry();
-    g->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-             {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-             {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-             {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
-            {0, 1, 2, 2, 3, 0});
+    vke::Geometry *quadGeom = new vke::Geometry();
+    quadGeom->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                    {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+                    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
+                   {0, 1, 2, 2, 3, 0});
+
     auto mat = new vke::BasicUnlitMaterial();
     mat->set_color({1.0, 0.0, 0.0, 1.0});
-    vke::Mesh *m = new vke::Mesh(g, mat);
+    auto mat2 = new vke::BasicUnlitMaterial();
+    mat2->set_color({0.0, 1.0, 0.0, 1.0});
+    auto mat3 = new vke::BasicUnlitMaterial();
+    mat3->set_color({0.0, 0.0, 1.0, 1.0});
 
-    // meshes.push_back(m);
-    m_scene->add(m);
+    vke::Mesh *m = new vke::Mesh(quadGeom, mat);
+    vke::Mesh *m2 = m->clone();
+    m2->set_material(mat2);
+    vke::Mesh *m3 = m->clone();
+    m3->set_material(mat3);
+
     m->set_scale(5.0);
     m->set_position({0.0, -1.0, 0.0});
     m->set_rotation(glm::radians(glm::vec3{90.0, 0.0, 0.0}));
-
-    vke::Geometry *g2 = new vke::Geometry();
-    g2->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-              {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}}},
-             {0, 1, 2, 2, 3, 0});
-    auto mat2 = new vke::BasicUnlitMaterial();
-    mat2->set_color({0.0, 1.0, 0.0, 1.0});
-    vke::Mesh *m2 = new vke::Mesh(g2, mat2);
-
-    m_scene->add(m2);
-
-    vke::Geometry *g3 = new vke::Geometry();
-    g3->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-              {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-              {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-              {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}}},
-             {0, 1, 2, 2, 3, 0});
-    auto mat3 = new vke::BasicUnlitMaterial();
-    mat3->set_color({0.0, 0.0, 1.0, 1.0});
-    vke::Mesh *m3 = new vke::Mesh(g3, mat3);
-
-    m_scene->add(m3);
-
     m3->set_position({-2.0, 2.0, 2.0});
-    m3->load_file("../core/resources/meshes/cube.obj");
+
+    // std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
+
+    m3->load_file("cube.obj");
+
+    m_scene->add(m);
+    m_scene->add(m2);
+    m_scene->add(m3);
 
     m_controller = new vke::Controller(camera);
     // m_controller = new vke::Controller(camera, vke::ORBITAL);
@@ -90,8 +80,7 @@ void VulkanRenderer::setup()
 
     glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow *w, int width, int heigth)
                                    { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
-    // glfwSetKeyCallback(m_window->get_window_obj(), [](GLFWwindow *w, int key, int scancode, int action, int mods)
-    //                    { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->keyboard_callback(w, key, scancode, action, mods); });
+
     glfwSetCursorPosCallback(m_window->get_window_obj(), [](GLFWwindow *w, double xpos, double ypos)
                              { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->mouse_callback(w, xpos, ypos); });
 
@@ -100,17 +89,12 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::tick()
 {
-    // auto currentTime = std::chrono::high_resolution_clock::now();
     float currentTime = (float)vke::Window::get_time_elapsed();
-    // m_deltaTime = std::chrono::duration<float, std::chrono::period>(currentTime - m_lastTime).count();
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
     float fps = 1.0 / m_deltaTime;
 
     keyboard_callback(m_window->get_window_obj(), 0, 0, 0, 0);
-
-    std::string newTitle = "VK ENGINE         fps = " + std::to_string(fps);
-    m_window->set_title(newTitle.c_str());
 
     m_renderer->render(m_scene);
 

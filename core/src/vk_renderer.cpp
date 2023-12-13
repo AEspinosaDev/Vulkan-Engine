@@ -434,6 +434,10 @@ namespace vke
 		for (auto pair : m_shaderPasses)
 		{
 			ShaderPass *pass = pair.second;
+
+			pass->descriptorSetLayoutIDs.push_back(0);
+			pass->descriptorSetLayoutIDs.push_back(1);
+
 			auto shader = ShaderSource::read_file(pass->SHADER_FILE);
 
 			if (shader.vertSource != "")
@@ -452,10 +456,15 @@ namespace vke
 				pass->stages.push_back(geomShaderStage);
 			}
 
+			std::vector<VkDescriptorSetLayout> descriptorLayouts;
+			for (auto &layoutID: pass->descriptorSetLayoutIDs )
+			{
+				descriptorLayouts.push_back(m_descriptorMng.get_layout(layoutID));
+			}
+
 			VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-			pipelineLayoutInfo.setLayoutCount = 2;
-			VkDescriptorSetLayout setLayouts[] = {m_descriptorMng.get_layout(0), m_descriptorMng.get_layout(1)};
-			pipelineLayoutInfo.pSetLayouts = setLayouts;
+			pipelineLayoutInfo.setLayoutCount = descriptorLayouts.size();
+			pipelineLayoutInfo.pSetLayouts =  descriptorLayouts.data();
 
 			if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pass->pipelineLayout) != VK_SUCCESS)
 			{
@@ -535,6 +544,7 @@ namespace vke
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
 		objectData.color = static_cast<BasicUnlitMaterial *>(mat)->get_color();
+		objectData.otherParams = {m->is_affected_by_fog(),false,false,false};
 		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);

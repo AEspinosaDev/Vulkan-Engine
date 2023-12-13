@@ -10,6 +10,8 @@ layout(location = 4) in vec3 color;
 
 //Output
 layout(location = 0) out vec3 fragColor;
+layout(location = 1) out int affectedByFog;
+
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -20,17 +22,21 @@ layout(set = 0, binding = 0) uniform CameraUniforms {
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
     vec4 color;
+    vec4 otherParams;
 } object;
 
 void main() {
     gl_Position = camera.viewProj * object.model * mat4(1.0) * vec4(pos, 1.0);
     fragColor = object.color.rgb;
+    affectedByFog = int(object.otherParams.x);
 }
 
 #shader fragment
 #version 460
 
 layout(location = 0) in vec3 fragColor;
+layout(location = 1) in flat int affectedByFog;
+
 
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec4 fogColor; // w is for exponent
@@ -52,9 +58,13 @@ float computeFog() {
 
 void main() {
 
-    float f = computeFog();
-
-    vec3 color = f * fragColor.rgb + (1 - f) * scene.fogColor.rgb;
+    vec3 color;
+    if(affectedByFog==1){
+        float f = computeFog();
+        color = f * fragColor.rgb + (1 - f) * scene.fogColor.rgb;
+    }else{
+        color = fragColor.rgb;
+    }
 
     outColor = vec4(color, 1.0);
 }

@@ -14,13 +14,14 @@ target_include_directories(VKEngine
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/private
+        ${glm_SOURCE_DIR}
 )
 
 # Link Vulkan, glfw, shaderc and include glm
 target_link_libraries(VKEngine Vulkan::Vulkan glfw shaderc_shared.lib)
-target_include_directories(VKEngine PRIVATE ${glm_SOURCE_DIR})
 
 # Set properties
 set_target_properties(VKEngine PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
