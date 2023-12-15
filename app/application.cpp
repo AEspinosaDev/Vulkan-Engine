@@ -53,6 +53,8 @@ void VulkanRenderer::setup()
     vke::Mesh *m = new vke::Mesh(quadGeom, mat);
     vke::Mesh *m2 = m->clone();
     m2->set_material(mat2);
+    m2->load_file("cube.obj");
+    
     vke::Mesh *m3 = m->clone();
     m3->set_material(mat3);
 
@@ -63,7 +65,6 @@ void VulkanRenderer::setup()
 
     // std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
-    m3->load_file("cube.obj");
 
     m_scene->add(m);
     m_scene->add(m2);

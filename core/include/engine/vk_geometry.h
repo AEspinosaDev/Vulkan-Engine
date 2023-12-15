@@ -1,12 +1,15 @@
 #ifndef VK_GEOMETRY_H
 #define VK_GEOMETRY_H
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
 #include "../private/vk_core.h"
 #include "../private/vk_buffer.h"
+#include "../private/vk_utils.h"
 
 namespace vke
 {
-
     struct Vertex
     {
         glm::vec3 pos;
@@ -60,6 +63,16 @@ namespace vke
 
             return attributeDescriptions;
         }
+
+        bool operator==(const Vertex &other) const
+        {
+            return pos == other.pos && normal == other.normal && tangent == other.tangent && texCoord == other.texCoord && color == other.color;
+        }
+
+        bool operator!=(const Vertex &other) const
+        {
+            return !(*this == other);
+        }
     };
 
     class Geometry
@@ -82,7 +95,7 @@ namespace vke
         inline bool is_data_loaded() const { return loaded; }
         inline bool is_buffer_loaded() const { return buffer_loaded; }
         inline bool is_indexed() const { return indexed; }
-        
+
         inline std::vector<uint16_t> const get_vertex_index() const
         {
             return m_vertexIndex;
@@ -93,7 +106,7 @@ namespace vke
         }
         ~Geometry()
         {
-            
+
             delete m_vbo;
             delete m_ibo;
         }
@@ -103,5 +116,20 @@ namespace vke
         void fill(glm::vec3 **pos, glm::vec3 **normal, glm::vec2 **uv, glm::vec3 **tangent);
     };
 
-}
+};
+
+namespace std
+{
+    template <>
+    struct hash<vke::Vertex>
+    {
+        size_t operator()(vke::Vertex const &vertex) const
+        {
+            size_t seed = 0;
+            vke::vkutils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
+            return seed;
+        }
+    };
+};
+
 #endif // VK_GEOMETRY_H

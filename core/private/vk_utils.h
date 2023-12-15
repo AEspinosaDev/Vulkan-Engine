@@ -72,14 +72,22 @@ namespace vke
 
 			return VK_FALSE;
 		}
-		
+
 		VkResult create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger);
-		
+
 		void destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator);
-		
+
 		void log_available_extensions(std::vector<VkExtensionProperties> ext);
-		
+
 		void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
+
+		template <typename T, typename... Rest>
+		void hash_combine(std::size_t &seed, const T &v, const Rest &...rest)
+		{
+			seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			(hash_combine(seed, rest), ...);
+		}
+
 	};
 
 }

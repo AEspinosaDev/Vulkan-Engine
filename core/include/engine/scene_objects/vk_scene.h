@@ -25,6 +25,24 @@ namespace vke
         glm::vec3 lightPosition;
         glm::vec3 lightColor;
 
+        inline void clasify_object(Object3D *obj)
+        {
+            switch (obj->get_type())
+            {
+            case MESH:
+                m_meshes.push_back((Mesh *)obj);
+                break;
+            case CAMERA:
+                m_cameras.push_back((Camera *)obj);
+                break;
+            case LIGHT:
+                //
+                break;
+            }
+            for (auto child : obj->get_children())
+                clasify_object(child);
+        }
+
     public:
         Scene(Camera *cam) : m_activeCamera(cam) { add_child(cam); };
         ~Scene()
@@ -39,19 +57,7 @@ namespace vke
         }
         inline void add_child(Object3D *obj)
         {
-            switch (obj->get_type())
-            {
-            case MESH:
-                m_meshes.push_back((Mesh *)obj);
-                break;
-            case CAMERA:
-                m_cameras.push_back((Camera *)obj);
-                break;
-            case LIGHT:
-                //
-                break;
-            }
-
+            clasify_object(obj);
             Object3D::add_child(obj);
             isDirty = true;
         }

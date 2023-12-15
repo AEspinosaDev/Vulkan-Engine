@@ -20,18 +20,5 @@ namespace vke {
 		
         // return nullptr;
     }
-    // Geometry *Geometry::load2()
-    // {
-	// 	Geometry* m = new Mesh();
-	// 	m->m_vertexData = {
-	// 	{{0.1f, -0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {1.0f, 1.0f, 1.0f}},
-	// 	{{0.6f, 0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {1.0f, 0.0f, 0.0f}},
-	// 	{{-0.4f, 0.5f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f}, {0.0f, 1.0f, 1.0f}}
-	// 	};
-		
-	// 	m->loaded = true;
-	// 	return m;
-
-	// }
-	
+    
 }

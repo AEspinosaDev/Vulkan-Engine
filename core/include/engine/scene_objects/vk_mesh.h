@@ -1,7 +1,6 @@
 #ifndef VK_MESH_H
 #define VK_MESH_H
 
-#include <tiny_obj_loader.h>
 #include "../vk_object3D.h"
 #include "../vk_geometry.h"
 #include "../vk_material.h"
@@ -19,6 +18,9 @@ namespace vke
 		bool m_affectedByFog{true};
 		bool m_castShadows{true};
 		bool m_receiveShadows{true};
+
+		// TO DO: Initialize this material and call it in the renderer if mesh doesnt have a material
+		static Material *m_debugMaterial;
 
 	public:
 		Mesh() : Object3D(MESH), m_geometry(nullptr), m_material(nullptr) {}
@@ -40,11 +42,17 @@ namespace vke
 		inline void set_cast_shadows(bool op) { m_castShadows = op; }
 		inline bool get_cast_shadows() const { return m_castShadows; }
 		inline void set_receive_shadows(bool op) { m_receiveShadows = op; }
+		inline Material *set_debug_material()
+		{
+			Material *m = m_material;
+			m_material = m_debugMaterial;
+			return m;
+		}
 		inline bool get_recive_shadows() const { return m_castShadows; }
 		inline void set_affected_by_fog(bool op) { m_affectedByFog = op; }
 		inline bool is_affected_by_fog() const { return m_affectedByFog; }
 
-		void load_file(const std::string fileName);
+		bool load_file(const std::string fileName, bool overrideGeometry = false);
 
 		Mesh *clone() const;
 	};
