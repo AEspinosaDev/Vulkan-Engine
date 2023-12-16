@@ -24,6 +24,11 @@ namespace vke
 		bool m_fullscreen;
 		glm::ivec2 m_screenPos = glm::ivec2(45, 45);
 
+		// Callbacks
+		std::function<void(int, int, int, int)> m_keyCallback;
+		std::function<void(int, int)> m_windowSizeCallback;
+		std::function<void(double, double)> m_mouseCallBack;
+
 		friend class Renderer;
 
 	public:
@@ -79,13 +84,23 @@ namespace vke
 			glfwSetWindowTitle(m_GLFWwindow, title);
 		}
 		inline std::string get_title() { return m_title; }
-
-		void set_keyboard_callback(std::function<void(GLFWwindow *, int, int, int, int)> callback);
-		void set_mouse_callback(std::function<void()> &&function);
-		// void set_window_callback(std::function<void()> &&function);
-
 		inline static void poll_events() { glfwPollEvents(); }
 		inline static double get_time_elapsed() { return glfwGetTime(); }
+
+		inline void set_key_callback(std::function<void(int, int, int, int)> callback)
+		{
+			m_keyCallback = callback;
+		}
+
+		inline void set_window_size_callback(std::function<void(int, int)> callback)
+		{
+			m_windowSizeCallback = callback;
+		}
+
+		inline void set_mouse_callback(std::function<void(double, double)> callback)
+		{
+			m_mouseCallBack = callback;
+		}
 	};
 }
 #endif

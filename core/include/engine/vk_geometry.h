@@ -26,7 +26,7 @@ namespace vke
             bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
             return bindingDescription;
         }
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions()
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(bool normal=true, bool tangent=true, bool texCoord=true, bool color=true)
         {
             std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
@@ -36,30 +36,43 @@ namespace vke
             posAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
             posAtt.offset = offsetof(Vertex, pos);
             attributeDescriptions.push_back(posAtt);
-            VkVertexInputAttributeDescription normalAtt{};
-            normalAtt.binding = 0;
-            normalAtt.location = 1;
-            normalAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
-            normalAtt.offset = offsetof(Vertex, normal);
-            attributeDescriptions.push_back(normalAtt);
-            VkVertexInputAttributeDescription texCoordAtt{};
-            texCoordAtt.binding = 0;
-            texCoordAtt.location = 2;
-            texCoordAtt.format = VK_FORMAT_R32G32_SFLOAT;
-            texCoordAtt.offset = offsetof(Vertex, texCoord);
-            attributeDescriptions.push_back(texCoordAtt);
-            VkVertexInputAttributeDescription tangentAtt{};
-            tangentAtt.binding = 0;
-            tangentAtt.location = 3;
-            tangentAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
-            tangentAtt.offset = offsetof(Vertex, tangent);
-            attributeDescriptions.push_back(tangentAtt);
-            VkVertexInputAttributeDescription colorAtt{};
-            colorAtt.binding = 0;
-            colorAtt.location = 4;
-            colorAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
-            colorAtt.offset = offsetof(Vertex, color);
-            attributeDescriptions.push_back(colorAtt);
+
+            if (normal)
+            {
+                VkVertexInputAttributeDescription normalAtt{};
+                normalAtt.binding = 0;
+                normalAtt.location = 1;
+                normalAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+                normalAtt.offset = offsetof(Vertex, normal);
+                attributeDescriptions.push_back(normalAtt);
+            }
+            if (texCoord)
+            {
+                VkVertexInputAttributeDescription texCoordAtt{};
+                texCoordAtt.binding = 0;
+                texCoordAtt.location = 2;
+                texCoordAtt.format = VK_FORMAT_R32G32_SFLOAT;
+                texCoordAtt.offset = offsetof(Vertex, texCoord);
+                attributeDescriptions.push_back(texCoordAtt);
+            }
+            if (tangent)
+            {
+                VkVertexInputAttributeDescription tangentAtt{};
+                tangentAtt.binding = 0;
+                tangentAtt.location = 3;
+                tangentAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+                tangentAtt.offset = offsetof(Vertex, tangent);
+                attributeDescriptions.push_back(tangentAtt);
+            }
+            if (color)
+            {
+                VkVertexInputAttributeDescription colorAtt{};
+                colorAtt.binding = 0;
+                colorAtt.location = 4;
+                colorAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+                colorAtt.offset = offsetof(Vertex, color);
+                attributeDescriptions.push_back(colorAtt);
+            }
 
             return attributeDescriptions;
         }

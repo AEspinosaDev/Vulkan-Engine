@@ -7,6 +7,14 @@ void VulkanRenderer::init()
     m_renderer = new vke::Renderer(m_window);
     m_renderer->init();
 
+    m_window->set_window_size_callback(std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1,
+                                                 std::placeholders::_2));
+    m_window->set_mouse_callback(std::bind(&VulkanRenderer::mouse_callback, this, std::placeholders::_1,
+                                           std::placeholders::_2));
+    m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
+                                         std::placeholders::_2, std::placeholders::_3,
+                                         std::placeholders::_4));
+
     setup();
 }
 
@@ -56,42 +64,25 @@ void VulkanRenderer::setup()
 
     std::string meshDir(MODEL_DIR);
     std::string engineMeshDir(VK_MODEL_DIR);
-    m2->load_file(meshDir+"kabuto.obj");
-    m2->set_rotation(glm::vec3(0.0,3.14, 0.0));
+    m2->load_file(meshDir + "kabuto.obj");
+    m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
 
     vke::Mesh *m3 = m->clone();
     m3->set_material(mat3);
 
     m->set_scale(10.0);
     m->set_position({0.0, -4.0, 0.0});
-    m->load_file(meshDir+"terrain.obj");
+    m->load_file(meshDir + "terrain.obj");
     m3->set_position({-2.0, 2.0, 2.0});
-    m3->load_file(engineMeshDir+"cube.obj");
-    
+    m3->load_file(engineMeshDir + "cube.obj");
 
     // std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     m_scene->add(m);
     m_scene->add(m2);
     m_scene->add(m3);
-    
 
     m_controller = new vke::Controller(camera);
-    // m_controller = new vke::Controller(camera, vke::ORBITAL);
-
-    // m_renderer.
-    // m_window->set_keyboard_callback(&VulkanRenderer::keyboard_callback);
-
-    // WINDOW CALLBACKS
-    glfwSetWindowUserPointer(m_window->get_window_obj(), this);
-
-    glfwSetFramebufferSizeCallback(m_window->get_window_obj(), [](GLFWwindow *w, int width, int heigth)
-                                   { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->window_resize_callback(w, width, heigth); });
-
-    glfwSetCursorPosCallback(m_window->get_window_obj(), [](GLFWwindow *w, double xpos, double ypos)
-                             { static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(w))->mouse_callback(w, xpos, ypos); });
-
-    // m_lastTime = std::chrono::high_resolution_clock::now();
 }
 
 void VulkanRenderer::tick()
@@ -99,11 +90,9 @@ void VulkanRenderer::tick()
     float currentTime = (float)vke::Window::get_time_elapsed();
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
-    float fps = 1.0 / m_deltaTime;
+    float fps = 1.0f / m_deltaTime;
 
-    keyboard_callback(m_window->get_window_obj(), 0, 0, 0, 0);
+    m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_deltaTime);
 
     m_renderer->render(m_scene);
-
-    // std::cout << m_scene->get_rotation().x << " " << m_scene->get_rotation().y << std::endl;
 }

@@ -176,10 +176,10 @@ namespace vke
 
 		VK_CHECK(vkCreateImageView(m_device, &dview_info, nullptr, &m_depthView));
 
-		m_deletionQueue.push_function([=]()
-									  {
-		vkDestroyImageView(m_device, m_depthView, nullptr);
-		vmaDestroyImage(m_memory, m_depthImage.image, m_depthImage.allocation); });
+		// m_deletionQueue.push_function([=]()
+		// 							  {
+		// vkDestroyImageView(m_device, m_depthView, nullptr);
+		// vmaDestroyImage(m_memory, m_depthImage.image, m_depthImage.allocation); });
 	}
 
 	void Renderer::init_default_renderpass()
@@ -402,7 +402,7 @@ namespace vke
 		builder.inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
 		auto bindingDescription = Vertex::getBindingDescription();
-		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions(true,false,false,false);
 
 		builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
 		builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;

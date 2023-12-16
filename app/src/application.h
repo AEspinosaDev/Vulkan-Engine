@@ -37,27 +37,26 @@ private:
 
 #pragma region Input Management
 
-    void keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+    void keyboard_callback(int key, int scancode, int action, int mods)
     {
-         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+         if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             m_window->set_window_should_close(true);
         }
 
-        if (glfwGetKey(window, GLFW_KEY_F11) == GLFW_PRESS)
+        if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_F11) == GLFW_PRESS)
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
-
-        m_controller->handle_keyboard(window,key,action, m_deltaTime);
+        
     }
 
-    void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+    void mouse_callback(double xpos, double ypos)
     {
-        m_controller->handle_mouse(window,(float)xpos,(float)ypos);
+        m_controller->handle_mouse(m_window->get_window_obj(),(float)xpos,(float)ypos);
     }
 
-    void window_resize_callback(GLFWwindow *window, int width, int height)
+    void window_resize_callback(int width, int height)
     {
         m_window->set_size(width, height);
     }
