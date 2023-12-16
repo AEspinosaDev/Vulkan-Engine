@@ -113,7 +113,7 @@ namespace vke
 
         void fill(std::vector<Vertex> vertexInfo);
         void fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
-        void fill(glm::vec3 **pos, glm::vec3 **normal, glm::vec2 **uv, glm::vec3 **tangent);
+        void fill(glm::vec3 *pos, glm::vec3 *normal, glm::vec2 *uv, glm::vec3 *tangent, uint32_t vertNumber);
     };
 
 };

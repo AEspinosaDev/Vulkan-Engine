@@ -14,18 +14,19 @@ namespace vke
 
         std::vector<Camera *> m_cameras;
         std::vector<Mesh *> m_meshes;
+    
         // std::vector<Light*> m_lights;
 
         bool m_fog{true};
         glm::vec3 m_fogColor{0.8f, 0.8f, 0.8f};
-        float m_fogIntensity{10.0f};
+        float m_fogIntensity{2.0f};
         float m_fogExponent{1.0f};
 
         glm::vec3 ambientColor;
         glm::vec3 lightPosition;
         glm::vec3 lightColor;
 
-        inline void clasify_object(Object3D *obj)
+        inline void classify_object(Object3D *obj)
         {
             switch (obj->get_type())
             {
@@ -40,7 +41,7 @@ namespace vke
                 break;
             }
             for (auto child : obj->get_children())
-                clasify_object(child);
+                classify_object(child);
         }
 
     public:
@@ -57,7 +58,7 @@ namespace vke
         }
         inline void add_child(Object3D *obj)
         {
-            clasify_object(obj);
+            classify_object(obj);
             Object3D::add_child(obj);
             isDirty = true;
         }

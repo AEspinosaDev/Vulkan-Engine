@@ -10,6 +10,7 @@ namespace vke
 	{
 		VkShaderModule shaderModule;
 		VkShaderStageFlagBits stage;
+
 	};
 	/*
 	/Shader useful info
@@ -42,6 +43,8 @@ namespace vke
 		std::vector<int> descriptorSetLayoutIDs;
 
 		ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile) {}
+		
+		void cleanup(VkDevice device);
 	};
 
 	/*

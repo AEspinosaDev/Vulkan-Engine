@@ -44,7 +44,7 @@ namespace vke
 		VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
 		VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, /*VkCommandBufferResetFlagBits*/ 0));
 
-		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex,scene);
+		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
 
 		// prepare the submission to the queue.
 		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
@@ -176,10 +176,10 @@ namespace vke
 
 		VK_CHECK(vkCreateImageView(m_device, &dview_info, nullptr, &m_depthView));
 
-		// m_deletionQueue.push_function([=]()
-		// 							  {
-		// vkDestroyImageView(m_device, m_depthView, nullptr);
-		// vmaDestroyImage(m_memory, m_depthImage.image, m_depthImage.allocation); });
+		m_deletionQueue.push_function([=]()
+									  {
+		vkDestroyImageView(m_device, m_depthView, nullptr);
+		vmaDestroyImage(m_memory, m_depthImage.image, m_depthImage.allocation); });
 	}
 
 	void Renderer::init_default_renderpass()
@@ -426,10 +426,10 @@ namespace vke
 
 		builder.depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
-		std::string shaderDir(SHADER_DIR);
+		std::string shaderDir(VK_SHADER_DIR);
 
 		m_shaderPasses["basic_unlit"] = new ShaderPass(shaderDir + "basic_unlit.glsl");
-		// m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
+		m_shaderPasses["basic_phong"] = new ShaderPass(shaderDir + "basic_phong.glsl");
 
 		for (auto pair : m_shaderPasses)
 		{
@@ -457,14 +457,14 @@ namespace vke
 			}
 
 			std::vector<VkDescriptorSetLayout> descriptorLayouts;
-			for (auto &layoutID: pass->descriptorSetLayoutIDs )
+			for (auto &layoutID : pass->descriptorSetLayoutIDs)
 			{
 				descriptorLayouts.push_back(m_descriptorMng.get_layout(layoutID));
 			}
 
 			VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
 			pipelineLayoutInfo.setLayoutCount = descriptorLayouts.size();
-			pipelineLayoutInfo.pSetLayouts =  descriptorLayouts.data();
+			pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
 
 			if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pass->pipelineLayout) != VK_SUCCESS)
 			{
@@ -474,6 +474,9 @@ namespace vke
 
 			builder.shaderPass = pass;
 			pass->pipeline = builder.build_pipeline(m_device, m_renderPass);
+
+			m_deletionQueue.push_function([=]()
+										  { pass->cleanup(m_device); });
 		}
 	}
 
@@ -516,7 +519,6 @@ namespace vke
 			}
 			i++;
 		}
-		// Draw helpers ...
 	}
 
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum)
@@ -543,8 +545,8 @@ namespace vke
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
-		objectData.color = static_cast<BasicUnlitMaterial *>(mat)->get_color();
-		objectData.otherParams = {m->is_affected_by_fog(),false,false,false};
+		objectData.color = static_cast<BasicPhongMaterial *>(mat)->get_color();
+		objectData.otherParams = {m->is_affected_by_fog(), false, false, false};
 		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
@@ -605,9 +607,11 @@ namespace vke
 										   m_globalUniformsBuffer.strideSize * m_currentFrame);
 
 		SceneUniforms sceneParams;
-		sceneParams.fogParams = {camera->get_near(),camera->get_far(),scene->get_fog_intensity(),1.0f};
-		sceneParams.fogColor = glm::vec4(scene->get_fog_color(),1.0f);
-		sceneParams.ambientColor = {0.5, 0.2, 0.7, 1};
+		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), 1.0f};
+		sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
+		sceneParams.ambientColor = {0.5, 0.2, 0.7, 0.2};
+		sceneParams.lightColor = {1.0, 1.0, 1.0, 0.0};
+		sceneParams.lightPosition = {2.0, 2.0, 0.0, 0.0};
 
 		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));

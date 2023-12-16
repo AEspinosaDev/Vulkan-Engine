@@ -11,13 +11,13 @@
 #include "../private/vk_uniforms.h"
 #include "../private/vk_descriptors.h"
 
-#include "config.h"
+#include "vk_config.h"
 #include "vk_window.h"
 #include "vk_material.h"
 #include "scene_objects/vk_scene.h"
 
 // TESTING
-#include "materials/vk_basic_unlit.h"
+#include "materials/vk_basic_phong.h"
 
 namespace vke
 {

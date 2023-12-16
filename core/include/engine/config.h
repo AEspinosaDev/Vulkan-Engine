@@ -1,6 +1,6 @@
 // config.h.in
 #pragma once
 
-#define TEXTURE_DIR "C:/Dev/Vulkan-Engine/core/resources/textures/"
-#define SHADER_DIR "C:/Dev/Vulkan-Engine/core/resources/shaders/"
-#define MODEL_DIR "C:/Dev/Vulkan-Engine/core/resources/meshes/"
+#define VK_TEXTURE_DIR ""
+#define VK_SHADER_DIR ""
+#define VK_MODEL_DIR ""

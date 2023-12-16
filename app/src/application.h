@@ -4,7 +4,9 @@
 #include <engine/vk_renderer.h>
 #include <engine/utilities/vk_controller.h>
 #include <engine/materials/vk_basic_unlit.h>
+#include <engine/materials/vk_basic_phong.h>
 #include <chrono>
+#include "config.h"
 
 
 /**

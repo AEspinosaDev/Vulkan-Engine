@@ -81,7 +81,7 @@ namespace vke
 		inline std::string get_title() { return m_title; }
 
 		void set_keyboard_callback(std::function<void(GLFWwindow *, int, int, int, int)> callback);
-		// void set_mouse_callback(std::function<void()> &&function);
+		void set_mouse_callback(std::function<void()> &&function);
 		// void set_window_callback(std::function<void()> &&function);
 
 		inline static void poll_events() { glfwPollEvents(); }

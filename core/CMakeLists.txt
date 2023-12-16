@@ -77,10 +77,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 # Set configuration
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/")
-set(TEXTURE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/textures/")
-set(MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/meshes/")
-configure_file(config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/config.h)
+set(VK_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/")
+set(VK_TEXTURE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/textures/")
+set(VK_MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/meshes/")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/vk_config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/vk_config.h)
 
 
 

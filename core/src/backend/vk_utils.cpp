@@ -112,6 +112,22 @@ namespace vke
 			return VK_ERROR_EXTENSION_NOT_PRESENT;
 		}
 	}
-	
+	glm::vec3 vkutils::get_tangent_gram_smidt(glm::vec3 &p1, glm::vec3 &p2, glm::vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3, glm::vec3 normal)
+	{
+		glm::vec3 edge1 = p2 - p1;
+		glm::vec3 edge2 = p3 - p1;
+		glm::vec2 deltaUV1 = uv2 - uv1;
+		glm::vec2 deltaUV2 = uv3 - uv1;
+
+		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+		glm::vec3 tangent{};
+		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+		// Gram-Schmidt orthogonalization
+		normal = glm::normalize(normal);
+		return glm::normalize(tangent - normal * glm::dot(normal, tangent));
+	}
 
 }

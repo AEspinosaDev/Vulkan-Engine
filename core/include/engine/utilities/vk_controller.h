@@ -72,7 +72,7 @@ namespace vke
         inline void set_mouse_sensitivity(float s) { m_mouseSensitivity = s; }
         inline Object3D* get_object() const {return m_objPtr;}
         inline void set_object(Object3D* obj) {m_objPtr=obj;}
-
+        /*Not insert as GLFW callback!*/
         virtual void handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime);
         virtual void handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch = true);
         virtual void handle_mouse_scroll()

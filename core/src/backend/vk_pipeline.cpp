@@ -154,4 +154,14 @@ namespace vke
 		return spirv;
 	}
 
+	void ShaderPass::cleanup(VkDevice device)
+	{
+		for (auto &stage : stages)
+		{
+			vkDestroyShaderModule(device, stage.shaderModule, nullptr);
+		}
+		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		vkDestroyPipeline(device, pipeline, nullptr);
+	}
+
 }

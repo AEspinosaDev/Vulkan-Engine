@@ -29,7 +29,7 @@ void VulkanRenderer::setup()
     camera = new vke::Camera();
     m_scene = new vke::Scene(camera);
 
-    camera->set_position(glm::vec3(0.0f, 0.0f, -1.0f));
+    camera->set_position(glm::vec3(0.0f, 0.0f, -5.0f));
     camera->set_far(100.0f);
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
@@ -37,38 +37,44 @@ void VulkanRenderer::setup()
     // m_scene->set_rotation({0.7,1.5, 0.0});
 
     vke::Geometry *quadGeom = new vke::Geometry();
-    quadGeom->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-                    {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-                    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-                    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
+    quadGeom->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                    {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+                    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
                    {0, 1, 2, 2, 3, 0});
 
-    auto mat = new vke::BasicUnlitMaterial();
+    auto mat = new vke::BasicPhongMaterial();
     mat->set_color({1.0, 0.0, 0.0, 1.0});
-    auto mat2 = new vke::BasicUnlitMaterial();
+    auto mat2 = new vke::BasicPhongMaterial();
     mat2->set_color({0.0, 1.0, 0.0, 1.0});
-    auto mat3 = new vke::BasicUnlitMaterial();
+    auto mat3 = new vke::BasicPhongMaterial();
     mat3->set_color({0.0, 0.0, 1.0, 1.0});
 
     vke::Mesh *m = new vke::Mesh(quadGeom, mat);
     vke::Mesh *m2 = m->clone();
     m2->set_material(mat2);
-    m2->load_file("cube.obj");
-    
+
+    std::string meshDir(MODEL_DIR);
+    std::string engineMeshDir(VK_MODEL_DIR);
+    m2->load_file(meshDir+"kabuto.obj");
+    m2->set_rotation(glm::vec3(0.0,3.14, 0.0));
+
     vke::Mesh *m3 = m->clone();
     m3->set_material(mat3);
 
-    m->set_scale(5.0);
-    m->set_position({0.0, -1.0, 0.0});
-    m->set_rotation(glm::radians(glm::vec3{90.0, 0.0, 0.0}));
+    m->set_scale(10.0);
+    m->set_position({0.0, -4.0, 0.0});
+    m->load_file(meshDir+"terrain.obj");
     m3->set_position({-2.0, 2.0, 2.0});
+    m3->load_file(engineMeshDir+"cube.obj");
+    
 
     // std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
-
 
     m_scene->add(m);
     m_scene->add(m2);
     m_scene->add(m3);
+    
 
     m_controller = new vke::Controller(camera);
     // m_controller = new vke::Controller(camera, vke::ORBITAL);
