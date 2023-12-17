@@ -1,6 +1,5 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "engine/utilities/vk_loaders.h"
-#include "engine/config.h"
 
 bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials, bool calculateTangents)
 {
@@ -17,11 +16,11 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
     // Check for errors
     if (!warn.empty())
     {
-        DEBUG_LOG("WARN: "+warn);
+        DEBUG_LOG("WARN: " + warn);
     }
     if (!err.empty())
     {
-        std::cerr << err << std::endl;
+        ERR_LOG(err);
         DEBUG_LOG("ERROR: Couldn't load mesh");
         return false;
     }
@@ -30,6 +29,7 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
     std::vector<uint16_t> indices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
 
+    size_t shape_id = 0;
     for (const tinyobj::shape_t &shape : shapes)
     {
         if (!shape.mesh.indices.empty())
@@ -146,7 +146,7 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
 
         if (overrideGeometry)
         {
-            Geometry *oldGeom = mesh->get_geometry();
+            Geometry *oldGeom = mesh->get_geometry(shape_id);
             if (oldGeom)
             {
                 oldGeom->fill(vertices, indices);
@@ -157,6 +157,8 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
         Geometry *g = new Geometry();
         g->fill(vertices, indices);
         mesh->set_geometry(g);
+
+        shape_id++;
     }
     return true;
 }

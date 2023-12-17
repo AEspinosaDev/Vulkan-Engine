@@ -1,5 +1,5 @@
-#ifndef VK_APPLICATION_H
-#define VK_APPLICATION_H
+#ifndef VK_APPLICATION
+#define VK_APPLICATION
 
 #include <engine/vk_renderer.h>
 #include <engine/utilities/vk_controller.h>

@@ -1,5 +1,5 @@
-#ifndef VK_INITIALIZERS_H
-#define VK_INITIALIZERS_H
+#ifndef VK_INITIALIZERS
+#define VK_INITIALIZERS
 
 #include "vk_core.h"
 #include "vk_bootstrap.h"

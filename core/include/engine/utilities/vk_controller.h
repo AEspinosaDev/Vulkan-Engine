@@ -1,5 +1,5 @@
-#ifndef VK_CONTROLLER_H
-#define VK_CONTROLLER_H
+#ifndef VK_CONTROLLER
+#define VK_CONTROLLER
 
 #include "../private/vk_core.h"
 #include "../vk_object3D.h"

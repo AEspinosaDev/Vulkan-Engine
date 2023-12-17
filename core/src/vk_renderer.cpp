@@ -26,6 +26,16 @@ namespace vke
 		// 	iterate scene tree and update mesh and lights vectors
 		// 	dirty = false
 		// }
+		// for (auto mesh : scene->get_meshes())
+		// {
+		// 	for (size_t i = 0; i < mesh->get_num_geometries(); i++)
+		// 	{
+		// 		if (!mesh->get_geometry(i)->buffer_loaded)
+		// 		{
+		// 			upload_geometry_data(mesh->get_geometry(i));
+		// 		}
+		// 	}
+		// }
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
@@ -294,6 +304,24 @@ namespace vke
 			m_deletionQueue.push_function([=]()
 										  { m_frames[i].cleanup(m_device); });
 		}
+
+		VkFenceCreateInfo uploadFenceCreateInfo = vkinit::fence_create_info();
+
+		VK_CHECK(vkCreateFence(m_device, &uploadFenceCreateInfo, nullptr, &m_uploadContext.uploadFence));
+		m_deletionQueue.push_function([=]()
+									  { vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr); });
+
+		VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::command_pool_create_info(vkboot::find_queue_families(m_gpu, *m_window->get_surface()).graphicsFamily.value());
+		VK_CHECK(vkCreateCommandPool(m_device, &uploadCommandPoolInfo, nullptr, &m_uploadContext.commandPool));
+
+		m_deletionQueue.push_function([=]()
+									  { vkDestroyCommandPool(m_device, m_uploadContext.commandPool, nullptr); });
+
+		// allocate the default command buffer that we will use for the instant commands
+		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(m_uploadContext.commandPool, 1);
+
+		VkCommandBuffer cmd;
+		VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_uploadContext.commandBuffer));
 	}
 
 	void Renderer::init_descriptors()
@@ -402,7 +430,7 @@ namespace vke
 		builder.inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
 		auto bindingDescription = Vertex::getBindingDescription();
-		auto attributeDescriptions = Vertex::getAttributeDescriptions(true,false,false,false);
+		auto attributeDescriptions = Vertex::getAttributeDescriptions(true, false, false, false);
 
 		builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
 		builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
@@ -507,6 +535,27 @@ namespace vke
 		m_swapchain.cleanup(&m_device);
 	}
 
+	void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
+	{
+		VkCommandBuffer cmd = m_uploadContext.commandBuffer;
+
+		VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+		function(cmd);
+
+		VK_CHECK(vkEndCommandBuffer(cmd));
+
+		VkSubmitInfo submit = vkinit::submit_info(&cmd);
+
+		VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, m_uploadContext.uploadFence));
+
+		vkWaitForFences(m_device, 1, &m_uploadContext.uploadFence, true, 9999999999);
+		vkResetFences(m_device, 1, &m_uploadContext.uploadFence);
+
+		vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
+	}
+
 	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes)
 	{
 
@@ -523,19 +572,9 @@ namespace vke
 
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum)
 	{
-		if (!m->get_geometry() || !m->get_geometry()->loaded)
+
+		if (m->get_num_geometries() == 0)
 			return;
-
-		if (!m->get_material())
-			// bind default material
-			return;
-
-		Material *mat = m->get_material();
-
-		if (!mat->m_shaderPass)
-		{
-			mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
-		}
 
 		// Offset calculation
 		uint32_t objectOffset = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum;
@@ -545,51 +584,101 @@ namespace vke
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
-		objectData.color = static_cast<BasicPhongMaterial *>(mat)->get_color();
+		objectData.color = static_cast<BasicPhongMaterial *>(m->get_material())->get_color();
 		objectData.otherParams = {m->is_affected_by_fog(), false, false, false};
 		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
-
-		VkDescriptorSet descriptors[] = {m_globalDescriptor.descriptorSet, m_frames[m_currentFrame].objectDescriptor.descriptorSet};
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 2, descriptors, 3, descriptorOffsets);
-		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
-		// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
-
-		// BIND OBJECT BUFFERS
-		Geometry *g = m->get_geometry();
-
-		if (!g->buffer_loaded)
-			upload_geometry_data(g);
-
-		VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
-		VkDeviceSize offsets[] = {0};
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-		if (g->indexed)
+		for (size_t i = 0; i < m->get_num_geometries(); i++)
 		{
-			vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
-		}
-		else
-		{
-			vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
+			Geometry *g = m->get_geometry(i);
+
+			Material *mat = m->get_material(g->m_materialID);
+			if (!mat)
+			{
+				// USE DEBUG MAT;
+			}
+			if (!mat->m_shaderPass)
+			{
+				mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
+			}
+
+			// TO DO: Upload material UBO !!!!
+
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
+
+			VkDescriptorSet descriptors[] = {m_globalDescriptor.descriptorSet, m_frames[m_currentFrame].objectDescriptor.descriptorSet};
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 2, descriptors, 3, descriptorOffsets);
+			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
+			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
+
+			// BIND OBJECT BUFFERS
+			if (!g->buffer_loaded)
+				upload_geometry_data(g);
+
+			VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
+			VkDeviceSize offsets[] = {0};
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+			if (g->indexed)
+			{
+				vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
+				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
+			}
+			else
+			{
+				vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
+			}
 		}
 	}
-
 	void Renderer::upload_geometry_data(Geometry *const g)
 	{
-		g->m_vbo->init(m_memory, sizeof(g->m_vertexData[0]) * g->m_vertexData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		g->m_vbo->upload_data(m_memory, g->m_vertexData.data(), sizeof(g->m_vertexData[0]) * g->m_vertexData.size());
+		// Should be executed only once if geometry data is not changed
+
+		// Staging vertex buffer (CPU only)
+		size_t vboSize = sizeof(g->m_vertexData[0]) * g->m_vertexData.size();
+		Buffer vboStagingBuffer;
+		vboStagingBuffer.init(m_memory, vboSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+		vboStagingBuffer.upload_data(m_memory, g->m_vertexData.data(), vboSize);
+
+		// GPU vertex buffer
+		g->m_vbo->init(m_memory, vboSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+		immediate_submit([=](VkCommandBuffer cmd)
+						 {
+							 VkBufferCopy copy;
+							 copy.dstOffset = 0;
+							 copy.srcOffset = 0;
+							 copy.size = vboSize;
+							 vkCmdCopyBuffer(cmd, vboStagingBuffer.buffer, g->m_vbo->buffer, 1, &copy); });
+
 		m_deletionQueue.push_function([=]()
 									  { g->m_vbo->cleanup(m_memory); });
+		vboStagingBuffer.cleanup(m_memory);
+
 		if (g->indexed)
 		{
-			g->m_ibo->init(m_memory, sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-			g->m_ibo->upload_data(m_memory, g->m_vertexIndex.data(), sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size());
+			// Staging index buffer (CPU only)
+			size_t iboSize = sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size();
+			Buffer iboStagingBuffer;
+			iboStagingBuffer.init(m_memory, iboSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+			iboStagingBuffer.upload_data(m_memory, g->m_vertexIndex.data(), iboSize);
+
+			// GPU index buffer
+			g->m_ibo->init(m_memory, iboSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+			immediate_submit([=](VkCommandBuffer cmd)
+							 {
+							
+							 VkBufferCopy index_copy;
+							 index_copy.dstOffset = 0;
+							 index_copy.srcOffset = 0;
+							 index_copy.size = iboSize;
+							 vkCmdCopyBuffer(cmd, iboStagingBuffer.buffer, g->m_ibo->buffer, 1, &index_copy); });
 			m_deletionQueue.push_function([=]()
 										  { g->m_ibo->cleanup(m_memory); });
+			iboStagingBuffer.cleanup(m_memory);
 		}
+
 		g->buffer_loaded = true;
 	}
 	void Renderer::upload_global_data(Scene *const scene)

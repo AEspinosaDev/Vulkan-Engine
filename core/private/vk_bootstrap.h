@@ -1,5 +1,5 @@
-#ifndef VK_BOOTSTRAP_H
-#define VK_BOOTSTRAP_H
+#ifndef VK_BOOTSTRAP
+#define VK_BOOTSTRAP
 #include "vk_core.h"
 #include "vk_utils.h"
 

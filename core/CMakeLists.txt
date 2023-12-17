@@ -15,6 +15,7 @@ target_include_directories(VKEngine
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_image
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/private
         ${glm_SOURCE_DIR}

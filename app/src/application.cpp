@@ -59,7 +59,7 @@ void VulkanRenderer::setup()
     mat3->set_color({0.0, 0.0, 1.0, 1.0});
 
     vke::Mesh *m = new vke::Mesh(quadGeom, mat);
-    vke::Mesh *m2 = m->clone();
+    vke::Mesh *m2 = new vke::Mesh();
     m2->set_material(mat2);
 
     std::string meshDir(MODEL_DIR);
@@ -67,12 +67,12 @@ void VulkanRenderer::setup()
     m2->load_file(meshDir + "kabuto.obj");
     m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
 
-    vke::Mesh *m3 = m->clone();
+    vke::Mesh *m3 = new vke::Mesh();
     m3->set_material(mat3);
 
     m->set_scale(10.0);
     m->set_position({0.0, -4.0, 0.0});
-    m->load_file(meshDir + "terrain.obj");
+    m->load_file(meshDir + "terrain.obj", true);
     m3->set_position({-2.0, 2.0, 2.0});
     m3->load_file(engineMeshDir + "cube.obj");
 

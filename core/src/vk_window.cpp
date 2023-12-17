@@ -16,8 +16,7 @@ namespace vke
         if (!m_GLFWwindow)
         {
             glfwTerminate();
-            std::cerr << "Failed to create GLFW window" << std::endl;
-            // Handle error
+            ERR_LOG("Failed to create GLFW window");
         }
 
         glfwSetWindowPos(m_GLFWwindow, (int)m_screenPos.x, (int)m_screenPos.y);

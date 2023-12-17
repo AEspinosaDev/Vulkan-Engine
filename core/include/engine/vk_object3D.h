@@ -1,5 +1,5 @@
-#ifndef VK_OBJECT_3D_H
-#define VK_OBJECT_3D_H
+#ifndef VK_OBJECT_3D
+#define VK_OBJECT_3D
 
 #include <string>
 #include <vector>

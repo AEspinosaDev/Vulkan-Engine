@@ -1,6 +1,5 @@
-#ifndef VK_CORE_h
-#define VK_CORE_h
-
+#ifndef VK_CORE
+#define VK_CORE
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -20,28 +19,31 @@
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
-#include <algorithm> 
+#include <algorithm>
 
-//Utils
-#define DEBUG_LOG(msg) { std::cout << msg << std::endl;}
-#define VK_CHECK(x)                                                 \
-	do                                                              \
-	{                                                               \
-		VkResult err = x;                                           \
-		if (err)                                                    \
-		{                                                           \
-			std::cout <<"Detected Vulkan error: " << err << std::endl; \
-			abort();                                                \
-		}                                                           \
+#define DEBUG_LOG(msg)                 \
+	{                                  \
+		std::cout << msg << std::endl; \
+	}
+#define ERR_LOG(msg)                 \
+	{                                  \
+		std::cerr << msg << std::endl; \
+	}
+#define VK_CHECK(x)                                                     \
+	do                                                                  \
+	{                                                                   \
+		VkResult err = x;                                               \
+		if (err)                                                        \
+		{                                                               \
+			std::cout << "Detected Vulkan error: " << err << std::endl; \
+			abort();                                                    \
+		}                                                               \
 	} while (0)
 
-
-//Ahead declaration of some key classes	
-namespace vke{
+// Ahead declaration of some key classes
+namespace vke
+{
 	class Renderer;
 }
 
 #endif
-
-
-

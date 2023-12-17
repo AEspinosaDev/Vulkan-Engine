@@ -1,5 +1,5 @@
-#ifndef VK_CAMERA_H
-#define VK_CAMERA_H
+#ifndef VK_CAMERA
+#define VK_CAMERA
 
 #include "../vk_object3D.h"
 

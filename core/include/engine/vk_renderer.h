@@ -1,5 +1,5 @@
-#ifndef VK_RENDERER_H
-#define VK_RENDERER_H
+#ifndef VK_RENDERER
+#define VK_RENDERER
 
 #include "../private/vk_core.h"
 #include "../private/vk_utils.h"
@@ -8,6 +8,7 @@
 #include "../private/vk_swapchain.h"
 #include "../private/vk_pipeline.h"
 #include "../private/vk_frame.h"
+#include "../private/vk_image.h"
 #include "../private/vk_uniforms.h"
 #include "../private/vk_descriptors.h"
 
@@ -57,6 +58,13 @@ namespace vke
 			bool depthTest{true};
 			bool depthWrite{true};
 		};
+		struct UploadContext{
+			VkFence uploadFence;
+			VkCommandPool commandPool;
+			VkCommandBuffer commandBuffer;
+		};
+
+		UploadContext m_uploadContext;
 
 		VmaAllocator m_memory{};
 		Settings m_settings{};
@@ -171,6 +179,8 @@ namespace vke
 		void recreate_swap_chain();
 
 		void cleanup_swap_chain();
+
+		void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
 
 #pragma endregion
 #pragma region Drawing

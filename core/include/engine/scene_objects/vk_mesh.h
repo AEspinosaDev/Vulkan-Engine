@@ -1,5 +1,5 @@
-#ifndef VK_MESH_H
-#define VK_MESH_H
+#ifndef VK_MESH
+#define VK_MESH
 
 #include "../vk_object3D.h"
 #include "../vk_geometry.h"
@@ -8,12 +8,12 @@
 namespace vke
 {
 	/*
-	Class containing data to represent a 3D model.
+	Class used to represent a 3D model.
 	*/
 	class Mesh : public Object3D
 	{
-		Geometry *m_geometry;
-		Material *m_material;
+		std::vector<Geometry *> m_geometry;
+		std::vector<Material *> m_material;
 
 		bool m_affectedByFog{true};
 		bool m_castShadows{true};
@@ -23,29 +23,56 @@ namespace vke
 		static Material *m_debugMaterial;
 
 	public:
-		Mesh() : Object3D(MESH), m_geometry(nullptr), m_material(nullptr) {}
-		Mesh(Geometry *geom, Material *mat) : Object3D(MESH), m_geometry(geom), m_material(mat) {}
+		Mesh() : Object3D(MESH) {}
+		Mesh(Geometry *geom, Material *mat) : Object3D(MESH)
+		{
+			m_geometry.push_back(geom);
+			m_material.push_back(mat);
+		}
 		~Mesh()
 		{
-			delete m_geometry;
+			// delete m_geometry;
 		}
-		Geometry *get_geometry() const { return m_geometry; }
-		void set_geometry(Geometry *g)
+		/**
+		 * Returns the geometry in the slot.
+		 */
+		inline Geometry *get_geometry(size_t id = 0) const { return m_geometry.size() >= id + 1 ? m_geometry[id] : nullptr; }
+		/**
+		 * Change the geometry in the given slot and returns the old one ref.
+		 */
+		Geometry *change_geometry(Geometry *g, size_t id = 0);
+		/**
+		 * Returns the material in the slot.
+		 */
+		inline Material *get_material(size_t id = 0) const { return m_material.size() >= id + 1 ? m_material[id] : nullptr; }
+		/**
+		 * Change the material in the given slot and returns the old one ref.
+		 */
+		Material *change_material(Material *m, size_t id = 0);
+		/*
+		* Adds this geometry in the next free slot. It is important to set correctly the id of the material slot this geometry is pointing.
+		*/
+		inline void set_geometry(Geometry *g)
 		{
-			m_geometry = g;
+			m_geometry.push_back(g);
 		}
-		Material *get_material() const { return m_material; }
-		void set_material(Material *m)
+		/*
+		* Adds this material in the next free slot
+		*/
+		inline void set_material(Material *m)
 		{
-			m_material = m;
+			m_material.push_back(m);
 		}
+		inline size_t get_num_geometries() const { return m_geometry.size(); }
+		inline size_t get_num_materials() const { return m_material.size(); }
+
 		inline void set_cast_shadows(bool op) { m_castShadows = op; }
 		inline bool get_cast_shadows() const { return m_castShadows; }
 		inline void set_receive_shadows(bool op) { m_receiveShadows = op; }
-		inline Material *set_debug_material()
+		inline Material *set_debug_material(size_t id = 0)
 		{
-			Material *m = m_material;
-			m_material = m_debugMaterial;
+			Material *m = get_material(id);
+			m_material[id] = m_debugMaterial;
 			return m;
 		}
 		inline bool get_recive_shadows() const { return m_castShadows; }

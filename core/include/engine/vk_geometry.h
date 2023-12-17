@@ -1,5 +1,5 @@
-#ifndef VK_GEOMETRY_H
-#define VK_GEOMETRY_H
+#ifndef VK_GEOMETRY
+#define VK_GEOMETRY
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
@@ -96,6 +96,9 @@ namespace vke
         std::vector<Vertex> m_vertexData;
         Buffer *m_vbo;
         Buffer *m_ibo;
+
+        size_t m_materialID{0};
+
         bool loaded{false};
         bool indexed{false};
         bool buffer_loaded{false};
@@ -105,6 +108,9 @@ namespace vke
     public:
         Geometry() : m_vbo{new Buffer},
                      m_ibo{new Buffer} {}
+
+        inline size_t get_material_ID() const {return m_materialID;}             
+        inline void set_material_ID(size_t id) {m_materialID = id;}             
         inline bool is_data_loaded() const { return loaded; }
         inline bool is_buffer_loaded() const { return buffer_loaded; }
         inline bool is_indexed() const { return indexed; }

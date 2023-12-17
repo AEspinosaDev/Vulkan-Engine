@@ -1,5 +1,5 @@
-#ifndef VK_SCENE_H
-#define VK_SCENE_H
+#ifndef VK_SCENE
+#define VK_SCENE
 
 #include "vk_mesh.h"
 #include "vk_camera.h"

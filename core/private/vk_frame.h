@@ -1,5 +1,5 @@
-#ifndef VK_FRAME_H
-#define VK_FRAME_H
+#ifndef VK_FRAME
+#define VK_FRAME
 
 #include "vk_buffer.h"
 #include "vk_bootstrap.h"

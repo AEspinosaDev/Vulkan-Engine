@@ -87,6 +87,7 @@ vec3 phong() {
 
     vec3 ambient = scene.ambientColor.w*scene.ambientColor.rgb;
     vec3 diffuse = clamp(dot(lightDir, v_normal), 0.0, 1.0)*scene.lightColor.rgb;
+    //Blinn specular term
     vec3 specular = pow(max(dot(v_normal,halfVector),0.0),40.0f)*10.0f*scene.lightColor.rgb;
 
     return (ambient+diffuse+specular)*v_color.rgb;

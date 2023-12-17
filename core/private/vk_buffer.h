@@ -1,5 +1,5 @@
-#ifndef VK_BUFFER_H
-#define VK_BUFFER_H
+#ifndef VK_BUFFER
+#define VK_BUFFER
 
 #include "vk_bootstrap.h"
 
@@ -26,12 +26,7 @@ namespace vke
         void cleanup(VmaAllocator memory);
     };
 
-    struct Image
-    {
-        VkImage image;
-        VmaAllocation allocation;
-        VkFormat format;
-    };
+   
 }
 
 #endif

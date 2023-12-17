@@ -1,5 +1,5 @@
-#ifndef VK_PIPELINE_H
-#define VK_PIPELINE_H
+#ifndef VK_PIPELINE
+#define VK_PIPELINE
 
 #include "vk_core.h"
 #include "vk_initializers.h"

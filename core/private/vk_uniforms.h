@@ -1,5 +1,5 @@
-#ifndef VK_UNIFORMS_H
-#define VK_UNIFORMS_H
+#ifndef VK_UNIFORMS
+#define VK_UNIFORMS
 
 #include "vk_buffer.h"
 

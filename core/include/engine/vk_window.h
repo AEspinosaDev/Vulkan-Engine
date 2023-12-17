@@ -1,5 +1,5 @@
-#ifndef VK_WINDOW_H
-#define VK_WINDOW_H
+#ifndef VK_WINDOW
+#define VK_WINDOW
 
 #include "../private/vk_core.h"
 #include "../private/vk_utils.h"

@@ -1,5 +1,5 @@
-#ifndef VK_SWAPCHAIN_H
-#define VK_SWAPCHAIN_H
+#ifndef VK_SWAPCHAIN
+#define VK_SWAPCHAIN
 
 #include "vk_core.h"
 #include "vk_bootstrap.h"
