@@ -7,14 +7,16 @@
 
 namespace vke
 {
+    // Meshes
     namespace OBJLoader
     {
-         bool load_mesh(Mesh  *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
+        bool load_mesh(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
     };
     // TO DO
     // namespace FBXLoader
     // {
     // };
+   
 }
 
 #endif

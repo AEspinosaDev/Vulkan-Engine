@@ -706,3 +706,19 @@ namespace vke
 										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 	}
 }
+
+void vke::Renderer::upload_texture(Texture *const t)
+{
+	Buffer stagingBuffer;
+	t->m_image->init(m_memory, &stagingBuffer, t->m_tmpCache, t->m_width, t->m_height);
+
+	// immediate_submit([=](VkCommandBuffer cmd)
+	// 				 { t->m_image->upload_image(m_uploadContext.commandBuffer, &stagingBuffer) });
+
+	m_deletionQueue.push_function([=]()
+								  { t->m_image->cleanup(m_memory); });
+
+	stagingBuffer.cleanup(m_memory);
+
+	t->buffer_loaded = true;
+}

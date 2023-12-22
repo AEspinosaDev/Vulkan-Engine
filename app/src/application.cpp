@@ -82,6 +82,10 @@ void VulkanRenderer::setup()
     m_scene->add(m2);
     m_scene->add(m3);
 
+    std::string textDir(TEXTURE_DIR);
+    vke::Texture *text = new vke::Texture();
+    text->load_image(textDir + "wood_diffuse.jpg");
+
     m_controller = new vke::Controller(camera);
 }
 

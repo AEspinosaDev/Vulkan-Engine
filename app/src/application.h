@@ -5,6 +5,7 @@
 #include <engine/utilities/vk_controller.h>
 #include <engine/materials/vk_basic_unlit.h>
 #include <engine/materials/vk_basic_phong.h>
+#include <engine/vk_texture.h>
 #include <chrono>
 #include "config.h"
 

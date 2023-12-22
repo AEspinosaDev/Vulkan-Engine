@@ -1,20 +1,27 @@
 #ifndef VK_IMAGE
 #define VK_IMAGE
 
-#include <stb_image.h>
 #include "vk_buffer.h"
-
+#include "vk_initializers.h"
 
 namespace vke
 {
     struct Image
     {
         VkImage image;
-        VmaAllocation allocation;
+        VkExtent3D extent;
         VkFormat format;
 
-		
-        bool load_image(const char* file);
+        VmaAllocation allocation;
+
+
+        static const int BYTES_PER_PIXEL{4};
+
+        void init(VmaAllocator memory, Buffer* stagingBuffer, unsigned char *pixels, int width, int height, int depth=1);
+
+        void upload_image(VkCommandBuffer cmd, Buffer* stagingBuffer);
+
+        void cleanup(VmaAllocator memory);
     };
 
 } // namespace vke

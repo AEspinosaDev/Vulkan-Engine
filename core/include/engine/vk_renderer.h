@@ -15,6 +15,7 @@
 #include "vk_config.h"
 #include "vk_window.h"
 #include "vk_material.h"
+#include "vk_texture.h"
 #include "scene_objects/vk_scene.h"
 
 // TESTING
@@ -58,7 +59,8 @@ namespace vke
 			bool depthTest{true};
 			bool depthWrite{true};
 		};
-		struct UploadContext{
+		struct UploadContext
+		{
 			VkFence uploadFence;
 			VkCommandPool commandPool;
 			VkCommandBuffer commandBuffer;
@@ -180,14 +182,14 @@ namespace vke
 
 		void cleanup_swap_chain();
 
-		void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+		void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 
 #pragma endregion
 #pragma region Drawing
 
 		void set_viewport(VkCommandBuffer commandBuffer);
 
-		void render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene* const scene);
+		void render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene *const scene);
 
 		void draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes);
 
@@ -199,6 +201,8 @@ namespace vke
 		void upload_geometry_data(Geometry *const g);
 
 		void upload_global_data(Scene *const scene);
+
+		void upload_texture(Texture *const t);
 	};
 
 }
