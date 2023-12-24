@@ -85,20 +85,18 @@ namespace vke
 		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 		std::vector<Frame> m_frames;
 
-		const int MAX_FRAMES_IN_FLIGHT{2};
-		const int MAX_OBJECTS_IN_FLIGHT{10};
-		const int MAX_LIGHTS_IN_FLIGHT{10};
+		VkImageView m_depthView;
+		Image m_depthBuffer;
 
 		DescriptorManager m_descriptorMng{};
-
 		DescriptorSet m_globalDescriptor{};
 		Buffer m_globalUniformsBuffer{};
 
-		VkFormat m_depthFormat;
-		VkImageView m_depthView;
-		Image m_depthImage;
-
 		vkutils::DeletionQueue m_deletionQueue;
+
+		const int MAX_FRAMES_IN_FLIGHT{2};
+		const int MAX_OBJECTS_IN_FLIGHT{10};
+		const int MAX_LIGHTS_IN_FLIGHT{10};
 
 #ifdef NDEBUG
 		const bool m_enableValidationLayers{false};

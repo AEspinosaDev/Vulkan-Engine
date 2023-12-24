@@ -3,24 +3,13 @@
 
 namespace vke
 {
-    void Image::init(VmaAllocator memory, Buffer* stagingBuffer, unsigned char *pixels, int width, int height, int depth)
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent)
     {
-        void *pixel_ptr = pixels;
-        VkDeviceSize imageSize = width * height * depth * BYTES_PER_PIXEL;
+        extent = imageExtent;
 
-        // the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
-        VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
+        format = imageFormat;
 
-        stagingBuffer->init(memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-        stagingBuffer->upload_data(memory, pixel_ptr, static_cast<size_t>(imageSize));
-
-        free(pixels);
-        
-        extent.width = static_cast<uint32_t>(width);
-        extent.height = static_cast<uint32_t>(height);
-        extent.depth = static_cast<uint32_t>(depth);
-
-        VkImageCreateInfo img_info = vkinit::image_create_info(image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent);
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent);
 
         VmaAllocationCreateInfo img_allocinfo = {};
         img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -29,7 +18,44 @@ namespace vke
         vmaCreateImage(memory, &img_info, &img_allocinfo, &image, &allocation, nullptr);
 
     }
-    void Image::upload_image(VkCommandBuffer cmd, Buffer* stagingBuffer)
+
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent)
+    {
+        extent = imageExtent;
+
+        format = imageFormat;
+
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent);
+
+        vmaCreateImage(memory, &img_info, &allocInfo, &image, &allocation, nullptr);
+    }
+
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, Buffer *stagingBuffer, unsigned char *pixels, int width, int height, int depth)
+    {
+        void *pixel_ptr = pixels;
+        VkDeviceSize imageSize = width * height * depth * BYTES_PER_PIXEL;
+
+        // the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
+        format = imageFormat;
+
+        stagingBuffer->init(memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+        stagingBuffer->upload_data(memory, pixel_ptr, static_cast<size_t>(imageSize));
+
+        free(pixels);
+
+        extent.width = static_cast<uint32_t>(width);
+        extent.height = static_cast<uint32_t>(height);
+        extent.depth = static_cast<uint32_t>(depth);
+
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent);
+
+        VmaAllocationCreateInfo img_allocinfo = {};
+        img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        // allocate and create the image
+        vmaCreateImage(memory, &img_info, &img_allocinfo, &image, &allocation, nullptr);
+    }
+    void Image::upload_image(VkCommandBuffer cmd, Buffer *stagingBuffer)
     {
         VkImageSubresourceRange range;
         range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -76,8 +102,6 @@ namespace vke
 
         // barrier the image into the shader readable layout
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
-
-        
     }
     void Image::cleanup(VmaAllocator memory)
     {

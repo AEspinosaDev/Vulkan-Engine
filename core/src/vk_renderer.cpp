@@ -167,29 +167,26 @@ namespace vke
 										  // vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 										  cleanup_swap_chain(); });
 
-		// depth image size will match the window
-		VkExtent3D depthImageExtent = {
+		// DEPTH STENCIL BUFFER SETUP
+
+		VkExtent3D depthBufferExtent = {
 			m_window->get_extent()->width,
 			m_window->get_extent()->height,
 			1};
-
-		m_depthFormat = VK_FORMAT_D32_SFLOAT;
-
-		VkImageCreateInfo dimg_info = vkinit::image_create_info(m_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
 
 		VmaAllocationCreateInfo dimg_allocinfo = {};
 		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		vmaCreateImage(m_memory, &dimg_info, &dimg_allocinfo, &m_depthImage.image, &m_depthImage.allocation, nullptr);
-		VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(m_depthFormat, m_depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+		m_depthBuffer.init(m_memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, depthBufferExtent);
 
+		VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(m_depthBuffer.format, m_depthBuffer.image, VK_IMAGE_ASPECT_DEPTH_BIT);
 		VK_CHECK(vkCreateImageView(m_device, &dview_info, nullptr, &m_depthView));
 
-		// m_deletionQueue.push_function([=]()
-		// 							  {
-		// vkDestroyImageView(m_device, m_depthView, nullptr);
-		// vmaDestroyImage(m_memory, m_depthImage.image, m_depthImage.allocation); });
+		m_deletionQueue.push_function([=]()
+									  {
+			vkDestroyImageView(m_device, m_depthView, nullptr);
+			m_depthBuffer.cleanup(m_memory); });
 	}
 
 	void Renderer::init_default_renderpass()
@@ -202,7 +199,7 @@ namespace vke
 		VkAttachmentDescription depth_attachment = {};
 		// Depth attachment
 		depth_attachment.flags = 0;
-		depth_attachment.format = m_depthFormat;
+		depth_attachment.format = m_depthBuffer.format;
 		depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -326,7 +323,6 @@ namespace vke
 
 	void Renderer::init_descriptors()
 	{
-
 		m_descriptorMng.init(m_device);
 		m_descriptorMng.create_pool(10, 10, 10, 10);
 
@@ -558,7 +554,6 @@ namespace vke
 
 	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes)
 	{
-
 		int i = 0;
 		for (Mesh *m : meshes)
 		{
@@ -572,7 +567,6 @@ namespace vke
 
 	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum)
 	{
-
 		if (m->get_num_geometries() == 0)
 			return;
 
@@ -683,7 +677,6 @@ namespace vke
 	}
 	void Renderer::upload_global_data(Scene *const scene)
 	{
-
 		Camera *camera = scene->get_active_camera();
 		if (camera->is_dirty())
 			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
@@ -709,8 +702,21 @@ namespace vke
 
 void vke::Renderer::upload_texture(Texture *const t)
 {
+	VkExtent3D extent = {t->m_width,
+						 t->m_height,
+						 t->m_depth};
+
+	t->m_image->init(m_memory, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent);
+
 	Buffer stagingBuffer;
-	t->m_image->init(m_memory, &stagingBuffer, t->m_tmpCache, t->m_width, t->m_height);
+
+	void *pixel_ptr = t->m_tmpCache;
+	VkDeviceSize imageSize = t->m_width * t->m_height * t->m_depth * Image::BYTES_PER_PIXEL;
+
+	stagingBuffer.init(m_memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+	stagingBuffer.upload_data(m_memory, pixel_ptr, static_cast<size_t>(imageSize));
+
+	free(t->m_tmpCache);
 
 	// immediate_submit([=](VkCommandBuffer cmd)
 	// 				 { t->m_image->upload_image(m_uploadContext.commandBuffer, &stagingBuffer) });
