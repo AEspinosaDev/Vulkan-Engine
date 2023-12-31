@@ -24,18 +24,16 @@ namespace vke
     struct ObjectUniforms
     {
         glm::mat4 model;
-        glm::vec4 color; // w is opacity
+        glm::vec4 color;       // w is opacity
         glm::vec4 otherParams; // x is affected by fog, y is receive shadows, z cast shadows
     };
 
-    struct UnlitBasicMaterialUniforms
+    struct MaterialUniforms
     {
-        glm::vec4 color; // w is opacity
-    };
-    struct PhongMaterialUniforms
-    {
-        glm::vec4 albedo; // w is opacity
-        glm::vec4 phongParams; // x for glossiness, y for exponent
+        glm::vec4 dataSlot1; // albedo color, has color tex,
+        glm::vec4 dataSlot2; // tile u, tile v,
+        glm::vec4 dataSlot3; // roughness, metallic, has r tex, has m tex
+        glm::vec4 dataSlot4; // roughness, metallic, has r tex, has m tex
     };
 
 }

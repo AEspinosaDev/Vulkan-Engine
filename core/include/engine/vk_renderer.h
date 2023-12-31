@@ -85,7 +85,6 @@ namespace vke
 		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 		std::vector<Frame> m_frames;
 
-		VkImageView m_depthView;
 		Image m_depthBuffer;
 
 		DescriptorManager m_descriptorMng{};
@@ -204,4 +203,4 @@ namespace vke
 	};
 
 }
-#endif // VK_RENDERER_H
+#endif // VK_RENDERER

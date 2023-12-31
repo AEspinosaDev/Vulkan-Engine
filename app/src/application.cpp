@@ -76,15 +76,20 @@ void VulkanRenderer::setup()
     m3->set_position({-2.0, 2.0, 2.0});
     m3->load_file(engineMeshDir + "cube.obj");
 
-    // std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
-
     m_scene->add(m);
     m_scene->add(m2);
     m_scene->add(m3);
 
     std::string textDir(TEXTURE_DIR);
+
     vke::Texture *text = new vke::Texture();
     text->load_image(textDir + "wood_diffuse.jpg");
+
+    vke::Texture *text2 = new vke::Texture();
+    text2->load_image(textDir + "land.png");
+
+    mat3->set_color_texture(text);
+    mat->set_color_texture(text2);
 
     m_controller = new vke::Controller(camera);
 }

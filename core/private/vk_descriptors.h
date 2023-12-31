@@ -12,7 +12,7 @@ namespace vke
     {
         VkDescriptorSet descriptorSet{};
 
-        std::vector<Buffer*> binded_buffers;
+        std::vector<Buffer *> binded_buffers;
         uint32_t layoutID;
         uint32_t bindings;
         bool isDynamic;
@@ -37,6 +37,7 @@ namespace vke
             uint32_t numUBO,
             uint32_t numUBODynamic,
             uint32_t numUBOStorage,
+            uint32_t numImageCombined,
             uint32_t maxSets);
 
         void set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount);
@@ -46,6 +47,8 @@ namespace vke
         void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet *descriptor);
 
         void set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding);
+
+        void set_descriptor_write(VkSampler sampler, VkImageView imageView, DescriptorSet *descriptor);
 
         void bind_descriptor_sets(VkCommandBuffer commandBuffer,
                                   VkPipelineBindPoint pipelineBindPoint,

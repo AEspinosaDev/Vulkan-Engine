@@ -4,13 +4,15 @@
 //Input
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
 
 //Output
 layout(location = 0) out vec3 v_pos;
 layout(location = 1) out vec3 v_normal;
-layout(location = 2) out vec3 v_color;
-layout(location = 3) out vec3 v_lightPos;
-layout(location = 4) out int v_affectedByFog;
+layout(location = 2) out vec2 v_uv;
+layout(location = 3) out vec3 v_color;
+layout(location = 4) out vec3 v_lightPos;
+layout(location = 5) out int v_affectedByFog;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -41,6 +43,7 @@ void main() {
     v_color = object.color.rgb;
     v_lightPos = (camera.view * vec4(scene.lightDirection.xyz, 1.0)).xyz;
     v_affectedByFog = int(object.otherParams.x);
+    v_uv = uv;
 }
 
 #shader fragment
@@ -49,9 +52,10 @@ void main() {
 //Input
 layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
-layout(location = 2) in vec3 v_color;
-layout(location = 3) in vec3 v_lightPos;
-layout(location = 4) in flat int v_affectedByFog;
+layout(location = 2) in vec2 v_uv;
+layout(location = 3) in vec3 v_color;
+layout(location = 4) in vec3 v_lightPos;
+layout(location = 5) in flat int v_affectedByFog;
 
 //Output
 layout(location = 0) out vec4 outColor;
@@ -68,6 +72,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec4 color;
     vec4 params; //x shininess //y glossiness 
 } object;
+layout(set = 2, binding = 0) uniform sampler2D colorTex;
 
 float computeFog() {
     float z = (2.0 * scene.fogParams.x) / (scene.fogParams.y + scene.fogParams.x - gl_FragCoord.z * (scene.fogParams.y - scene.fogParams.x));
@@ -101,6 +106,6 @@ void main() {
         float f = computeFog();
         color = f * color + (1 - f) * scene.fogColor.rgb;
     } 
-
-    outColor = vec4(color, 1.0);
+    //outColor = texture(colorTex,v_uv).xyz;
+    outColor = vec4(texture(colorTex,v_uv).xyz, 1.0);
 }

@@ -20,5 +20,10 @@ namespace vke
         loaded = true;
         return loaded;
     }
+    void Texture::create_sampler(VkDevice device)
+    {
+        VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
+        vkCreateSampler(device, &samplerInfo, nullptr, &m_sampler);
+    }
 
 }

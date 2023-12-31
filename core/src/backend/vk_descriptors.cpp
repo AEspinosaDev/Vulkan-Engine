@@ -3,13 +3,14 @@
 namespace vke
 {
 
-    void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage, uint32_t maxSets)
+    void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage, uint32_t numImageCombined, uint32_t maxSets)
     {
         std::vector<VkDescriptorPoolSize> sizes =
             {
                 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numUBO},
                 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, numUBODynamic},
-                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numUBOStorage}};
+                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numUBOStorage},
+                {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImageCombined}};
 
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -57,11 +58,25 @@ namespace vke
 
         VkWriteDescriptorSet writeSetting = vkinit::write_descriptor_buffer(type, descriptor->descriptorSet, &info, binding);
 
-        descriptor->bindings+=1;
+        descriptor->bindings += 1;
         descriptor->binded_buffers.push_back(buffer);
         descriptor->isDynamic = type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
         vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
+    }
+    void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, DescriptorSet *descriptor)
+    {
+
+        VkDescriptorImageInfo imageBufferInfo;
+        imageBufferInfo.sampler = sampler;
+        imageBufferInfo.imageView = imageView;
+        imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkWriteDescriptorSet texture1 = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->descriptorSet, &imageBufferInfo, 0);
+
+        descriptor->bindings += 1;
+        
+        vkUpdateDescriptorSets(m_device, 1, &texture1, 0, nullptr);
     }
     void DescriptorManager::cleanup()
     {
