@@ -24,16 +24,16 @@ namespace vke
     struct ObjectUniforms
     {
         glm::mat4 model;
-        glm::vec4 color;       // w is opacity
         glm::vec4 otherParams; // x is affected by fog, y is receive shadows, z cast shadows
     };
 
     struct MaterialUniforms
     {
-        glm::vec4 dataSlot1; // albedo color, has color tex,
-        glm::vec4 dataSlot2; // tile u, tile v,
-        glm::vec4 dataSlot3; // roughness, metallic, has r tex, has m tex
-        glm::vec4 dataSlot4; // roughness, metallic, has r tex, has m tex
+        glm::vec4 dataSlot1; 
+        glm::vec4 dataSlot2; 
+        glm::vec4 dataSlot3; 
+        glm::vec4 dataSlot4; 
+        glm::vec4 dataSlot5; 
     };
 
 }

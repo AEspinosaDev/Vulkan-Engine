@@ -85,11 +85,12 @@ void VulkanRenderer::setup()
     vke::Texture *text = new vke::Texture();
     text->load_image(textDir + "wood_diffuse.jpg");
 
-    vke::Texture *text2 = new vke::Texture();
-    text2->load_image(textDir + "land.png");
 
     mat3->set_color_texture(text);
-    mat->set_color_texture(text2);
+
+    //mat2->set_color_texture(text);
+    //mat->set_color_texture(text);
+
 
     m_controller = new vke::Controller(camera);
 }

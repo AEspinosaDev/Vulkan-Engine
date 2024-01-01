@@ -2,6 +2,7 @@
 #define VK_MATERIAL
 #include <unordered_map>
 #include "../private/vk_pipeline.h"
+#include "../private/vk_uniforms.h"
 #include "vk_texture.h"
 
 namespace vke
@@ -27,9 +28,11 @@ namespace vke
 
         std::string m_shaderPassID{};
 
+        DescriptorSet m_descriptor;
+
         friend class Renderer;
 
-        virtual void upload_uniforms() = 0;
+        virtual MaterialUniforms get_uniforms() const = 0;
         virtual std::unordered_map<int,Texture*> get_textures() const = 0;
 
     public:

@@ -19,7 +19,7 @@ namespace vke
         Image m_image;
         VkSampler m_sampler;
 
-        DescriptorSet m_descriptor;
+        
         
 
         bool loaded{false};
@@ -40,6 +40,8 @@ namespace vke
 
         bool load_image(std::string fileName);
         void create_sampler(VkDevice device);
+
+        void cleanup(VkDevice device, VmaAllocator memory);
     };
 }
 

@@ -3,6 +3,7 @@
 
 //Input VBO
 layout(location = 0) in vec3 pos;
+layout(location = 2) in vec2 uv;
 
 
 //Output
@@ -21,10 +22,16 @@ layout(set = 1, binding = 0) uniform ObjectUniforms {
     vec4 color;
     vec4 otherParams;
 } object;
+layout(set = 1, binding = 1) uniform MaterialUniforms {
+    vec4 color;
+    vec2 tile;
+    float hasColorTexture;
+    float hasOpacityTexture;
+} material;
 
 void main() {
     gl_Position = camera.viewProj * object.model * mat4(1.0) * vec4(pos, 1.0);
-    fragColor = object.color.rgb;
+    fragColor = material.color.rgb;
     affectedByFog = int(object.otherParams.x);
 }
 
@@ -43,8 +50,11 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec4 lightColor;
 } scene;
 layout(set = 1, binding = 1) uniform MaterialUniforms {
-    vec4 color;
-} object;
+     vec4 color;
+    vec2 tile;
+    float hasColorTexture;
+    float hasOpacityTexture;
+} material;
 
 layout(location = 0) out vec4 outColor;
 

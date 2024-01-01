@@ -39,7 +39,7 @@ void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags
 
 }
 
-void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, uint32_t *istrideDataSizes)
+void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize,std::vector<uint32_t> stridePartitionsSizes)
 {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -57,7 +57,7 @@ void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags
                              nullptr));
 
     strideSize = istrideSize;
-    // stridePartitions.data() = istrideDataSizes;
+    partitionsSizes = stridePartitionsSizes;
 }
 
 void vke::Buffer::cleanup(VmaAllocator memory)

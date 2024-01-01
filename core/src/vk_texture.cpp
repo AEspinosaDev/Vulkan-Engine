@@ -26,4 +26,10 @@ namespace vke
         vkCreateSampler(device, &samplerInfo, nullptr, &m_sampler);
     }
 
+    void Texture::cleanup(VkDevice device, VmaAllocator memory)
+    {
+        m_image.cleanup(device, memory);
+        vkDestroySampler(device, m_sampler, VK_NULL_HANDLE);
+    }
+
 }

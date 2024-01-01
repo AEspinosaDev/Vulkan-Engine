@@ -3,7 +3,7 @@
 
 namespace vke
 {
-	void Renderer::run(Scene *const scene)
+	void Renderer::run(Scene* const scene)
 	{
 		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
@@ -20,22 +20,9 @@ namespace vke
 		cleanup();
 	}
 
-	void Renderer::render(Scene *const scene)
+	void Renderer::render(Scene* const scene)
 	{
-		// if(scene is dirty){
-		// 	iterate scene tree and update mesh and lights vectors
-		// 	dirty = false
-		// }
-		// for (auto mesh : scene->get_meshes())
-		// {
-		// 	for (size_t i = 0; i < mesh->get_num_geometries(); i++)
-		// 	{
-		// 		if (!mesh->get_geometry(i)->buffer_loaded)
-		// 		{
-		// 			upload_geometry_data(mesh->get_geometry(i));
-		// 		}
-		// 	}
-		// }
+
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
@@ -61,13 +48,13 @@ namespace vke
 		// we will signal the renderSemaphore, to signal that rendering has finished
 		VkSubmitInfo submitInfo = vkinit::submit_info(&m_frames[m_currentFrame].commandBuffer);
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		VkSemaphore waitSemaphores[] = {m_frames[m_currentFrame].presentSemaphore};
-		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+		VkSemaphore waitSemaphores[] = { m_frames[m_currentFrame].presentSemaphore };
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		VkSemaphore signalSemaphores[] = {m_frames[m_currentFrame].renderSemaphore};
+		VkSemaphore signalSemaphores[] = { m_frames[m_currentFrame].renderSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -83,7 +70,7 @@ namespace vke
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = {*m_swapchain.get_swapchain_obj()};
+		VkSwapchainKHR swapChains[] = { *m_swapchain.get_swapchain_obj() };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
@@ -108,11 +95,11 @@ namespace vke
 	{
 
 		vkboot::VulkanBooter booter(&m_instance,
-									&m_debugMessenger,
-									&m_gpu,
-									&m_device,
-									&m_graphicsQueue, m_window->get_surface(),
-									&m_presentQueue, &m_memory, &m_enableValidationLayers);
+			&m_debugMessenger,
+			&m_gpu,
+			&m_device,
+			&m_graphicsQueue, m_window->get_surface(),
+			&m_presentQueue, &m_memory, &m_enableValidationLayers);
 
 		booter.boot_vulkan();
 
@@ -143,6 +130,10 @@ namespace vke
 		{
 			m_deletionQueue.flush();
 
+			cleanup_swap_chain();
+
+			vmaDestroyAllocator(m_memory);
+
 			vkDestroyDevice(m_device, nullptr);
 
 			if (m_enableValidationLayers)
@@ -162,17 +153,13 @@ namespace vke
 	{
 		m_swapchain.create(&m_gpu, &m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent());
 
-		m_deletionQueue.push_function([=]()
-									  {
-										  // vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-										  cleanup_swap_chain(); });
 
 		// DEPTH STENCIL BUFFER SETUP
 
 		VkExtent3D depthBufferExtent = {
 			m_window->get_extent()->width,
 			m_window->get_extent()->height,
-			1};
+			1 };
 
 		VmaAllocationCreateInfo dimg_allocinfo = {};
 		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -181,8 +168,10 @@ namespace vke
 		m_depthBuffer.init(m_memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, depthBufferExtent);
 		m_depthBuffer.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-		m_deletionQueue.push_function([=]()
-									  { m_depthBuffer.cleanup(m_device, m_memory); });
+		/*	m_deletionQueue.push_function([=]()
+				{
+					cleanup_swap_chain(); });*/
+
 	}
 
 	void Renderer::init_default_renderpass()
@@ -246,8 +235,8 @@ namespace vke
 		;
 		depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-		VkAttachmentDescription attachments[2] = {colorAttachment, depth_attachment};
-		VkSubpassDependency dependencies[2] = {dependency, depthDependency};
+		VkAttachmentDescription attachments[2] = { colorAttachment, depth_attachment };
+		VkSubpassDependency dependencies[2] = { dependency, depthDependency };
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = 2;
@@ -263,7 +252,7 @@ namespace vke
 		}
 
 		m_deletionQueue.push_function([=]()
-									  { vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
+			{ vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
 	}
 
 	void Renderer::init_framebuffers()
@@ -277,7 +266,7 @@ namespace vke
 		{
 			VkImageView attachments[2] = {
 				m_swapchain.get_image_views()[i],
-				m_depthBuffer.view};
+				m_depthBuffer.view };
 
 			fb_info.pAttachments = attachments;
 			fb_info.attachmentCount = 2;
@@ -295,20 +284,20 @@ namespace vke
 		{
 			m_frames[i].init(m_device, m_gpu, *m_window->get_surface());
 			m_deletionQueue.push_function([=]()
-										  { m_frames[i].cleanup(m_device); });
+				{ m_frames[i].cleanup(m_device); });
 		}
 
 		VkFenceCreateInfo uploadFenceCreateInfo = vkinit::fence_create_info();
 
 		VK_CHECK(vkCreateFence(m_device, &uploadFenceCreateInfo, nullptr, &m_uploadContext.uploadFence));
 		m_deletionQueue.push_function([=]()
-									  { vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr); });
+			{ vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr); });
 
 		VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::command_pool_create_info(vkboot::find_queue_families(m_gpu, *m_window->get_surface()).graphicsFamily.value());
 		VK_CHECK(vkCreateCommandPool(m_device, &uploadCommandPoolInfo, nullptr, &m_uploadContext.commandPool));
 
 		m_deletionQueue.push_function([=]()
-									  { vkDestroyCommandPool(m_device, m_uploadContext.commandPool, nullptr); });
+			{ vkDestroyCommandPool(m_device, m_uploadContext.commandPool, nullptr); });
 
 		// allocate the default command buffer that we will use for the instant commands
 		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(m_uploadContext.commandPool, 1);
@@ -324,12 +313,14 @@ namespace vke
 		// GLOBAL SET
 		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
 		VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-		VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
+		VkDescriptorSetLayoutBinding bindings[] = { camBufferBinding, sceneBufferBinding };
 		m_descriptorMng.set_layout(0, bindings, 2);
 
 		// PER-OBJECT SET
 		VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
-		m_descriptorMng.set_layout(1, &objectBufferBinding, 1);
+		VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+		VkDescriptorSetLayoutBinding objectBindings[] = { objectBufferBinding, materialBufferBinding };
+		m_descriptorMng.set_layout(1, objectBindings, 2);
 
 		// TEXTURE SET
 		VkDescriptorSetLayoutBinding textureBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
@@ -338,32 +329,36 @@ namespace vke
 		const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
 		const size_t globalUBOSize = MAX_FRAMES_IN_FLIGHT * strideSize;
 		m_globalUniformsBuffer.init(m_memory, globalUBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
+
 		m_deletionQueue.push_function([=]()
-									  { m_globalUniformsBuffer.cleanup(m_memory); });
+			{ m_globalUniformsBuffer.cleanup(m_memory); });
 
 		m_descriptorMng.allocate_descriptor_set(0, &m_globalDescriptor);
 
 		m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(CameraUniforms), 0,
-											 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+			&m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
 		m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
-											 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+			&m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 
-			const size_t strideSize = vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu);
+			const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
 			m_frames[i].objectUniformBuffer.init(m_memory, MAX_OBJECTS_IN_FLIGHT * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
 			m_deletionQueue.push_function([=]()
-										  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
+				{ m_frames[i].objectUniformBuffer.cleanup(m_memory); });
 
 			m_descriptorMng.allocate_descriptor_set(1, &m_frames[i].objectDescriptor);
 
 			m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(ObjectUniforms), 0, &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+
+			m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(MaterialUniforms), vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu), &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 		}
 
 		m_deletionQueue.push_function([=]()
-									  { m_descriptorMng.cleanup(); });
+			{ m_descriptorMng.cleanup(); });
 	}
 
 	void Renderer::set_viewport(VkCommandBuffer commandBuffer)
@@ -378,12 +373,12 @@ namespace vke
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 		VkRect2D scissor{};
-		scissor.offset = {0, 0};
+		scissor.offset = { 0, 0 };
 		scissor.extent = *m_window->get_extent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene *const scene)
+	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene* const scene)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 
@@ -397,10 +392,10 @@ namespace vke
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
 
 		// CLEAR SETUP
-		VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
+		VkClearValue clearColor = { {{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}} };
 		VkClearValue clearDepth;
 		clearDepth.depthStencil.depth = 1.f;
-		VkClearValue clearValues[] = {clearColor, clearDepth};
+		VkClearValue clearValues[] = { clearColor, clearDepth };
 		renderPassInfo.clearValueCount = 2;
 		renderPassInfo.pClearValues = clearValues;
 
@@ -438,7 +433,7 @@ namespace vke
 		builder.viewport.height = (float)m_window->get_extent()->height;
 		builder.viewport.minDepth = 0.0f;
 		builder.viewport.maxDepth = 1.0f;
-		builder.scissor.offset = {0, 0};
+		builder.scissor.offset = { 0, 0 };
 		builder.scissor.extent = *m_window->get_extent();
 
 		builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
@@ -456,7 +451,7 @@ namespace vke
 
 		for (auto pair : m_shaderPasses)
 		{
-			ShaderPass *pass = pair.second;
+			ShaderPass* pass = pair.second;
 
 			pass->descriptorSetLayoutIDs.push_back(0);
 			pass->descriptorSetLayoutIDs.push_back(1);
@@ -481,7 +476,7 @@ namespace vke
 			}
 
 			std::vector<VkDescriptorSetLayout> descriptorLayouts;
-			for (auto &layoutID : pass->descriptorSetLayoutIDs)
+			for (auto& layoutID : pass->descriptorSetLayoutIDs)
 			{
 				descriptorLayouts.push_back(m_descriptorMng.get_layout(layoutID));
 			}
@@ -500,7 +495,7 @@ namespace vke
 			pass->pipeline = builder.build_pipeline(m_device, m_renderPass);
 
 			m_deletionQueue.push_function([=]()
-										  { pass->cleanup(m_device); });
+				{ pass->cleanup(m_device); });
 		}
 	}
 
@@ -533,7 +528,7 @@ namespace vke
 		m_depthBuffer.cleanup(m_device, m_memory);
 	}
 
-	void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
+	void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function)
 	{
 		VkCommandBuffer cmd = m_uploadContext.commandBuffer;
 
@@ -554,10 +549,10 @@ namespace vke
 		vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
 	}
 
-	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes)
+	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh*> meshes)
 	{
 		int i = 0;
-		for (Mesh *m : meshes)
+		for (Mesh* m : meshes)
 		{
 			if (m)
 			{
@@ -567,28 +562,29 @@ namespace vke
 		}
 	}
 
-	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum)
+	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh* const m, int meshNum)
 	{
 		if (m->get_num_geometries() == 0)
 			return;
 
 		// Offset calculation
-		uint32_t objectOffset = (uint32_t)(vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) * meshNum);
+		uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * meshNum;
 		uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
-		uint32_t descriptorOffsets[] = {globalOffset, globalOffset, objectOffset};
+
+		uint32_t globalOffsets[] = { globalOffset, globalOffset };
+		uint32_t objectOffsets[] = { objectOffset, objectOffset };
 
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
-		objectData.color = static_cast<BasicPhongMaterial *>(m->get_material())->get_color();
-		objectData.otherParams = {m->is_affected_by_fog(), false, false, false};
+		objectData.otherParams = { m->is_affected_by_fog(), false, false, false };
 		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
 		for (size_t i = 0; i < m->get_num_geometries(); i++)
 		{
-			Geometry *g = m->get_geometry(i);
+			Geometry* g = m->get_geometry(i);
 
-			Material *mat = m->get_material(g->m_materialID);
+			Material* mat = m->get_material(g->m_materialID);
 			if (!mat)
 			{
 				// USE DEBUG MAT;
@@ -598,50 +594,61 @@ namespace vke
 				mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
 			}
 
-			// TO DO: Upload material UBO !!!!
+			MaterialUniforms materialData = mat->get_uniforms();
+			m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
 
 			auto textures = mat->get_textures();
 			for (auto pair : textures)
 			{
-				Texture *texture = pair.second;
+				Texture* texture = pair.second;
 				if (texture->loaded)
 				{
 					if (!texture->buffer_loaded)
 					{
 						upload_texture(texture);
+
+						m_descriptorMng.allocate_descriptor_set(2, &mat->m_descriptor);
+						m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view, &mat->m_descriptor);
 					}
 				}
 			}
 
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
+			// GLOBAL LAYOUT BINDING
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
+			// PER OBJECT LAYOUT BINDING
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
+			// TEXTURE LAYOUT BINDING
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
 
-			VkDescriptorSet descriptors[] = {m_globalDescriptor.descriptorSet, m_frames[m_currentFrame].objectDescriptor.descriptorSet};
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 2, descriptors, 3, descriptorOffsets);
-			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 0, 1, &m_globalDescriptor, 2, globalOffsets);
-			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m->get_material()->m_pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor, 1, &objectOffset);
-			if (!textures.empty())
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &textures[0]->m_descriptor.descriptorSet, 0, nullptr);
 
-			// BIND OBJECT BUFFERS
-			if (!g->buffer_loaded)
-				upload_geometry_data(g);
 
-			VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
-			VkDeviceSize offsets[] = {0};
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			if (m_lastGeometry != g) {
+
+				// BIND OBJECT BUFFERS
+				if (!g->buffer_loaded)
+					upload_geometry_data(g);
+
+				VkBuffer vertexBuffers[] = { g->m_vbo->buffer };
+				VkDeviceSize offsets[] = { 0 };
+				vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			}
 
 			if (g->indexed)
 			{
 				vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
-				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
+				if (m_lastGeometry != g)
+					vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
 			}
 			else
 			{
 				vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
 			}
+
+			m_lastGeometry = g;
 		}
 	}
-	void Renderer::upload_geometry_data(Geometry *const g)
+	void Renderer::upload_geometry_data(Geometry* const g)
 	{
 		// Should be executed only once if geometry data is not changed
 
@@ -655,15 +662,15 @@ namespace vke
 		g->m_vbo->init(m_memory, vboSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
 		immediate_submit([=](VkCommandBuffer cmd)
-						 {
-							 VkBufferCopy copy;
-							 copy.dstOffset = 0;
-							 copy.srcOffset = 0;
-							 copy.size = vboSize;
-							 vkCmdCopyBuffer(cmd, vboStagingBuffer.buffer, g->m_vbo->buffer, 1, &copy); });
+			{
+				VkBufferCopy copy;
+				copy.dstOffset = 0;
+				copy.srcOffset = 0;
+				copy.size = vboSize;
+				vkCmdCopyBuffer(cmd, vboStagingBuffer.buffer, g->m_vbo->buffer, 1, &copy); });
 
 		m_deletionQueue.push_function([=]()
-									  { g->m_vbo->cleanup(m_memory); });
+			{ g->m_vbo->cleanup(m_memory); });
 		vboStagingBuffer.cleanup(m_memory);
 
 		if (g->indexed)
@@ -678,23 +685,23 @@ namespace vke
 			g->m_ibo->init(m_memory, iboSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
 			immediate_submit([=](VkCommandBuffer cmd)
-							 {
-							
-							 VkBufferCopy index_copy;
-							 index_copy.dstOffset = 0;
-							 index_copy.srcOffset = 0;
-							 index_copy.size = iboSize;
-							 vkCmdCopyBuffer(cmd, iboStagingBuffer.buffer, g->m_ibo->buffer, 1, &index_copy); });
+				{
+
+					VkBufferCopy index_copy;
+					index_copy.dstOffset = 0;
+					index_copy.srcOffset = 0;
+					index_copy.size = iboSize;
+					vkCmdCopyBuffer(cmd, iboStagingBuffer.buffer, g->m_ibo->buffer, 1, &index_copy); });
 			m_deletionQueue.push_function([=]()
-										  { g->m_ibo->cleanup(m_memory); });
+				{ g->m_ibo->cleanup(m_memory); });
 			iboStagingBuffer.cleanup(m_memory);
 		}
 
 		g->buffer_loaded = true;
 	}
-	void Renderer::upload_global_data(Scene *const scene)
+	void Renderer::upload_global_data(Scene* const scene)
 	{
-		Camera *camera = scene->get_active_camera();
+		Camera* camera = scene->get_active_camera();
 		if (camera->is_dirty())
 			camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
 		CameraUniforms camData;
@@ -703,32 +710,33 @@ namespace vke
 		camData.viewProj = camera->get_projection() * camera->get_view();
 
 		m_globalUniformsBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
-										   m_globalUniformsBuffer.strideSize * m_currentFrame);
+			m_globalUniformsBuffer.strideSize * m_currentFrame);
 
 		SceneUniforms sceneParams;
-		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), 1.0f};
+		sceneParams.fogParams = { camera->get_near(), camera->get_far(), scene->get_fog_intensity(), 1.0f };
 		sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
-		sceneParams.ambientColor = {0.5, 0.2, 0.7, 0.2};
-		sceneParams.lightColor = {1.0, 1.0, 1.0, 0.0};
-		sceneParams.lightPosition = {2.0, 2.0, 0.0, 0.0};
+		sceneParams.ambientColor = { 0.5, 0.2, 0.7, 0.2 };
+		// SHOUL BE AN ARRAY OF LIGHTS... TO DO
+		sceneParams.lightColor = { 1.0, 1.0, 1.0, 0.0 };
+		sceneParams.lightPosition = { 2.0, 2.0, 0.0, 0.0 };
 
 		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
-										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
+			m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 	}
 }
 
-void vke::Renderer::upload_texture(Texture *const t)
+void vke::Renderer::upload_texture(Texture* const t)
 {
-	VkExtent3D extent = {(uint32_t)t->m_width,
+	VkExtent3D extent = { (uint32_t)t->m_width,
 						 (uint32_t)t->m_height,
-						 (uint32_t)t->m_depth};
+						 (uint32_t)t->m_depth };
 
 	t->m_image.init(m_memory, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent);
 	t->m_image.create_view(m_device, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	Buffer stagingBuffer;
 
-	void *pixel_ptr = t->m_tmpCache;
+	void* pixel_ptr = t->m_tmpCache;
 	VkDeviceSize imageSize = t->m_width * t->m_height * t->m_depth * Image::BYTES_PER_PIXEL;
 
 	stagingBuffer.init(m_memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
@@ -737,10 +745,8 @@ void vke::Renderer::upload_texture(Texture *const t)
 	free(t->m_tmpCache);
 
 	immediate_submit([&](VkCommandBuffer cmd)
-					 { t->m_image.upload_image(cmd, &stagingBuffer); });
+		{ t->m_image.upload_image(cmd, &stagingBuffer); });
 
-	m_deletionQueue.push_function([=]()
-								  { t->m_image.cleanup(m_device, m_memory); });
 
 	stagingBuffer.cleanup(m_memory);
 
@@ -749,6 +755,7 @@ void vke::Renderer::upload_texture(Texture *const t)
 	// SETUP DESCRIPTORS
 	t->create_sampler(m_device);
 
-	m_descriptorMng.allocate_descriptor_set(2, &t->m_descriptor);
-	m_descriptorMng.set_descriptor_write(t->m_sampler, t->m_image.view, &t->m_descriptor);
+
+	m_deletionQueue.push_function([=]()
+		{ t->cleanup(m_device, m_memory); });
 }

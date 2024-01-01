@@ -18,9 +18,6 @@
 #include "vk_texture.h"
 #include "scene_objects/vk_scene.h"
 
-// TESTING
-#include "materials/vk_basic_phong.h"
-
 namespace vke
 {
 	enum BufferingType
@@ -90,6 +87,7 @@ namespace vke
 		DescriptorManager m_descriptorMng{};
 		DescriptorSet m_globalDescriptor{};
 		Buffer m_globalUniformsBuffer{};
+
 
 		vkutils::DeletionQueue m_deletionQueue;
 

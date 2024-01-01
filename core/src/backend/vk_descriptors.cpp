@@ -21,14 +21,14 @@ namespace vke
 
         VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_pool));
     }
-    void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount)
+    void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount, VkDescriptorSetLayoutCreateFlags flags)
     {
         VkDescriptorSetLayout layout;
         VkDescriptorSetLayoutCreateInfo setinfo = {};
         setinfo.bindingCount = bindingCount;
-        setinfo.flags = 0;
+        setinfo.flags = flags;
         setinfo.pNext = nullptr;
-        setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO; 
         setinfo.pBindings = bindings;
 
         VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &layout));
