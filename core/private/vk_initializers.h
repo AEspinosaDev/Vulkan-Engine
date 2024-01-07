@@ -35,7 +35,7 @@ namespace vke
 
 		VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace face, float lineWidth = 1.0);
 
-		VkPipelineMultisampleStateCreateInfo multisampling_state_create_info();
+		VkPipelineMultisampleStateCreateInfo multisampling_state_create_info( VkSampleCountFlagBits samples);
 
 		VkPipelineColorBlendAttachmentState color_blend_attachment_state();
 
@@ -47,7 +47,7 @@ namespace vke
 
 		VkWriteDescriptorSet write_descriptor_buffer(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorBufferInfo *bufferInfo, uint32_t binding);
 
-		VkImageCreateInfo image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
+		VkImageCreateInfo image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent,VkSampleCountFlagBits samples=VK_SAMPLE_COUNT_1_BIT);
 
 		VkImageViewCreateInfo imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
 

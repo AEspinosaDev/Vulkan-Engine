@@ -11,6 +11,7 @@
 #include "../private/vk_image.h"
 #include "../private/vk_uniforms.h"
 #include "../private/vk_descriptors.h"
+#include "../private/vk_renderpass.h"
 
 #include "vk_config.h"
 #include "vk_window.h"
@@ -63,26 +64,34 @@ namespace vke
 			VkCommandBuffer commandBuffer;
 		};
 
-		UploadContext m_uploadContext;
+		UploadContext m_uploadContext{};
 
 		VmaAllocator m_memory{};
 		Settings m_settings{};
 
 		Window *m_window;
 		VkInstance m_instance{};
-		Swapchain m_swapchain;
 		VkPhysicalDevice m_gpu{};
 		VkDevice m_device{};
 		VkQueue m_graphicsQueue{};
 		VkQueue m_presentQueue{};
 		VkDebugUtilsMessengerEXT m_debugMessenger{};
 
+		Swapchain m_swapchain;
+
+		Image m_colorBuffer{};
+		Image m_depthBuffer{};
+
 		VkRenderPass m_renderPass{};
+		VkRenderPass m_shadowPass{};
+
 		std::vector<VkFramebuffer> m_framebuffers;
+		VkFramebuffer m_shadowFramebuffer;
+
 		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
+
 		std::vector<Frame> m_frames;
 
-		Image m_depthBuffer;
 
 		DescriptorManager m_descriptorMng{};
 		DescriptorSet m_globalDescriptor{};
@@ -163,7 +172,7 @@ namespace vke
 
 		void create_swapchain();
 
-		void init_default_renderpass();
+		void init_renderpasses();
 
 		void init_framebuffers();
 

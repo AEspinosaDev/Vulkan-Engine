@@ -3,13 +3,13 @@
 
 namespace vke
 {
-    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent)
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,VkSampleCountFlagBits samples)
     {
         extent = imageExtent;
 
         format = imageFormat;
 
-        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent);
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent,samples);
 
         VmaAllocationCreateInfo img_allocinfo = {};
         img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -18,13 +18,13 @@ namespace vke
         vmaCreateImage(memory, &img_info, &img_allocinfo, &image, &allocation, nullptr);
     }
 
-    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent)
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent,VkSampleCountFlagBits samples)
     {
         extent = imageExtent;
 
         format = imageFormat;
 
-        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent);
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent,samples);
 
         vmaCreateImage(memory, &img_info, &allocInfo, &image, &allocation, nullptr);
     }

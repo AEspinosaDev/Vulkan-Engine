@@ -18,8 +18,9 @@ namespace vke
 
         static const int BYTES_PER_PIXEL{4};
 
-        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent);
-        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent);
+        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,VkSampleCountFlagBits samples);
+        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent,VkSampleCountFlagBits samples);
+        
         void create_view(VkDevice device, VkImageAspectFlags aspectFlags);
 
         void upload_image(VkCommandBuffer cmd, Buffer *stagingBuffer);
