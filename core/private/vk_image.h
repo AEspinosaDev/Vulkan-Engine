@@ -21,11 +21,11 @@ namespace vke
         void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,VkSampleCountFlagBits samples);
         void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent,VkSampleCountFlagBits samples);
         
-        void create_view(VkDevice device, VkImageAspectFlags aspectFlags);
+        void create_view(VkDevice& device, VkImageAspectFlags aspectFlags);
 
-        void upload_image(VkCommandBuffer cmd, Buffer *stagingBuffer);
+        void upload_image(VkCommandBuffer& cmd, Buffer *stagingBuffer);
 
-        void cleanup(VkDevice device, VmaAllocator memory);
+        void cleanup(VkDevice& device, VmaAllocator& memory);
     };
 
 } // namespace vke

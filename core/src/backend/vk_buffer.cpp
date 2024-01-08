@@ -1,6 +1,6 @@
 #include "vk_buffer.h"
 
-void vke::Buffer::upload_data(VmaAllocator memory, const void *bufferData, size_t size)
+void vke::Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)
 {
     void *data;
     vmaMapMemory(memory, allocation, &data);
@@ -8,7 +8,7 @@ void vke::Buffer::upload_data(VmaAllocator memory, const void *bufferData, size_
     vmaUnmapMemory(memory, allocation);
 }
 
-void vke::Buffer::upload_data(VmaAllocator memory, const void *bufferData, size_t size, size_t offset)
+void vke::Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size, size_t offset)
 {
     char *data;
     vmaMapMemory(memory, allocation, (void **)&data);
@@ -17,7 +17,7 @@ void vke::Buffer::upload_data(VmaAllocator memory, const void *bufferData, size_
     vmaUnmapMemory(memory, allocation);
 }
 
-void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
+void vke::Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
 {
 
     VkBufferCreateInfo bufferInfo = {};
@@ -36,10 +36,9 @@ void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags
                              nullptr));
 
     strideSize = istrideSize;
-
 }
 
-void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize,std::vector<uint32_t> stridePartitionsSizes)
+void vke::Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
 {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -60,7 +59,7 @@ void vke::Buffer::init(VmaAllocator memory, size_t allocSize, VkBufferUsageFlags
     partitionsSizes = stridePartitionsSizes;
 }
 
-void vke::Buffer::cleanup(VmaAllocator memory)
+void vke::Buffer::cleanup(VmaAllocator &memory)
 {
     vmaDestroyBuffer(memory, buffer,
                      allocation);

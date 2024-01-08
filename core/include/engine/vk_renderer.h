@@ -31,12 +31,26 @@ namespace vke
 
 	enum AntialiasingType
 	{
-		_NONE = 1,
-		_MSAA_4 = 4,
-		_MSAA_8 = 8,
-		_MSAA_16 = 16,
+		_NONE = VK_SAMPLE_COUNT_1_BIT,
+		_MSAA_4 = VK_SAMPLE_COUNT_4_BIT,
+		_MSAA_8 = VK_SAMPLE_COUNT_8_BIT,
+		_MSAA_16 = VK_SAMPLE_COUNT_16_BIT,
+		_MSAA_32 = VK_SAMPLE_COUNT_32_BIT
 	};
 
+	struct RendererSettings
+	{
+
+		AntialiasingType AAtype{_MSAA_4};
+		BufferingType bufferingType{_DOUBLE};
+
+		glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
+		bool autoClearColor{true};
+		bool autoClearDepth{true};
+		bool autoClearStencil{true};
+		bool depthTest{true};
+		bool depthWrite{true};
+	};
 	/**
 	 * Core class whose porpuse is to render data on a window.
 	 */
@@ -44,19 +58,8 @@ namespace vke
 	{
 #pragma region Properties
 
-		struct Settings
-		{
+		RendererSettings m_settings{};
 
-			AntialiasingType AAtype{_NONE};
-			BufferingType bufferingType{_DOUBLE};
-
-			glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
-			bool autoClearColor{true};
-			bool autoClearDepth{true};
-			bool autoClearStencil{true};
-			bool depthTest{true};
-			bool depthWrite{true};
-		};
 		struct UploadContext
 		{
 			VkFence uploadFence;
@@ -67,7 +70,6 @@ namespace vke
 		UploadContext m_uploadContext{};
 
 		VmaAllocator m_memory{};
-		Settings m_settings{};
 
 		Window *m_window;
 		VkInstance m_instance{};
@@ -79,24 +81,19 @@ namespace vke
 
 		Swapchain m_swapchain;
 
-		Image m_colorBuffer{};
-		Image m_depthBuffer{};
+		std::vector<Frame> m_frames;
 
 		VkRenderPass m_renderPass{};
 		VkRenderPass m_shadowPass{};
 
-		std::vector<VkFramebuffer> m_framebuffers;
 		VkFramebuffer m_shadowFramebuffer;
 
+		// std::unordered_map<std::string, VkFramebuffer> m_customFramebuffers;
 		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
-
-		std::vector<Frame> m_frames;
-
 
 		DescriptorManager m_descriptorMng{};
 		DescriptorSet m_globalDescriptor{};
 		Buffer m_globalUniformsBuffer{};
-
 
 		vkutils::DeletionQueue m_deletionQueue;
 
@@ -110,6 +107,7 @@ namespace vke
 		const bool m_enableValidationLayers{true};
 #endif
 		bool m_framebufferResized{false};
+		bool m_changeInConfiguration{false};
 		bool m_initialized{false};
 		uint32_t m_currentFrame{0};
 
@@ -119,14 +117,23 @@ namespace vke
 #pragma endregion
 #pragma region Getters & Setters
 	public:
-		inline glm::vec4 get_clearcolor() const { return m_settings.clearColor; }
+		inline Window *const get_window() const { return m_window; }
+
+		inline RendererSettings get_settings() { return m_settings; }
 
 		inline void set_clearcolor(glm::vec4 c)
 		{
 			m_settings.clearColor = c;
 		}
-
-		inline Window *const get_window() const { return m_window; }
+		inline void set_antialiasing(AntialiasingType msaa)
+		{
+			m_settings.AAtype = msaa;
+			if (m_initialized)
+			{
+				m_framebufferResized = true;
+				m_changeInConfiguration = true;
+			}
+		}
 
 		inline void set_autoclear(bool clrColor, bool clrDepth = true, bool clrStencil = true)
 		{
@@ -141,6 +148,7 @@ namespace vke
 #pragma endregion
 #pragma region Core Functions
 		Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
+		Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 		/**
 		 * Inits the renderer. Call it before using any other function related to this class.
 		 */

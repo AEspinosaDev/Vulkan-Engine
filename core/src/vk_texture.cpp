@@ -20,13 +20,13 @@ namespace vke
         loaded = true;
         return loaded;
     }
-    void Texture::create_sampler(VkDevice device)
+    void Texture::create_sampler(VkDevice &device)
     {
         VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
         vkCreateSampler(device, &samplerInfo, nullptr, &m_sampler);
     }
 
-    void Texture::cleanup(VkDevice device, VmaAllocator memory)
+    void Texture::cleanup(VkDevice &device, VmaAllocator &memory)
     {
         m_image.cleanup(device, memory);
         vkDestroySampler(device, m_sampler, VK_NULL_HANDLE);

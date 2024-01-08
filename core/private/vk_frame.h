@@ -23,9 +23,8 @@ namespace vke
         DescriptorSet objectDescriptor;
         Buffer objectUniformBuffer;
 
-        void init(VkDevice device, VkPhysicalDevice gpu, VkSurfaceKHR surface);
-        void cleanup(VkDevice device);
-       
+        void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR &surface);
+        void cleanup(VkDevice &device);
     };
 
 }

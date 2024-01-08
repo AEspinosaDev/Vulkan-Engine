@@ -3,7 +3,7 @@
 namespace vke
 {
 
-    void Frame::init(VkDevice device, VkPhysicalDevice gpu, VkSurfaceKHR surface)
+    void Frame::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR &surface)
     {
         // create a command pool for commands submitted to the graphics queue.
         // we also want the pool to allow for resetting of individual command buffers
@@ -28,7 +28,7 @@ namespace vke
         VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore));
     }
 
-    void Frame::cleanup(VkDevice device)
+    void Frame::cleanup(VkDevice &device)
     {
         vkDestroyCommandPool(device, commandPool, nullptr);
         vkDestroyFence(device, renderFence, nullptr);

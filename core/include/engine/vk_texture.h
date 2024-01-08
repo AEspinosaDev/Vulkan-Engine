@@ -39,9 +39,9 @@ namespace vke
         inline int get_num_channels() const { return m_channels; }
 
         bool load_image(std::string fileName);
-        void create_sampler(VkDevice device);
+        void create_sampler(VkDevice& device);
 
-        void cleanup(VkDevice device, VmaAllocator memory);
+        void cleanup(VkDevice& device, VmaAllocator& memory);
     };
 }
 

@@ -14,8 +14,10 @@ namespace vke
 
         std::vector<Camera *> m_cameras;
         std::vector<Mesh *> m_meshes;
-    
+
         // std::vector<Light*> m_lights;
+        // For now, just ONE light
+        // Light* m_light
 
         bool m_fog{true};
         glm::vec3 m_fogColor{0.8f, 0.8f, 0.8f};
@@ -69,13 +71,13 @@ namespace vke
         // inline const std::vector<Mesh *> get_lights() const { return m_meshes; }
 
         inline void set_fog_active(bool op) { m_fog = op; }
-        inline bool is_fog_active() { return m_fog; }
+        inline bool is_fog_active() const { return m_fog; }
 
         inline void set_fog_color(glm::vec3 c) { m_fogColor = c; }
-        inline glm::vec3 get_fog_color() { return m_fogColor; }
+        inline glm::vec3 get_fog_color() const { return m_fogColor; }
 
         inline void set_fog_intensity(float i) { m_fogIntensity = i; }
-        inline float get_fog_intensity() { return m_fogIntensity; }
+        inline float get_fog_intensity() const { return m_fogIntensity; }
     };
 
 }

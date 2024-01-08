@@ -12,7 +12,7 @@ namespace vke
 		return info;
 	}
 
-	VkCommandBufferAllocateInfo vkinit::command_buffer_allocate_info(VkCommandPool pool, uint32_t count /*= 1*/, VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/)
+	VkCommandBufferAllocateInfo vkinit::command_buffer_allocate_info(VkCommandPool &pool, uint32_t count /*= 1*/, VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/)
 	{
 		VkCommandBufferAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -35,7 +35,7 @@ namespace vke
 		return info;
 	}
 
-	VkFramebufferCreateInfo vkinit::framebuffer_create_info(VkRenderPass renderPass, VkExtent2D extent)
+	VkFramebufferCreateInfo vkinit::framebuffer_create_info(VkRenderPass &renderPass, VkExtent2D &extent)
 	{
 		VkFramebufferCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -102,7 +102,7 @@ namespace vke
 		return info;
 	}
 
-	VkRenderPassBeginInfo vkinit::renderpass_begin_info(VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer)
+	VkRenderPassBeginInfo vkinit::renderpass_begin_info(VkRenderPass &renderPass, VkExtent2D &windowExtent, VkFramebuffer &framebuffer)
 	{
 		VkRenderPassBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -179,7 +179,7 @@ namespace vke
 
 		return info;
 	}
-	VkPipelineMultisampleStateCreateInfo vkinit::multisampling_state_create_info( VkSampleCountFlagBits samples)
+	VkPipelineMultisampleStateCreateInfo vkinit::multisampling_state_create_info(VkSampleCountFlagBits samples)
 	{
 		VkPipelineMultisampleStateCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -261,7 +261,7 @@ namespace vke
 		return write;
 	}
 
-	VkImageCreateInfo vkinit::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent,VkSampleCountFlagBits samples)
+	VkImageCreateInfo vkinit::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, VkSampleCountFlagBits samples)
 	{
 		VkImageCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

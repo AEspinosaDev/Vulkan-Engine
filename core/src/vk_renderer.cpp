@@ -25,7 +25,7 @@ namespace vke
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(m_device, *m_swapchain.get_swapchain_obj(), UINT64_MAX, m_frames[m_currentFrame].presentSemaphore, VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain.get_swapchain_obj(), UINT64_MAX, m_frames[m_currentFrame].presentSemaphore, VK_NULL_HANDLE, &imageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -69,7 +69,7 @@ namespace vke
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = {*m_swapchain.get_swapchain_obj()};
+		VkSwapchainKHR swapChains[] = {m_swapchain.get_swapchain_obj()};
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
@@ -150,38 +150,24 @@ namespace vke
 
 	void Renderer::create_swapchain()
 	{
-		m_swapchain.create(&m_gpu, &m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent());
+		m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent());
 
-		// COLOR BIT SETUP
-
-		VkExtent3D bufferExtent = {
-			m_window->get_extent()->width,
-			m_window->get_extent()->height,
-			1};
-
-		VmaAllocationCreateInfo cimg_allocinfo = {};
-		cimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-		cimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		m_colorBuffer.init(m_memory, *m_swapchain.get_image_format(), VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, cimg_allocinfo, bufferExtent, (VkSampleCountFlagBits)m_settings.AAtype);
-		m_colorBuffer.create_view(m_device, VK_IMAGE_ASPECT_COLOR_BIT);
-
+		// COLOR BUFFER SETUP
+		m_swapchain.create_colorbuffer(m_device, m_memory, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 		// DEPTH STENCIL BUFFER SETUP
-
-		VmaAllocationCreateInfo dimg_allocinfo = {};
-		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-		dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		m_depthBuffer.init(m_memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, bufferExtent, (VkSampleCountFlagBits)m_settings.AAtype);
-		m_depthBuffer.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
+		if (m_settings.depthTest)
+			m_swapchain.create_depthbuffer(m_device, m_memory, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 	}
 
 	void Renderer::init_renderpasses()
 	{
 
 		RenderPassBuilder builder;
-		builder.add_color_attachment(*m_swapchain.get_image_format(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, (VkSampleCountFlagBits)m_settings.AAtype);
-		builder.setup_depth_attachment(m_depthBuffer.format, (VkSampleCountFlagBits)m_settings.AAtype);
+
+		builder.add_color_attachment(m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype);
+
+		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
+		
 		m_renderPass = builder.build_renderpass(m_device, true, true);
 
 		m_deletionQueue.push_function([=]()
@@ -190,25 +176,10 @@ namespace vke
 
 	void Renderer::init_framebuffers()
 	{
-		auto size = m_swapchain.get_image_views().size();
+		// FOR THE SWAPCHAIN
+		m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
-		m_framebuffers.resize(size);
-
-		VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(m_renderPass, *m_window->get_extent());
-		for (size_t i = 0; i < size; i++)
-		{
-			VkImageView attachments[2] = {
-				m_swapchain.get_image_views()[i],
-				m_depthBuffer.view};
-
-			fb_info.pAttachments = attachments;
-			fb_info.attachmentCount = 2;
-
-			if (vkCreateFramebuffer(m_device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to create framebuffer!");
-			}
-		}
+		// FOR SHADOW PASS
 	}
 
 	void Renderer::init_control_objects()
@@ -321,7 +292,7 @@ namespace vke
 
 		set_viewport(commandBuffer);
 
-		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_framebuffers[imageIndex]);
+		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 		// CLEAR SETUP
 		VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
@@ -443,22 +414,16 @@ namespace vke
 		}
 
 		VK_CHECK(vkDeviceWaitIdle(m_device));
+
 		cleanup_swap_chain();
 		create_swapchain();
+
 		init_framebuffers();
 	}
 
 	void Renderer::cleanup_swap_chain()
 	{
-		for (size_t i = 0; i < m_framebuffers.size(); i++)
-		{
-			vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
-		}
-
-		m_swapchain.cleanup(&m_device);
-		
-		m_colorBuffer.cleanup(m_device, m_memory);
-		m_depthBuffer.cleanup(m_device, m_memory);
+		m_swapchain.cleanup(m_device, m_memory);
 	}
 
 	void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)

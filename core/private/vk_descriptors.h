@@ -31,7 +31,7 @@ namespace vke
 		std::unordered_map<uint32_t, VkDescriptorSetLayout> m_layouts;
 
 	public:
-		inline void init(VkDevice dvc) { m_device = dvc; }
+		inline void init(VkDevice &dvc) { m_device = dvc; }
 
 		void create_pool(
 			uint32_t numUBO,

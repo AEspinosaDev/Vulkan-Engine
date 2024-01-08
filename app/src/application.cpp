@@ -4,7 +4,11 @@
 void VulkanRenderer::init()
 {
     m_window = new vke::Window("VK Engine", 800, 600);
-    m_renderer = new vke::Renderer(m_window);
+
+    vke::RendererSettings settings{};
+    settings.AAtype = vke::AntialiasingType::_MSAA_8;
+    settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
+    m_renderer = new vke::Renderer(m_window, settings);
     m_renderer->init();
 
     m_window->set_window_size_callback(std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1,
@@ -34,6 +38,7 @@ void VulkanRenderer::run()
 
 void VulkanRenderer::setup()
 {
+
     camera = new vke::Camera();
     m_scene = new vke::Scene(camera);
 
@@ -65,6 +70,7 @@ void VulkanRenderer::setup()
     std::string meshDir(MODEL_DIR);
     std::string engineMeshDir(VK_MODEL_DIR);
     m2->load_file(meshDir + "kabuto.obj");
+    // m2->load_file(engineMeshDir + "sphere.obj");
     m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
 
     vke::Mesh *m3 = new vke::Mesh();
@@ -85,12 +91,10 @@ void VulkanRenderer::setup()
     vke::Texture *text = new vke::Texture();
     text->load_image(textDir + "wood_diffuse.jpg");
 
-
     mat3->set_color_texture(text);
 
-    //mat2->set_color_texture(text);
-    //mat->set_color_texture(text);
-
+    // mat2->set_color_texture(text);
+    // mat->set_color_texture(text);
 
     m_controller = new vke::Controller(camera);
 }

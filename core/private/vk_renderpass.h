@@ -11,10 +11,10 @@ namespace vke
         std::vector<VkAttachmentDescription> colorAttachments;
         VkAttachmentDescription depthAttachment{};
 
-        void add_color_attachment(VkFormat format, VkImageLayout finalLayout, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool stencil = true);
-        void setup_depth_attachment(VkFormat format, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool stencil = true);
+        void add_color_attachment(VkFormat& format, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool stencil = true);
+        void setup_depth_attachment(VkFormat& format, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool stencil = true);
 
-        VkRenderPass build_renderpass(VkDevice device, bool colorBit, bool depthBit);
+        VkRenderPass build_renderpass(VkDevice& device, bool colorBit, bool depthBit);
     };
 
 }

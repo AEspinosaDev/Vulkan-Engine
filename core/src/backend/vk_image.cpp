@@ -3,13 +3,13 @@
 
 namespace vke
 {
-    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,VkSampleCountFlagBits samples)
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, VkSampleCountFlagBits samples)
     {
         extent = imageExtent;
 
         format = imageFormat;
 
-        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent,samples);
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent, samples);
 
         VmaAllocationCreateInfo img_allocinfo = {};
         img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -18,18 +18,18 @@ namespace vke
         vmaCreateImage(memory, &img_info, &img_allocinfo, &image, &allocation, nullptr);
     }
 
-    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent,VkSampleCountFlagBits samples)
+    void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, VkSampleCountFlagBits samples)
     {
         extent = imageExtent;
 
         format = imageFormat;
 
-        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent,samples);
+        VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent, samples);
 
         vmaCreateImage(memory, &img_info, &allocInfo, &image, &allocation, nullptr);
     }
 
-    void Image::upload_image(VkCommandBuffer cmd, Buffer *stagingBuffer)
+    void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
     {
         VkImageSubresourceRange range;
         range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -77,12 +77,12 @@ namespace vke
         // barrier the image into the shader readable layout
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
     }
-    void Image::create_view(VkDevice device, VkImageAspectFlags aspectFlags)
+    void Image::create_view(VkDevice &device, VkImageAspectFlags aspectFlags)
     {
         VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(format, image, aspectFlags);
         VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
     }
-    void Image::cleanup(VkDevice device, VmaAllocator memory)
+    void Image::cleanup(VkDevice &device, VmaAllocator &memory)
     {
         vkDestroyImageView(device, view, nullptr);
         vmaDestroyImage(memory, image, allocation);
