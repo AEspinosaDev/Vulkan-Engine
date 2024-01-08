@@ -61,11 +61,17 @@ void VulkanRenderer::setup()
                    {0, 1, 2, 2, 3, 0});
 
     auto mat = new vke::BasicPhongMaterial();
-    mat->set_color({1.0, 0.0, 0.0, 1.0});
+    mat->set_color({0.43f, 0.28f, 0.23f, 1.0});
+    mat->set_glossiness(10.0f);
+    mat->set_shininess(1.0f);
+
     auto mat2 = new vke::BasicPhongMaterial();
     mat2->set_color({0.0, 1.0, 0.0, 1.0});
     auto mat3 = new vke::BasicPhongMaterial();
     mat3->set_color({0.0, 0.0, 1.0, 1.0});
+
+    auto lightMat = new vke::BasicUnlitMaterial();
+    lightMat->set_color(glm::vec4(m_scene->get_light()->get_color(), 1.0f));
 
     vke::Mesh *m = new vke::Mesh(quadGeom, mat);
     vke::Mesh *m2 = new vke::Mesh();
@@ -74,8 +80,14 @@ void VulkanRenderer::setup()
     std::string meshDir(MODEL_DIR);
     std::string engineMeshDir(VK_MODEL_DIR);
     m2->load_file(meshDir + "kabuto.obj");
-    // m2->load_file(engineMeshDir + "sphere.obj");
     m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
+
+    m_lightDummy = new vke::Mesh();
+    m_lightDummy->load_file(engineMeshDir + "sphere.obj");
+    m_lightDummy->set_material(lightMat);
+    m_lightDummy->set_scale(0.5f);
+    m_scene->add(m_lightDummy);
+    
 
     vke::Mesh *m3 = new vke::Mesh();
     m3->set_material(mat3);
@@ -83,7 +95,7 @@ void VulkanRenderer::setup()
     m->set_scale(10.0);
     m->set_position({0.0, -4.0, 0.0});
     m->load_file(meshDir + "terrain.obj", true);
-    m3->set_position({-2.0, 2.0, 2.0});
+    m3->set_position({-3.0, 2.0, 3.0});
     m3->load_file(engineMeshDir + "cube.obj");
 
     m_scene->add(m);
@@ -103,6 +115,21 @@ void VulkanRenderer::setup()
     m_controller = new vke::Controller(camera);
 }
 
+void VulkanRenderer::update()
+{
+    m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_deltaTime);
+
+
+    // Rotate the vector around the ZX plane
+    float rotationAngle = glm::radians(20.0f * m_deltaTime);
+    auto light = m_scene->get_light();
+    float _x = light->get_position().x * cos(rotationAngle) - light->get_position().z  * sin(rotationAngle);
+    float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
+
+    light->set_position({_x, light->get_position().y, _z});
+    m_lightDummy->set_position(light->get_position());
+}
+
 void VulkanRenderer::tick()
 {
     float currentTime = (float)vke::Window::get_time_elapsed();
@@ -110,7 +137,7 @@ void VulkanRenderer::tick()
     m_lastTime = currentTime;
     float fps = 1.0f / m_deltaTime;
 
-    m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_deltaTime);
+    update();
 
     m_renderer->render(m_scene);
 }

@@ -20,9 +20,10 @@ class VulkanRenderer
     vke::Camera *camera;
     vke::Controller *m_controller;
 
+    vke::Mesh* m_lightDummy;
+
     float m_deltaTime{0.0f};
     float m_lastTime{0.0f};
-    // std::chrono::steady_clock::time_point m_lastTime;
 
 public:
     void
@@ -34,6 +35,8 @@ private:
     void setup();
 
     void tick();
+
+    void update();
 
 #pragma region Input Management
 

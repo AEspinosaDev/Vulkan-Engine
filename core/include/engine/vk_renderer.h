@@ -95,6 +95,7 @@ namespace vke
 		VkRenderPass m_renderPass{};
 		VkRenderPass m_shadowPass{};
 
+		Texture* m_shadowTexture;
 		VkFramebuffer m_shadowFramebuffer;
 
 		// std::unordered_map<std::string, VkFramebuffer> m_customFramebuffers;
@@ -137,6 +138,15 @@ namespace vke
 		inline void set_antialiasing(AntialiasingType msaa)
 		{
 			m_settings.AAtype = msaa;
+			if (m_initialized)
+			{
+				m_framebufferResized = true;
+				m_changeInConfiguration = true;
+			}
+		}
+		inline void set_shadow_quality(ShadowResolution quality)
+		{
+			m_settings.shadowResolution = quality;
 			if (m_initialized)
 			{
 				m_framebufferResized = true;
@@ -208,13 +218,13 @@ namespace vke
 #pragma endregion
 #pragma region Drawing
 
-		void set_viewport(VkCommandBuffer commandBuffer);
+		void set_viewport(VkCommandBuffer& commandBuffer);
 
-		void render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene *const scene);
+		void render_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex, Scene *const scene);
 
-		void draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes);
+		void draw_meshes(VkCommandBuffer& commandBuffer, const std::vector<Mesh *> meshes);
 
-		void draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum);
+		void draw_mesh(VkCommandBuffer& commandBuffer, Mesh *const m, int meshNum);
 
 #pragma endregion
 #pragma region BufferManagement

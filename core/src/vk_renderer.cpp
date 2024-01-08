@@ -164,6 +164,8 @@ namespace vke
 
 		RenderPassBuilder builder;
 
+		// DEFAULT RENDER PASS
+
 		builder.add_color_attachment(m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
@@ -172,6 +174,34 @@ namespace vke
 
 		m_deletionQueue.push_function([=]()
 									  { vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
+
+		// SHADOW RENDER PASS
+
+		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, VK_SAMPLE_COUNT_1_BIT, false);
+
+		std::vector<VkSubpassDependency> dependencies;
+		dependencies.resize(2);
+
+		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].dstSubpass = 0;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[1].srcSubpass = 0;
+		dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		m_shadowPass = builder.build_renderpass(m_device, false, true, dependencies);
+
+		m_deletionQueue.push_function([=]()
+									  { vkDestroyRenderPass(m_device, m_shadowPass, nullptr); });
 	}
 
 	void Renderer::init_framebuffers()
@@ -180,6 +210,53 @@ namespace vke
 		m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 		// FOR SHADOW PASS
+		// For shadow mapping we only need a depth attachment
+		m_shadowTexture = new Texture();
+		Image shadowImage;
+		shadowImage.init(m_memory, m_swapchain.get_depthbuffer().format,
+						 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {1080, 1080, 1}, VK_SAMPLE_COUNT_1_BIT);
+
+		// VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+		// VkMemoryRequirements memReqs;
+		// vkGetImageMemoryRequirements(device, offscreenPass.depth.image, &memReqs);
+		// memAlloc.allocationSize = memReqs.size;
+		// memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		// VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.depth.mem));
+		// VK_CHECK_RESULT(vkBindImageMemory(device, offscreenPass.depth.image, offscreenPass.depth.mem, 0));
+
+		shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
+		m_shadowTexture->m_image = shadowImage;
+
+		// VkFilter shadowmap_filter = vks::tools::formatIsFilterable(physicalDevice, DEPTH_FORMAT, VK_IMAGE_TILING_OPTIMAL) ? DEFAULT_SHADOWMAP_FILTER : VK_FILTER_NEAREST;
+		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_NEAREST);
+		// sampler.magFilter = VK_FILTER_NEAREST;
+		// sampler.minFilter = VK_FILTER_NEAREST;
+		sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		sampler.addressModeV = sampler.addressModeU;
+		sampler.addressModeW = sampler.addressModeU;
+		sampler.mipLodBias = 0.0f;
+		sampler.maxAnisotropy = 1.0f;
+		sampler.minLod = 0.0f;
+		sampler.maxLod = 1.0f;
+		sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
+
+		m_deletionQueue.push_function([=]()
+									  { m_shadowTexture->cleanup(m_device, m_memory); });
+
+		//	To light
+		VkExtent2D shadowRes{1080, 1080};
+		VkFramebufferCreateInfo shadow_fb_info = vkinit::framebuffer_create_info(m_shadowPass, shadowRes);
+		shadow_fb_info.pAttachments = &m_shadowTexture->m_image.view;
+
+		if (vkCreateFramebuffer(m_device, &shadow_fb_info, nullptr, &m_shadowFramebuffer) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create shadow framebuffer!");
+		}
+
+		m_deletionQueue.push_function([=]()
+									  { vkDestroyFramebuffer(m_device, m_shadowFramebuffer, nullptr); });
 	}
 
 	void Renderer::init_control_objects()
@@ -264,7 +341,7 @@ namespace vke
 									  { m_descriptorMng.cleanup(); });
 	}
 
-	void Renderer::set_viewport(VkCommandBuffer commandBuffer)
+	void Renderer::set_viewport(VkCommandBuffer &commandBuffer)
 	{
 		// Viewport setup
 		VkViewport viewport{};
@@ -281,7 +358,7 @@ namespace vke
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	void Renderer::render_pass(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene *const scene)
+	void Renderer::render_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 	{
 		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
 
@@ -417,8 +494,7 @@ namespace vke
 
 		cleanup_swap_chain();
 		create_swapchain();
-
-		init_framebuffers();
+		m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 	}
 
 	void Renderer::cleanup_swap_chain()
@@ -447,21 +523,23 @@ namespace vke
 		vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
 	}
 
-	void Renderer::draw_meshes(VkCommandBuffer commandBuffer, const std::vector<Mesh *> meshes)
+	void Renderer::draw_meshes(VkCommandBuffer &commandBuffer, const std::vector<Mesh *> meshes)
 	{
 		int i = 0;
 		for (Mesh *m : meshes)
 		{
 			if (m)
 			{
-				draw_mesh(commandBuffer, m, i);
+				if (m->is_active())
+					draw_mesh(commandBuffer, m, i);
 			}
 			i++;
 		}
 	}
 
-	void Renderer::draw_mesh(VkCommandBuffer commandBuffer, Mesh *const m, int meshNum)
+	void Renderer::draw_mesh(VkCommandBuffer &commandBuffer, Mesh *const m, int meshNum)
 	{
+
 		if (m->get_num_geometries() == 0)
 			return;
 
@@ -517,7 +595,7 @@ namespace vke
 			// PER OBJECT LAYOUT BINDING
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 			// TEXTURE LAYOUT BINDING
-			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
 
 			if (m_lastGeometry != g)
 			{
