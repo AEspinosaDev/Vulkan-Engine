@@ -32,8 +32,11 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
 
     vec3 lighPosition;
+    float lightType;
+    vec3 lightColor;
     float lightIntensity;
-    vec4 lightColor;
+    vec4 lightData;
+
 } scene;
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
@@ -57,7 +60,7 @@ void main() {
     v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
     v_lightPos = (camera.view * vec4(scene.lighPosition, 1.0)).xyz;
     v_affectedByFog = int(object.otherParams.x);
-    v_uv = vec2(uv.x*material.tileUV.x,uv.y*material.tileUV.y );
+    v_uv = vec2(uv.x * material.tileUV.x, uv.y * material.tileUV.y);
 }
 
 #shader fragment
@@ -86,8 +89,10 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
     
     vec3 lighPosition;
+    float lightType;
+    vec3 lightColor;
     float lightIntensity;
-    vec4 lightColor;
+    vec4 lightData;
 } scene;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -111,7 +116,7 @@ float computeFog() {
     return exp(-scene.fogIntensity * z);
 }
 
-float computeAttenuation(){
+float computeAttenuation() {
 
     return 0.0;
 }
@@ -120,17 +125,17 @@ vec3 phong() {
 
     vec3 lightDir = normalize(v_lightPos - v_pos);
     vec3 viewDir = normalize(-v_pos);
-    vec3 halfVector = normalize(lightDir+viewDir);
+    vec3 halfVector = normalize(lightDir + viewDir);
 
-    vec3 ambient = scene.ambientIntensity*scene.ambientColor;
-    vec3 diffuse = clamp(dot(lightDir, v_normal), 0.0, 1.0)*scene.lightColor.rgb;
+    vec3 ambient = scene.ambientIntensity * scene.ambientColor;
+    vec3 diffuse = clamp(dot(lightDir, v_normal), 0.0, 1.0) * scene.lightColor.rgb;
 
     //Blinn specular term
-    vec3 specular = pow(max(dot(v_normal,halfVector),0.0),material.glossiness)*material.shininess*scene.lightColor.rgb;
+    vec3 specular = pow(max(dot(v_normal, halfVector), 0.0), material.glossiness) * material.shininess * scene.lightColor.rgb;
 
-    vec3 color = material.hasColorTexture  ? texture(colorTex,v_uv).rgb : material.color.rgb;
+    vec3 color = material.hasColorTexture ? texture(colorTex, v_uv).rgb : material.color.rgb;
 
-    return (ambient+diffuse+specular)*color;
+    return (ambient + diffuse + specular) * color;
 
 }
 

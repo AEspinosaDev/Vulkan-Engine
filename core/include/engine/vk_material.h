@@ -14,9 +14,9 @@ namespace vke
     };
     struct MaterialParameters
     {
-        bool blending;
-        bool faceCulling;
-        Culling culling;
+        bool blending{true};
+        bool faceCulling{false};
+        Culling culling{_BACK};
     };
 
     class Material
@@ -37,6 +37,7 @@ namespace vke
 
     public:
         Material(std::string shaderPassID) : m_shaderPassID(shaderPassID) {}
+        Material(std::string shaderPassID, MaterialParameters params) : m_shaderPassID(shaderPassID), m_parameters(params) {}
 
         ~Material() {}
 

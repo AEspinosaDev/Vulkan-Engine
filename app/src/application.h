@@ -9,7 +9,6 @@
 #include <chrono>
 #include "config.h"
 
-
 /**
  * Example app
  */
@@ -17,10 +16,10 @@ class VulkanRenderer
 {
     vke::Window *m_window;
     vke::Renderer *m_renderer;
-    vke::Scene* m_scene;
+    vke::Scene *m_scene;
     vke::Camera *camera;
     vke::Controller *m_controller;
-    
+
     float m_deltaTime{0.0f};
     float m_lastTime{0.0f};
     // std::chrono::steady_clock::time_point m_lastTime;
@@ -40,7 +39,7 @@ private:
 
     void keyboard_callback(int key, int scancode, int action, int mods)
     {
-         if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             m_window->set_window_should_close(true);
         }
@@ -49,12 +48,11 @@ private:
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
-        
     }
 
     void mouse_callback(double xpos, double ypos)
     {
-        m_controller->handle_mouse(m_window->get_window_obj(),(float)xpos,(float)ypos);
+        m_controller->handle_mouse(m_window->get_window_obj(), (float)xpos, (float)ypos);
     }
 
     void window_resize_callback(int width, int height)

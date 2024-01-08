@@ -25,7 +25,7 @@
 	{                                  \
 		std::cout << msg << std::endl; \
 	}
-#define ERR_LOG(msg)                 \
+#define ERR_LOG(msg)                   \
 	{                                  \
 		std::cerr << msg << std::endl; \
 	}
@@ -39,6 +39,15 @@
 			abort();                                                    \
 		}                                                               \
 	} while (0)
+
+// Shadows
+typedef enum ShadowResolutionFlagsBits
+{
+	VK_LOW_SHADOW_RESOLUTION = 1080,
+	VK_MEDIUM_SHADOW_RESOLUTION = 1080,
+	VK_HIGH_SHADOW_RESOLUTION = 1080,
+	VK_ULTRA_SHADOW_RESOLUTION = 1080,
+} ShadowResolutionFlagsBits;
 
 // Ahead declaration of some key classes
 namespace vke

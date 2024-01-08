@@ -3,6 +3,7 @@
 
 #include "vk_mesh.h"
 #include "vk_camera.h"
+#include "vk_light.h"
 
 namespace vke
 {
@@ -14,19 +15,19 @@ namespace vke
 
         std::vector<Camera *> m_cameras;
         std::vector<Mesh *> m_meshes;
-
         // std::vector<Light*> m_lights;
-        // For now, just ONE light
-        // Light* m_light
 
+        // LIGHTING
+        //  For now, just ONE light
+        Light *m_light{nullptr};
+        glm::vec3 m_ambientColor{0.5f, 0.2f, 0.7f};
+        float m_ambientIntensity{0.2f};
+
+        // FOG
         bool m_fog{true};
         glm::vec3 m_fogColor{0.8f, 0.8f, 0.8f};
         float m_fogIntensity{2.0f};
         float m_fogExponent{1.0f};
-
-        glm::vec3 ambientColor;
-        glm::vec3 lightPosition;
-        glm::vec3 lightColor;
 
         inline void classify_object(Object3D *obj)
         {
@@ -69,6 +70,15 @@ namespace vke
         inline const std::vector<Mesh *> get_meshes() const { return m_meshes; }
         inline const std::vector<Camera *> get_cameras() const { return m_cameras; }
         // inline const std::vector<Mesh *> get_lights() const { return m_meshes; }
+
+        inline void set_light(Light *l) { m_light = l; }
+        inline Light *get_light() { return m_light; }
+
+        inline void set_ambient_color(glm::vec3 c) { m_ambientColor = c; }
+        inline glm::vec3 get_ambient_color() const { return m_ambientColor; }
+
+        inline void set_ambient_intensity(float i) { m_ambientIntensity = i; }
+        inline float get_ambient_intensity() const { return m_ambientIntensity; }
 
         inline void set_fog_active(bool op) { m_fog = op; }
         inline bool is_fog_active() const { return m_fog; }

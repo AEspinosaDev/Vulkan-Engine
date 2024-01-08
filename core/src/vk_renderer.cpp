@@ -167,7 +167,7 @@ namespace vke
 		builder.add_color_attachment(m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
-		
+
 		m_renderPass = builder.build_renderpass(m_device, true, true);
 
 		m_deletionQueue.push_function([=]()
@@ -612,10 +612,10 @@ namespace vke
 		SceneUniforms sceneParams;
 		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), 1.0f};
 		sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
-		sceneParams.ambientColor = {0.5, 0.2, 0.7, 0.2};
-		// SHOUL BE AN ARRAY OF LIGHTS... TO DO
-		sceneParams.lightColor = {1.0, 1.0, 1.0, 0.0};
-		sceneParams.lightPosition = {2.0, 2.0, 0.0, 0.0};
+		sceneParams.ambientColor = glm::vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
+		// SHOULD BE AN ARRAY OF LIGHTS... TO DO
+		if (scene->get_light())
+			sceneParams.lightUniforms = scene->get_light()->get_uniforms();
 
 		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));

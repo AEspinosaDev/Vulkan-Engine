@@ -8,6 +8,7 @@ void VulkanRenderer::init()
     vke::RendererSettings settings{};
     settings.AAtype = vke::AntialiasingType::_MSAA_8;
     settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
+
     m_renderer = new vke::Renderer(m_window, settings);
     m_renderer->init();
 
@@ -40,12 +41,15 @@ void VulkanRenderer::setup()
 {
 
     camera = new vke::Camera();
-    m_scene = new vke::Scene(camera);
-
     camera->set_position(glm::vec3(0.0f, 0.0f, -5.0f));
     camera->set_far(100.0f);
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
+
+    m_scene = new vke::Scene(camera);
+
+    m_scene->set_light(new vke::PointLight());
+    m_scene->get_light()->set_position({2.0f, 2.0f, 0.0f});
 
     // m_scene->set_rotation({0.7,1.5, 0.0});
 
