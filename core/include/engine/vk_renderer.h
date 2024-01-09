@@ -95,7 +95,7 @@ namespace vke
 		VkRenderPass m_renderPass{};
 		VkRenderPass m_shadowPass{};
 
-		Texture* m_shadowTexture;
+		Texture *m_shadowTexture;
 		VkFramebuffer m_shadowFramebuffer;
 
 		// std::unordered_map<std::string, VkFramebuffer> m_customFramebuffers;
@@ -211,20 +211,23 @@ namespace vke
 
 		void recreate_swap_chain();
 
-		void cleanup_swap_chain();
+		void reconfigure_vulkan();
 
 		void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 
 #pragma endregion
 #pragma region Drawing
 
-		void set_viewport(VkCommandBuffer& commandBuffer);
+		void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth = 0.0f, float maxDepth = 1.0f,
+						  float x = 0.0f, float y = 0.0f, int offsetX = 0, int offsetY = 0);
 
-		void render_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex, Scene *const scene);
+		void render_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
 
-		void draw_meshes(VkCommandBuffer& commandBuffer, const std::vector<Mesh *> meshes);
+		void shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
 
-		void draw_mesh(VkCommandBuffer& commandBuffer, Mesh *const m, int meshNum);
+		void draw_mesh(VkCommandBuffer &commandBuffer, Mesh *const m, int meshNum);
+
+		void draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g);
 
 #pragma endregion
 #pragma region BufferManagement

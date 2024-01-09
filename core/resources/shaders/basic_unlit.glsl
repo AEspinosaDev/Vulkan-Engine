@@ -30,7 +30,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 } material;
 
 void main() {
-    gl_Position = camera.viewProj * object.model * mat4(1.0) * vec4(pos, 1.0);
+    gl_Position = camera.viewProj * object.model * vec4(pos, 1.0);
     fragColor = material.color.rgb;
     affectedByFog = int(object.otherParams.x);
 }

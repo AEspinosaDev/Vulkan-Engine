@@ -40,7 +40,20 @@ namespace vke
 		VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
 		VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, /*VkCommandBufferResetFlagBits*/ 0));
 
+		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
+
+		if (vkBeginCommandBuffer(m_frames[m_currentFrame].commandBuffer, &beginInfo) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to begin recording command buffer!");
+		}
+
+		// shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
 		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
+
+		if (vkEndCommandBuffer(m_frames[m_currentFrame].commandBuffer) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to record command buffer!");
+		}
 
 		// prepare the submission to the queue.
 		// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
@@ -129,7 +142,7 @@ namespace vke
 		{
 			m_deletionQueue.flush();
 
-			cleanup_swap_chain();
+			m_swapchain.cleanup(m_device, m_memory);
 
 			vmaDestroyAllocator(m_memory);
 
@@ -175,8 +188,10 @@ namespace vke
 		m_deletionQueue.push_function([=]()
 									  { vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
 
-		// SHADOW RENDER PASS
+		if (m_initialized)
+			return;
 
+		// SHADOW RENDER PASS
 		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, VK_SAMPLE_COUNT_1_BIT, false);
 
 		std::vector<VkSubpassDependency> dependencies;
@@ -240,6 +255,7 @@ namespace vke
 		sampler.minLod = 0.0f;
 		sampler.maxLod = 1.0f;
 		sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
 		VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
 
 		m_deletionQueue.push_function([=]()
@@ -341,33 +357,25 @@ namespace vke
 									  { m_descriptorMng.cleanup(); });
 	}
 
-	void Renderer::set_viewport(VkCommandBuffer &commandBuffer)
+	void Renderer::set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth, float maxDepth, float x, float y, int offsetX, int offsetY)
 	{
 		// Viewport setup
 		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = (float)m_window->get_extent()->width;
-		viewport.height = (float)m_window->get_extent()->height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
+		viewport.x = x;
+		viewport.y = y;
+		viewport.width = (float)extent.width;
+		viewport.height = (float)extent.height;
+		viewport.minDepth = minDepth;
+		viewport.maxDepth = maxDepth;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 		VkRect2D scissor{};
-		scissor.offset = {0, 0};
-		scissor.extent = *m_window->get_extent();
+		scissor.offset = {offsetX, offsetY};
+		scissor.extent = extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
 	void Renderer::render_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 	{
-		VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
-
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
-
-		set_viewport(commandBuffer);
 
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
@@ -381,18 +389,83 @@ namespace vke
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+		set_viewport(commandBuffer, *m_window->get_extent());
+
 		upload_global_data(scene);
 
-		draw_meshes(commandBuffer, scene->get_meshes());
+		int mesh_idx = 0;
+		for (Mesh *m : scene->get_meshes())
+		{
+			if (m)
+			{
+				if (m->is_active())
+					draw_mesh(commandBuffer, m, mesh_idx);
+			}
+			mesh_idx++;
+		}
 
 		vkCmdEndRenderPass(commandBuffer);
-
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to record command buffer!");
-		}
 	}
 
+	void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
+	{
+
+		VkExtent2D shadowExtent{1080, 1080};
+
+		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_shadowPass, shadowExtent, m_shadowFramebuffer);
+
+		VkClearValue clearDepth;
+		clearDepth.depthStencil = {1.0f, 0};
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearDepth;
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		set_viewport(commandBuffer, shadowExtent);
+
+		// Required to avoid shadow mapping artifacts
+		float depthBiasConstant = 1.25f;
+		float depthBiasSlope = 1.75f;
+		vkCmdSetDepthBias(
+			commandBuffer,
+			depthBiasConstant,
+			0.0f,
+			depthBiasSlope);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipeline);
+
+		int mesh_idx = 0;
+		for (Mesh *m : scene->get_meshes())
+		{
+			if (m)
+			{
+				if (m->is_active() && m->get_num_geometries() > 1)
+				{
+					// Offset calculation
+					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
+					uint32_t objectOffsets[] = {objectOffset, objectOffset};
+
+					// ObjectUniforms objectData;
+					ObjectUniforms objectData;
+					objectData.model = m->get_model_matrix();
+					objectData.otherParams = {m->is_affected_by_fog(), false, false, false};
+					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+
+					for (size_t i = 0; i < m->get_num_geometries(); i++)
+					{
+						Geometry *g = m->get_geometry(i);
+						// PER OBJECT LAYOUT BINDING
+						// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
+
+						draw_geometry(commandBuffer, g);
+					}
+				}
+				mesh_idx++;
+			}
+
+			vkCmdEndRenderPass(commandBuffer);
+		}
+	}
 	void Renderer::init_default_shaderpasses()
 	{
 		PipelineBuilder builder;
@@ -477,6 +550,58 @@ namespace vke
 			m_deletionQueue.push_function([=]()
 										  { pass->cleanup(m_device); });
 		}
+
+		if (m_initialized)
+			return;
+		// DEPTH PASS
+
+		auto depthAttributeDescriptions = Vertex::getAttributeDescriptions(false, false, false, false);
+		builder.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(depthAttributeDescriptions.size());
+		builder.vertexInputInfo.pVertexAttributeDescriptions = depthAttributeDescriptions.data();
+
+		VkExtent2D shadowExtent{1080, 1080};
+
+		builder.viewport.width = (float)shadowExtent.width;
+		builder.viewport.height = (float)shadowExtent.height;
+		builder.scissor.extent = shadowExtent;
+
+		builder.multisampling = vkinit::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
+
+		ShaderPass *depthPass = new ShaderPass(shaderDir + "depth.glsl");
+		depthPass->descriptorSetLayoutIDs.push_back(1);
+
+		auto shader = ShaderSource::read_file(depthPass->SHADER_FILE);
+		ShaderStage vertShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_VERTEX_BIT,
+																		ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
+		depthPass->stages.push_back(vertShaderStage);
+		ShaderStage fragShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+																		ShaderSource::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
+		depthPass->stages.push_back(fragShaderStage);
+
+		std::vector<VkDescriptorSetLayout> descriptorLayouts;
+		for (auto &layoutID : depthPass->descriptorSetLayoutIDs)
+		{
+			descriptorLayouts.push_back(m_descriptorMng.get_layout(layoutID));
+		}
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
+		pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorLayouts.size();
+		pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
+
+		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &depthPass->pipelineLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+
+		builder.pipelineLayout = depthPass->pipelineLayout;
+		builder.shaderPass = depthPass;
+
+		depthPass->pipeline = builder.build_pipeline(m_device, m_shadowPass);
+
+		m_shaderPasses["depth"] = depthPass;
+
+		m_deletionQueue.push_function([=]()
+									  { depthPass->cleanup(m_device); });
 	}
 
 	void Renderer::recreate_swap_chain()
@@ -492,14 +617,9 @@ namespace vke
 
 		VK_CHECK(vkDeviceWaitIdle(m_device));
 
-		cleanup_swap_chain();
+		m_swapchain.cleanup(m_device, m_memory);
 		create_swapchain();
 		m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
-	}
-
-	void Renderer::cleanup_swap_chain()
-	{
-		m_swapchain.cleanup(m_device, m_memory);
 	}
 
 	void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
@@ -521,20 +641,6 @@ namespace vke
 		vkResetFences(m_device, 1, &m_uploadContext.uploadFence);
 
 		vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
-	}
-
-	void Renderer::draw_meshes(VkCommandBuffer &commandBuffer, const std::vector<Mesh *> meshes)
-	{
-		int i = 0;
-		for (Mesh *m : meshes)
-		{
-			if (m)
-			{
-				if (m->is_active())
-					draw_mesh(commandBuffer, m, i);
-			}
-			i++;
-		}
 	}
 
 	void Renderer::draw_mesh(VkCommandBuffer &commandBuffer, Mesh *const m, int meshNum)
@@ -597,31 +703,35 @@ namespace vke
 			// TEXTURE LAYOUT BINDING
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
 
-			if (m_lastGeometry != g)
-			{
-
-				// BIND OBJECT BUFFERS
-				if (!g->buffer_loaded)
-					upload_geometry_data(g);
-
-				VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
-				VkDeviceSize offsets[] = {0};
-				vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			}
-
-			if (g->indexed)
-			{
-				vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
-				if (m_lastGeometry != g)
-					vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
-			}
-			else
-			{
-				vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
-			}
-
-			m_lastGeometry = g;
+			draw_geometry(commandBuffer, g);
 		}
+	}
+	void Renderer::draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g)
+	{
+		if (m_lastGeometry != g)
+		{
+
+			// BIND OBJECT BUFFERS
+			if (!g->buffer_loaded)
+				upload_geometry_data(g);
+
+			VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
+			VkDeviceSize offsets[] = {0};
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+		}
+
+		if (g->indexed)
+		{
+			vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
+			if (m_lastGeometry != g)
+				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
+		}
+		else
+		{
+			vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
+		}
+
+		m_lastGeometry = g;
 	}
 	void Renderer::upload_geometry_data(Geometry *const g)
 	{
