@@ -10,7 +10,6 @@ namespace vke
 	{
 		VkShaderModule shaderModule;
 		VkShaderStageFlagBits stage;
-
 	};
 	/*
 	/Shader useful info
@@ -43,7 +42,7 @@ namespace vke
 		std::vector<int> descriptorSetLayoutIDs;
 
 		ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile) {}
-		
+
 		void cleanup(VkDevice device);
 	};
 
@@ -65,11 +64,16 @@ namespace vke
 		// Poligon mode, culling and order
 		VkPipelineRasterizationStateCreateInfo rasterizer;
 		// Blending
+		VkPipelineColorBlendStateCreateInfo colorBlending;
 		VkPipelineColorBlendAttachmentState colorBlendAttachment;
 		// Sampling
 		VkPipelineMultisampleStateCreateInfo multisampling;
 		// Depth
 		VkPipelineDepthStencilStateCreateInfo depthStencil;
+		// Dynamic States
+		std::vector<VkDynamicState> dynamicStates = {
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR};
 
 		VkPipelineLayout pipelineLayout;
 

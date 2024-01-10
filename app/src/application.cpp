@@ -49,7 +49,7 @@ void VulkanRenderer::setup()
     m_scene = new vke::Scene(camera);
 
     m_scene->set_light(new vke::PointLight());
-    m_scene->get_light()->set_position({2.0f, 2.0f, 0.0f});
+    m_scene->get_light()->set_position({3.0f, 3.0f, 0.0f});
 
     // m_scene->set_rotation({0.7,1.5, 0.0});
 
@@ -68,7 +68,7 @@ void VulkanRenderer::setup()
     auto mat2 = new vke::BasicPhongMaterial();
     mat2->set_color({0.0, 1.0, 0.0, 1.0});
     auto mat3 = new vke::BasicPhongMaterial();
-    mat3->set_color({0.0, 0.0, 1.0, 1.0});
+    mat3->set_color({0.0, 0.0, 0.0, 1.0});
 
     auto lightMat = new vke::BasicUnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_light()->get_color(), 1.0f));
@@ -95,6 +95,7 @@ void VulkanRenderer::setup()
     m->set_scale(10.0);
     m->set_position({0.0, -4.0, 0.0});
     m->load_file(meshDir + "terrain.obj", true);
+    //m->set_rotation({ 1.5,0.0,0.0 });
     m3->set_position({-3.0, 2.0, 3.0});
     m3->load_file(engineMeshDir + "cube.obj");
 

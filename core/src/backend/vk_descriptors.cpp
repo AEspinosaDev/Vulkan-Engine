@@ -64,13 +64,13 @@ namespace vke
 
         vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
     }
-    void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, DescriptorSet *descriptor)
+    void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout, DescriptorSet *descriptor)
     {
 
         VkDescriptorImageInfo imageBufferInfo;
         imageBufferInfo.sampler = sampler;
         imageBufferInfo.imageView = imageView;
-        imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageBufferInfo.imageLayout = layout;
 
         VkWriteDescriptorSet texture1 = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->descriptorSet, &imageBufferInfo, 0);
 

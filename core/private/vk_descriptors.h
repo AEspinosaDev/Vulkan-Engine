@@ -48,7 +48,7 @@ namespace vke
 
 		void set_descriptor_write(Buffer* buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet* descriptor, VkDescriptorType type, uint32_t binding);
 
-		void set_descriptor_write(VkSampler sampler, VkImageView imageView, DescriptorSet* descriptor);
+		void set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout, DescriptorSet* descriptor);
 
 		void bind_descriptor_sets(VkCommandBuffer commandBuffer,
 			VkPipelineBindPoint pipelineBindPoint,

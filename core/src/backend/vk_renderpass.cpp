@@ -15,7 +15,7 @@ void vke::RenderPassBuilder::add_color_attachment(VkFormat &format, VkSampleCoun
     colorAttachments.push_back(colorAttachment);
 }
 
-void vke::RenderPassBuilder::setup_depth_attachment(VkFormat &format, VkSampleCountFlagBits samples, bool stencil)
+void vke::RenderPassBuilder::setup_depth_attachment(VkFormat &format, VkSampleCountFlagBits samples, bool stencil, VkImageLayout finalLayout)
 {
     depthAttachment.flags = 0;
     depthAttachment.format = format;
@@ -25,7 +25,7 @@ void vke::RenderPassBuilder::setup_depth_attachment(VkFormat &format, VkSampleCo
     depthAttachment.stencilLoadOp = stencil ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachment.stencilStoreOp = stencil ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthAttachment.finalLayout = finalLayout;
 }
 
 VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool colorBit, bool depthBit)

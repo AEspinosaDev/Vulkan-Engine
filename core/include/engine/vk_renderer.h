@@ -96,7 +96,8 @@ namespace vke
 		VkRenderPass m_shadowPass{};
 
 		Texture *m_shadowTexture;
-		VkFramebuffer m_shadowFramebuffer;
+		DescriptorSet m_shadowDescriptor{};
+		VkFramebuffer m_shadowFramebuffer{};
 
 		// std::unordered_map<std::string, VkFramebuffer> m_customFramebuffers;
 		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;

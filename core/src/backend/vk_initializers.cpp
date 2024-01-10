@@ -194,6 +194,17 @@ namespace vke
 		info.alphaToOneEnable = VK_FALSE;
 		return info;
 	}
+	VkPipelineColorBlendStateCreateInfo vkinit::color_blend_create_info()
+	{
+		VkPipelineColorBlendStateCreateInfo colorBlending = {};
+		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlending.pNext = nullptr;
+
+		colorBlending.logicOpEnable = VK_FALSE;
+		colorBlending.logicOp = VK_LOGIC_OP_COPY;
+		
+		return colorBlending;
+	}
 	VkPipelineColorBlendAttachmentState vkinit::color_blend_attachment_state()
 	{
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};

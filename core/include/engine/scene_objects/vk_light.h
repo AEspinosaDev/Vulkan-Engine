@@ -16,8 +16,8 @@ namespace vke
         bool m_castShadows{true};
         // Image m_shadowMap | Texture m_shadowMap;
         // DescriptorSet m_textureDescriptor;
-
         // static int m_shadowResolution{1080};
+        glm::vec3 m_shadowTarget{0.0f, 0.0f, 0.0f};
 
         friend class Renderer;
 
@@ -34,6 +34,9 @@ namespace vke
 
         virtual inline bool get_cast_shadows() const { return m_castShadows; }
         virtual inline void set_cast_shadows(bool o) { m_castShadows = o; }
+
+         virtual inline  glm::vec3 get_shadow_target() const { return m_shadowTarget; }
+        virtual inline void set_cast_shadows( glm::vec3 o) { m_shadowTarget = o; }
     };
 
     // POINT LIGHT

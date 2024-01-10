@@ -47,7 +47,11 @@ namespace vke
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		// shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
+		upload_global_data(scene);
+
+		if (scene->get_light())
+			shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
+
 		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
 
 		if (vkEndCommandBuffer(m_frames[m_currentFrame].commandBuffer) != VK_SUCCESS)
@@ -192,7 +196,7 @@ namespace vke
 			return;
 
 		// SHADOW RENDER PASS
-		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, VK_SAMPLE_COUNT_1_BIT, false);
+		builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, VK_SAMPLE_COUNT_1_BIT, false, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
 
 		std::vector<VkSubpassDependency> dependencies;
 		dependencies.resize(2);
@@ -244,8 +248,6 @@ namespace vke
 
 		// VkFilter shadowmap_filter = vks::tools::formatIsFilterable(physicalDevice, DEPTH_FORMAT, VK_IMAGE_TILING_OPTIMAL) ? DEFAULT_SHADOWMAP_FILTER : VK_FILTER_NEAREST;
 		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-		// sampler.magFilter = VK_FILTER_NEAREST;
-		// sampler.minFilter = VK_FILTER_NEAREST;
 		sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 		sampler.addressModeV = sampler.addressModeU;
@@ -338,6 +340,11 @@ namespace vke
 		m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
 											 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
+		m_descriptorMng.allocate_descriptor_set(2, &m_shadowDescriptor);
+		m_descriptorMng.set_descriptor_write(m_shadowTexture->m_sampler, m_shadowTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_shadowDescriptor);
+
+	
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 
@@ -391,8 +398,6 @@ namespace vke
 
 		set_viewport(commandBuffer, *m_window->get_extent());
 
-		upload_global_data(scene);
-
 		int mesh_idx = 0;
 		for (Mesh *m : scene->get_meshes())
 		{
@@ -439,10 +444,12 @@ namespace vke
 		{
 			if (m)
 			{
-				if (m->is_active() && m->get_num_geometries() > 1)
+				if (m->is_active() && m->get_num_geometries() > 0)
 				{
-					// Offset calculation
 					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
+					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
+
+					uint32_t globalOffsets[] = {globalOffset, globalOffset};
 					uint32_t objectOffsets[] = {objectOffset, objectOffset};
 
 					// ObjectUniforms objectData;
@@ -454,17 +461,19 @@ namespace vke
 					for (size_t i = 0; i < m->get_num_geometries(); i++)
 					{
 						Geometry *g = m->get_geometry(i);
+						// GLOBAL LAYOUT BINDING
+						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
 						// PER OBJECT LAYOUT BINDING
-						// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
+						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipelineLayout, 1, 1,
+												&m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
 						draw_geometry(commandBuffer, g);
 					}
 				}
 				mesh_idx++;
 			}
-
-			vkCmdEndRenderPass(commandBuffer);
 		}
+		vkCmdEndRenderPass(commandBuffer);
 	}
 	void Renderer::init_default_shaderpasses()
 	{
@@ -494,6 +503,10 @@ namespace vke
 		builder.multisampling = vkinit::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
 
 		builder.colorBlendAttachment = vkinit::color_blend_attachment_state();
+
+		builder.colorBlending = vkinit::color_blend_create_info();
+		builder.colorBlending.attachmentCount = 1;
+		builder.colorBlending.pAttachments = &builder.colorBlendAttachment;
 
 		builder.depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
@@ -565,9 +578,17 @@ namespace vke
 		builder.viewport.height = (float)shadowExtent.height;
 		builder.scissor.extent = shadowExtent;
 
+		builder.rasterizer.depthBiasEnable = VK_TRUE;
+
+		builder.colorBlending.attachmentCount = 0;
+
+		// builder.dynamicState = VK_TRUE;
+
 		builder.multisampling = vkinit::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
 		ShaderPass *depthPass = new ShaderPass(shaderDir + "depth.glsl");
+
+		depthPass->descriptorSetLayoutIDs.push_back(0);
 		depthPass->descriptorSetLayoutIDs.push_back(1);
 
 		auto shader = ShaderSource::read_file(depthPass->SHADER_FILE);
@@ -687,10 +708,10 @@ namespace vke
 				{
 					if (!texture->buffer_loaded)
 					{
-						upload_texture(texture);
+						// upload_texture(texture);
 
-						m_descriptorMng.allocate_descriptor_set(2, &mat->m_descriptor);
-						m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view, &mat->m_descriptor);
+						// m_descriptorMng.allocate_descriptor_set(2, &mat->m_descriptor);
+						// m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_descriptor);
 					}
 				}
 			}
@@ -701,7 +722,9 @@ namespace vke
 			// PER OBJECT LAYOUT BINDING
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 			// TEXTURE LAYOUT BINDING
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
+			//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &m_shadowDescriptor.descriptorSet, 0, nullptr);
+
 
 			draw_geometry(commandBuffer, g);
 		}
@@ -801,9 +824,15 @@ namespace vke
 		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), 1.0f};
 		sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
 		sceneParams.ambientColor = glm::vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
+
 		// SHOULD BE AN ARRAY OF LIGHTS... TO DO
 		if (scene->get_light())
+		{
 			sceneParams.lightUniforms = scene->get_light()->get_uniforms();
+			glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, .5f, 96.0f);
+			glm::mat4 depthViewMatrix = glm::lookAt(scene->get_light()->get_position(), scene->get_light()->get_shadow_target(), glm::vec3(0, 1, 0)); // Maybe -1
+			sceneParams.lightUniforms.viewProj = depthProjectionMatrix * depthViewMatrix;
+		}
 
 		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));

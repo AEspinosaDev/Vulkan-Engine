@@ -37,6 +37,8 @@ namespace vke
 
 		VkPipelineMultisampleStateCreateInfo multisampling_state_create_info( VkSampleCountFlagBits samples);
 
+		VkPipelineColorBlendStateCreateInfo color_blend_create_info();
+
 		VkPipelineColorBlendAttachmentState color_blend_attachment_state();
 
 		VkPipelineLayoutCreateInfo pipeline_layout_create_info();
