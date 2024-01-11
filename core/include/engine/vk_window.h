@@ -19,6 +19,7 @@ namespace vke
 		VkExtent2D *m_extent;
 		VkSurfaceKHR *m_surface;
 
+		bool m_initialized{false};
 		bool m_resized{false};
 		bool m_resizeable;
 		bool m_fullscreen;
@@ -47,11 +48,14 @@ namespace vke
 			m_height = h;
 			m_resized = true;
 		}
+		inline bool is_initialized() { return m_initialized; }
 		inline bool is_resized() { return m_resized; }
 		inline void set_resized(bool r) { m_resized = r; }
 		inline bool is_fullscreen() { return m_fullscreen; }
 		inline void set_fullscreen(bool t)
 		{
+			if (!m_initialized)
+				return;
 			m_fullscreen = t;
 			if (!m_fullscreen)
 			{
@@ -68,6 +72,8 @@ namespace vke
 		inline glm::ivec2 get_position() { return m_screenPos; }
 		inline void set_position(glm::ivec2 p)
 		{
+			if (!m_initialized)
+				return;
 			m_screenPos = p;
 			glfwSetWindowPos(m_GLFWwindow, p.x, p.y);
 		}
@@ -80,6 +86,8 @@ namespace vke
 		inline void set_window_should_close(bool op) { glfwSetWindowShouldClose(m_GLFWwindow, op); }
 		inline void set_title(const char *title)
 		{
+			if (!m_initialized)
+				return;
 			m_title = title;
 			glfwSetWindowTitle(m_GLFWwindow, title);
 		}

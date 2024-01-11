@@ -20,13 +20,13 @@ namespace vke
         // LIGHTING
         //  For now, just ONE light
         Light *m_light{nullptr};
-        glm::vec3 m_ambientColor{0.5f, 0.2f, 0.7f};
+        glm::vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
         float m_ambientIntensity{0.2f};
 
         // FOG
         bool m_fog{true};
-        glm::vec3 m_fogColor{0.8f, 0.8f, 0.8f};
-        float m_fogIntensity{2.0f};
+        glm::vec3 m_fogColor{0.2f, 0.2f, 0.2f};
+        float m_fogIntensity{0.25f};
         float m_fogExponent{1.0f};
 
         inline void classify_object(Object3D *obj)

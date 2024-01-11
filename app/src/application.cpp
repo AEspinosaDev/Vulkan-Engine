@@ -5,12 +5,7 @@ void VulkanRenderer::init()
 {
     m_window = new vke::Window("VK Engine", 800, 600);
 
-    vke::RendererSettings settings{};
-    settings.AAtype = vke::AntialiasingType::_MSAA_8;
-    settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
-
-    m_renderer = new vke::Renderer(m_window, settings);
-    m_renderer->init();
+    m_window->init();
 
     m_window->set_window_size_callback(std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1,
                                                  std::placeholders::_2));
@@ -19,6 +14,12 @@ void VulkanRenderer::init()
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
                                          std::placeholders::_2, std::placeholders::_3,
                                          std::placeholders::_4));
+
+    vke::RendererSettings settings{};
+    settings.AAtype = vke::AntialiasingType::_MSAA_8;
+    settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
+
+    m_renderer = new vke::Renderer(m_window, settings);
 
     setup();
 }
@@ -49,7 +50,7 @@ void VulkanRenderer::setup()
     m_scene = new vke::Scene(camera);
 
     m_scene->set_light(new vke::PointLight());
-    m_scene->get_light()->set_position({3.0f, 3.0f, 0.0f});
+    m_scene->get_light()->set_position({-3.0f, 3.0f, 0.0f});
 
     // m_scene->set_rotation({0.7,1.5, 0.0});
 
@@ -60,17 +61,19 @@ void VulkanRenderer::setup()
                     {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
                    {0, 1, 2, 2, 3, 0});
 
-    auto mat = new vke::BasicPhongMaterial();
-    mat->set_color({0.43f, 0.28f, 0.23f, 1.0});
-    mat->set_glossiness(10.0f);
-    mat->set_shininess(1.0f);
+    auto mat = new vke::PhysicalBasedMaterial();
+    mat->set_albedo({0.43f, 0.28f, 0.23f, 1.0});
+    mat->set_metalness(0.0f);
+    mat->set_roughness(0.9f);
 
-    auto mat2 = new vke::BasicPhongMaterial();
-    mat2->set_color({0.0, 1.0, 0.0, 1.0});
-    auto mat3 = new vke::BasicPhongMaterial();
-    mat3->set_color({0.0, 0.0, 0.0, 1.0});
+    auto mat2 = new vke::PhysicalBasedMaterial();
+    mat2->set_albedo({0.0, 1.0, 0.0, 1.0});
+    mat2->set_metalness(0.8f);
+    mat2->set_roughness(0.3f);
+    auto mat3 = new vke::PhysicalBasedMaterial();
+    mat3->set_albedo({0.0, 0.0, 0.0, 1.0});
 
-    auto lightMat = new vke::BasicUnlitMaterial();
+    auto lightMat = new vke::UnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_light()->get_color(), 1.0f));
 
     vke::Mesh *m = new vke::Mesh(quadGeom, mat);
@@ -108,7 +111,7 @@ void VulkanRenderer::setup()
     vke::Texture *text = new vke::Texture();
     text->load_image(textDir + "wood_diffuse.jpg");
 
-    mat3->set_color_texture(text);
+    mat3->set_albedo_texture(text);
 
     // mat2->set_color_texture(text);
     // mat->set_color_texture(text);
@@ -122,7 +125,7 @@ void VulkanRenderer::update()
 
 
     // Rotate the vector around the ZX plane
-    float rotationAngle = glm::radians(20.0f * m_deltaTime);
+    float rotationAngle = glm::radians(10.0f * m_deltaTime);
     auto light = m_scene->get_light();
     float _x = light->get_position().x * cos(rotationAngle) - light->get_position().z  * sin(rotationAngle);
     float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);

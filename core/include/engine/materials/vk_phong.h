@@ -1,12 +1,12 @@
-#ifndef VK_BASIC_PHONG_MATERIAL
-#define VK_BASIC_PHONG_MATERIAL
+#ifndef VK_PHONG_MATERIAL
+#define VK_PHONG_MATERIAL
 
 #include "../vk_material.h"
 #include "../private/vk_descriptors.h"
 
 namespace vke
 {
-    class BasicPhongMaterial : public Material
+    class PhongMaterial : public Material
     {
     protected:
         glm::vec2 m_tileUV{1.0f, 1.0f};
@@ -37,8 +37,8 @@ namespace vke
         }
 
     public:
-        BasicPhongMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("basic_phong"), m_color(color) {}
-        BasicPhongMaterial(glm::vec4 color, MaterialParameters params) : Material("basic_phong", params), m_color(color) {}
+        PhongMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("phong"), m_color(color) {}
+        PhongMaterial(glm::vec4 color, MaterialParameters params) : Material("phong", params), m_color(color) {}
 
         inline glm::vec2 get_tile() const { return m_tileUV; }
         inline void set_tile(glm::vec2 tile) { m_tileUV = tile; }

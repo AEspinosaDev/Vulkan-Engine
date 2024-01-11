@@ -74,4 +74,7 @@ void main() {
     }
 
     outColor = vec4(color, 1.0);
+
+     float gamma = 2.2;
+    outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
 }

@@ -12,7 +12,8 @@ layout(location = 1) out vec3 v_normal;
 layout(location = 2) out vec2 v_uv;
 layout(location = 3) out vec3 v_lightPos;
 layout(location = 4) out int v_affectedByFog;
-layout(location = 5) out vec3 v_modelPos;
+layout(location = 5) out int v_receiveShadows;
+layout(location = 6) out vec3 v_modelPos;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -33,7 +34,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
 
     vec3 lighPosition;
-    float lightType;
+    int lightType;
     vec3 lightColor;
     float lightIntensity;
     vec4 lightData;
@@ -60,10 +61,10 @@ void main() {
     mat4 mv = camera.view * object.model;
     v_pos = (mv * vec4(pos, 1.0)).xyz;
     v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
-    v_lightPos = (camera.view * vec4(scene.lighPosition, 1.0)).xyz;
+    v_lightPos = scene.lightType == 0 ? (camera.view * vec4(scene.lighPosition, 1.0)).xyz : (camera.view * vec4(scene.lightData.xyz, 0.0)).xyz;
     v_affectedByFog = int(object.otherParams.x);
     v_uv = vec2(uv.x * material.tileUV.x, uv.y * material.tileUV.y);
-
+    v_receiveShadows = int(object.otherParams.y);
     v_modelPos = (object.model * vec4(pos, 1.0)).xyz;
 }
 
@@ -76,7 +77,8 @@ layout(location = 1) in vec3 v_normal;
 layout(location = 2) in vec2 v_uv;
 layout(location = 3) in vec3 v_lightPos;
 layout(location = 4) in flat int v_affectedByFog;
-layout(location = 5) in vec3 v_modelPos;
+layout(location = 5) in flat int v_receiveShadows;
+layout(location = 6) in vec3 v_modelPos;
 
 //Output
 layout(location = 0) out vec4 outColor;
@@ -94,7 +96,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
 
     vec3 lighPosition;
-    float lightType;
+    int lightType;
     vec3 lightColor;
     float lightIntensity;
     vec4 lightData;
@@ -114,7 +116,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool hasGlossinessTexture;
 
 } material;
-layout(set = 2, binding = 0) uniform sampler2D colorTex;
+layout(set = 2, binding = 0) uniform sampler2D shadowMap;
 // layout(set = 2, binding = 1) uniform sampler2D normalTex;
 
 float computeFog() {
@@ -123,81 +125,85 @@ float computeFog() {
 }
 
 float computeAttenuation() {
+    if(scene.lightType != 0)
+        return 1.0;
 
-    return 0.0;
+    float d = length(v_lightPos - v_pos);
+    float influence = scene.lightData.x;
+    float window = pow(max(1 - pow(d / influence, 2), 0), 2);
+
+    return pow(10 / max(d, 0.0001), 2) * window;
+}
+
+float filterPCF(int kernelSize, vec3 coords, float bias) {
+
+    int edge = kernelSize/2;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+    float currentDepth = coords.z;
+
+    float shadow = 0.0;
+
+    for(int x = -edge; x <= edge; ++x) {
+        for(int y = -edge; y <= edge; ++y) {
+            float pcfDepth = texture(shadowMap, coords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow /= (kernelSize*kernelSize);
+
 }
 
 float computeShadow() {
 
-   vec4 pos_lightSpace = scene.lightViewProj * vec4(v_modelPos.xyz, 1.0);
+    vec4 pos_lightSpace = scene.lightViewProj * vec4(v_modelPos.xyz, 1.0);
 
-    // perform perspective divide
     vec3 projCoords = pos_lightSpace.xyz / pos_lightSpace.w;
-    // Commenting out unnecessary transformation
-    // projCoords = projCoords * 0.5 + 0.5;
 
-    // Clamping values to [0, 1] range
-    float closestDepth = texture(colorTex, projCoords.xy).r;
-    float currentDepth = projCoords.z;
-
-    // Uncomment and modify if necessary to handle fragments outside shadow map
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
         return 0.0;
 
-    // Uncomment and modify the bias if necessary
-    // float bias = max(0.0005 * (1.0 - dot(normal, lightDir)), 0.00005);
-    float bias = 0.1;  // You can tweak this value
-
-    // Compare depth values with bias
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
-
-    return shadow;
-	//return lightDir.x;
-
-    // float shadow = 1.0;
-
-    // if(shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
-    //     float dist = texture(colorTex,).r;
-
-    //     if(shadowCoord.w > 0.0 && dist < shadowCoord.z) {
-    //         shadow = ambient;
-    //     }
-    // }
-    // return shadow;
+    float bias = 0.1;
+    return filterPCF(7,projCoords,bias);
 
 }
 
 vec3 phong() {
 
-    vec3 lightDir = normalize(v_lightPos - v_pos);
+    vec3 lightDir = scene.lightType == 0 ? normalize(v_lightPos - v_pos) : normalize(v_lightPos);
     vec3 viewDir = normalize(-v_pos);
     vec3 halfVector = normalize(lightDir + viewDir);
 
-    vec3 ambient = scene.ambientIntensity * scene.ambientColor;
     vec3 diffuse = clamp(dot(lightDir, v_normal), 0.0, 1.0) * scene.lightColor.rgb;
 
     //Blinn specular term
     vec3 specular = pow(max(dot(v_normal, halfVector), 0.0), material.glossiness) * material.shininess * scene.lightColor.rgb;
 
-    //vec3 color = material.hasColorTexture ? texture(colorTex, v_uv).rgb : material.color.rgb;
-    vec3 color = material.hasColorTexture ? texture(colorTex, v_uv).rgb : material.color.rgb;
+    vec3 color = material.hasColorTexture ? texture(shadowMap, v_uv).rgb : material.color.rgb;
 
-    //if(color.r>1.0f) color = vec3(1.0,1.0,1.0);
+    float att = computeAttenuation();
 
-    return (ambient + diffuse + specular) * color;
+    return (diffuse + specular) * color * att * scene.lightIntensity;
 
 }
 
 void main() {
 
     vec3 color = phong();
-    color *= (1.0-computeShadow());
+    if(v_receiveShadows == 1)
+        color *= (1.0 - computeShadow());
+
+    vec3 ambient = scene.ambientIntensity * scene.ambientColor * 0.005;
+    color += ambient;
 
     if(v_affectedByFog == 1) {
         float f = computeFog();
         color = f * color + (1 - f) * scene.fogColor.rgb;
-    } 
-    //outColor = texture(colorTex,v_uv).xyz;
-    // outColor = vec4(texture(colorTex,v_uv).xyz, 1.0);
+    }
+
     outColor = vec4(color, 1.0);
+
+    float gamma = 2.2;
+    outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+
 }

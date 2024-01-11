@@ -170,15 +170,19 @@ namespace vke
 		Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 		Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 		/**
-		 * Inits the renderer. Call it before using any other function related to this class.
+		 * Inits the renderer.
 		 */
 		inline void init()
 		{
-			m_window->init();
+			if (!m_window->m_initialized)
+				m_window->init();
+
 			init_vulkan();
+
+			m_initialized = true;
 		}
 		/**
-		 * Standalone pre-implemented render loop for the renderer.
+		 * Standalone pre-implemented render loop for the renderer. Call init before using this function
 		 */
 		void run(Scene *const scene);
 		/**
@@ -208,7 +212,7 @@ namespace vke
 
 		void init_descriptors();
 
-		void init_default_shaderpasses();
+		void init_shaderpasses();
 
 		void recreate_swap_chain();
 

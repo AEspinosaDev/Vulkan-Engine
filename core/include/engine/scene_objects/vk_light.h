@@ -2,6 +2,8 @@
 #define VK_LIGHT
 
 #include "../private/vk_uniforms.h"
+#include "../private/vk_descriptors.h"
+#include "../vk_texture.h"
 #include "../vk_object3D.h"
 
 namespace vke
@@ -13,11 +15,20 @@ namespace vke
         glm::vec3 m_color;
         float m_intensity;
 
-        bool m_castShadows{true};
-        // Image m_shadowMap | Texture m_shadowMap;
-        // DescriptorSet m_textureDescriptor;
-        // static int m_shadowResolution{1080};
-        glm::vec3 m_shadowTarget{0.0f, 0.0f, 0.0f};
+        // Shadows
+        struct Shadow
+        {
+            bool cast{true};
+            float nearPlane{0.5f};
+            float farPlane{100.0f};
+            float fov{45.0f};
+            glm::vec3 target{0.0f, 0.0f, 0.0f};
+
+            Texture *map;
+            DescriptorSet descriptor;
+        };
+
+        Shadow m_shadow;
 
         friend class Renderer;
 
@@ -32,11 +43,23 @@ namespace vke
         virtual inline float get_intensity() const { return m_intensity; }
         virtual inline void set_intensity(float i) { m_intensity = i; }
 
-        virtual inline bool get_cast_shadows() const { return m_castShadows; }
-        virtual inline void set_cast_shadows(bool o) { m_castShadows = o; }
+        virtual inline bool get_cast_shadows() const { return m_shadow.cast; }
+        virtual inline void set_cast_shadows(bool o) { m_shadow.cast = o; }
 
-         virtual inline  glm::vec3 get_shadow_target() const { return m_shadowTarget; }
-        virtual inline void set_cast_shadows( glm::vec3 o) { m_shadowTarget = o; }
+        virtual inline glm::vec3 get_shadow_target() const { return m_shadow.target; }
+        virtual inline void set_shadow_target(glm::vec3 o) { m_shadow.target = o; }
+
+        virtual inline float get_shadow_near() const { return m_shadow.nearPlane; }
+        virtual inline void set_shadow_near(float n) { m_shadow.nearPlane = n; }
+
+        virtual inline float get_shadow_far() const { return m_shadow.farPlane; }
+        virtual inline void set_shadow_far(float f) { m_shadow.farPlane = f; }
+
+        virtual inline float get_shadow_fov() const { return m_shadow.fov; }
+        virtual inline void set_shadow_fov(float f) { m_shadow.fov = f; }
+
+        //Read only
+        virtual const Texture *const get_shadow_map() const { return m_shadow.map; }
     };
 
     // POINT LIGHT
@@ -49,7 +72,7 @@ namespace vke
         virtual LightUniforms get_uniforms() const;
 
     public:
-        PointLight(glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Light(color, intensity), m_effectArea(10.0f), m_decaying(1.0f) {}
+        PointLight(glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f) : Light(color, intensity), m_effectArea(12.0f), m_decaying(1.0f) {}
 
         inline float get_area_of_effect() const { return m_effectArea; }
         inline void set_area_of_effect(float a) { m_effectArea = a; }

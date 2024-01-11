@@ -5,11 +5,6 @@
 layout(location = 0) in vec3 pos;
 
 //Uniforms
-layout(set = 0, binding = 0) uniform CameraUniforms {
-    mat4 view;
-    mat4 proj;
-    mat4 viewProj;
-} camera;
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 fogColor;
     float fogExponent;

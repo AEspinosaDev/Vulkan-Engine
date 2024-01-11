@@ -5,10 +5,14 @@ namespace vke
 {
 	void Renderer::run(Scene *const scene)
 	{
+		if (!m_initialized)
+			init();
+
 		while (!glfwWindowShouldClose(m_window->get_window_obj()))
 		{
 			// I-O
 			m_window->poll_events();
+
 			render(scene);
 		}
 		shutdown();
@@ -22,6 +26,8 @@ namespace vke
 
 	void Renderer::render(Scene *const scene)
 	{
+		if (!m_initialized)
+			init();
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
@@ -49,7 +55,7 @@ namespace vke
 
 		upload_global_data(scene);
 
-		if (scene->get_light())
+		if (scene->get_light() && scene->get_light()->get_cast_shadows())
 			shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
 
 		render_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
@@ -135,9 +141,7 @@ namespace vke
 
 		init_descriptors();
 
-		init_default_shaderpasses();
-
-		m_initialized = true;
+		init_shaderpasses();
 	}
 
 	void Renderer::cleanup()
@@ -229,24 +233,16 @@ namespace vke
 		m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 		// FOR SHADOW PASS
-		// For shadow mapping we only need a depth attachment
+		const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+
 		m_shadowTexture = new Texture();
 		Image shadowImage;
 		shadowImage.init(m_memory, m_swapchain.get_depthbuffer().format,
-						 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {1080, 1080, 1}, VK_SAMPLE_COUNT_1_BIT);
-
-		// VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
-		// VkMemoryRequirements memReqs;
-		// vkGetImageMemoryRequirements(device, offscreenPass.depth.image, &memReqs);
-		// memAlloc.allocationSize = memReqs.size;
-		// memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		// VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.depth.mem));
-		// VK_CHECK_RESULT(vkBindImageMemory(device, offscreenPass.depth.image, offscreenPass.depth.mem, 0));
+						 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, VK_SAMPLE_COUNT_1_BIT);
 
 		shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_shadowTexture->m_image = shadowImage;
 
-		// VkFilter shadowmap_filter = vks::tools::formatIsFilterable(physicalDevice, DEPTH_FORMAT, VK_IMAGE_TILING_OPTIMAL) ? DEFAULT_SHADOWMAP_FILTER : VK_FILTER_NEAREST;
 		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_NEAREST);
 		sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -264,7 +260,7 @@ namespace vke
 									  { m_shadowTexture->cleanup(m_device, m_memory); });
 
 		//	To light
-		VkExtent2D shadowRes{1080, 1080};
+		VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
 		VkFramebufferCreateInfo shadow_fb_info = vkinit::framebuffer_create_info(m_shadowPass, shadowRes);
 		shadow_fb_info.pAttachments = &m_shadowTexture->m_image.view;
 
@@ -343,8 +339,6 @@ namespace vke
 		m_descriptorMng.allocate_descriptor_set(2, &m_shadowDescriptor);
 		m_descriptorMng.set_descriptor_write(m_shadowTexture->m_sampler, m_shadowTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_shadowDescriptor);
 
-	
-
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 
@@ -414,8 +408,8 @@ namespace vke
 
 	void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 	{
-
-		VkExtent2D shadowExtent{1080, 1080};
+		const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+		VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
 
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_shadowPass, shadowExtent, m_shadowFramebuffer);
 
@@ -444,7 +438,7 @@ namespace vke
 		{
 			if (m)
 			{
-				if (m->is_active() && m->get_num_geometries() > 0)
+				if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
 				{
 					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
 					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
@@ -475,7 +469,7 @@ namespace vke
 		}
 		vkCmdEndRenderPass(commandBuffer);
 	}
-	void Renderer::init_default_shaderpasses()
+	void Renderer::init_shaderpasses()
 	{
 		PipelineBuilder builder;
 		builder.vertexInputInfo = vkinit::vertex_input_state_create_info();
@@ -512,8 +506,9 @@ namespace vke
 
 		std::string shaderDir(VK_SHADER_DIR);
 
-		m_shaderPasses["basic_unlit"] = new ShaderPass(shaderDir + "basic_unlit.glsl");
-		m_shaderPasses["basic_phong"] = new ShaderPass(shaderDir + "basic_phong.glsl");
+		m_shaderPasses["unlit"] = new ShaderPass(shaderDir + "unlit.glsl");
+		m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
+		m_shaderPasses["physical"] = new ShaderPass(shaderDir + "physically_based.glsl");
 
 		for (auto pair : m_shaderPasses)
 		{
@@ -572,13 +567,15 @@ namespace vke
 		builder.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(depthAttributeDescriptions.size());
 		builder.vertexInputInfo.pVertexAttributeDescriptions = depthAttributeDescriptions.data();
 
-		VkExtent2D shadowExtent{1080, 1080};
+		const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+		VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
 
 		builder.viewport.width = (float)shadowExtent.width;
 		builder.viewport.height = (float)shadowExtent.height;
 		builder.scissor.extent = shadowExtent;
 
 		builder.rasterizer.depthBiasEnable = VK_TRUE;
+		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
 
 		builder.colorBlending.attachmentCount = 0;
 
@@ -680,7 +677,7 @@ namespace vke
 		// ObjectUniforms objectData;
 		ObjectUniforms objectData;
 		objectData.model = m->get_model_matrix();
-		objectData.otherParams = {m->is_affected_by_fog(), false, false, false};
+		objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
 		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
 		for (size_t i = 0; i < m->get_num_geometries(); i++)
@@ -722,9 +719,8 @@ namespace vke
 			// PER OBJECT LAYOUT BINDING
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 			// TEXTURE LAYOUT BINDING
-			//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
+			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &m_shadowDescriptor.descriptorSet, 0, nullptr);
-
 
 			draw_geometry(commandBuffer, g);
 		}
@@ -828,10 +824,14 @@ namespace vke
 		// SHOULD BE AN ARRAY OF LIGHTS... TO DO
 		if (scene->get_light())
 		{
-			sceneParams.lightUniforms = scene->get_light()->get_uniforms();
-			glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, .5f, 96.0f);
-			glm::mat4 depthViewMatrix = glm::lookAt(scene->get_light()->get_position(), scene->get_light()->get_shadow_target(), glm::vec3(0, 1, 0)); // Maybe -1
-			sceneParams.lightUniforms.viewProj = depthProjectionMatrix * depthViewMatrix;
+			Light *l = scene->get_light();
+			if (l->is_active())
+			{
+				sceneParams.lightUniforms = l->get_uniforms();
+				glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(l->m_shadow.fov), 1.0f, l->m_shadow.nearPlane, l->m_shadow.farPlane);
+				glm::mat4 depthViewMatrix = glm::lookAt(l->m_transform.position, l->m_shadow.target, glm::vec3(0, 1, 0));
+				sceneParams.lightUniforms.viewProj = depthProjectionMatrix * depthViewMatrix;
+			}
 		}
 
 		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),

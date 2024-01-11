@@ -1,6 +1,6 @@
-#include "engine/materials/vk_basic_phong.h"
+#include "engine/materials/vk_phong.h"
 
-vke::MaterialUniforms vke::BasicPhongMaterial::get_uniforms() const
+vke::MaterialUniforms vke::PhongMaterial::get_uniforms() const
 {
     // Alignment in shader
     //-----------------

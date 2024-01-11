@@ -1,6 +1,6 @@
-#include "engine/materials/vk_basic_unlit.h"
+#include "engine/materials/vk_unlit.h"
 
-vke::MaterialUniforms vke::BasicUnlitMaterial::get_uniforms() const
+vke::MaterialUniforms vke::UnlitMaterial::get_uniforms() const
 {
     MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_color;

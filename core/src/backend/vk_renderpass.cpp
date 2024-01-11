@@ -76,7 +76,7 @@ VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool col
             colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-            colorAttachmentResolveRef.attachment = attachments.size();
+            colorAttachmentResolveRef.attachment = (uint32_t)attachments.size();
             colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             attachments.push_back(colorAttachmentResolve);
@@ -84,7 +84,7 @@ VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool col
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = colorBit ? colorAttachments.size() : 0;
+    subpass.colorAttachmentCount = colorBit ?  (uint32_t)colorAttachments.size() : 0;
     subpass.pColorAttachments = colorBit ? colorRefs.data() : VK_NULL_HANDLE;
     subpass.pDepthStencilAttachment = depthBit ? &depthAttachmentRef : VK_NULL_HANDLE;
     if (colorAttachments[0].finalLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
@@ -121,7 +121,7 @@ VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool col
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = dependencies.size();
+    renderPassInfo.dependencyCount =  (uint32_t)dependencies.size();
     renderPassInfo.pDependencies = dependencies.data();
 
     VkRenderPass renderPass{};
@@ -182,7 +182,7 @@ VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool col
             colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-            colorAttachmentResolveRef.attachment = attachments.size();
+            colorAttachmentResolveRef.attachment =  (uint32_t)attachments.size();
             colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             attachments.push_back(colorAttachmentResolve);
@@ -190,7 +190,7 @@ VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool col
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = colorBit ? colorAttachments.size() : 0;
+    subpass.colorAttachmentCount = colorBit ?  (uint32_t)colorAttachments.size() : 0;
     subpass.pColorAttachments = colorBit ? colorRefs.data() : VK_NULL_HANDLE;
     subpass.pDepthStencilAttachment = depthBit ? &depthAttachmentRef : VK_NULL_HANDLE;
     if (colorAttachments[0].finalLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
@@ -202,7 +202,7 @@ VkRenderPass vke::RenderPassBuilder::build_renderpass(VkDevice &device, bool col
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = dependencies.size();
+    renderPassInfo.dependencyCount =  (uint32_t)dependencies.size();
     renderPassInfo.pDependencies = dependencies.data();
 
     VkRenderPass renderPass{};

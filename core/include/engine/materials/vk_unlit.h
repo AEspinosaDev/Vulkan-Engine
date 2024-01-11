@@ -5,7 +5,7 @@
 
 namespace vke
 {
-    class BasicUnlitMaterial : public Material
+    class UnlitMaterial : public Material
     {
     protected:
         glm::vec2 m_tileUV{1.0f, 1.0f};
@@ -23,8 +23,8 @@ namespace vke
         }
 
     public:
-        BasicUnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("basic_unlit"), m_color(color) {}
-        BasicUnlitMaterial(glm::vec4 color, MaterialParameters params) : Material("basic_unlit", params), m_color(color) {}
+        UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("unlit"), m_color(color) {}
+        UnlitMaterial(glm::vec4 color, MaterialParameters params) : Material("unlit", params), m_color(color) {}
 
         inline glm::vec2 get_tile() const { return m_tileUV; }
         inline void set_tile(glm::vec2 tile) { m_tileUV = tile; }

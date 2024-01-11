@@ -38,11 +38,13 @@ namespace vke
             } });
 
         glfwSetCursorPosCallback(m_GLFWwindow, [](GLFWwindow *w, double x, double y)
-                           {
+                                 {
             Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(w));
             if (instance->m_mouseCallBack) {
                 instance->m_mouseCallBack(x,y);
             } });
+            
+        m_initialized = true;
     }
 
 }
