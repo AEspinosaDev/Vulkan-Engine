@@ -1,5 +1,10 @@
 #include "engine/materials/vk_unlit.h"
 
+namespace vke
+{
+    Material *Material::DEBUG_MATERIAL = nullptr;
+}
+
 vke::MaterialUniforms vke::UnlitMaterial::get_uniforms() const
 {
     MaterialUniforms uniforms;

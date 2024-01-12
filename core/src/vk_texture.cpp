@@ -3,6 +3,8 @@
 
 namespace vke
 {
+    Texture *Texture::DEBUG_TEXTURE = nullptr;
+
     bool Texture::load_image(std::string fileName)
     {
         if (m_tmpCache)

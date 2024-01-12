@@ -27,6 +27,7 @@ namespace vke
 	void Renderer::render(Scene *const scene)
 	{
 		if (!m_initialized)
+
 			init();
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
@@ -142,6 +143,9 @@ namespace vke
 		init_descriptors();
 
 		init_shaderpasses();
+
+		init_resources();
+		
 	}
 
 	void Renderer::cleanup()
@@ -303,7 +307,7 @@ namespace vke
 	void Renderer::init_descriptors()
 	{
 		m_descriptorMng.init(m_device);
-		m_descriptorMng.create_pool(10, 10, 10, 10, 10);
+		m_descriptorMng.create_pool(10, 10, 10, 20, 10);
 
 		// GLOBAL SET
 		VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
@@ -318,8 +322,13 @@ namespace vke
 		m_descriptorMng.set_layout(1, objectBindings, 2);
 
 		// TEXTURE SET
-		VkDescriptorSetLayoutBinding textureBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-		m_descriptorMng.set_layout(2, &textureBinding, 1);
+		VkDescriptorSetLayoutBinding textureBinding0 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0); // ShadowMap
+		VkDescriptorSetLayoutBinding textureBinding1 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+		VkDescriptorSetLayoutBinding textureBinding2 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+		VkDescriptorSetLayoutBinding textureBinding3 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+		VkDescriptorSetLayoutBinding textureBinding4 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+		VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding0, textureBinding1, textureBinding2, textureBinding3, textureBinding4};
+		m_descriptorMng.set_layout(2, textureBindings, 5);
 
 		const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
 		const size_t globalUBOSize = MAX_FRAMES_IN_FLIGHT * strideSize;
@@ -336,8 +345,8 @@ namespace vke
 		m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
 											 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
-		m_descriptorMng.allocate_descriptor_set(2, &m_shadowDescriptor);
-		m_descriptorMng.set_descriptor_write(m_shadowTexture->m_sampler, m_shadowTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_shadowDescriptor);
+		// m_descriptorMng.allocate_descriptor_set(2, &m_textureDescriptor);
+		// m_descriptorMng.set_descriptor_write(m_shadowTexture->m_sampler, m_shadowTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_textureDescriptor, 0);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
@@ -397,8 +406,51 @@ namespace vke
 		{
 			if (m)
 			{
-				if (m->is_active())
-					draw_mesh(commandBuffer, m, mesh_idx);
+				if (m->is_active() && m->get_num_geometries() > 0)
+				{
+
+					// Offset calculation
+					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
+					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
+
+					// ObjectUniforms objectData;
+					ObjectUniforms objectData;
+					objectData.model = m->get_model_matrix();
+					objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
+					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+
+					for (size_t i = 0; i < m->get_num_geometries(); i++)
+					{
+						Geometry *g = m->get_geometry(i);
+
+						Material *mat = m->get_material(g->m_materialID);
+
+						if (!mat)
+						{
+							continue;
+							// USE DEBUG MAT;
+						}
+
+						if (mat->m_isDirty)
+							setup_material(mat);
+
+						MaterialUniforms materialData = mat->get_uniforms();
+						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+
+						vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
+						// GLOBAL LAYOUT BINDING
+						uint32_t globalOffsets[] = {globalOffset, globalOffset};
+						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
+						// PER OBJECT LAYOUT BINDING
+						uint32_t objectOffsets[] = {objectOffset, objectOffset};
+						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
+						// TEXTURE LAYOUT BINDING
+						if (mat->m_shaderPass->descriptorSetLayoutIDs.size() > 2)
+							vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_textureDescriptor.descriptorSet, 0, nullptr);
+
+						draw_geometry(commandBuffer, g);
+					}
+				}
 			}
 			mesh_idx++;
 		}
@@ -443,9 +495,6 @@ namespace vke
 					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
 					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
 
-					uint32_t globalOffsets[] = {globalOffset, globalOffset};
-					uint32_t objectOffsets[] = {objectOffset, objectOffset};
-
 					// ObjectUniforms objectData;
 					ObjectUniforms objectData;
 					objectData.model = m->get_model_matrix();
@@ -455,9 +504,12 @@ namespace vke
 					for (size_t i = 0; i < m->get_num_geometries(); i++)
 					{
 						Geometry *g = m->get_geometry(i);
+
 						// GLOBAL LAYOUT BINDING
+						uint32_t globalOffsets[] = {globalOffset, globalOffset};
 						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
 						// PER OBJECT LAYOUT BINDING
+						uint32_t objectOffsets[] = {objectOffset, objectOffset};
 						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipelineLayout, 1, 1,
 												&m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
@@ -507,16 +559,17 @@ namespace vke
 		std::string shaderDir(VK_SHADER_DIR);
 
 		m_shaderPasses["unlit"] = new ShaderPass(shaderDir + "unlit.glsl");
+		m_shaderPasses["unlit"]->descriptorSetLayoutIDs = {0, 1};
+
 		m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
+		m_shaderPasses["phong"]->descriptorSetLayoutIDs = {0, 1, 2};
+
 		m_shaderPasses["physical"] = new ShaderPass(shaderDir + "physically_based.glsl");
+		m_shaderPasses["physical"]->descriptorSetLayoutIDs = {0, 1, 2};
 
 		for (auto pair : m_shaderPasses)
 		{
 			ShaderPass *pass = pair.second;
-
-			pass->descriptorSetLayoutIDs.push_back(0);
-			pass->descriptorSetLayoutIDs.push_back(1);
-			pass->descriptorSetLayoutIDs.push_back(2);
 
 			auto shader = ShaderSource::read_file(pass->SHADER_FILE);
 
@@ -622,6 +675,18 @@ namespace vke
 									  { depthPass->cleanup(m_device); });
 	}
 
+	void Renderer::init_resources()
+	{
+
+		Texture::DEBUG_TEXTURE = new Texture();
+		std::string engineMeshDir(VK_TEXTURE_DIR);
+		Texture::DEBUG_TEXTURE->load_image(engineMeshDir + "dummy.png");
+		upload_texture(Texture::DEBUG_TEXTURE);
+
+		// Material::DEBUG_MATERIAL = new B
+
+
+	}
 	void Renderer::recreate_swap_chain()
 	{
 		int width = 0, height = 0;
@@ -661,70 +726,6 @@ namespace vke
 		vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
 	}
 
-	void Renderer::draw_mesh(VkCommandBuffer &commandBuffer, Mesh *const m, int meshNum)
-	{
-
-		if (m->get_num_geometries() == 0)
-			return;
-
-		// Offset calculation
-		uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * meshNum;
-		uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
-
-		uint32_t globalOffsets[] = {globalOffset, globalOffset};
-		uint32_t objectOffsets[] = {objectOffset, objectOffset};
-
-		// ObjectUniforms objectData;
-		ObjectUniforms objectData;
-		objectData.model = m->get_model_matrix();
-		objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
-		m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
-
-		for (size_t i = 0; i < m->get_num_geometries(); i++)
-		{
-			Geometry *g = m->get_geometry(i);
-
-			Material *mat = m->get_material(g->m_materialID);
-			if (!mat)
-			{
-				// USE DEBUG MAT;
-			}
-			if (!mat->m_shaderPass)
-			{
-				mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
-			}
-
-			MaterialUniforms materialData = mat->get_uniforms();
-			m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
-
-			auto textures = mat->get_textures();
-			for (auto pair : textures)
-			{
-				Texture *texture = pair.second;
-				if (texture->loaded)
-				{
-					if (!texture->buffer_loaded)
-					{
-						// upload_texture(texture);
-
-						// m_descriptorMng.allocate_descriptor_set(2, &mat->m_descriptor);
-						// m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_descriptor);
-					}
-				}
-			}
-
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
-			// GLOBAL LAYOUT BINDING
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
-			// PER OBJECT LAYOUT BINDING
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
-			// TEXTURE LAYOUT BINDING
-			// vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_descriptor.descriptorSet, 0, nullptr);
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &m_shadowDescriptor.descriptorSet, 0, nullptr);
-
-			draw_geometry(commandBuffer, g);
-		}
-	}
 	void Renderer::draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g)
 	{
 		if (m_lastGeometry != g)
@@ -837,6 +838,41 @@ namespace vke
 		m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 										   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 	}
+}
+
+void vke::Renderer::setup_material(Material *const mat)
+{
+	if (!mat->m_shaderPass)
+	{
+		mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
+	}
+	if (!mat->m_textureDescriptor.allocated)
+	{
+		m_descriptorMng.allocate_descriptor_set(2, &mat->m_textureDescriptor);
+
+		// Set Shadow Map write
+		m_descriptorMng.set_descriptor_write(m_shadowTexture->m_sampler, m_shadowTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
+	}
+
+	auto textures = mat->get_textures();
+	for (auto pair : textures)
+	{
+		Texture *texture = pair.second;
+		if (texture->loaded)
+		{
+			if (!texture->buffer_loaded)
+				upload_texture(texture);
+
+			// Set texture write
+			if (!mat->get_texture_binding_state()[pair.first])
+			{
+				m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
+				mat->set_texture_binding_state(pair.first, true);
+			}
+		}
+	}
+
+	mat->m_isDirty = false;
 }
 
 void vke::Renderer::upload_texture(Texture *const t)

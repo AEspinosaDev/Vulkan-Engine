@@ -96,10 +96,8 @@ namespace vke
 		VkRenderPass m_shadowPass{};
 
 		Texture *m_shadowTexture;
-		DescriptorSet m_shadowDescriptor{};
 		VkFramebuffer m_shadowFramebuffer{};
 
-		// std::unordered_map<std::string, VkFramebuffer> m_customFramebuffers;
 		std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 
 		DescriptorManager m_descriptorMng{};
@@ -124,6 +122,7 @@ namespace vke
 
 		Material *m_lastMaterial{nullptr};
 		Geometry *m_lastGeometry{nullptr};
+
 
 #pragma endregion
 #pragma region Getters & Setters
@@ -214,6 +213,8 @@ namespace vke
 
 		void init_shaderpasses();
 
+		void init_resources();
+
 		void recreate_swap_chain();
 
 		void reconfigure_vulkan();
@@ -230,8 +231,6 @@ namespace vke
 
 		void shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
 
-		void draw_mesh(VkCommandBuffer &commandBuffer, Mesh *const m, int meshNum);
-
 		void draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g);
 
 #pragma endregion
@@ -241,7 +240,10 @@ namespace vke
 
 		void upload_global_data(Scene *const scene);
 
+		void setup_material(Material* const mat);
+
 		void upload_texture(Texture *const t);
+
 	};
 
 }

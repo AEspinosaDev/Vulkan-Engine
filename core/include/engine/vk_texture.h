@@ -19,15 +19,16 @@ namespace vke
         Image m_image;
         VkSampler m_sampler;
 
-        
-        
-
         bool loaded{false};
         bool buffer_loaded{false};
+
 
         friend class Renderer;
 
     public:
+
+        static Texture* DEBUG_TEXTURE;
+
         Texture() : m_tmpCache(nullptr), m_depth(1) {}
 
         inline bool is_data_loaded() const { return loaded; }
@@ -39,9 +40,9 @@ namespace vke
         inline int get_num_channels() const { return m_channels; }
 
         bool load_image(std::string fileName);
-        void create_sampler(VkDevice& device);
+        void create_sampler(VkDevice &device);
 
-        void cleanup(VkDevice& device, VmaAllocator& memory);
+        void cleanup(VkDevice &device, VmaAllocator &memory);
     };
 }
 

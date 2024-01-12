@@ -24,18 +24,26 @@ namespace vke
     protected:
         ShaderPass *m_shaderPass{nullptr};
 
-        MaterialParameters m_parameters;
+        MaterialParameters m_parameters{};
 
         std::string m_shaderPassID{};
 
-        DescriptorSet m_descriptor;
+        DescriptorSet m_textureDescriptor{};
+
+        bool m_isDirty{true};
 
         friend class Renderer;
 
         virtual MaterialUniforms get_uniforms() const = 0;
-        virtual std::unordered_map<int,Texture*> get_textures() const = 0;
+
+        virtual std::unordered_map<int, Texture *> get_textures() const = 0;
+
+        virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
+        virtual void set_texture_binding_state(int id, bool state) = 0;
 
     public:
+        static Material *DEBUG_MATERIAL;
+
         Material(std::string shaderPassID) : m_shaderPassID(shaderPassID) {}
         Material(std::string shaderPassID, MaterialParameters params) : m_shaderPassID(shaderPassID), m_parameters(params) {}
 
@@ -44,7 +52,6 @@ namespace vke
         virtual inline MaterialParameters get_parameters() const { return m_parameters; }
         virtual void set_parameters(MaterialParameters p) { m_parameters = p; }
     };
-
+    
 }
-
 #endif

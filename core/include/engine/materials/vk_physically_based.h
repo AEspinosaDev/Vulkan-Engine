@@ -36,6 +36,7 @@ namespace vke
         };
 
         std::unordered_map<int, Texture *> m_textures;
+        std::unordered_map<int, bool> m_textureBindingState;
 
         virtual MaterialUniforms get_uniforms() const;
         virtual inline std::unordered_map<int, Texture *> get_textures() const
@@ -43,42 +44,80 @@ namespace vke
             return m_textures;
         }
 
+        virtual std::unordered_map<int, bool> get_texture_binding_state() const
+        {
+            return m_textureBindingState;
+        }
+        virtual void set_texture_binding_state(int id, bool state)
+        {
+            m_textureBindingState[id] = state;
+        }
+
     public:
         PhysicalBasedMaterial(glm::vec4 albedo = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("physical"), m_albedo(albedo) {}
         PhysicalBasedMaterial(glm::vec4 albedo, MaterialParameters params) : Material("physical", params), m_albedo(albedo) {}
 
         inline glm::vec2 get_tile() const { return m_tileUV; }
-        inline void set_tile(glm::vec2 tile) { m_tileUV = tile; }
+        inline void set_tile(glm::vec2 tile)
+        {
+            m_tileUV = tile;
+            m_isDirty = true;
+        }
 
         inline glm::vec4 get_albedo() const { return m_albedo; }
-        inline void set_albedo(glm::vec4 c) { m_albedo = c; }
+        inline void set_albedo(glm::vec4 c)
+        {
+            m_albedo = c;
+            m_isDirty = true;
+        }
 
         // Weight between parameter and albedo texture
         virtual inline float get_albedo_weight() const { return m_albedoWeight; }
         // Weight between parameter and albedo texture
-        virtual inline void set_albedo_weight(float w) { m_albedoWeight = w; }
+        virtual inline void set_albedo_weight(float w)
+        {
+            m_albedoWeight = w;
+            m_isDirty = true;
+        }
 
         inline float get_metalness() const { return m_metalness; }
-        inline void set_metalness(float m) { m_metalness = m; }
+        inline void set_metalness(float m)
+        {
+            m_metalness = m;
+            m_isDirty = true;
+        }
 
         // Weight between parameter and metallness texture
         virtual inline float get_metalness_weight() const { return m_metalnessWeight; }
         // Weight between parameter and metallness texture
-        virtual inline void set_metalness_weight(float w) { m_metalnessWeight = w; }
+        virtual inline void set_metalness_weight(float w)
+        {
+            m_metalnessWeight = w;
+            m_isDirty = true;
+        }
 
         inline float get_roughness() const { return m_roughness; }
-        inline void set_roughness(float r) { m_roughness = r; }
+        inline void set_roughness(float r)
+        {
+            m_roughness = r;
+            m_isDirty = true;
+        }
 
         // Weight between parameter and roughness texture
         virtual inline float get_roughness_weight() const { return m_roughnessWeight; }
         // Weight between parameter and roughness texture
-        virtual inline void set_roughness_weight(float w) { m_roughnessWeight = w; }
+        virtual inline void set_roughness_weight(float w)
+        {
+            m_roughnessWeight = w;
+            m_isDirty = true;
+        }
 
         inline Texture *get_albedo_texture() { return m_textures[ALBEDO]; }
         inline void set_albedo_texture(Texture *t)
         {
             m_hasAlbedoTexture = t ? true : false;
             m_textures[ALBEDO] = t;
+            m_isDirty = true;
         }
 
         inline Texture *get_normal_texture() { return m_textures[NORMAL]; }
@@ -86,6 +125,7 @@ namespace vke
         {
             m_hasNormalTexture = t ? true : false;
             m_textures[NORMAL] = t;
+            m_isDirty = true;
         }
 
         /*
@@ -96,6 +136,7 @@ namespace vke
         {
             m_hasMaskTexture = t ? true : false;
             m_textures[MASK] = t;
+            m_isDirty = true;
         }
     };
 }

@@ -329,6 +329,10 @@ namespace vke
 		VkWriteDescriptorSet write = {};
 		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		write.pNext = nullptr;
+		
+
+
+		
 
 		write.dstBinding = binding;
 		write.dstSet = dstSet;

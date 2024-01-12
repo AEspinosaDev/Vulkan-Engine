@@ -147,9 +147,9 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 } material;
 
 layout(set = 2, binding = 0) uniform sampler2D shadowMap;
-// layout(set = 2, binding = 1) uniform sampler2D normalTex;
+layout(set = 2, binding = 1) uniform sampler2D albedoTex;
 // layout(set = 2, binding = 2) uniform sampler2D normalTex;
-// layout(set = 2, binding = 3) uniform sampler2D normalTex;
+// layout(set = 2, binding = 3) uniform sampler2D maskTex;
 
 //Surface global properties
 vec3 g_normal;
@@ -287,7 +287,8 @@ void main() {
 
     g_normal = v_normal;
     // g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(colorMap, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
-    g_albedo = material.albedo.rgb;
+    g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
+    //g_albedo = material.albedo.rgb;
     //g_opacity = material.hasAlbdoTexture ? mix(material.albedo.a, texture(colorMap, v_uv).a, material.albedoWeight) : material.albedo.a;
     g_opacity =  material.opacity;
     g_roughness =  material.roughness;

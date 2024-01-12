@@ -28,7 +28,7 @@ namespace vke
         setinfo.bindingCount = bindingCount;
         setinfo.flags = flags;
         setinfo.pNext = nullptr;
-        setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO; 
+        setinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         setinfo.pBindings = bindings;
 
         VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &layout));
@@ -48,6 +48,8 @@ namespace vke
 
         VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
                                           &descriptor->descriptorSet));
+
+        descriptor->allocated = true;
     }
     void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
     {
@@ -64,7 +66,7 @@ namespace vke
 
         vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
     }
-    void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout, DescriptorSet *descriptor)
+    void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout, DescriptorSet *descriptor, uint32_t binding)
     {
 
         VkDescriptorImageInfo imageBufferInfo;
@@ -72,10 +74,10 @@ namespace vke
         imageBufferInfo.imageView = imageView;
         imageBufferInfo.imageLayout = layout;
 
-        VkWriteDescriptorSet texture1 = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->descriptorSet, &imageBufferInfo, 0);
+        VkWriteDescriptorSet texture1 = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->descriptorSet, &imageBufferInfo, binding);
 
         descriptor->bindings += 1;
-        
+
         vkUpdateDescriptorSets(m_device, 1, &texture1, 0, nullptr);
     }
     void DescriptorManager::cleanup()

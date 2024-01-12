@@ -40,6 +40,8 @@ void VulkanRenderer::run()
 
 void VulkanRenderer::setup()
 {
+    std::string meshDir(MODEL_DIR);
+    std::string engineMeshDir(VK_MODEL_DIR);
 
     camera = new vke::Camera();
     camera->set_position(glm::vec3(0.0f, 0.0f, -5.0f));
@@ -52,7 +54,6 @@ void VulkanRenderer::setup()
     m_scene->set_light(new vke::PointLight());
     m_scene->get_light()->set_position({-3.0f, 3.0f, 0.0f});
 
-    // m_scene->set_rotation({0.7,1.5, 0.0});
 
     vke::Geometry *quadGeom = new vke::Geometry();
     quadGeom->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -70,51 +71,48 @@ void VulkanRenderer::setup()
     mat2->set_albedo({0.0, 1.0, 0.0, 1.0});
     mat2->set_metalness(0.8f);
     mat2->set_roughness(0.3f);
+
     auto mat3 = new vke::PhysicalBasedMaterial();
     mat3->set_albedo({0.0, 0.0, 0.0, 1.0});
 
     auto lightMat = new vke::UnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_light()->get_color(), 1.0f));
-
-    vke::Mesh *m = new vke::Mesh(quadGeom, mat);
-    vke::Mesh *m2 = new vke::Mesh();
-    m2->set_material(mat2);
-
-    std::string meshDir(MODEL_DIR);
-    std::string engineMeshDir(VK_MODEL_DIR);
-    m2->load_file(meshDir + "kabuto.obj");
-    m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
-
     m_lightDummy = new vke::Mesh();
     m_lightDummy->load_file(engineMeshDir + "sphere.obj");
     m_lightDummy->set_material(lightMat);
     m_lightDummy->set_scale(0.5f);
-    m_scene->add(m_lightDummy);
+
+    vke::Mesh *m = new vke::Mesh(quadGeom, mat);
+    m->set_scale(10.0);
+    m->set_position({0.0, -4.0, 0.0});
+    m->load_file(meshDir + "terrain.obj", true);
+
+    vke::Mesh *m2 = new vke::Mesh();
+    m2->set_material(mat2);
+    m2->load_file(meshDir + "kabuto.obj");
+    m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
     
 
     vke::Mesh *m3 = new vke::Mesh();
     m3->set_material(mat3);
-
-    m->set_scale(10.0);
-    m->set_position({0.0, -4.0, 0.0});
-    m->load_file(meshDir + "terrain.obj", true);
-    //m->set_rotation({ 1.5,0.0,0.0 });
     m3->set_position({-3.0, 2.0, 3.0});
     m3->load_file(engineMeshDir + "cube.obj");
 
     m_scene->add(m);
     m_scene->add(m2);
     m_scene->add(m3);
+    m_scene->add(m_lightDummy);
 
     std::string textDir(TEXTURE_DIR);
 
     vke::Texture *text = new vke::Texture();
     text->load_image(textDir + "wood_diffuse.jpg");
+    vke::Texture *text2 = new vke::Texture();
+    text2->load_image(textDir + "land.png");
 
     mat3->set_albedo_texture(text);
-
-    // mat2->set_color_texture(text);
-    // mat->set_color_texture(text);
+    // mat2->set_albedo_texture(text);
+    mat->set_albedo_texture(text2);
 
     m_controller = new vke::Controller(camera);
 }
@@ -140,6 +138,7 @@ void VulkanRenderer::tick()
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
     float fps = 1.0f / m_deltaTime;
+    
 
     update();
 

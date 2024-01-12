@@ -35,6 +35,8 @@ public:
 private:
     void setup();
 
+    void ui_overlay();
+
     void tick();
 
     void update();
