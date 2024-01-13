@@ -448,7 +448,7 @@ namespace vke
 						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
 						// TEXTURE LAYOUT BINDING
-						if (mat->m_shaderPass->descriptorSetLayoutIDs[2])
+						if (mat->m_shaderPass->settings.descriptorSetLayoutIDs[2])
 							vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_textureDescriptor.descriptorSet, 0, nullptr);
 
 						draw_geometry(commandBuffer, g);
@@ -526,38 +526,6 @@ namespace vke
 	}
 	void Renderer::init_shaderpasses()
 	{
-		// Setup shaderpasses
-		std::string shaderDir(VK_SHADER_DIR);
-		m_shaderPasses["unlit"] = new ShaderPass(shaderDir + "unlit.glsl");
-		m_shaderPasses["unlit"]->descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-														   {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
-														   {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
-		m_shaderPasses["unlit"]->attributes = {{VertexAttributeType::POSITION, true},
-											   {VertexAttributeType::NORMAL, false},
-											   {VertexAttributeType::UV, false},
-											   {VertexAttributeType::TANGENT, false},
-											   {VertexAttributeType::COLOR, false}};
-
-		m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
-		m_shaderPasses["phong"]->descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-														   {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
-														   {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
-		m_shaderPasses["phong"]->attributes = {{VertexAttributeType::POSITION, true},
-											   {VertexAttributeType::NORMAL, true},
-											   {VertexAttributeType::UV, true},
-											   {VertexAttributeType::TANGENT, false},
-											   {VertexAttributeType::COLOR, false}};
-
-		m_shaderPasses["physical"] = new ShaderPass(shaderDir + "physically_based.glsl");
-		m_shaderPasses["physical"]->descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-															  {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
-															  {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
-		m_shaderPasses["physical"]->attributes = {{VertexAttributeType::POSITION, true},
-												  {VertexAttributeType::NORMAL, true},
-												  {VertexAttributeType::UV, true},
-												  {VertexAttributeType::TANGENT, true},
-												  {VertexAttributeType::COLOR, false}};
-
 		PipelineBuilder builder;
 
 		// Default geometry assembly values
@@ -577,60 +545,52 @@ namespace vke
 		builder.scissor.offset = {0, 0};
 		builder.scissor.extent = *m_window->get_extent();
 
-		// Depth test
-		builder.depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+		builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+
+		builder.depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
+
+		builder.multisampling = vkinit::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
+
+		// Setup shaderpasses
+		std::string shaderDir(VK_SHADER_DIR);
+		m_shaderPasses["unlit"] = new ShaderPass(shaderDir + "unlit.glsl");
+		m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+																	{DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+																	{DescriptorLayoutType::TEXTURE_LAYOUT, false}};
+		m_shaderPasses["unlit"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+														{VertexAttributeType::NORMAL, false},
+														{VertexAttributeType::UV, false},
+														{VertexAttributeType::TANGENT, false},
+														{VertexAttributeType::COLOR, false}};
+
+		m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
+		m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+																	{DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+																	{DescriptorLayoutType::TEXTURE_LAYOUT, true}};
+		m_shaderPasses["phong"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+														{VertexAttributeType::NORMAL, true},
+														{VertexAttributeType::UV, true},
+														{VertexAttributeType::TANGENT, false},
+														{VertexAttributeType::COLOR, false}};
+
+		m_shaderPasses["physical"] = new ShaderPass(shaderDir + "physically_based.glsl");
+		m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+																	   {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+																	   {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
+		m_shaderPasses["physical"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+														   {VertexAttributeType::NORMAL, true},
+														   {VertexAttributeType::UV, true},
+														   {VertexAttributeType::TANGENT, true},
+														   {VertexAttributeType::COLOR, false}};
 
 		for (auto pair : m_shaderPasses)
 		{
 			ShaderPass *pass = pair.second;
 
-			// Attribute setup
-			auto attributeDescriptions = Vertex::getAttributeDescriptions(pass->attributes[VertexAttributeType::NORMAL],
-																		  pass->attributes[VertexAttributeType::TANGENT],
-																		  pass->attributes[VertexAttributeType::UV],
-																		  pass->attributes[VertexAttributeType::COLOR]);
-			builder.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-			builder.vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-			// Rasterizer
-			builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-			// Sampling
-			builder.multisampling = vkinit::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
-
-			// Blending
-			builder.colorBlendAttachment = vkinit::color_blend_attachment_state();
-			builder.colorBlending = vkinit::color_blend_create_info();
-			builder.colorBlending.attachmentCount = 1;
-			builder.colorBlending.pAttachments = &builder.colorBlendAttachment;
-
-			// Shaders
-			auto shader = ShaderSource::read_file(pass->SHADER_FILE);
-
-			if (shader.vertSource != "")
-			{
-				ShaderStage vertShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_VERTEX_BIT,
-																				ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
-				pass->stages.push_back(vertShaderStage);
-			}
-			if (shader.fragSource != "")
-			{
-				ShaderStage fragShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-																				ShaderSource::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
-				pass->stages.push_back(fragShaderStage);
-			}
-			if (shader.geomSource != "")
-			{
-				ShaderStage geomShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_GEOMETRY_BIT,
-																				ShaderSource::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
-				pass->stages.push_back(geomShaderStage);
-			}
+			ShaderPass::build_shader_stages(m_device, *pass);
 
 			builder.build_pipeline_layout(m_device, m_descriptorMng, *pass);
-
-			builder.shaderPass = pass;
-
-			pass->pipeline = builder.build_pipeline(m_device, m_renderPass);
+			builder.build_pipeline(m_device, m_renderPass, *pass);
 
 			m_deletionQueue.push_function([=]()
 										  { pass->cleanup(m_device); });
@@ -639,44 +599,32 @@ namespace vke
 		if (m_initialized)
 			return;
 		// DEPTH PASS
-
-		auto depthAttributeDescriptions = Vertex::getAttributeDescriptions(false, false, false, false);
-		builder.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(depthAttributeDescriptions.size());
-		builder.vertexInputInfo.pVertexAttributeDescriptions = depthAttributeDescriptions.data();
+		ShaderPass *depthPass = new ShaderPass(shaderDir + "depth.glsl");
+		depthPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+													  {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+													  {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
+		depthPass->settings.attributes = {{VertexAttributeType::POSITION, true},
+										  {VertexAttributeType::NORMAL, false},
+										  {VertexAttributeType::UV, false},
+										  {VertexAttributeType::TANGENT, false},
+										  {VertexAttributeType::COLOR, false}};
 
 		const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 		VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
-
 		builder.viewport.width = (float)shadowExtent.width;
 		builder.viewport.height = (float)shadowExtent.height;
 		builder.scissor.extent = shadowExtent;
-
-		builder.rasterizer.depthBiasEnable = VK_TRUE;
+		// builder.rasterizer.depthBiasEnable = VK_TRUE;
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
-
 		builder.colorBlending.attachmentCount = 0;
-
 		// builder.dynamicState = VK_TRUE;
 
 		builder.multisampling = vkinit::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
-		ShaderPass *depthPass = new ShaderPass(shaderDir + "depth.glsl");
-
-		depthPass->descriptorSetLayoutIDs = {{0, true}, {1, true}, {2, false}};
-
-		auto shader = ShaderSource::read_file(depthPass->SHADER_FILE);
-		ShaderStage vertShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_VERTEX_BIT,
-																		ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
-		depthPass->stages.push_back(vertShaderStage);
-		ShaderStage fragShaderStage = ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-																		ShaderSource::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
-		depthPass->stages.push_back(fragShaderStage);
+		ShaderPass::build_shader_stages(m_device, *depthPass);
 
 		builder.build_pipeline_layout(m_device, m_descriptorMng, *depthPass);
-
-		builder.shaderPass = depthPass;
-
-		depthPass->pipeline = builder.build_pipeline(m_device, m_shadowPass);
+		builder.build_pipeline(m_device, m_shadowPass, *depthPass);
 
 		m_shaderPasses["depth"] = depthPass;
 

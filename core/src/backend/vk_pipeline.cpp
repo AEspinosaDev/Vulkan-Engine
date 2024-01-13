@@ -2,10 +2,36 @@
 
 namespace vke
 {
+	void PipelineBuilder::init(VkExtent2D &extent)
+	{
+
+		// Default geometry assembly values
+		vertexInputInfo = vkinit::vertex_input_state_create_info();
+		inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+		auto bindingDescription = Vertex::getBindingDescription();
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+
+		// Viewport
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float)extent.width;
+		viewport.height = (float)extent.height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		scissor.offset = {0, 0};
+		scissor.extent = extent;
+
+		rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+
+		depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
+
+	}
+
 	void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)
 	{
 		std::vector<VkDescriptorSetLayout> descriptorLayouts;
-		for (auto &layoutID : pass.descriptorSetLayoutIDs)
+		for (auto &layoutID : pass.settings.descriptorSetLayoutIDs)
 		{
 			if (layoutID.second)
 				descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first));
@@ -23,10 +49,9 @@ namespace vke
 		pipelineLayout = pass.pipelineLayout;
 	}
 
-	VkPipeline PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &pass)
+	void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &renderPass, ShaderPass &shaderPass)
 	{
-		// make viewport state from our stored viewport and scissor.
-		// at the moment we wont support multiple viewports or scissors
+		// Viewport setup (JUST ONE FOR NOW)
 		VkPipelineViewportStateCreateInfo viewportState = {};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.pNext = nullptr;
@@ -35,6 +60,36 @@ namespace vke
 		viewportState.pViewports = &viewport;
 		viewportState.scissorCount = 1;
 		viewportState.pScissors = &scissor;
+
+		// Attribute setup
+		auto attributeDescriptions = Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::NORMAL],
+																	  shaderPass.settings.attributes[VertexAttributeType::TANGENT],
+																	  shaderPass.settings.attributes[VertexAttributeType::UV],
+																	  shaderPass.settings.attributes[VertexAttributeType::COLOR]);
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		// Raster setup
+		rasterizer.polygonMode = shaderPass.settings.poligonMode;
+		rasterizer.cullMode = shaderPass.settings.cullMode;
+		rasterizer.frontFace = shaderPass.settings.drawOrder;
+
+		// Depth setup
+		depthStencil.depthTestEnable = shaderPass.settings.depthTest ? VK_TRUE : VK_FALSE;
+		depthStencil.depthWriteEnable = shaderPass.settings.depthWrite ? VK_TRUE : VK_FALSE;
+		depthStencil.depthCompareOp = shaderPass.settings.depthTest ? shaderPass.settings.depthOp : VK_COMPARE_OP_ALWAYS;
+
+		// Blending SETUP TO DO
+		if (!shaderPass.settings.blending)
+		{
+			colorBlendAttachment = vkinit::color_blend_attachment_state();
+			colorBlending = vkinit::color_blend_create_info();
+			colorBlending.attachmentCount = 1;
+			colorBlending.pAttachments = &colorBlendAttachment;
+		}
+		else
+		{
+		}
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -48,7 +103,7 @@ namespace vke
 		pipelineInfo.pNext = nullptr;
 
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
-		for (auto &stage : shaderPass->stages)
+		for (auto &stage : shaderPass.stages)
 		{
 			stages.push_back(vkinit::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
 		}
@@ -64,7 +119,7 @@ namespace vke
 		pipelineInfo.pDynamicState = &dynamicState;
 		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.layout = pipelineLayout;
-		pipelineInfo.renderPass = pass;
+		pipelineInfo.renderPass = renderPass;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -73,11 +128,10 @@ namespace vke
 				device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
 		{
 			std::cout << "failed to create pipline\n";
-			return VK_NULL_HANDLE; // failed to create graphics pipeline
 		}
 		else
 		{
-			return newPipeline;
+			shaderPass.pipeline = newPipeline;
 		}
 	}
 
@@ -159,7 +213,33 @@ namespace vke
 		return spirv;
 	}
 
-	void ShaderPass::cleanup(VkDevice device)
+	void ShaderPass::build_shader_stages(VkDevice &device, ShaderPass &pass)
+	{
+		if (pass.SHADER_FILE == "")
+			return;
+		auto shader = ShaderSource::read_file(pass.SHADER_FILE);
+
+		if (shader.vertSource != "")
+		{
+			ShaderStage vertShaderStage = ShaderSource::create_shader_stage(device, VK_SHADER_STAGE_VERTEX_BIT,
+																			ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, true));
+			pass.stages.push_back(vertShaderStage);
+		}
+		if (shader.fragSource != "")
+		{
+			ShaderStage fragShaderStage = ShaderSource::create_shader_stage(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+																			ShaderSource::compile_shader(shader.fragSource, shader.name + "frag", shaderc_fragment_shader, true));
+			pass.stages.push_back(fragShaderStage);
+		}
+		if (shader.geomSource != "")
+		{
+			ShaderStage geomShaderStage = ShaderSource::create_shader_stage(device, VK_SHADER_STAGE_GEOMETRY_BIT,
+																			ShaderSource::compile_shader(shader.geomSource, shader.name + "geom", shaderc_geometry_shader, true));
+			pass.stages.push_back(geomShaderStage);
+		}
+	}
+
+	void ShaderPass::cleanup(VkDevice &device)
 	{
 		for (auto &stage : stages)
 		{
