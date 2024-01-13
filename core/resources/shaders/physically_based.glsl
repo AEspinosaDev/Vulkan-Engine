@@ -5,6 +5,7 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
+layout(location = 3) in vec3 tangent;
 
 //Output
 layout(location = 0) out vec3 v_pos;
@@ -14,6 +15,7 @@ layout(location = 3) out vec3 v_lightPos;
 layout(location = 4) out int v_affectedByFog;
 layout(location = 5) out int v_receiveShadows;
 layout(location = 6) out vec3 v_modelPos;
+layout(location = 7) out mat3 v_TBN;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -57,19 +59,23 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     float roughness;
     float roughnessWeight;
 
-    float emmission;
-
-    vec2 tileUV;
+    float occlusion;
+    float occlusionWeight;
 
     bool hasAlbdoTexture;
     bool hasNormalTexture;
-    bool hasMaskTexture;
-    bool hasEmiTexture;
+    bool hasRoughnessTexture;
+    bool hasMetallicTexture;
+    bool hasAOTexture;
 
-    vec4 emmissionColor;
+    bool hasMaskTexture;
+    int maskType;
+
+    vec2 tileUV;
 } material;
 
 void main() {
+
     gl_Position = camera.viewProj * object.model * vec4(pos, 1.0);
 
     //OUTS
@@ -79,6 +85,13 @@ void main() {
     v_pos = (mv * vec4(pos, 1.0)).xyz;
 
     v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
+
+    if(material.hasNormalTexture) {
+        vec3 T = -normalize(vec3(mv * vec4(tangent, 0.0)));
+        vec3 N = normalize(vec3(mv * vec4(normal, 0.0)));
+        vec3 B = cross(N, T);
+        v_TBN = mat3(T, B, N);
+    }
 
     v_lightPos = scene.lightType == 0 ? (camera.view * vec4(scene.lighPosition, 1.0)).xyz : (camera.view * vec4(scene.lightData.xyz, 0.0)).xyz;
 
@@ -99,6 +112,7 @@ layout(location = 3) in vec3 v_lightPos;
 layout(location = 4) in flat int v_affectedByFog;
 layout(location = 5) in flat int v_receiveShadows;
 layout(location = 6) in vec3 v_modelPos;
+layout(location = 7) in mat3 v_TBN;
 
 //Output
 layout(location = 0) out vec4 outColor;
@@ -134,22 +148,28 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     float roughness;
     float roughnessWeight;
 
-    float emmission;
-
-    vec2 tileUV;
+    float occlusion;
+    float occlusionWeight;
 
     bool hasAlbdoTexture;
     bool hasNormalTexture;
-    bool hasMaskTexture;
-    bool hasEmiTexture;
+    bool hasRoughnessTexture;
+    bool hasMetallicTexture;
+    bool hasAOTexture;
 
-    vec4 emmissionColor;
+    bool hasMaskTexture;
+    int maskType;
+
+    vec2 tileUV;
 } material;
 
 layout(set = 2, binding = 0) uniform sampler2D shadowMap;
+
 layout(set = 2, binding = 1) uniform sampler2D albedoTex;
-// layout(set = 2, binding = 2) uniform sampler2D normalTex;
-// layout(set = 2, binding = 3) uniform sampler2D maskTex;
+layout(set = 2, binding = 2) uniform sampler2D normalTex;
+layout(set = 2, binding = 3) uniform sampler2D maskRoughTex;
+layout(set = 2, binding = 4) uniform sampler2D metalTex;
+layout(set = 2, binding = 5) uniform sampler2D occlusionTex;
 
 //Surface global properties
 vec3 g_normal;
@@ -164,7 +184,7 @@ const float PI = 3.14159265359;
 
 float computeFog() {
     float z = (2.0 * scene.fogMinDistance) / (scene.fogMaxDistance + scene.fogMinDistance - gl_FragCoord.z * (scene.fogMaxDistance - scene.fogMinDistance));
-    return exp(-scene.fogIntensity* 0.01 * z);
+    return exp(-scene.fogIntensity * 0.01 * z);
 }
 
 float computeAttenuation() {
@@ -285,15 +305,30 @@ vec3 computeLighting() {
 
 void main() {
 
-    g_normal = v_normal;
-    // g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(colorMap, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
+    //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
-    //g_albedo = material.albedo.rgb;
-    //g_opacity = material.hasAlbdoTexture ? mix(material.albedo.a, texture(colorMap, v_uv).a, material.albedoWeight) : material.albedo.a;
-    g_opacity =  material.opacity;
-    g_roughness =  material.roughness;
-    g_metalness =  material.metalness;
-    g_ao = 1.0;
+    g_opacity = material.opacity;
+    g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
+
+    if(material.hasMaskTexture) {
+        vec4 mask = pow(texture(maskRoughTex, v_uv).rgba, vec4(2.2)); //Correction linearize color
+        if(material.maskType == 0) { //HDRP UNITY
+		    //Unity HDRP uses glossiness not roughness pipeline, so it has to be inversed
+            g_roughness = 1.0 - mask.a;
+            g_metalness = mask.r;
+            g_ao = mask.g;
+        } else if(material.maskType == 1) { //UNREAL
+            g_roughness = mask.r;
+            g_metalness = mask.b;
+            g_ao = mask.g;
+        } else if(material.maskType == 2) { //URP UNITY
+            // TO DO ...
+        }
+    } else {
+        g_roughness = material.hasRoughnessTexture ? mix(material.roughness, texture(maskRoughTex, v_uv).r, material.roughnessWeight) : material.roughness;
+        g_metalness = material.hasMetallicTexture ? mix(material.metalness, texture(metalTex, v_uv).r, material.metalnessWeight) : material.metalness;
+        g_ao = material.hasAOTexture ? mix(material.occlusion, texture(occlusionTex, v_uv).r, material.occlusionWeight) : material.occlusion;
+    }
 
     vec3 color = computeLighting();
     if(v_receiveShadows == 1)

@@ -54,7 +54,6 @@ void VulkanRenderer::setup()
     m_scene->set_light(new vke::PointLight());
     m_scene->get_light()->set_position({-3.0f, 3.0f, 0.0f});
 
-
     vke::Geometry *quadGeom = new vke::Geometry();
     quadGeom->fill({{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
                     {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -91,7 +90,6 @@ void VulkanRenderer::setup()
     m2->set_material(mat2);
     m2->load_file(meshDir + "kabuto.obj");
     m2->set_rotation(glm::vec3(0.0, 3.14, 0.0));
-    
 
     vke::Mesh *m3 = new vke::Mesh();
     m3->set_material(mat3);
@@ -105,14 +103,23 @@ void VulkanRenderer::setup()
 
     std::string textDir(TEXTURE_DIR);
 
-    vke::Texture *text = new vke::Texture();
-    text->load_image(textDir + "wood_diffuse.jpg");
-    vke::Texture *text2 = new vke::Texture();
-    text2->load_image(textDir + "land.png");
+    vke::Texture *floorText = new vke::Texture();
+    floorText->load_image(textDir + "floor_diffuse.jpg");
+    vke::Texture *floorNormalText = new vke::Texture();
+    floorNormalText->load_image(textDir + "floor_normal.jpg");
+    vke::Texture *floorRoughText = new vke::Texture();
+    floorRoughText->load_image(textDir + "floor_roughness.jpg");
+    mat->set_albedo_texture(floorText);
+    mat->set_normal_texture(floorNormalText);
+    mat->set_roughness_texture(floorRoughText);
+    mat->set_tile({15.0f, 15.0f});
 
-    mat3->set_albedo_texture(text);
-    // mat2->set_albedo_texture(text);
-    mat->set_albedo_texture(text2);
+    vke::Texture *woodText = new vke::Texture();
+    woodText->load_image(textDir + "wood_diffuse.jpg");
+    vke::Texture *woodNormalText = new vke::Texture();
+    woodNormalText->load_image(textDir + "wood_normal.jpg");
+    mat3->set_albedo_texture(woodText);
+    mat3->set_normal_texture(woodNormalText);
 
     m_controller = new vke::Controller(camera);
 }
@@ -121,11 +128,10 @@ void VulkanRenderer::update()
 {
     m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_deltaTime);
 
-
     // Rotate the vector around the ZX plane
     float rotationAngle = glm::radians(10.0f * m_deltaTime);
     auto light = m_scene->get_light();
-    float _x = light->get_position().x * cos(rotationAngle) - light->get_position().z  * sin(rotationAngle);
+    float _x = light->get_position().x * cos(rotationAngle) - light->get_position().z * sin(rotationAngle);
     float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
 
     light->set_position({_x, light->get_position().y, _z});
@@ -138,7 +144,6 @@ void VulkanRenderer::tick()
     m_deltaTime = currentTime - m_lastTime;
     m_lastTime = currentTime;
     float fps = 1.0f / m_deltaTime;
-    
 
     update();
 

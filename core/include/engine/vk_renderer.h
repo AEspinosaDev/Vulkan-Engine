@@ -102,6 +102,8 @@ namespace vke
 
 		DescriptorManager m_descriptorMng{};
 		DescriptorSet m_globalDescriptor{};
+		
+
 		Buffer m_globalUniformsBuffer{};
 
 		vkutils::DeletionQueue m_deletionQueue;
@@ -122,7 +124,6 @@ namespace vke
 
 		Material *m_lastMaterial{nullptr};
 		Geometry *m_lastGeometry{nullptr};
-
 
 #pragma endregion
 #pragma region Getters & Setters
@@ -227,7 +228,7 @@ namespace vke
 		void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth = 0.0f, float maxDepth = 1.0f,
 						  float x = 0.0f, float y = 0.0f, int offsetX = 0, int offsetY = 0);
 
-		void render_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
+		void default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
 
 		void shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
 
@@ -240,10 +241,9 @@ namespace vke
 
 		void upload_global_data(Scene *const scene);
 
-		void setup_material(Material* const mat);
+		void setup_material(Material *const mat);
 
 		void upload_texture(Texture *const t);
-
 	};
 
 }

@@ -3,6 +3,8 @@
 
 #include "vk_core.h"
 #include "vk_initializers.h"
+#include "vk_descriptors.h"
+
 
 namespace vke
 {
@@ -39,7 +41,10 @@ namespace vke
 		VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
 
 		std::vector<ShaderStage> stages;
-		std::vector<int> descriptorSetLayoutIDs;
+
+		std::unordered_map<int, bool> descriptorSetLayoutIDs;
+
+		std::unordered_map<int, bool> attributes;
 
 		ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile) {}
 
@@ -77,7 +82,9 @@ namespace vke
 
 		VkPipelineLayout pipelineLayout;
 
-		VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
+		void build_pipeline_layout(VkDevice &device,  DescriptorManager &descriptorManager, ShaderPass &pass);
+
+		VkPipeline build_pipeline(VkDevice &device, VkRenderPass &pass);
 	};
 
 }

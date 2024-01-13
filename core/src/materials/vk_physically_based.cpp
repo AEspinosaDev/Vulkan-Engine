@@ -14,23 +14,26 @@ vke::MaterialUniforms vke::PhysicalBasedMaterial::get_uniforms() const
     //  float roughness;
     //  float roughnessWeight;
 
-    // float emmission;
-    //  vec2 tileUV;
+    // float occlusion;
+    // float occlusionWeight;
 
     //  bool hasAlbdoTexture;
     //  bool hasNormalTexture;
+    //  bool hasRoughnessTexture;
+    //  bool hasMetallicTexture;
+    //  bool hasAOTexture;
     //  bool hasMaskTexture;
-    //  bool hasEmiTexture;
+    // int maskType;
+    // vec2 uvTile;
 
-    // vec4 emmissionColor;
     //-----------------
 
     MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_albedo;
     uniforms.dataSlot2 = {m_albedoWeight, m_metalness, m_metalnessWeight, m_roughness};
-    uniforms.dataSlot3 = {m_roughnessWeight, m_emmissive, m_tileUV.x, m_tileUV.y};
-    uniforms.dataSlot4 = {m_hasAlbedoTexture, m_hasNormalTexture, m_hasMaskTexture,0.0f};
-    uniforms.dataSlot5 = m_emissionColor;
+    uniforms.dataSlot3 = {m_roughnessWeight, m_occlusion, m_occlusionWeight, m_hasAlbedoTexture};
+    uniforms.dataSlot4 = {m_hasNormalTexture, m_hasRoughnessTexture, m_hasMetallicTexture, m_hasAOTexture};
+    uniforms.dataSlot5 = {m_hasMaskTexture, m_maskType, m_tileUV.x, m_tileUV.y};
 
     return uniforms;
 }

@@ -6,24 +6,10 @@ layout(location = 0) in vec3 pos;
 
 //Uniforms
 layout(set = 0, binding = 1) uniform SceneUniforms {
-    vec3 fogColor;
-    float fogExponent;
-    float fogMinDistance;
-    float fogMaxDistance;
-    float fogIntensity;
-
-    float unusedSlot1;
-
-    vec3 ambientColor;
-    float ambientIntensity;
-
-    vec3 lighPosition;
-    float lightType;
-    vec3 lightColor;
-    float lightIntensity;
-    vec4 lightData;
+    mat4 unusedSlot1;
+    vec4 unusedSlot2;
+    vec4 unusedSlot3;
     mat4 lightViewProj;
-
 } scene;
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;

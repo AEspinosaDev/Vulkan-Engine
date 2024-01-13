@@ -2,8 +2,28 @@
 
 namespace vke
 {
+	void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)
+	{
+		std::vector<VkDescriptorSetLayout> descriptorLayouts;
+		for (auto &layoutID : pass.descriptorSetLayoutIDs)
+		{
+			if (layoutID.second)
+				descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first));
+		}
 
-	VkPipeline PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass)
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
+		pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorLayouts.size();
+		pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
+
+		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pass.pipelineLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+
+		pipelineLayout = pass.pipelineLayout;
+	}
+
+	VkPipeline PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &pass)
 	{
 		// make viewport state from our stored viewport and scissor.
 		// at the moment we wont support multiple viewports or scissors
@@ -15,14 +35,12 @@ namespace vke
 		viewportState.pViewports = &viewport;
 		viewportState.scissorCount = 1;
 		viewportState.pScissors = &scissor;
-		
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicState.pDynamicStates = dynamicStates.data();
 
-		
 		// build the actual pipeline
 		// we now use all of the info structs we have been writing into into this one to create the pipeline
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};

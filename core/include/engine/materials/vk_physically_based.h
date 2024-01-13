@@ -6,6 +6,16 @@
 
 namespace vke
 {
+    /**
+    Support for some presets of commercial game engines
+    */
+    enum MaskType
+    {
+        UNITY_HDRP = 0,
+        UNREAL_ENGINE = 1,
+        UNITY_URP = 2
+    };
+
     /// Epic's Unreal Engine 4 PBR Metallic-Roughness Workflow
     class PhysicalBasedMaterial : public Material
     {
@@ -21,21 +31,36 @@ namespace vke
         float m_roughness{0.5f};
         float m_roughnessWeight{1.0f}; // Weight between parameter and roughness texture
 
-        float m_emmissive{0.0f};
-        glm::vec4 m_emissionColor;
+        float m_occlusion{0.0f};
+        float m_occlusionWeight{1.0f}; // Weight between parameter and occlusion texture
+
+        // float m_emmissive{0.0f};
+        // glm::vec4 m_emissionColor;
 
         bool m_hasAlbedoTexture{false};
         bool m_hasNormalTexture{false};
+        bool m_hasRoughnessTexture{false};
+        bool m_hasMetallicTexture{false};
+        bool m_hasAOTexture{false};
+
         bool m_hasMaskTexture{false};
+        int m_maskType{0};
 
         enum Textures
         {
             ALBEDO = 0,
             NORMAL = 1,
-            MASK = 2, // R = ROUGHNESS // G = METALNESS // B = AO
+            MASK_ROUGHNESS = 2, // R = ROUGHNESS // G = METALNESS // B = AO OR JUST ROUGHNESS
+            METALNESS = 3,
+            AO = 4,
         };
 
-        std::unordered_map<int, Texture *> m_textures;
+        std::unordered_map<int, Texture *> m_textures{{ALBEDO, nullptr},
+                                                      {NORMAL, nullptr},
+                                                      {MASK_ROUGHNESS, nullptr},
+                                                      {METALNESS, nullptr},
+                                                      {AO, nullptr}};
+
         std::unordered_map<int, bool> m_textureBindingState;
 
         virtual MaterialUniforms get_uniforms() const;
@@ -112,10 +137,27 @@ namespace vke
             m_isDirty = true;
         }
 
+        inline float get_occlusion() const { return m_occlusion; }
+        inline void set_occlusion(float r)
+        {
+            m_occlusion = r;
+            m_isDirty = true;
+        }
+
+        // Weight between parameter and occlusion texture
+        virtual inline float get_occlusion_weight() const { return m_occlusionWeight; }
+        // Weight between parameter and occlusion texture
+        virtual inline void set_occlusion_weight(float w)
+        {
+            m_occlusionWeight = w;
+            m_isDirty = true;
+        }
+
         inline Texture *get_albedo_texture() { return m_textures[ALBEDO]; }
         inline void set_albedo_texture(Texture *t)
         {
             m_hasAlbedoTexture = t ? true : false;
+            m_textureBindingState[ALBEDO] = false;
             m_textures[ALBEDO] = t;
             m_isDirty = true;
         }
@@ -124,18 +166,46 @@ namespace vke
         inline void set_normal_texture(Texture *t)
         {
             m_hasNormalTexture = t ? true : false;
+            m_textureBindingState[NORMAL] = false;
             m_textures[NORMAL] = t;
             m_isDirty = true;
         }
 
         /*
-        Sets mask texture. Mask texture channels must represent: R = ROUGHNESS // G = METALNESS // B = AO
+        Sets mask texture. Support for some presets of commercial game engines.
         */
-        inline Texture *get_mask_texture() { return m_textures[MASK]; }
-        inline void set_mask_texture(Texture *t)
+        inline Texture *get_mask_texture() { return m_textures[MASK_ROUGHNESS]; }
+        inline void set_mask_texture(Texture *t, MaskType preset)
         {
             m_hasMaskTexture = t ? true : false;
-            m_textures[MASK] = t;
+            m_textureBindingState[MASK_ROUGHNESS] = false;
+            m_textures[MASK_ROUGHNESS] = t;
+            m_maskType = (int)preset;
+            m_isDirty = true;
+        }
+
+        inline Texture *get_roughness_texture() { return m_textures[MASK_ROUGHNESS]; }
+        inline void set_roughness_texture(Texture *t)
+        {
+            m_hasRoughnessTexture = t ? true : false;
+            m_textureBindingState[MASK_ROUGHNESS] = false;
+            m_textures[MASK_ROUGHNESS] = t;
+            m_isDirty = true;
+        }
+        inline Texture *get_metallic_texture() { return m_textures[METALNESS]; }
+        inline void set_metallic_texture(Texture *t)
+        {
+            m_hasMetallicTexture = t ? true : false;
+            m_textureBindingState[METALNESS] = false;
+            m_textures[METALNESS] = t;
+            m_isDirty = true;
+        }
+        inline Texture *get_occlusion_texture() { return m_textures[AO]; }
+        inline void set_occlusion_texture(Texture *t)
+        {
+            m_hasAOTexture = t ? true : false;
+            m_textureBindingState[AO] = false;
+            m_textures[AO] = t;
             m_isDirty = true;
         }
     };

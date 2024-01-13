@@ -33,6 +33,7 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
     for (const tinyobj::shape_t &shape : shapes)
     {
         if (!shape.mesh.indices.empty())
+        {
             // IS INDEXED
             for (const tinyobj::index_t &index : shape.mesh.indices)
             {
@@ -57,21 +58,8 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
                     vertex.normal.z = attrib.normals[3 * index.normal_index + 2];
                 }
 
-                if (calculateTangents)
-                {
-
-                    vertex.tangent = vkutils::get_tangent_gram_smidt(vertex.pos,
-                                                                     vertices[indices[indices.size() - 2]].pos,
-                                                                     vertices[indices[indices.size() - 1]].pos,
-                                                                     vertex.texCoord,
-                                                                     vertices[indices[indices.size() - 2]].texCoord,
-                                                                     vertices[indices[indices.size() - 1]].texCoord,
-                                                                     vertex.tangent);
-                }
-                else
-                {
-                    vertex.tangent = {0.0, 0.0, 0.0};
-                }
+                // Tangent
+                vertex.tangent = {0.0, 0.0, 0.0};
 
                 // UV
                 if (index.texcoord_index >= 0)
@@ -89,6 +77,7 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
 
                 indices.push_back(uniqueVertices[vertex]);
             }
+        }
         else
             // NOT INDEXED
             for (size_t i = 0; i < shape.mesh.num_face_vertices.size(); i++)
@@ -112,20 +101,9 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
                         vertex.normal.z = attrib.normals[3 * vertex_index + 2];
                     }
                     // Tangents
-                    if (calculateTangents)
-                    {
-                        vertex.tangent = vkutils::get_tangent_gram_smidt(vertex.pos,
-                                                                         vertices[indices[indices.size() - 2]].pos,
-                                                                         vertices[indices[indices.size() - 1]].pos,
-                                                                         vertex.texCoord,
-                                                                         vertices[indices[indices.size() - 2]].texCoord,
-                                                                         vertices[indices[indices.size() - 1]].texCoord,
-                                                                         vertex.tangent);
-                    }
-                    else
-                    {
-                        vertex.tangent = {0.0, 0.0, 0.0};
-                    }
+
+                    vertex.tangent = {0.0, 0.0, 0.0};
+
                     // UV
                     if (!attrib.texcoords.empty())
                     {
@@ -144,6 +122,11 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
                 }
             }
 
+        if (calculateTangents)
+        {
+            compute_tangents_gram_smidt(vertices, indices);
+        }
+
         if (overrideGeometry)
         {
             Geometry *oldGeom = mesh->get_geometry(shape_id);
@@ -161,4 +144,33 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
         shape_id++;
     }
     return true;
+}
+void vke::OBJLoader::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
+{
+    if (!indices.empty())
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            size_t i0 = indices[i];
+            size_t i1 = indices[i + 1];
+            size_t i2 = indices[i + 2];
+
+            glm::vec3 tangent = vkutils::get_tangent_gram_smidt(vertices[i0].pos, vertices[i1].pos, vertices[i2].pos,
+                                                                vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord,
+                                                                {0.0f, 0.0f, 0.0f});
+
+            vertices[i0].tangent += tangent;
+            vertices[i1].tangent += tangent;
+            vertices[i2].tangent += tangent;
+        }
+    else
+        for (size_t i = 0; i < vertices.size(); i += 3)
+        {
+            glm::vec3 tangent = vkutils::get_tangent_gram_smidt(vertices[i].pos, vertices[i + 1].pos, vertices[i + 2].pos,
+                                                                vertices[i].texCoord, vertices[i + 1].texCoord, vertices[i + 2].texCoord,
+                                                                {0.0f, 0.0f, 0.0f});
+
+            vertices[i].tangent += tangent;
+            vertices[i + 1].tangent += tangent;
+            vertices[i + 2].tangent += tangent;
+        }
 }

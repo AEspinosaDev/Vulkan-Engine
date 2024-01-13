@@ -28,7 +28,10 @@ namespace vke
             GLOSSINESS = 2,
             SHININESS = 3,
         };
-        std::unordered_map<int, Texture *> m_textures;
+        std::unordered_map<int, Texture *> m_textures{{ALBEDO, nullptr},
+                                                      {NORMAL, nullptr},
+                                                      {GLOSSINESS, nullptr},
+                                                      {SHININESS, nullptr}};
         std::unordered_map<int, bool> m_textureBindingState;
 
         virtual MaterialUniforms get_uniforms() const;
@@ -82,6 +85,7 @@ namespace vke
         inline void set_color_texture(Texture *t)
         {
             m_hasColorTexture = t ? true : false;
+            m_textureBindingState[ALBEDO] = false;
             m_textures[ALBEDO] = t;
             m_isDirty = true;
         }
@@ -90,6 +94,7 @@ namespace vke
         inline void set_normal_texture(Texture *t)
         {
             m_hasNormalTexture = t ? true : false;
+            m_textureBindingState[NORMAL] = false;
             m_textures[NORMAL] = t;
             m_isDirty = true;
         }
@@ -98,7 +103,16 @@ namespace vke
         inline void set_glossiness_texture(Texture *t)
         {
             m_hasGlossinessTexture = t ? true : false;
+            m_textureBindingState[GLOSSINESS] = false;
             m_textures[GLOSSINESS] = t;
+            m_isDirty = true;
+        }
+        inline Texture *get_shininess_texture() { return m_textures[SHININESS]; }
+        inline void set_shininess_texture(Texture *t)
+        {
+            m_hasGlossinessTexture = t ? true : false;
+            m_textureBindingState[SHININESS] = false;
+            m_textures[SHININESS] = t;
             m_isDirty = true;
         }
     };

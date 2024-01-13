@@ -8,6 +8,14 @@
 
 namespace vke
 {
+
+	enum DescriptorLayoutType
+	{
+		GLOBAL_LAYOUT = 0,
+		PER_OBJECT_LAYOUT = 1,
+		TEXTURE_LAYOUT = 2
+	};
+
 	struct DescriptorSet
 	{
 		VkDescriptorSet descriptorSet{};

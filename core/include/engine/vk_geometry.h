@@ -10,6 +10,15 @@
 
 namespace vke
 {
+    enum VertexAttributeType
+    {
+        POSITION = 0,
+        NORMAL = 1,
+        TANGENT = 2,
+        UV = 3,
+        COLOR = 4
+    };
+
     struct Vertex
     {
         glm::vec3 pos;
@@ -26,7 +35,7 @@ namespace vke
             bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
             return bindingDescription;
         }
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(bool normal=true, bool tangent=true, bool texCoord=true, bool color=true)
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(bool normal = true, bool tangent = true, bool texCoord = true, bool color = true)
         {
             std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
@@ -109,8 +118,8 @@ namespace vke
         Geometry() : m_vbo{new Buffer},
                      m_ibo{new Buffer} {}
 
-        inline size_t get_material_ID() const {return m_materialID;}             
-        inline void set_material_ID(size_t id) {m_materialID = id;}             
+        inline size_t get_material_ID() const { return m_materialID; }
+        inline void set_material_ID(size_t id) { m_materialID = id; }
         inline bool is_data_loaded() const { return loaded; }
         inline bool is_buffer_loaded() const { return buffer_loaded; }
         inline bool is_indexed() const { return indexed; }
