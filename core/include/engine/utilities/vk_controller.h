@@ -6,12 +6,7 @@
 
 namespace vke
 {
-    enum MovementType
-    {
-        ORBITAL,
-        WASD,
-    };
-
+   
     struct KeyMappings
     {
         int moveLeft = GLFW_KEY_A;
@@ -33,7 +28,7 @@ namespace vke
     protected:
         Object3D *m_objPtr;
         float m_speed;
-        MovementType m_type;
+        ControllerMovementType m_type;
         KeyMappings m_mappings;
 
         enum KeyActions{
@@ -58,14 +53,14 @@ namespace vke
         Transform m_initialState;
 
     public:
-        Controller(Object3D *obj, MovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(5.0f),
+        Controller(Object3D *obj, ControllerMovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(5.0f),
                                                                m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
                                                                m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
                                                                m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
                                                                m_initialState(obj->get_transform()), m_mappings(km),
                                                                m_orbitalCenter({0.0,0.0,0.0}) {}
 
-        inline MovementType get_type() { return m_type; }
+        inline ControllerMovementType get_type() { return m_type; }
         inline float get_speed() const { return m_speed; }
         inline void set_speed(float s) { m_speed = s; }
         inline float get_mouse_sensitivity() const { return m_mouseSensitivity; }

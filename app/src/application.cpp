@@ -16,7 +16,7 @@ void VulkanRenderer::init()
                                          std::placeholders::_4));
 
     vke::RendererSettings settings{};
-    settings.AAtype = vke::AntialiasingType::_MSAA_8;
+    settings.AAtype = vke::AntialiasingType::MSAA_x8;
     settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
 
     m_renderer = new vke::Renderer(m_window, settings);

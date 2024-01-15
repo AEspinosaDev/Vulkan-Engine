@@ -241,20 +241,13 @@ namespace vke
 		m_shadowTexture = new Texture();
 		Image shadowImage;
 		shadowImage.init(m_memory, m_swapchain.get_depthbuffer().format,
-						 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, VK_SAMPLE_COUNT_1_BIT);
+						 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, false, VK_SAMPLE_COUNT_1_BIT);
 
 		shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_shadowTexture->m_image = shadowImage;
 
-		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-		sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		sampler.addressModeV = sampler.addressModeU;
-		sampler.addressModeW = sampler.addressModeU;
-		sampler.mipLodBias = 0.0f;
+		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 		sampler.maxAnisotropy = 1.0f;
-		sampler.minLod = 0.0f;
-		sampler.maxLod = 1.0f;
 		sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 		VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
@@ -318,7 +311,7 @@ namespace vke
 		VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
 		VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 		VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
-		m_descriptorMng.set_layout(DescriptorLayoutType::PER_OBJECT_LAYOUT, objectBindings, 2);
+		m_descriptorMng.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
 
 		// TEXTURE SET
 		VkDescriptorSetLayoutBinding textureBinding0 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0); // ShadowMap
@@ -356,7 +349,7 @@ namespace vke
 			m_deletionQueue.push_function([=]()
 										  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
 
-			m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::PER_OBJECT_LAYOUT, &m_frames[i].objectDescriptor);
+			m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_frames[i].objectDescriptor);
 
 			m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(ObjectUniforms), 0, &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
@@ -555,7 +548,7 @@ namespace vke
 		std::string shaderDir(VK_SHADER_DIR);
 		m_shaderPasses["unlit"] = new ShaderPass(shaderDir + "unlit.glsl");
 		m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-																	{DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+																	{DescriptorLayoutType::OBJECT_LAYOUT, true},
 																	{DescriptorLayoutType::TEXTURE_LAYOUT, false}};
 		m_shaderPasses["unlit"]->settings.attributes = {{VertexAttributeType::POSITION, true},
 														{VertexAttributeType::NORMAL, false},
@@ -565,7 +558,7 @@ namespace vke
 
 		m_shaderPasses["phong"] = new ShaderPass(shaderDir + "phong.glsl");
 		m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-																	{DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+																	{DescriptorLayoutType::OBJECT_LAYOUT, true},
 																	{DescriptorLayoutType::TEXTURE_LAYOUT, true}};
 		m_shaderPasses["phong"]->settings.attributes = {{VertexAttributeType::POSITION, true},
 														{VertexAttributeType::NORMAL, true},
@@ -575,7 +568,7 @@ namespace vke
 
 		m_shaderPasses["physical"] = new ShaderPass(shaderDir + "physically_based.glsl");
 		m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-																	   {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+																	   {DescriptorLayoutType::OBJECT_LAYOUT, true},
 																	   {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
 		m_shaderPasses["physical"]->settings.attributes = {{VertexAttributeType::POSITION, true},
 														   {VertexAttributeType::NORMAL, true},
@@ -601,7 +594,7 @@ namespace vke
 		// DEPTH PASS
 		ShaderPass *depthPass = new ShaderPass(shaderDir + "depth.glsl");
 		depthPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-													  {DescriptorLayoutType::PER_OBJECT_LAYOUT, true},
+													  {DescriptorLayoutType::OBJECT_LAYOUT, true},
 													  {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
 		depthPass->settings.attributes = {{VertexAttributeType::POSITION, true},
 										  {VertexAttributeType::NORMAL, false},
@@ -638,6 +631,7 @@ namespace vke
 		Texture::DEBUG_TEXTURE = new Texture();
 		std::string engineMeshDir(VK_TEXTURE_DIR);
 		Texture::DEBUG_TEXTURE->load_image(engineMeshDir + "dummy_.jpg");
+		Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 		upload_texture(Texture::DEBUG_TEXTURE);
 
 		// Material::DEBUG_MATERIAL = new B
@@ -817,7 +811,7 @@ void vke::Renderer::setup_material(Material *const mat)
 		{
 			// SET ACTUAL TEXTURE
 
-			if (!texture->buffer_loaded && texture->loaded)
+			if (!texture->is_buffer_loaded() && texture->is_data_loaded())
 				upload_texture(texture);
 
 			// Set texture write
@@ -846,7 +840,7 @@ void vke::Renderer::upload_texture(Texture *const t)
 						 (uint32_t)t->m_height,
 						 (uint32_t)t->m_depth};
 
-	t->m_image.init(m_memory, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent, VK_SAMPLE_COUNT_1_BIT);
+	t->m_image.init(m_memory, (VkFormat)t->m_settings.format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent, t->m_settings.useMipmaps, VK_SAMPLE_COUNT_1_BIT);
 	t->m_image.create_view(m_device, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	Buffer stagingBuffer;
@@ -864,10 +858,29 @@ void vke::Renderer::upload_texture(Texture *const t)
 
 	stagingBuffer.cleanup(m_memory);
 
-	t->buffer_loaded = true;
+	t->m_buffer_loaded = true;
 
-	// SETUP DESCRIPTORS
-	t->create_sampler(m_device);
+	// GENERATE MIPMAPS
+	if (t->m_settings.useMipmaps)
+	{
+		VkFormatProperties formatProperties;
+		vkGetPhysicalDeviceFormatProperties(m_gpu, t->m_image.format, &formatProperties);
+		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+		{
+			throw std::runtime_error("texture image format does not support linear blitting!");
+		}
+
+		immediate_submit([&](VkCommandBuffer cmd)
+						 { t->m_image.generate_mipmaps(cmd); });
+	}
+	// CREATE SAMPLER
+	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info((VkFilter)t->m_settings.filter,
+																  VK_SAMPLER_MIPMAP_MODE_LINEAR,
+																  (float)t->m_settings.minMipLevel,
+																  t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
+																  t->m_settings.anisotropicFilter, vkutils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy,
+																  (VkSamplerAddressMode)t->m_settings.adressMode);
+	vkCreateSampler(m_device, &samplerInfo, nullptr, &t->m_sampler);
 
 	m_deletionQueue.push_function([=]()
 								  { t->cleanup(m_device, m_memory); });

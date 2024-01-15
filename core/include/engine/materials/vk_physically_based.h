@@ -80,7 +80,7 @@ namespace vke
 
     public:
         PhysicalBasedMaterial(glm::vec4 albedo = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("physical"), m_albedo(albedo) {}
-        PhysicalBasedMaterial(glm::vec4 albedo, MaterialParameters params) : Material("physical", params), m_albedo(albedo) {}
+        PhysicalBasedMaterial(glm::vec4 albedo, MaterialSettings params) : Material("physical", params), m_albedo(albedo) {}
 
         inline glm::vec2 get_tile() const { return m_tileUV; }
         inline void set_tile(glm::vec2 tile)

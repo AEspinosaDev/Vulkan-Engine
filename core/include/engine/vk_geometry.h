@@ -10,14 +10,7 @@
 
 namespace vke
 {
-    enum VertexAttributeType
-    {
-        POSITION = 0,
-        NORMAL = 1,
-        TANGENT = 2,
-        UV = 3,
-        COLOR = 4
-    };
+   
 
     struct Vertex
     {

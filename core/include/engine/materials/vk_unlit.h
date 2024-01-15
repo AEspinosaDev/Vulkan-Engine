@@ -34,7 +34,7 @@ namespace vke
 
     public:
         UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("unlit"), m_color(color) {}
-        UnlitMaterial(glm::vec4 color, MaterialParameters params) : Material("unlit", params), m_color(color) {}
+        UnlitMaterial(glm::vec4 color, MaterialSettings params) : Material("unlit", params), m_color(color) {}
 
         inline glm::vec2 get_tile() const { return m_tileUV; }
         inline void set_tile(glm::vec2 tile)

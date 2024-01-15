@@ -18,6 +18,7 @@ namespace vke
 		std::vector<VkImage> m_presentImages;
 		std::vector<VkImageView> m_presentImageViews;
 
+		//Resources
 		Image m_colorBuffer{};
 		Image m_depthBuffer{};
 

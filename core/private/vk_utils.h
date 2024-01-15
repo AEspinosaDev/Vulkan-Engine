@@ -53,9 +53,11 @@ namespace vke
 			}
 		};
 
-		size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice gpu);
+		VkPhysicalDeviceProperties get_gpu_properties(VkPhysicalDevice& gpu);
 
-		uint32_t find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice& gpu);
+
+		uint32_t find_memory_type(VkPhysicalDevice& gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 		bool check_validation_layer_suport(std::vector<const char *> validationLayers);
 
@@ -89,7 +91,6 @@ namespace vke
 			seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			(hash_combine(seed, rest), ...);
 		}
-
 
 	};
 

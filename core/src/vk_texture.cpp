@@ -19,14 +19,10 @@ namespace vke
         };
 
         DEBUG_LOG("Texture loaded successfully");
-        loaded = true;
-        return loaded;
+        m_loaded = true;
+        return m_loaded;
     }
-    void Texture::create_sampler(VkDevice &device)
-    {
-        VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-        vkCreateSampler(device, &samplerInfo, nullptr, &m_sampler);
-    }
+   
 
     void Texture::cleanup(VkDevice &device, VmaAllocator &memory)
     {

@@ -139,7 +139,13 @@ namespace vke
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
+
 		VkPhysicalDeviceFeatures deviceFeatures{};
+		vkGetPhysicalDeviceFeatures(*m_gpu, &deviceFeatures);
+		// // Enable features
+		// deviceFeatures.samplerAnisotropy = true;
+		// deviceFeatures.geometryShader = true;
+
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());

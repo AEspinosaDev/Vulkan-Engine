@@ -21,37 +21,13 @@
 
 namespace vke
 {
-	typedef enum BufferingType
-	{
-		_UNIQUE = 1,
-		_DOUBLE = 2,
-		_TRIPLE = 3,
-		_QUADRUPLE = 4
-	} BufferingType;
-
-	typedef enum AntialiasingType
-	{
-		_NONE = VK_SAMPLE_COUNT_1_BIT,
-		_MSAA_4 = VK_SAMPLE_COUNT_4_BIT,
-		_MSAA_8 = VK_SAMPLE_COUNT_8_BIT,
-		_MSAA_16 = VK_SAMPLE_COUNT_16_BIT,
-		_MSAA_32 = VK_SAMPLE_COUNT_32_BIT
-	} AntialiasingType;
-
-	typedef enum ShadowResolution
-	{
-		_LOW = VK_LOW_SHADOW_RESOLUTION,
-		_MEDIUM = VK_MEDIUM_SHADOW_RESOLUTION,
-		_HIGH = VK_HIGH_SHADOW_RESOLUTION,
-		_ULTRA = VK_ULTRA_SHADOW_RESOLUTION
-	} ShadowResolution;
 
 	struct RendererSettings
 	{
 
-		AntialiasingType AAtype{_MSAA_4};
+		AntialiasingType AAtype{MSAA_x4};
 		BufferingType bufferingType{_DOUBLE};
-		ShadowResolution shadowResolution{_LOW};
+		ShadowResolution shadowResolution{LOW};
 
 		glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
 		bool autoClearColor{true};
@@ -102,7 +78,6 @@ namespace vke
 
 		DescriptorManager m_descriptorMng{};
 		DescriptorSet m_globalDescriptor{};
-		
 
 		Buffer m_globalUniformsBuffer{};
 
@@ -131,6 +106,7 @@ namespace vke
 		inline Window *const get_window() const { return m_window; }
 
 		inline RendererSettings get_settings() { return m_settings; }
+		inline void set_settings(RendererSettings settings) { m_settings = settings; }
 
 		inline void set_clearcolor(glm::vec4 c)
 		{

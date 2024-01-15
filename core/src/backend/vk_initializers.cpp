@@ -202,7 +202,7 @@ namespace vke
 
 		colorBlending.logicOpEnable = VK_FALSE;
 		colorBlending.logicOp = VK_LOGIC_OP_COPY;
-		
+
 		return colorBlending;
 	}
 	VkPipelineColorBlendAttachmentState vkinit::color_blend_attachment_state()
@@ -272,8 +272,9 @@ namespace vke
 		return write;
 	}
 
-	VkImageCreateInfo vkinit::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, VkSampleCountFlagBits samples)
+	VkImageCreateInfo vkinit::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, uint32_t mipLevels, VkSampleCountFlagBits samples)
 	{
+
 		VkImageCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		info.pNext = nullptr;
@@ -283,7 +284,7 @@ namespace vke
 		info.format = format;
 		info.extent = extent;
 
-		info.mipLevels = 1;
+		info.mipLevels = mipLevels;
 		info.arrayLayers = 1;
 		info.samples = samples;
 		info.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -291,7 +292,7 @@ namespace vke
 
 		return info;
 	}
-	VkImageViewCreateInfo vkinit::imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags)
+	VkImageViewCreateInfo vkinit::imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
 	{
 		// build a image-view for the depth image to use for rendering
 		VkImageViewCreateInfo info = {};
@@ -302,7 +303,7 @@ namespace vke
 		info.image = image;
 		info.format = format;
 		info.subresourceRange.baseMipLevel = 0;
-		info.subresourceRange.levelCount = 1;
+		info.subresourceRange.levelCount = mipLevels;
 		info.subresourceRange.baseArrayLayer = 0;
 		info.subresourceRange.layerCount = 1;
 		info.subresourceRange.aspectMask = aspectFlags;
@@ -310,17 +311,27 @@ namespace vke
 		return info;
 	}
 
-	VkSamplerCreateInfo vkinit::sampler_create_info(VkFilter filters, VkSamplerAddressMode samplerAddressMode /*= VK_SAMPLER_ADDRESS_MODE_REPEAT*/)
+	VkSamplerCreateInfo vkinit::sampler_create_info(VkFilter filters, VkSamplerMipmapMode mipmapMode, float minLod, float maxLod, bool anysotropicFilter, float maxAnysotropy  ,VkSamplerAddressMode samplerAddressMode /*= VK_SAMPLER_ADDRESS_MODE_REPEAT*/)
 	{
 		VkSamplerCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		info.pNext = nullptr;
 
-		info.magFilter = filters;
-		info.minFilter = filters;
 		info.addressModeU = samplerAddressMode;
 		info.addressModeV = samplerAddressMode;
 		info.addressModeW = samplerAddressMode;
+
+		info.magFilter = filters;
+		info.minFilter = filters;
+
+		info.mipmapMode = mipmapMode;
+		info.minLod = 0.0f; // Optional
+		info.maxLod = maxLod;
+		info.mipLodBias = 0.0f; // Optional
+
+		info.anisotropyEnable = anysotropicFilter;
+		info.maxAnisotropy = maxAnysotropy;
+		
 
 		return info;
 	}
@@ -329,10 +340,6 @@ namespace vke
 		VkWriteDescriptorSet write = {};
 		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		write.pNext = nullptr;
-		
-
-
-		
 
 		write.dstBinding = binding;
 		write.dstSet = dstSet;

@@ -73,7 +73,7 @@ namespace vke
 		cimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		cimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		m_colorBuffer.init(memory, m_presentFormat, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, cimg_allocinfo, bufferExtent, samples);
+		m_colorBuffer.init(memory, m_presentFormat, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, cimg_allocinfo, bufferExtent,false, samples);
 		m_colorBuffer.create_view(device, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
@@ -88,7 +88,7 @@ namespace vke
 		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		m_depthBuffer.init(memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, bufferExtent, samples);
+		m_depthBuffer.init(memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, bufferExtent,false, samples);
 		m_depthBuffer.create_view(device, VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
 

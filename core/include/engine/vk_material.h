@@ -12,7 +12,7 @@ namespace vke
         _FRONT,
         _BACK
     };
-    struct MaterialParameters
+    struct MaterialSettings
     {
         bool blending{true};
         bool faceCulling{false};
@@ -24,7 +24,7 @@ namespace vke
     protected:
         ShaderPass *m_shaderPass{nullptr};
 
-        MaterialParameters m_parameters{};
+        MaterialSettings m_settings{};
 
         std::string m_shaderPassID{};
 
@@ -45,12 +45,12 @@ namespace vke
         static Material *DEBUG_MATERIAL;
 
         Material(std::string shaderPassID) : m_shaderPassID(shaderPassID) {}
-        Material(std::string shaderPassID, MaterialParameters params) : m_shaderPassID(shaderPassID), m_parameters(params) {}
+        Material(std::string shaderPassID, MaterialSettings params) : m_shaderPassID(shaderPassID), m_settings(params) {}
 
         ~Material() {}
 
-        virtual inline MaterialParameters get_parameters() const { return m_parameters; }
-        virtual void set_parameters(MaterialParameters p) { m_parameters = p; }
+        virtual inline MaterialSettings get_parameters() const { return m_settings; }
+        virtual void set_parameters(MaterialSettings p) { m_settings = p; }
     };
     
 }

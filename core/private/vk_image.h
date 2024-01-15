@@ -9,23 +9,29 @@ namespace vke
     struct Image
     {
         VkImage image;
+        VkImageView view;
+
         VkExtent3D extent;
         VkFormat format;
 
-        VkImageView view;
+        uint32_t mipLevels{1};
 
         VmaAllocation allocation;
 
+        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
+        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
+
+        void create_view(VkDevice &device, VkImageAspectFlags aspectFlags);
+
+        void upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer);
+
+        void generate_mipmaps(VkCommandBuffer &cmd);
+
+        void cleanup(VkDevice &device, VmaAllocator &memory);
+
         static const int BYTES_PER_PIXEL{4};
 
-        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,VkSampleCountFlagBits samples);
-        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent,VkSampleCountFlagBits samples);
-        
-        void create_view(VkDevice& device, VkImageAspectFlags aspectFlags);
-
-        void upload_image(VkCommandBuffer& cmd, Buffer *stagingBuffer);
-
-        void cleanup(VkDevice& device, VmaAllocator& memory);
+        // static void create_sampler(VkDevice &device,);
     };
 
 } // namespace vke

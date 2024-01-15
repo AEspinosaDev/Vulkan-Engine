@@ -51,7 +51,7 @@ namespace vke
 
     public:
         PhongMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("phong"), m_color(color) {}
-        PhongMaterial(glm::vec4 color, MaterialParameters params) : Material("phong", params), m_color(color) {}
+        PhongMaterial(glm::vec4 color, MaterialSettings params) : Material("phong", params), m_color(color) {}
 
         inline glm::vec2 get_tile() const { return m_tileUV; }
         inline void set_tile(glm::vec2 tile)

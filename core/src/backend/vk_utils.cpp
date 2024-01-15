@@ -31,7 +31,13 @@ namespace vke
 
 		return true;
 	}
-	size_t vkutils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice gpu)
+	VkPhysicalDeviceProperties vkutils::get_gpu_properties(VkPhysicalDevice& gpu)
+	{
+		VkPhysicalDeviceProperties deviceFeatures;
+		vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
+		return deviceFeatures;
+	}
+	size_t vkutils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice& gpu)
 	{
 		VkPhysicalDeviceProperties deviceFeatures;
 		vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
@@ -44,7 +50,7 @@ namespace vke
 		}
 		return alignedSize;
 	}
-	uint32_t vkutils::find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+	uint32_t vkutils::find_memory_type(VkPhysicalDevice& gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
 		vkGetPhysicalDeviceMemoryProperties(gpu, &memProperties);
@@ -127,7 +133,7 @@ namespace vke
 		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 
 		// Gram-Schmidt orthogonalization
-		//return glm::normalize(tangent - normal * glm::dot(normal, tangent));
+		// return glm::normalize(tangent - normal * glm::dot(normal, tangent));
 
 		return glm::normalize(tangent);
 	}

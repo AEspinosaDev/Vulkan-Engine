@@ -311,7 +311,8 @@ void main() {
     g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
 
     if(material.hasMaskTexture) {
-        vec4 mask = pow(texture(maskRoughTex, v_uv).rgba, vec4(2.2)); //Correction linearize color
+        // vec4 mask = pow(texture(maskRoughTex, v_uv).rgba, vec4(2.2)); //Correction linearize color
+        vec4 mask = texture(maskRoughTex, v_uv).rgba; //Correction linearize color
         if(material.maskType == 0) { //HDRP UNITY
 		    //Unity HDRP uses glossiness not roughness pipeline, so it has to be inversed
             g_roughness = 1.0 - mask.a;
