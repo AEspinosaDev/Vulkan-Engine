@@ -156,7 +156,7 @@ void vke::OBJLoader::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, 
 
             glm::vec3 tangent = vkutils::get_tangent_gram_smidt(vertices[i0].pos, vertices[i1].pos, vertices[i2].pos,
                                                                 vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord,
-                                                                {0.0f, 0.0f, 0.0f});
+                                                                vertices[i0].normal);
 
             vertices[i0].tangent += tangent;
             vertices[i1].tangent += tangent;
@@ -167,7 +167,7 @@ void vke::OBJLoader::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, 
         {
             glm::vec3 tangent = vkutils::get_tangent_gram_smidt(vertices[i].pos, vertices[i + 1].pos, vertices[i + 2].pos,
                                                                 vertices[i].texCoord, vertices[i + 1].texCoord, vertices[i + 2].texCoord,
-                                                                {0.0f, 0.0f, 0.0f});
+                                                                vertices[i].normal);
 
             vertices[i].tangent += tangent;
             vertices[i + 1].tangent += tangent;

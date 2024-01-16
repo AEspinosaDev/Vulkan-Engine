@@ -1,9 +1,9 @@
 
-file(GLOB LIB_SOURCES "src/*.cpp" "src/utilities/*.cpp" "src/scene_objects/*.cpp" "src/materials/*.cpp" "src/backend/*.cpp")
+file(GLOB LIB_SOURCES "src/*.cpp" "src/utilities/*.cpp" "src/scene_objects/*.cpp" "src/materials/*.cpp" "src/backend/*.cpp"  "third_party/imgui/*.cpp")
 
 file(GLOB LIB_HEADERS "include/engine/*.h" "include/engine/utilities/*.h" "include/engine/scene_objects/*.h" "include/engine/materials/*.h")
 
-file(GLOB LIB_INTERNAL_HEADERS "private/*.h")
+file(GLOB LIB_INTERNAL_HEADERS "private/*.h" "third_party/imgui/*.h")
 
 
 # Add the library target
@@ -16,6 +16,7 @@ target_include_directories(VKEngine
         $<INSTALL_INTERFACE:include>
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_image
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/private
         ${glm_SOURCE_DIR}

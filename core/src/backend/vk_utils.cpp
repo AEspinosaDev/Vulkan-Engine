@@ -133,9 +133,9 @@ namespace vke
 		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 
 		// Gram-Schmidt orthogonalization
-		// return glm::normalize(tangent - normal * glm::dot(normal, tangent));
+		return glm::normalize(tangent - normal * glm::dot(normal, tangent));
 
-		return glm::normalize(tangent);
+		// return glm::normalize(tangent);
 	}
 
 }

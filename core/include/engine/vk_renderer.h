@@ -19,6 +19,10 @@
 #include "vk_texture.h"
 #include "scene_objects/vk_scene.h"
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
 namespace vke
 {
 
@@ -220,7 +224,11 @@ namespace vke
 		void setup_material(Material *const mat);
 
 		void upload_texture(Texture *const t);
+#pragma region gui 
+		void init_imgui();
+#pragma endregion
 	};
+	
 
 }
 #endif // VK_RENDERER

@@ -30,6 +30,12 @@ namespace vke
 
 			init();
 
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		ImGui::ShowDemoWindow();
+		ImGui::Render();
+
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain.get_swapchain_obj(), UINT64_MAX, m_frames[m_currentFrame].presentSemaphore, VK_NULL_HANDLE, &imageIndex);
@@ -145,6 +151,8 @@ namespace vke
 		init_shaderpasses();
 
 		init_resources();
+
+		init_imgui();
 	}
 
 	void Renderer::cleanup()
@@ -394,6 +402,8 @@ namespace vke
 
 		set_viewport(commandBuffer, *m_window->get_extent());
 
+		
+
 		int mesh_idx = 0;
 		for (Mesh *m : scene->get_meshes())
 		{
@@ -450,6 +460,7 @@ namespace vke
 			}
 			mesh_idx++;
 		}
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 		vkCmdEndRenderPass(commandBuffer);
 	}
@@ -884,4 +895,66 @@ void vke::Renderer::upload_texture(Texture *const t)
 
 	m_deletionQueue.push_function([=]()
 								  { t->cleanup(m_device, m_memory); });
+}
+void vke::Renderer::init_imgui()
+{
+	// 1: create descriptor pool for IMGUI
+	VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+										 {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+										 {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+										 {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+										 {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+										 {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+										 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+										 {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+										 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+										 {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+										 {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	VkDescriptorPool imguiPool;
+	VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &imguiPool));
+
+	// 2: initialize imgui library
+	// this initializes the core structures of imgui
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
+	// this initializes imgui for SDL
+	ImGui_ImplGlfw_InitForVulkan(m_window->get_window_obj(), true);
+
+	// this initializes imgui for Vulkan
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.Instance = m_instance;
+	init_info.PhysicalDevice = m_gpu;
+	init_info.Device = m_device;
+	init_info.Queue = m_graphicsQueue;
+	init_info.DescriptorPool = imguiPool;
+	init_info.MinImageCount = 3;
+	init_info.ImageCount = 3;
+	// init_info.UseDynamicRendering = true;
+	init_info.ColorAttachmentFormat = m_swapchain.get_image_format();
+
+	init_info.MSAASamples = (VkSampleCountFlagBits)m_settings.AAtype;
+
+	ImGui_ImplVulkan_Init(&init_info, m_renderPass);
+
+	// // execute a gpu command to upload imgui font textures
+	// immediate_submit([&](VkCommandBuffer cmd)
+	// 				 { ImGui_ImplVulkan_CreateFontsTexture(cmd); });
+
+	// // clear font textures from cpu data
+	// ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+	// add the destroy the imgui created structures
+	m_deletionQueue.push_function([=]()
+								  {
+		vkDestroyDescriptorPool(m_device, imguiPool, nullptr);
+		ImGui_ImplVulkan_Shutdown(); });
 }
