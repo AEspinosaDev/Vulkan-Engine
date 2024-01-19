@@ -18,10 +18,13 @@ void VulkanRenderer::init()
     vke::RendererSettings settings{};
     settings.AAtype = vke::AntialiasingType::MSAA_x8;
     settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
+    settings.enableUI = true;
 
     m_renderer = new vke::Renderer(m_window, settings);
 
     setup();
+
+    setup_gui();
 }
 
 void VulkanRenderer::run()
@@ -112,7 +115,7 @@ void VulkanRenderer::setup()
     mat->set_albedo_texture(floorText);
     mat->set_normal_texture(floorNormalText);
     mat->set_roughness_texture(floorRoughText);
-    mat->set_tile({15.0f, 15.0f});
+    mat->set_tile({25.0f, 25.0f});
 
     vke::Texture *woodText = new vke::Texture();
     woodText->load_image(textDir + "wood_diffuse.jpg");
@@ -122,6 +125,49 @@ void VulkanRenderer::setup()
     mat3->set_normal_texture(woodNormalText);
 
     m_controller = new vke::Controller(camera);
+}
+
+void VulkanRenderer::setup_gui()
+{
+    m_overlay = new vke::GUIOverlay();
+
+    vke::Panel *tutorialPanel = new vke::Panel("TUTORIAL", 0, 0, 350, 180, vke::PanelWidgetFlags::NoResize);
+
+    tutorialPanel->add_child(new vke::Space());
+    tutorialPanel->add_child(new vke::Separator("CONTROLS"));
+    tutorialPanel->add_child(new vke::Separator());
+    tutorialPanel->add_child(new vke::TextLine("WASD: move camera.", vke::TextWidgetType::BULLET));
+    tutorialPanel->add_child(new vke::TextLine("Mouse + Left: rotate camera.", vke::TextWidgetType::BULLET));
+    tutorialPanel->add_child(new vke::TextLine("F11: toggle fullscreen/windowed mode.", vke::TextWidgetType::BULLET));
+    tutorialPanel->add_child(new vke::TextLine("Esc: exit application.", vke::TextWidgetType::BULLET));
+    tutorialPanel->add_child(new vke::Space());
+    tutorialPanel->add_child(new vke::Separator());
+    tutorialPanel->add_child(new vke::TextLine(" Enjoy changing the settings parameters!"));
+
+    m_overlay->add_panel(tutorialPanel);
+    m_interface.tutorial = tutorialPanel;
+
+    vke::Panel *settingsPanel = new vke::Panel("SETTINGS", (float)m_window->get_extent()->width - 400, 0, 400, 1000, vke::PanelWidgetFlags::NoResize, true);
+
+    settingsPanel->add_child(new vke::SceneExplorer(m_scene));
+    settingsPanel->add_child(new vke::Space());
+    settingsPanel->add_child(new vke::Separator("GLOBAL SETTINGS"));
+    settingsPanel->add_child(new vke::Separator());
+    settingsPanel->add_child(new vke::TextLine(" Application average"));
+    settingsPanel->add_child(new vke::Space());
+    settingsPanel->add_child(new vke::Profiler());
+    settingsPanel->add_child(new vke::Space());
+    settingsPanel->add_child(new vke::Separator());
+    settingsPanel->add_child(new vke::Space());
+    settingsPanel->add_child(new vke::Separator("OBJECT SETTINGS"));
+    settingsPanel->add_child(new vke::Separator());
+   
+	
+
+    m_overlay->add_panel(settingsPanel);
+    m_interface.settings = settingsPanel;
+
+    m_renderer->set_gui_overlay(m_overlay);
 }
 
 void VulkanRenderer::update()
@@ -136,6 +182,8 @@ void VulkanRenderer::update()
 
     light->set_position({_x, light->get_position().y, _z});
     m_lightDummy->set_position(light->get_position());
+
+    m_interface.settings->set_position({(float)m_window->get_extent()->width - 400, 0});
 }
 
 void VulkanRenderer::tick()

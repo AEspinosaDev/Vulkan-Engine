@@ -42,27 +42,40 @@ include(FetchContent)
 set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/dependencies")
 
 # GLFW
-#Exclude addons
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+find_package(glfw QUIET)
+if (NOT glfw_FOUND)
+    message(STATUS "GLFW not found, fetching GLFW using FetchContent.")
+   #Exclude addons
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3.4 # Use the version you need
-)
-FetchContent_MakeAvailable(glfw)
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.3.4 # Use the version you need
+    )
+    FetchContent_MakeAvailable(glfw)
+
+else()
+    message(STATUS "GLFW found.")
+endif()
 
 # GLM
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 0.9.9.8 # Use the version you need
-    CMAKE_ARGS -DGLM_TEST_ENABLE=OFF
-)
-FetchContent_MakeAvailable(glm)
-
+find_package(glm QUIET)
+if (NOT glm_FOUND)
+    message(STATUS "GLM not found, fetching GLM using FetchContent.")
+    FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 0.9.9.8 # Use the version you need
+        CMAKE_ARGS -DGLM_TEST_ENABLE=OFF
+    )
+    FetchContent_MakeAvailable(glm)
+  
+else()
+    message(STATUS "GLM found.")
+endif()
 
 # Configure vulkan path
 link_directories(${VULKAN_SDK_ROOT})

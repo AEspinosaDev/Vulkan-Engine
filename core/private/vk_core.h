@@ -20,6 +20,9 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
 
 #define DEBUG_LOG(msg)                 \
 	{                                  \
@@ -119,6 +122,43 @@ namespace vke
 		MIRROR_EDGE_CLAMP = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE, // Like clamp to edge, but instead uses the edge opposite to the closest edge.
 		BORDER_CLAMP = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER			  // Return a solid color when sampling beyond the dimensions of the image.
 	} TextureAdressModeType;
+
+	typedef enum PanelWidgetFlags
+	{
+
+		None = ImGuiWindowFlags_None,
+		NoTitleBar = ImGuiWindowFlags_NoTitleBar,								// Disable title-bar
+		NoResize = ImGuiWindowFlags_NoResize,									// Disable user resizing with the lower-right grip
+		NoMove = ImGuiWindowFlags_NoMove,										// Disable user moving the window
+		NoScrollbar = ImGuiWindowFlags_NoScrollbar,								// Disable scrollbars (window can still scroll with mouse or programmatically)
+		NoScrollWithMouse = ImGuiWindowFlags_NoScrollWithMouse,					// Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
+		NoCollapse = ImGuiWindowFlags_NoCollapse,								// Disable user collapsing window by double-clicking on it. Also referred to as Window Menu Button (e.g. within a docking node).
+		AlwaysAutoResize = ImGuiWindowFlags_AlwaysAutoResize,					// Resize every window to its content every frame
+		NoBackground = ImGuiWindowFlags_NoBackground,							// Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
+		NoSavedSettings = ImGuiWindowFlags_NoSavedSettings,						// Never load/save settings in .ini file
+		NoMouseInputs = ImGuiWindowFlags_NoMouseInputs,							// Disable catching mouse, hovering test with pass through.
+		MenuBar = ImGuiWindowFlags_MenuBar,										// Has a menu-bar
+		HorizontalScrollbar = ImGuiWindowFlags_HorizontalScrollbar,				// Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
+		NoFocusOnAppearing = ImGuiWindowFlags_NoFocusOnAppearing,				// Disable taking focus when transitioning from hidden to visible state
+		NoBringToFrontOnFocus = ImGuiWindowFlags_NoBringToFrontOnFocus,			// Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
+		AlwaysVerticalScrollbar = ImGuiWindowFlags_AlwaysVerticalScrollbar,		// Always show vertical scrollbar (even if ContentSize.y < Size.y)
+		AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar, // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
+		NoNavInputs = ImGuiWindowFlags_NoNavInputs,								// No gamepad/keyboard navigation within the window
+		NoNavFocus = ImGuiWindowFlags_NoNavFocus,								// No focusing toward this window with gamepad/keyboard navigation (e.g. skipped by CTRL+TAB)
+		UnsavedDocument = ImGuiWindowFlags_UnsavedDocument,						// Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
+		NoNav = ImGuiWindowFlags_NoNav,
+		NoDecoration = ImGuiWindowFlags_NoDecoration,
+		NoInputs = ImGuiWindowFlags_NoInputs,
+
+	} PanelWidgetFlags;
+
+	typedef enum TextWidgetType
+	{
+		SIMPLE,
+		COLORIZED,
+		WARPED,
+		BULLET,
+	} TextWidgetType;
 
 	// Ahead declaration of some key classes
 	class Renderer;

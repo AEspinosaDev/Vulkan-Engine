@@ -12,17 +12,20 @@ namespace vke
 	class Window
 	{
 	private:
-		GLFWwindow *m_GLFWwindow{nullptr};
 		std::string m_title{};
-		int m_width;
-		int m_height;
+
+		GLFWwindow *m_GLFWwindow{nullptr};
 		VkExtent2D *m_extent;
 		VkSurfaceKHR *m_surface;
+
+		//Aux
+		VkExtent2D m_windowedExtent;
 
 		bool m_initialized{false};
 		bool m_resized{false};
 		bool m_resizeable;
 		bool m_fullscreen;
+
 		glm::ivec2 m_screenPos = glm::ivec2(45, 45);
 
 		// Callbacks
@@ -33,7 +36,7 @@ namespace vke
 		friend class Renderer;
 
 	public:
-		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_width(w), m_height(h), m_extent(new VkExtent2D{}), m_surface(new VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
+		Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_extent(new VkExtent2D{w, h}), m_windowedExtent({w, h}), m_surface(new VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
 		~Window()
 		{
 			delete m_extent;
@@ -44,8 +47,11 @@ namespace vke
 
 		inline void set_size(int w, int h)
 		{
-			m_width = w;
-			m_height = h;
+			if (!m_fullscreen)
+			{
+				m_windowedExtent.width = w;
+				m_windowedExtent.height = h;
+			}
 			m_resized = true;
 		}
 		inline bool is_initialized() { return m_initialized; }
@@ -59,7 +65,7 @@ namespace vke
 			m_fullscreen = t;
 			if (!m_fullscreen)
 			{
-				glfwSetWindowMonitor(m_GLFWwindow, NULL, m_screenPos.x, m_screenPos.y, m_width, m_height, GLFW_DONT_CARE);
+				glfwSetWindowMonitor(m_GLFWwindow, NULL, m_screenPos.x, m_screenPos.y, m_windowedExtent.width, m_windowedExtent.height, GLFW_DONT_CARE);
 			}
 			else
 			{
@@ -77,8 +83,8 @@ namespace vke
 			m_screenPos = p;
 			glfwSetWindowPos(m_GLFWwindow, p.x, p.y);
 		}
-		inline uint32_t get_width() { return m_width; }
-		inline uint32_t get_height() { return m_height; }
+		// inline uint32_t get_width() { return m_width; }
+		// inline uint32_t get_height() { return m_height; }
 		inline GLFWwindow *const get_window_obj() const { return m_GLFWwindow; }
 		inline VkExtent2D *const get_extent() const { return m_extent; }
 		inline VkSurfaceKHR *const get_surface() const { return m_surface; }

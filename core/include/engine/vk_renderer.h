@@ -18,10 +18,7 @@
 #include "vk_material.h"
 #include "vk_texture.h"
 #include "scene_objects/vk_scene.h"
-
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
+#include "utilities/vk_gui.h"
 
 namespace vke
 {
@@ -34,11 +31,15 @@ namespace vke
 		ShadowResolution shadowResolution{LOW};
 
 		glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
+
 		bool autoClearColor{true};
 		bool autoClearDepth{true};
 		bool autoClearStencil{true};
+
 		bool depthTest{true};
 		bool depthWrite{true};
+
+		bool enableUI{false};
 	};
 	/**
 	 * Core class whose porpuse is to render data on a window.
@@ -96,6 +97,7 @@ namespace vke
 #else
 		const bool m_enableValidationLayers{true};
 #endif
+
 		bool m_framebufferResized{false};
 		bool m_changeInConfiguration{false};
 		bool m_initialized{false};
@@ -103,6 +105,7 @@ namespace vke
 
 		Material *m_lastMaterial{nullptr};
 		Geometry *m_lastGeometry{nullptr};
+		GUIOverlay *m_gui{nullptr};
 
 #pragma endregion
 #pragma region Getters & Setters
@@ -144,6 +147,19 @@ namespace vke
 
 		inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
 		inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
+
+		inline void enable_gui_overlay(bool op) { m_settings.enableUI; }
+
+		inline void set_gui_overlay(GUIOverlay *gui)
+		{
+			m_gui = gui;
+			
+		}
+
+		inline GUIOverlay *get_gui_overlay()
+		{
+			return m_gui;
+		}
 
 #pragma endregion
 #pragma region Core Functions
@@ -224,11 +240,14 @@ namespace vke
 		void setup_material(Material *const mat);
 
 		void upload_texture(Texture *const t);
-#pragma region gui 
-		void init_imgui();
+#pragma region gui
+
+		void init_gui();
+
+		void render_gui();
+
 #pragma endregion
 	};
-	
 
 }
 #endif // VK_RENDERER

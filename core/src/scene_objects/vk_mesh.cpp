@@ -3,6 +3,8 @@
 
 namespace vke
 {
+    int Mesh::m_meshCount = 0;
+
     Geometry *Mesh::change_geometry(Geometry *g, size_t id)
     {
         if (m_geometry.size() < id + 1)

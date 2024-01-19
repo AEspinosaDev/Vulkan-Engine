@@ -11,7 +11,7 @@ namespace vke
 
         glfwWindowHint(GLFW_RESIZABLE, m_resizeable);
 
-        m_GLFWwindow = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
+        m_GLFWwindow = glfwCreateWindow(m_extent->width, m_extent->height, m_title.c_str(), nullptr, nullptr);
 
         if (!m_GLFWwindow)
         {

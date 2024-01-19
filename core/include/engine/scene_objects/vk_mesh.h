@@ -19,15 +19,17 @@ namespace vke
 		bool m_castShadows{true};
 		bool m_receiveShadows{true};
 
-		// TO DO: Initialize this material and call it in the renderer if mesh doesnt have a material
 		static Material *m_debugMaterial;
+		static int m_meshCount;
 
 	public:
-		Mesh() : Object3D(MESH) {}
-		Mesh(Geometry *geom, Material *mat) : Object3D(MESH)
+		Mesh() : Object3D("Mesh #"+std::to_string(Mesh::m_meshCount),MESH) { Mesh::m_meshCount++; }
+		Mesh(Geometry *geom, Material *mat) : Object3D("Mesh #"+std::to_string(Mesh::m_meshCount), MESH)
 		{
 			m_geometry.push_back(geom);
 			m_material.push_back(mat);
+
+			Mesh::m_meshCount++;
 		}
 		~Mesh()
 		{
@@ -50,15 +52,15 @@ namespace vke
 		 */
 		Material *change_material(Material *m, size_t id = 0);
 		/*
-		* Adds this geometry in the next free slot. It is important to set correctly the id of the material slot this geometry is pointing.
-		*/
+		 * Adds this geometry in the next free slot. It is important to set correctly the id of the material slot this geometry is pointing.
+		 */
 		inline void set_geometry(Geometry *g)
 		{
 			m_geometry.push_back(g);
 		}
 		/*
-		* Adds this material in the next free slot
-		*/
+		 * Adds this material in the next free slot
+		 */
 		inline void set_material(Material *m)
 		{
 			m_material.push_back(m);

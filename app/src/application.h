@@ -3,6 +3,7 @@
 
 #include <engine/vk_renderer.h>
 #include <engine/utilities/vk_controller.h>
+#include <engine/utilities/vk_gui.h>
 #include <engine/materials/vk_unlit.h>
 #include <engine/materials/vk_phong.h>
 #include <engine/materials/vk_physically_based.h>
@@ -15,13 +16,20 @@
  */
 class VulkanRenderer
 {
+    struct UserInterface{
+        vke::Panel* tutorial{nullptr};
+        vke::Panel* settings{nullptr};
+    };
+    UserInterface m_interface{};
+    
     vke::Window *m_window;
     vke::Renderer *m_renderer;
     vke::Scene *m_scene;
     vke::Camera *camera;
     vke::Controller *m_controller;
+    vke::GUIOverlay *m_overlay;
 
-    vke::Mesh* m_lightDummy;
+    vke::Mesh *m_lightDummy;
 
     float m_deltaTime{0.0f};
     float m_lastTime{0.0f};
@@ -35,7 +43,7 @@ public:
 private:
     void setup();
 
-    void ui_overlay();
+    void setup_gui();
 
     void tick();
 
@@ -54,6 +62,11 @@ private:
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
+
+        // if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_F10) == GLFW_PRESS)
+        // {
+        //     m_renderer->enable_gui_overlay(m_renderer->get_settings().enableUI ? false : false);
+        // }
     }
 
     void mouse_callback(double xpos, double ypos)

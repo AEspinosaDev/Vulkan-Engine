@@ -50,7 +50,7 @@ namespace vke
         {
             ALBEDO = 0,
             NORMAL = 1,
-            MASK_ROUGHNESS = 2, // R = ROUGHNESS // G = METALNESS // B = AO OR JUST ROUGHNESS
+            MASK_ROUGHNESS = 2, 
             METALNESS = 3,
             AO = 4,
         };

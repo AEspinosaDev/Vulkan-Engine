@@ -20,8 +20,14 @@ namespace vke
 
         bool perspective;
 
+        static int m_cameraCount;
+
     public:
-        Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D(p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f) { set_rotation({-90,0,0});}
+        Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_cameraCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
+        {
+            set_rotation({-90, 0, 0});
+            Camera::m_cameraCount++;
+        }
 
         inline void set_field_of_view(float fov) { m_fov = fov; }
         inline float get_field_of_view() { return m_fov; }
@@ -36,7 +42,7 @@ namespace vke
         inline void set_far(float f) { m_far = f; }
         inline float get_near() { return m_near; }
         inline void set_near(float n) { m_near = n; }
-      
+
         inline glm::mat4 get_model_matrix()
         {
             if (isDirty)
@@ -47,6 +53,6 @@ namespace vke
             return m_view;
         }
     };
-       
+    
 }
 #endif // VK_CAMERA_H

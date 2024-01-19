@@ -26,15 +26,13 @@ namespace vke
 
 	void Renderer::render(Scene *const scene)
 	{
+
 		if (!m_initialized)
 
 			init();
 
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
-		ImGui::Render();
+		if (m_settings.enableUI)
+			render_gui();
 
 		VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 		uint32_t imageIndex;
@@ -134,7 +132,7 @@ namespace vke
 
 		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window->get_window_obj(), nullptr, m_window->get_surface()));
 
-		booter.setup_devices();
+		booter.setup_devices(); // TO DO: Add to this function an entry parameter specifying the extensions to use
 
 		booter.setup_memory();
 
@@ -152,7 +150,8 @@ namespace vke
 
 		init_resources();
 
-		init_imgui();
+		if (m_settings.enableUI)
+			init_gui();
 	}
 
 	void Renderer::cleanup()
@@ -402,65 +401,68 @@ namespace vke
 
 		set_viewport(commandBuffer, *m_window->get_extent());
 
-		
-
-		int mesh_idx = 0;
-		for (Mesh *m : scene->get_meshes())
+		if (scene->get_active_camera() && scene->get_active_camera()->is_active())
 		{
-			if (m)
+			int mesh_idx = 0;
+			for (Mesh *m : scene->get_meshes())
 			{
-				if (m->is_active() && m->get_num_geometries() > 0)
+				if (m)
 				{
-
-					// Offset calculation
-					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
-					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
-
-					// ObjectUniforms objectData;
-					ObjectUniforms objectData;
-					objectData.model = m->get_model_matrix();
-					objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
-					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
-
-					for (size_t i = 0; i < m->get_num_geometries(); i++)
+					if (m->is_active() && m->get_num_geometries() > 0)
 					{
-						Geometry *g = m->get_geometry(i);
 
-						Material *mat = m->get_material(g->m_materialID);
+						// Offset calculation
+						uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
+						uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
 
-						if (!mat)
+						// ObjectUniforms objectData;
+						ObjectUniforms objectData;
+						objectData.model = m->get_model_matrix();
+						objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
+						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+
+						for (size_t i = 0; i < m->get_num_geometries(); i++)
 						{
-							continue;
-							// USE DEBUG MAT;
+							Geometry *g = m->get_geometry(i);
+
+							Material *mat = m->get_material(g->m_materialID);
+
+							if (!mat)
+							{
+								continue;
+								// USE DEBUG MAT;
+							}
+
+							if (mat->m_isDirty)
+								setup_material(mat);
+
+							MaterialUniforms materialData = mat->get_uniforms();
+							m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+
+							vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
+
+							// GLOBAL LAYOUT BINDING
+							uint32_t globalOffsets[] = {globalOffset, globalOffset};
+							vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
+
+							// PER OBJECT LAYOUT BINDING
+							uint32_t objectOffsets[] = {objectOffset, objectOffset};
+							vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
+
+							// TEXTURE LAYOUT BINDING
+							if (mat->m_shaderPass->settings.descriptorSetLayoutIDs[2])
+								vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_textureDescriptor.descriptorSet, 0, nullptr);
+
+							draw_geometry(commandBuffer, g);
 						}
-
-						if (mat->m_isDirty)
-							setup_material(mat);
-
-						MaterialUniforms materialData = mat->get_uniforms();
-						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
-
-						vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
-
-						// GLOBAL LAYOUT BINDING
-						uint32_t globalOffsets[] = {globalOffset, globalOffset};
-						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
-
-						// PER OBJECT LAYOUT BINDING
-						uint32_t objectOffsets[] = {objectOffset, objectOffset};
-						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
-
-						// TEXTURE LAYOUT BINDING
-						if (mat->m_shaderPass->settings.descriptorSetLayoutIDs[2])
-							vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_textureDescriptor.descriptorSet, 0, nullptr);
-
-						draw_geometry(commandBuffer, g);
 					}
 				}
+				mesh_idx++;
 			}
-			mesh_idx++;
 		}
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+		if (m_settings.enableUI)
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 		vkCmdEndRenderPass(commandBuffer);
 	}
@@ -896,7 +898,7 @@ void vke::Renderer::upload_texture(Texture *const t)
 	m_deletionQueue.push_function([=]()
 								  { t->cleanup(m_device, m_memory); });
 }
-void vke::Renderer::init_imgui()
+void vke::Renderer::init_gui()
 {
 	// 1: create descriptor pool for IMGUI
 	VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
@@ -925,6 +927,7 @@ void vke::Renderer::init_imgui()
 	// this initializes the core structures of imgui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
 
 	// this initializes imgui for SDL
 	ImGui_ImplGlfw_InitForVulkan(m_window->get_window_obj(), true);
@@ -945,16 +948,17 @@ void vke::Renderer::init_imgui()
 
 	ImGui_ImplVulkan_Init(&init_info, m_renderPass);
 
-	// // execute a gpu command to upload imgui font textures
-	// immediate_submit([&](VkCommandBuffer cmd)
-	// 				 { ImGui_ImplVulkan_CreateFontsTexture(cmd); });
-
-	// // clear font textures from cpu data
-	// ImGui_ImplVulkan_DestroyFontUploadObjects();
-
-	// add the destroy the imgui created structures
 	m_deletionQueue.push_function([=]()
-								  {
-		vkDestroyDescriptorPool(m_device, imguiPool, nullptr);
-		ImGui_ImplVulkan_Shutdown(); });
+								  {ImGui_ImplVulkan_Shutdown();
+		vkDestroyDescriptorPool(m_device, imguiPool, nullptr); });
+}
+
+void vke::Renderer::render_gui()
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	// ImGui::ShowDemoWindow();
+	m_gui->render();
+	ImGui::Render();
 }

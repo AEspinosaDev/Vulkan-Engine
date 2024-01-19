@@ -108,7 +108,7 @@ namespace vke
 			stages.push_back(vkinit::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
 		}
 
-		pipelineInfo.stageCount = stages.size();
+		pipelineInfo.stageCount = (uint32_t)stages.size();
 		pipelineInfo.pStages = stages.data();
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
