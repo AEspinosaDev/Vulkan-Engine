@@ -241,11 +241,7 @@ namespace vke
 
 		void upload_texture(Texture *const t);
 #pragma region gui
-
 		void init_gui();
-
-		void render_gui();
-
 #pragma endregion
 	};
 

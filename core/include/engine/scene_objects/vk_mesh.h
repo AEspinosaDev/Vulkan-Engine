@@ -19,12 +19,14 @@ namespace vke
 		bool m_castShadows{true};
 		bool m_receiveShadows{true};
 
+		std::string m_fileRoute{"None"};
+
 		static Material *m_debugMaterial;
 		static int m_meshCount;
 
 	public:
-		Mesh() : Object3D("Mesh #"+std::to_string(Mesh::m_meshCount),MESH) { Mesh::m_meshCount++; }
-		Mesh(Geometry *geom, Material *mat) : Object3D("Mesh #"+std::to_string(Mesh::m_meshCount), MESH)
+		Mesh() : Object3D("Mesh #" + std::to_string(Mesh::m_meshCount), MESH) { Mesh::m_meshCount++; }
+		Mesh(Geometry *geom, Material *mat) : Object3D("Mesh #" + std::to_string(Mesh::m_meshCount), MESH)
 		{
 			m_geometry.push_back(geom);
 			m_material.push_back(mat);
@@ -82,6 +84,8 @@ namespace vke
 		inline bool is_affected_by_fog() const { return m_affectedByFog; }
 
 		bool load_file(const std::string fileName, bool overrideGeometry = false);
+
+		inline std::string get_file_route() const { return m_fileRoute; }
 
 		Mesh *clone() const;
 	};

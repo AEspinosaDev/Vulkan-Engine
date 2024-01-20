@@ -3,7 +3,7 @@
 
 void VulkanRenderer::init()
 {
-    m_window = new vke::Window("VK Engine", 800, 600);
+    m_window = new vke::Window("VK Engine", 1200, 900);
 
     m_window->init();
 
@@ -129,9 +129,9 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::setup_gui()
 {
-    m_overlay = new vke::GUIOverlay();
+    m_interface.overlay = new vke::GUIOverlay();
 
-    vke::Panel *tutorialPanel = new vke::Panel("TUTORIAL", 0, 0, 350, 180, vke::PanelWidgetFlags::NoResize);
+    vke::Panel *tutorialPanel = new vke::Panel("TUTORIAL", 0, 0, 350, 180, vke::PanelWidgetFlags::NoMove);
 
     tutorialPanel->add_child(new vke::Space());
     tutorialPanel->add_child(new vke::Separator("CONTROLS"));
@@ -144,12 +144,13 @@ void VulkanRenderer::setup_gui()
     tutorialPanel->add_child(new vke::Separator());
     tutorialPanel->add_child(new vke::TextLine(" Enjoy changing the settings parameters!"));
 
-    m_overlay->add_panel(tutorialPanel);
+    m_interface.overlay->add_panel(tutorialPanel);
     m_interface.tutorial = tutorialPanel;
 
-    vke::Panel *settingsPanel = new vke::Panel("SETTINGS", (float)m_window->get_extent()->width - 400, 0, 400, 1000, vke::PanelWidgetFlags::NoResize, true);
+    vke::Panel *settingsPanel = new vke::Panel("SETTINGS", (float)m_window->get_extent()->width - 400, 0, 400, 1000, vke::PanelWidgetFlags::NoMove, true);
 
-    settingsPanel->add_child(new vke::SceneExplorer(m_scene));
+    m_interface.scene = new vke::SceneExplorer(m_scene);
+    settingsPanel->add_child(m_interface.scene);
     settingsPanel->add_child(new vke::Space());
     settingsPanel->add_child(new vke::Separator("GLOBAL SETTINGS"));
     settingsPanel->add_child(new vke::Separator());
@@ -161,18 +162,20 @@ void VulkanRenderer::setup_gui()
     settingsPanel->add_child(new vke::Space());
     settingsPanel->add_child(new vke::Separator("OBJECT SETTINGS"));
     settingsPanel->add_child(new vke::Separator());
-   
-	
 
-    m_overlay->add_panel(settingsPanel);
+    m_interface.object = new vke::ObjectExplorer();
+    settingsPanel->add_child(m_interface.object);
+
+    m_interface.overlay->add_panel(settingsPanel);
     m_interface.settings = settingsPanel;
 
-    m_renderer->set_gui_overlay(m_overlay);
+    m_renderer->set_gui_overlay(m_interface.overlay);
 }
 
 void VulkanRenderer::update()
 {
-    m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_deltaTime);
+    if (!m_interface.overlay->wants_to_handle_input())
+        m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_deltaTime);
 
     // Rotate the vector around the ZX plane
     float rotationAngle = glm::radians(10.0f * m_deltaTime);
@@ -184,6 +187,7 @@ void VulkanRenderer::update()
     m_lightDummy->set_position(light->get_position());
 
     m_interface.settings->set_position({(float)m_window->get_extent()->width - 400, 0});
+    m_interface.object->set_object(m_interface.scene->get_selected_object());
 }
 
 void VulkanRenderer::tick()

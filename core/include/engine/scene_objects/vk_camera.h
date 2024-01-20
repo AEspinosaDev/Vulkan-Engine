@@ -29,19 +29,31 @@ namespace vke
             Camera::m_cameraCount++;
         }
 
-        inline void set_field_of_view(float fov) { m_fov = fov; }
-        inline float get_field_of_view() { return m_fov; }
+        inline void set_field_of_view(float fov)
+        {
+            m_fov = fov;
+            isDirty = true;
+        }
+        inline float get_field_of_view() const { return m_fov; }
         inline void set_projection(int width, int height)
         {
             m_proj = glm::perspective(glm::radians(m_fov), (float)width / (float)height, m_near, m_far);
             m_proj[1][1] *= -1; // Because Vulkan
         }
-        inline glm::mat4 get_projection() { return m_proj; }
+        inline glm::mat4 get_projection() const { return m_proj; }
         inline glm::mat4 get_view() { return get_model_matrix(); }
-        inline float get_far() { return m_far; }
-        inline void set_far(float f) { m_far = f; }
-        inline float get_near() { return m_near; }
-        inline void set_near(float n) { m_near = n; }
+        inline float get_far() const { return m_far; }
+        inline void set_far(float f)
+        {
+            m_far = f;
+            isDirty = true;
+        }
+        inline float get_near() const { return m_near; }
+        inline void set_near(float n)
+        {
+            m_near = n;
+            isDirty = true;
+        }
 
         inline glm::mat4 get_model_matrix()
         {
@@ -53,6 +65,6 @@ namespace vke
             return m_view;
         }
     };
-    
+
 }
 #endif // VK_CAMERA_H

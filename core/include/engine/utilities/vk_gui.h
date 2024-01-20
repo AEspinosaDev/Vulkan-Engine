@@ -44,8 +44,8 @@ namespace vke
     class Panel : public Widget
     {
     protected:
-        float m_rounding{0.0f};
-        ImVec2 m_padding{0.0f, 0.0f};
+        float m_rounding{12.0f};
+        ImVec2 m_padding{8.0f, 5.0f};
         ImVec2 m_minExtent;
         ImVec4 m_color{-1.0f, -1.0f, -1.0f, 1.0f};
         float m_borderSize{0.0f};
@@ -158,6 +158,7 @@ namespace vke
 
     protected:
         Scene *m_scene;
+        Object3D *m_selectedObject{nullptr};
         virtual void render();
 
     public:
@@ -165,28 +166,41 @@ namespace vke
 
         inline Scene *get_scene() const { return m_scene; }
         inline void set_scene(Scene *sc) { m_scene = sc; }
+
+        inline Object3D *get_selected_object() const { return m_selectedObject; }
+    };
+
+    class ObjectExplorer : public Widget
+    {
+        Object3D *m_object;
+
+    protected:
+        virtual void render();
+
+    public:
+        ObjectExplorer(Object3D *obj = nullptr) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_object(obj) {}
+
+        inline Object3D *get_object() const { return m_object; }
+        inline void set_object(Object3D *obj) { m_object = obj; }
     };
 
     class GUIOverlay
     {
 
     private:
-        // VkDescriptorPoo
-
         std::vector<Panel *> m_panels;
 
-        inline void render()
-        {
-            for (auto p : m_panels)
-            {
-                p->render();
-            }
-        }
+        VkDescriptorPool m_pool{};
 
-        static void init();
-        static void render(GUIOverlay &gui);
-        static void upload_draw_data(GUIOverlay &gui);
-        static void cleanup(GUIOverlay &gui);
+        bool m_resized{false};
+
+        static bool m_initialized;
+
+        void init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass &renderPass,
+                  VkFormat format, VkSampleCountFlagBits samples, GLFWwindow *window);
+        void render();
+        void upload_draw_data(VkCommandBuffer &cmd);
+        void cleanup(VkDevice &device);
 
         friend class Renderer;
 
@@ -203,6 +217,20 @@ namespace vke
         {
             m_panels.push_back(p);
         }
+        inline bool wants_to_handle_input() const
+        {
+            if (GUIOverlay::m_initialized)
+            {
+                ImGuiIO &io = ImGui::GetIO();
+                if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+                    return true;
+                else
+                    return false;
+            }
+            return false;
+        }
+        inline void set_is_resized(bool op) { m_resized = op; }
+        inline bool get_is_resized() { return m_resized; }
     };
 
 }

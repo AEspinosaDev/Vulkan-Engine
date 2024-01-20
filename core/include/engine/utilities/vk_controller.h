@@ -6,7 +6,7 @@
 
 namespace vke
 {
-   
+
     struct KeyMappings
     {
         int moveLeft = GLFW_KEY_A;
@@ -31,13 +31,14 @@ namespace vke
         ControllerMovementType m_type;
         KeyMappings m_mappings;
 
-        enum KeyActions{
+        enum KeyActions
+        {
             PRESS = GLFW_PRESS,
             RELEASE = GLFW_RELEASE,
             REPEAT = GLFW_REPEAT,
         };
 
-        //MOUSE
+        // MOUSE
         float m_mouseSensitivity;
         float m_mouseDeltaX;
         float m_mouseDeltaY;
@@ -52,21 +53,29 @@ namespace vke
 
         Transform m_initialState;
 
+        bool m_enabled{true};
+
     public:
         Controller(Object3D *obj, ControllerMovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(5.0f),
-                                                               m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
-                                                               m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
-                                                               m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
-                                                               m_initialState(obj->get_transform()), m_mappings(km),
-                                                               m_orbitalCenter({0.0,0.0,0.0}) {}
+                                                                                                     m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
+                                                                                                     m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
+                                                                                                     m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
+                                                                                                     m_initialState(obj->get_transform()), m_mappings(km),
+                                                                                                     m_orbitalCenter({0.0, 0.0, 0.0}) {}
+
+        virtual inline void set_active(const bool s)
+        {
+            m_enabled = s;
+        }
+        virtual inline bool is_active() const { return m_enabled; }
 
         inline ControllerMovementType get_type() { return m_type; }
         inline float get_speed() const { return m_speed; }
         inline void set_speed(float s) { m_speed = s; }
         inline float get_mouse_sensitivity() const { return m_mouseSensitivity; }
         inline void set_mouse_sensitivity(float s) { m_mouseSensitivity = s; }
-        inline Object3D* get_object() const {return m_objPtr;}
-        inline void set_object(Object3D* obj) {m_objPtr=obj;}
+        inline Object3D *get_object() const { return m_objPtr; }
+        inline void set_object(Object3D *obj) { m_objPtr = obj; }
         /*Not insert as GLFW callback!*/
         virtual void handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime);
         virtual void handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch = true);

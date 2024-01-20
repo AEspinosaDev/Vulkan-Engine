@@ -3,6 +3,7 @@ namespace vke
 {
     void Controller::handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime)
     {
+        if(!m_enabled) return;
         auto speed = m_speed * deltaTime;
 
         if (m_type == WASD)
@@ -32,6 +33,7 @@ namespace vke
 
     void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch)
     {
+        if(!m_enabled) return;
         // Pressing
         if (glfwGetMouseButton(window, m_mappings.mouseLeft) == PRESS)
         {

@@ -16,18 +16,22 @@
  */
 class VulkanRenderer
 {
-    struct UserInterface{
-        vke::Panel* tutorial{nullptr};
-        vke::Panel* settings{nullptr};
+    struct UserInterface
+    {
+        vke::GUIOverlay *overlay{nullptr};
+
+        vke::Panel *tutorial{nullptr};
+        vke::Panel *settings{nullptr};
+        vke::SceneExplorer *scene{nullptr};
+        vke::ObjectExplorer *object{nullptr};
     };
     UserInterface m_interface{};
-    
+
     vke::Window *m_window;
     vke::Renderer *m_renderer;
     vke::Scene *m_scene;
     vke::Camera *camera;
     vke::Controller *m_controller;
-    vke::GUIOverlay *m_overlay;
 
     vke::Mesh *m_lightDummy;
 
@@ -53,6 +57,9 @@ private:
 
     void keyboard_callback(int key, int scancode, int action, int mods)
     {
+      
+    
+
         if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             m_window->set_window_should_close(true);
@@ -71,6 +78,9 @@ private:
 
     void mouse_callback(double xpos, double ypos)
     {
+        if (m_interface.overlay->wants_to_handle_input())
+            return;
+
         m_controller->handle_mouse(m_window->get_window_obj(), (float)xpos, (float)ypos);
     }
 
