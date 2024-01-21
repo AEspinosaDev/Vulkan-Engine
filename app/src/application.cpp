@@ -54,7 +54,8 @@ void VulkanRenderer::setup()
 
     m_scene = new vke::Scene(camera);
 
-    m_scene->set_light(new vke::PointLight());
+    // m_scene->set_light(new vke::PointLight());
+    m_scene->add(new vke::PointLight());
     m_scene->get_light()->set_position({-3.0f, 3.0f, 0.0f});
 
     vke::Geometry *quadGeom = new vke::Geometry();
@@ -129,9 +130,9 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new vke::GUIOverlay();
+    m_interface.overlay = new vke::GUIOverlay((float)m_window->get_extent()->width, (float)m_window->get_extent()->height);
 
-    vke::Panel *tutorialPanel = new vke::Panel("TUTORIAL", 0, 0, 350, 180, vke::PanelWidgetFlags::NoMove);
+    vke::Panel *tutorialPanel = new vke::Panel("TUTORIAL", 0,0.8f, 0.2f, 0.2f, vke::PanelWidgetFlags::NoMove, false, true);
 
     tutorialPanel->add_child(new vke::Space());
     tutorialPanel->add_child(new vke::Separator("CONTROLS"));
@@ -147,27 +148,27 @@ void VulkanRenderer::setup_gui()
     m_interface.overlay->add_panel(tutorialPanel);
     m_interface.tutorial = tutorialPanel;
 
-    vke::Panel *settingsPanel = new vke::Panel("SETTINGS", (float)m_window->get_extent()->width - 400, 0, 400, 1000, vke::PanelWidgetFlags::NoMove, true);
+    vke::Panel *explorerPanel = new vke::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, vke::PanelWidgetFlags::NoMove, false);
+    m_interface.scene = new vke::SceneExplorerWidget(m_scene);
+    explorerPanel->add_child(m_interface.scene);
+    explorerPanel->add_child(new vke::Space());
+    explorerPanel->add_child(new vke::Separator("GLOBAL SETTINGS"));
+    explorerPanel->add_child(new vke::Separator());
+    explorerPanel->add_child(new vke::TextLine(" Application average"));
+    explorerPanel->add_child(new vke::Space());
+    explorerPanel->add_child(new vke::Profiler());
+    explorerPanel->add_child(new vke::Space());
+    explorerPanel->add_child(new vke::Separator());
 
-    m_interface.scene = new vke::SceneExplorer(m_scene);
-    settingsPanel->add_child(m_interface.scene);
-    settingsPanel->add_child(new vke::Space());
-    settingsPanel->add_child(new vke::Separator("GLOBAL SETTINGS"));
-    settingsPanel->add_child(new vke::Separator());
-    settingsPanel->add_child(new vke::TextLine(" Application average"));
-    settingsPanel->add_child(new vke::Space());
-    settingsPanel->add_child(new vke::Profiler());
-    settingsPanel->add_child(new vke::Space());
-    settingsPanel->add_child(new vke::Separator());
-    settingsPanel->add_child(new vke::Space());
-    settingsPanel->add_child(new vke::Separator("OBJECT SETTINGS"));
-    settingsPanel->add_child(new vke::Separator());
+    m_interface.overlay->add_panel(explorerPanel);
+    m_interface.explorer = explorerPanel;
 
-    m_interface.object = new vke::ObjectExplorer();
-    settingsPanel->add_child(m_interface.object);
+    vke::Panel *propertiesPanel = new vke::Panel("PROPERTIES", 0.8f, 0, 0.2f, 0.8f, vke::PanelWidgetFlags::NoMove, true);
+    m_interface.object = new vke::ObjectExplorerWidget();
+    propertiesPanel->add_child(m_interface.object);
 
-    m_interface.overlay->add_panel(settingsPanel);
-    m_interface.settings = settingsPanel;
+    m_interface.overlay->add_panel(propertiesPanel);
+    m_interface.properties = propertiesPanel;
 
     m_renderer->set_gui_overlay(m_interface.overlay);
 }
@@ -185,8 +186,8 @@ void VulkanRenderer::update()
 
     light->set_position({_x, light->get_position().y, _z});
     m_lightDummy->set_position(light->get_position());
+    dynamic_cast<vke::UnlitMaterial*>(m_lightDummy->get_material())->set_color(glm::vec4(light->get_color(),1.0f));
 
-    m_interface.settings->set_position({(float)m_window->get_extent()->width - 400, 0});
     m_interface.object->set_object(m_interface.scene->get_selected_object());
 }
 

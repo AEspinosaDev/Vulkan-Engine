@@ -68,6 +68,7 @@ namespace vke
 
 	typedef enum ShadowResolution
 	{
+		VERY_LOW = 256,
 		LOW = 512,
 		MEDIUM = 1024,
 		HIGH = 2048,
@@ -159,6 +160,14 @@ namespace vke
 		WARPED,
 		BULLET,
 	} TextWidgetType;
+
+	typedef enum LightType
+	{
+		POINT = 0,
+		DIRECTIONAL = 1,
+		SPOT = 2,
+		AREA = 3
+	} LightType;
 
 	// Ahead declaration of some key classes
 	class Renderer;

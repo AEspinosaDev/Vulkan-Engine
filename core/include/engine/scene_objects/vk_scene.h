@@ -40,7 +40,7 @@ namespace vke
                 m_cameras.push_back((Camera *)obj);
                 break;
             case LIGHT:
-                //
+                m_light = (Light *)obj;
                 break;
             }
             for (auto child : obj->get_children())

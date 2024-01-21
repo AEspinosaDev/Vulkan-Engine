@@ -190,7 +190,7 @@ vec3 phong() {
 void main() {
 
     vec3 color = phong();
-    if(v_receiveShadows == 1)
+    if(v_receiveShadows == 1 && scene.lightData.w == 1)
         color *= (1.0 - computeShadow());
 
     vec3 ambient = scene.ambientIntensity * scene.ambientColor * 0.005;

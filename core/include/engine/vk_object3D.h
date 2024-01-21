@@ -182,11 +182,10 @@ namespace vke
                 m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.z, glm::vec3(0, 0, 1));
                 m_transform.worldMatrix = glm::scale(m_transform.worldMatrix, m_transform.scale);
 
-                //  Dirty flag
-                m_transform.worldMatrix = m_parent ? m_parent->get_model_matrix() * m_transform.worldMatrix : m_transform.worldMatrix;
-
                 isDirty = false;
             }
+            //  Dirty flag
+            m_transform.worldMatrix = m_parent ? m_parent->get_model_matrix() * m_transform.worldMatrix : m_transform.worldMatrix;
             return m_transform.worldMatrix;
         }
 

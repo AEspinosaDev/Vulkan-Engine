@@ -25,7 +25,6 @@ namespace vke
 
 	struct RendererSettings
 	{
-
 		AntialiasingType AAtype{MSAA_x4};
 		BufferingType bufferingType{_DOUBLE};
 		ShadowResolution shadowResolution{LOW};
@@ -40,6 +39,8 @@ namespace vke
 		bool depthWrite{true};
 
 		bool enableUI{false};
+
+		bool gammaCorrection{true};
 	};
 	/**
 	 * Core class whose porpuse is to render data on a window.
@@ -105,6 +106,7 @@ namespace vke
 
 		Material *m_lastMaterial{nullptr};
 		Geometry *m_lastGeometry{nullptr};
+
 		GUIOverlay *m_gui{nullptr};
 
 #pragma endregion

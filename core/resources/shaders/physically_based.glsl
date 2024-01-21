@@ -332,7 +332,7 @@ void main() {
     }
 
     vec3 color = computeLighting();
-    if(v_receiveShadows == 1)
+    if(v_receiveShadows == 1  && scene.lightData.w == 1)
         color *= (1.0 - computeShadow());
 
     //Ambient component

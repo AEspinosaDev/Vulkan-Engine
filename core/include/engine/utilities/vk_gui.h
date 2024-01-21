@@ -18,7 +18,7 @@ namespace vke
     protected:
         ImVec2 m_position;
         ImVec2 m_extent;
-
+        ImVec2 m_pixelExtent;
         std::vector<Widget *> m_children;
         Widget *m_parent;
 
@@ -39,6 +39,8 @@ namespace vke
 
         virtual inline glm::vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
         virtual inline void set_extent(glm::vec2 p) { m_extent = {p.x, p.y}; }
+
+        inline glm::vec2 get_pixel_extent() const { return {m_pixelExtent.x, m_pixelExtent.y}; }
     };
 
     class Panel : public Widget
@@ -47,10 +49,19 @@ namespace vke
         float m_rounding{12.0f};
         ImVec2 m_padding{8.0f, 5.0f};
         ImVec2 m_minExtent;
+
         ImVec4 m_color{-1.0f, -1.0f, -1.0f, 1.0f};
         float m_borderSize{0.0f};
 
+        bool m_collapsable{true};
         bool m_collapsed{false};
+
+        bool m_open{true};
+        bool m_closable{false};
+
+        bool m_resized{false};
+
+        GUIOverlay *m_parentOverlay{nullptr};
 
         PanelWidgetFlags m_flags;
 
@@ -61,9 +72,9 @@ namespace vke
         virtual void render();
 
     public:
-        Panel(const char *title, float posX, float posY, float extentX, float extentY, PanelWidgetFlags flags = PanelWidgetFlags::None, bool collapsed = false)
+        Panel(const char *title, float posX, float posY, float extentX, float extentY, PanelWidgetFlags flags = PanelWidgetFlags::None, bool collapsed = false, bool closable = false)
             : Widget(ImVec2(posX, posY), ImVec2(extentX, extentY)), m_title(title),
-              m_minExtent(ImVec2(extentX * 0.5f, extentY * 0.5f)), m_flags(flags), m_collapsed(collapsed) {}
+              m_minExtent(ImVec2(extentX * 0.5f, extentY * 0.5f)), m_flags(flags), m_collapsed(collapsed), m_closable(closable) {}
 
         ~Panel()
         {
@@ -82,6 +93,12 @@ namespace vke
 
         inline float get_border_size() const { return m_borderSize; }
         inline void set_border_size(float t) { m_borderSize = t; }
+
+        inline bool get_is_open() const { return m_open; }
+        inline void set_is_open(bool t) { m_open = t; }
+
+        inline void set_is_resized(bool op) { m_resized = op; }
+        inline bool get_is_resized() { return m_resized; }
     };
 
     class Button : public Widget
@@ -153,7 +170,7 @@ namespace vke
         inline void set_text(char *t) { m_text = t; }
     };
 
-    class SceneExplorer : public Widget
+    class SceneExplorerWidget : public Widget
     {
 
     protected:
@@ -162,7 +179,7 @@ namespace vke
         virtual void render();
 
     public:
-        SceneExplorer(Scene *scene) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_scene(scene) {}
+        SceneExplorerWidget(Scene *scene) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_scene(scene) {}
 
         inline Scene *get_scene() const { return m_scene; }
         inline void set_scene(Scene *sc) { m_scene = sc; }
@@ -170,7 +187,7 @@ namespace vke
         inline Object3D *get_selected_object() const { return m_selectedObject; }
     };
 
-    class ObjectExplorer : public Widget
+    class ObjectExplorerWidget : public Widget
     {
         Object3D *m_object;
 
@@ -178,14 +195,29 @@ namespace vke
         virtual void render();
 
     public:
-        ObjectExplorer(Object3D *obj = nullptr) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_object(obj) {}
+        ObjectExplorerWidget(Object3D *obj = nullptr) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_object(obj) {}
 
         inline Object3D *get_object() const { return m_object; }
         inline void set_object(Object3D *obj) { m_object = obj; }
     };
 
+    class GlobalSettingsWidget : public Widget
+    {
+        Renderer *m_renderer;
+
+    protected:
+        virtual void render();
+
+    public:
+        GlobalSettingsWidget(Renderer *obj = nullptr) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_renderer(obj) {}
+
+        inline Renderer *get_renderer() const { return m_renderer; }
+        inline void set_renderer(Renderer *obj) { m_renderer = obj; }
+    };
+
     class GUIOverlay
     {
+        ImVec2 m_extent;
 
     private:
         std::vector<Panel *> m_panels;
@@ -205,7 +237,7 @@ namespace vke
         friend class Renderer;
 
     public:
-        GUIOverlay() {}
+        GUIOverlay(float extentX, float extentY) : m_extent({extentX, extentY}) {}
         ~GUIOverlay()
         {
             for (auto p : m_panels)
@@ -215,6 +247,7 @@ namespace vke
         }
         inline void add_panel(Panel *p)
         {
+            p->m_parentOverlay = this;
             m_panels.push_back(p);
         }
         inline bool wants_to_handle_input() const
@@ -229,8 +262,13 @@ namespace vke
             }
             return false;
         }
-        inline void set_is_resized(bool op) { m_resized = op; }
-        inline bool get_is_resized() { return m_resized; }
+
+        inline glm::vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
+        inline void set_extent(glm::vec2 p)
+        {
+            m_extent = {p.x, p.y};
+            m_resized = true;
+        }
     };
 
 }

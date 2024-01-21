@@ -20,10 +20,11 @@ class VulkanRenderer
     {
         vke::GUIOverlay *overlay{nullptr};
 
+        vke::Panel *explorer{nullptr};
         vke::Panel *tutorial{nullptr};
-        vke::Panel *settings{nullptr};
-        vke::SceneExplorer *scene{nullptr};
-        vke::ObjectExplorer *object{nullptr};
+        vke::Panel *properties{nullptr};
+        vke::SceneExplorerWidget *scene{nullptr};
+        vke::ObjectExplorerWidget *object{nullptr};
     };
     UserInterface m_interface{};
 
@@ -87,6 +88,7 @@ private:
     void window_resize_callback(int width, int height)
     {
         m_window->set_size(width, height);
+        m_interface.overlay->set_extent({width,height});
     }
 
 #pragma endregion

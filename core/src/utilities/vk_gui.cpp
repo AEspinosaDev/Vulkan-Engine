@@ -69,8 +69,11 @@ namespace vke
         for (auto p : m_panels)
         {
             p->render();
+            p->set_is_resized(m_resized);
         }
         ImGui::Render();
+
+        m_resized = false;
     }
 
     void GUIOverlay::upload_draw_data(VkCommandBuffer &cmd)
@@ -86,8 +89,9 @@ namespace vke
 
     void Panel::render()
     {
-        ImGui::SetNextWindowPos(m_position, ImGuiCond_Once);
-        ImGui::SetNextWindowSize(m_extent, ImGuiCond_Once);
+        m_pixelExtent = {m_extent.x * m_parentOverlay->get_extent().x, m_extent.y * m_parentOverlay->get_extent().y};
+        ImGui::SetNextWindowPos({m_position.x * m_parentOverlay->get_extent().x, m_position.y * m_parentOverlay->get_extent().y}, (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
+        ImGui::SetNextWindowSize({m_extent.x * m_parentOverlay->get_extent().x, m_extent.y * m_parentOverlay->get_extent().y}, (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
         ImGui::SetNextWindowCollapsed(m_collapsed, ImGuiCond_Once);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, m_rounding);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, m_padding);
@@ -96,16 +100,22 @@ namespace vke
         if (m_color.x > -1)
             ImGui::PushStyleColor(ImGuiCol_MenuBarBg, m_color);
 
-        if (ImGui::Begin(m_title, NULL, (ImGuiWindowFlags)m_flags))
+        if (m_open)
         {
-            // if (m_parent->is_resized())
-            //     ImGui::SetWindowPos(m_position);
+            if (ImGui::Begin(m_title, m_closable ? &m_open : NULL, m_collapsable ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+            {
+                //     ImGui::SetWindowPos({m_position.x * m_parentOverlay->get_extent().x, m_position.y * m_parentOverlay->get_extent().y});
+                // if (m_resized)
+                // {
+                //     m_resized = false;
+                // }
 
-            for (auto widget : m_children)
-                widget->render();
+                for (auto widget : m_children)
+                    widget->render();
+            }
+
+            ImGui::End();
         }
-
-        ImGui::End();
         if (m_color.x > -1)
             ImGui::PopStyleColor();
         ImGui::PopStyleVar(4);
@@ -128,14 +138,14 @@ namespace vke
             break;
         }
     }
-    void SceneExplorer::render()
+    void SceneExplorerWidget::render()
     {
         ImGui::Spacing();
         ImGui::SeparatorText("SCENE EXPLORER");
 
         static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;
 
-        if (ImGui::BeginTable("2ways", 2, flags, ImVec2(m_parent->get_extent().x, m_parent->get_extent().y * 0.15f)))
+        if (ImGui::BeginTable("2ways", 2, flags, ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
         {
             ImGui::TableSetupColumn(" Name", ImGuiTableColumnFlags_NoHide);
             ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, 3 * 18.0f);
@@ -241,10 +251,13 @@ namespace vke
         !m_text ? ImGui::Separator() : ImGui::SeparatorText(m_text);
     }
 
-    void ObjectExplorer::render()
+    void ObjectExplorerWidget::render()
     {
         if (!m_object)
+        {
+            ImGui::Text("Select an object in the scene explorer");
             return;
+        }
 
         std::string str = m_object->get_name();
         std::transform(str.begin(), str.end(), str.begin(), ::toupper);
@@ -548,34 +561,53 @@ namespace vke
             //     }
             //     ImGui::EndTable();
         }
-        // if (m_object->get_type() == ObjectType::LIGHT)
-        // {
-        //     ImGui::SeparatorText("Light");
+        if (m_object->get_type() == ObjectType::LIGHT)
+        {
+            ImGui::SeparatorText("Light");
 
-        //     Light *light = dynamic_cast<Light *>(UIManager::m_SelectedObject);
-        //     float intensity = light->getIntensity();
-        //     if (light->getType() == 0)
-        //     {
-        //         float att = dynamic_cast<PointLight *>(light)->getAreaOfInfluence();
-        //         if (ImGui::DragFloat("Area of Influence", &att, 0.005f, 0.0f, 50.0f))
-        //             dynamic_cast<PointLight *>(light)->setAreaOfInfluence(att);
-        //     }
-        //     glm::vec3 color = light->getColor();
-        //     bool castShadows = light->getCastShadows();
-        //     if (ImGui::DragFloat("Intensity", &intensity, 0.005f, 0.0f, 99.0f))
-        //         light->setIntensity(intensity);
-        //     if (ImGui::ColorEdit3("Color", (float *)&color))
-        //     {
-        //         light->setColor(color);
-        //     };
-        //     if (ImGui::Checkbox("Cast Shadows", &castShadows))
-        //     {
-        //         light->setCastShadows(castShadows);
-        //     };
-        //     /*if(light.getAt)
-        //     float att = light->getAttenuation();
-        //     if (ImGui::DragFloat("Attenuation", &att, 0.005f, 0.0f, 99.0f)) light->setAttenuation(att);*/
-        // }
+            Light *light = dynamic_cast<Light *>(m_object);
+
+            float intensity = light->get_intensity();
+            if (ImGui::DragFloat("Intensity", &intensity, 0.005f, 0.0f, 10.0f))
+                light->set_intensity(intensity);
+            glm::vec3 color = light->get_color();
+            if (ImGui::ColorEdit3("Color", (float *)&color))
+            {
+                light->set_color(color);
+            };
+
+            if (light->get_light_type() == LightType::POINT)
+            {
+                float att = dynamic_cast<PointLight *>(light)->get_area_of_effect();
+                if (ImGui::DragFloat("Area of Influence", &att, 0.005f, 0.0f, 50.0f))
+                    dynamic_cast<PointLight *>(light)->set_area_of_effect(att);
+            }
+            bool castShadows = light->get_cast_shadows();
+
+            if (ImGui::Checkbox("Cast Shadows", &castShadows))
+            {
+                light->set_cast_shadows(castShadows);
+            };
+            if (castShadows)
+            {
+                float shadowNear = light->get_shadow_near();
+                if (ImGui::DragFloat("Shadow Near Plane", &shadowNear, 0.005f, 0.0f, 10.0f))
+                    light->set_shadow_near(shadowNear);
+                float shadowFar = light->get_shadow_far();
+                if (ImGui::DragFloat("Shadow Far Plane", &shadowFar, 1.0f, 10.0f, 1000.0f))
+                    light->set_shadow_far(shadowFar);
+                float shadowFov = light->get_shadow_fov();
+                if (ImGui::DragFloat("Shadow FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
+                    light->set_shadow_fov(shadowFov);
+                float position[3] = {light->get_shadow_target().x,
+                                     light->get_shadow_target().y,
+                                     light->get_shadow_target().z};
+                if (ImGui::DragFloat3("Shadow Target", position, 0.1f))
+                {
+                    light->set_shadow_target(glm::vec3(position[0], position[1], position[2]));
+                };
+            }
+        }
         if (m_object->get_type() == ObjectType::CAMERA)
         {
             ImGui::SeparatorText("Camera");
@@ -593,5 +625,93 @@ namespace vke
                 cam->set_field_of_view(fov);
         }
     }
+    void GlobalSettingsWidget::render()
+    {
 
+        // ImGui::SeparatorText("Global settings");
+
+        // ImGui::Checkbox("Clear Color", &m_renderer->m_settings.autoClearColor);
+        // ImGui::ColorEdit3("Clear Color", (float *)&m_renderer->m_settings.clearColor); // Edit 3 floats representing a color
+        // ImGui::Checkbox("Clear depth", &m_renderer->m_settings.autoClearDepth);
+        // ImGui::Checkbox("Depth Test", &m_renderer->m_settings.depthTest);
+        // ImGui::Checkbox("Depth Write", &m_renderer->m_settings.depthWrite);
+        // ImGui::Checkbox("Gamma correction", &m_renderer->m_settings.gammaCorrection);
+        // ImGui::Text("Anisotropic filter enabled");
+
+        // // if (ImGui::Checkbox("Fog", &m_renderer->m_settings))
+        // //     ;
+        // // if (r->m_Settings.ppEffects.fog)
+        // // {
+
+        // //     if (ImGui::ColorEdit3("Fog Color", (float *)&r->m_Settings.ppEffects.fogColor))
+        // //         ;
+
+        // //     if (ImGui::DragFloat("Fog Density", &r->m_Settings.ppEffects.fogIntensity, 1.0f, 0.0f, 100.0f))
+        // //         ;
+        // //     /*
+        // //         if (ImGui::DragFloat("Fog Start", &r->m_Settings.ppEffects.fogStart, 1.0f, r->m_CurrentScene->getActiveCamera()->getNear(), r->m_CurrentScene->getActiveCamera()->getFar()));
+        // //         if (ImGui::DragFloat("Fog End", &r->m_Settings.ppEffects.fogEnd, 1.0f, r->m_CurrentScene->getActiveCamera()->getNear(), r->m_CurrentScene->getActiveCamera()->getFar()));
+        // //     }*/
+        // // }
+
+        // const char *res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
+
+        // static int res_current = 1;
+        // if (ImGui::Combo("Shadow Resolution", &res_current, res, IM_ARRAYSIZE(res)))
+        // {
+        //     switch (res_current)
+        //     {
+        //     case 0:
+        //         m_renderer->m_settings.shadowResolution = ShadowResolution::VERY_LOW;
+        //         break;
+        //     case 1:
+        //         m_renderer->m_settings.shadowResolution = ShadowResolution::LOW;
+        //         break;
+        //     case 2:
+        //         m_renderer->m_settings.shadowResolution = ShadowResolution::MEDIUM;
+        //         break;
+        //     case 3:
+        //         m_renderer->m_settings.shadowResolution = ShadowResolution::HIGH;
+        //         break;
+        //     case 4:
+        //         m_renderer->m_settings.shadowResolution = ShadowResolution::ULTRA;
+        //         break;
+        //     }
+        // }
+
+        // //     /*if (res_current != 0) {
+        // //         r->m_Resources.framebuffers["msaaFBO"]->setTextureAttachmentSamples((AntialiasingType)r->m_Settings.antialiasingSamples);
+        // //     }*/
+        // // };
+        // // ImGui::SeparatorText("Antialiasing");
+
+        // const char *items[] = {"NONE", "MSAAx2", "MSAAx4", "MSAAx8", "MSAAx16", "OTHER"};
+        // static int item_current = 4;
+        // if (ImGui::Combo("Antialiasing", &item_current, items, IM_ARRAYSIZE(items)))
+        // {
+        //     switch (item_current)
+        //     {
+        //     case 0:
+        //         m_renderer->m_settings.AAtype = AntialiasingType::_NONE;
+        //         break;
+        //     case 1:
+        //         m_renderer->m_settings.AAtype = AntialiasingType::MSAA_x4;
+        //         break;
+        //     case 2:
+        //         m_renderer->m_settings.AAtype = AntialiasingType::MSAA_x8;
+        //         break;
+        //     case 3:
+        //         m_renderer->m_settings.AAtype = AntialiasingType::MSAA_x16;
+        //         break;
+        //     case 4:
+        //         m_renderer->m_settings.AAtype = AntialiasingType::MSAA_x32;
+        //         break;
+        //     }
+
+        //     //     if (item_current != 0)
+        //     //     {
+        //     //         r->m_Resources.framebuffers["msaaFBO"]->setTextureAttachmentSamples((AntialiasingType)r->m_Settings.antialiasingSamples);
+        //     //     }
+        //     // };
+    }
 }
