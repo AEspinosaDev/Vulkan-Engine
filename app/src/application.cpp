@@ -65,17 +65,17 @@ void VulkanRenderer::setup()
                     {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
                    {0, 1, 2, 2, 3, 0});
 
-    auto mat = new vke::PhysicalBasedMaterial();
+    auto mat = new vke::PhysicallyBasedMaterial();
     mat->set_albedo({0.43f, 0.28f, 0.23f, 1.0});
     mat->set_metalness(0.0f);
     mat->set_roughness(0.9f);
 
-    auto mat2 = new vke::PhysicalBasedMaterial();
+    auto mat2 = new vke::PhysicallyBasedMaterial();
     mat2->set_albedo({0.0, 1.0, 0.0, 1.0});
     mat2->set_metalness(0.8f);
     mat2->set_roughness(0.3f);
 
-    auto mat3 = new vke::PhysicalBasedMaterial();
+    auto mat3 = new vke::PhysicallyBasedMaterial();
     mat3->set_albedo({0.0, 0.0, 0.0, 1.0});
 
     auto lightMat = new vke::UnlitMaterial();
@@ -138,12 +138,13 @@ void VulkanRenderer::setup_gui()
     tutorialPanel->add_child(new vke::Separator("CONTROLS"));
     tutorialPanel->add_child(new vke::Separator());
     tutorialPanel->add_child(new vke::TextLine("WASD: move camera.", vke::TextWidgetType::BULLET));
+    tutorialPanel->add_child(new vke::TextLine("QE: move up/down camera.", vke::TextWidgetType::BULLET));
     tutorialPanel->add_child(new vke::TextLine("Mouse + Left: rotate camera.", vke::TextWidgetType::BULLET));
     tutorialPanel->add_child(new vke::TextLine("F11: toggle fullscreen/windowed mode.", vke::TextWidgetType::BULLET));
     tutorialPanel->add_child(new vke::TextLine("Esc: exit application.", vke::TextWidgetType::BULLET));
     tutorialPanel->add_child(new vke::Space());
     tutorialPanel->add_child(new vke::Separator());
-    tutorialPanel->add_child(new vke::TextLine(" Enjoy changing the settings parameters!"));
+    tutorialPanel->add_child(new vke::TextLine("Enjoy changing the parameters!"));
 
     m_interface.overlay->add_panel(tutorialPanel);
     m_interface.tutorial = tutorialPanel;
@@ -154,7 +155,7 @@ void VulkanRenderer::setup_gui()
     explorerPanel->add_child(new vke::Space());
     explorerPanel->add_child(new vke::Separator("GLOBAL SETTINGS"));
     explorerPanel->add_child(new vke::Separator());
-    explorerPanel->add_child(new vke::TextLine(" Application average"));
+    explorerPanel->add_child(new vke::TextLine(" Application average (No cap)"));
     explorerPanel->add_child(new vke::Space());
     explorerPanel->add_child(new vke::Profiler());
     explorerPanel->add_child(new vke::Space());

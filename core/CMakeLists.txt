@@ -76,6 +76,14 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     source_group("Source Files\\Materials" FILES ${materials_cpp})
     source_group("Source Files\\" FILES ${core_cpp})
     source_group("Source Files\\Backend" FILES ${priv_cpp})
+
+    file(GLOB deps_
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader/*h
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_image/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/*.cpp
+    )
+    source_group("Third Party" FILES ${deps_})
 endif()
 
 # Set configuration

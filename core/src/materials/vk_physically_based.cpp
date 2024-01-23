@@ -1,6 +1,6 @@
 #include "engine/materials/vk_physically_based.h"
 
-vke::MaterialUniforms vke::PhysicalBasedMaterial::get_uniforms() const
+vke::MaterialUniforms vke::PhysicallyBasedMaterial::get_uniforms() const
 {
     // Alignment in shader
     //-----------------

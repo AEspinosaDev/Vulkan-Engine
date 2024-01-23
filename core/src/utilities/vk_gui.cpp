@@ -439,7 +439,7 @@ namespace vke
                 ImGui::Separator();
                 if (model->get_material(i)->get_shaderpass_id() == "physical")
                 {
-                    PhysicalBasedMaterial *mat = dynamic_cast<PhysicalBasedMaterial *>(model->get_material(i));
+                    PhysicallyBasedMaterial *mat = dynamic_cast<PhysicallyBasedMaterial *>(model->get_material(i));
                     glm::vec3 albedo = mat->get_albedo();
                     if (ImGui::ColorEdit3("Albedo", (float *)&albedo))
                     {
