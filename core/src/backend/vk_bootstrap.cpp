@@ -17,7 +17,7 @@ namespace vke
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "VK Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.apiVersion = VK_API_VERSION_1_3; // To enable the most extensions
 
 		VkInstanceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -121,7 +121,7 @@ namespace vke
 			throw std::runtime_error("failed to find a suitable GPU!");
 		}
 	}
-	void vkboot::VulkanBooter::create_logical_device()
+	void vkboot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features)
 	{
 		vkboot::QueueFamilyIndices indices = vkboot::find_queue_families(*m_gpu, *m_surface);
 
@@ -139,28 +139,36 @@ namespace vke
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
+		VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
-		vkGetPhysicalDeviceFeatures(*m_gpu, &deviceFeatures);
-		// // Enable features
-		// deviceFeatures.samplerAnisotropy = true;
-		// deviceFeatures.geometryShader = true;
+		if (vkutils::is_device_extension_supported(*m_gpu, "VK_EXT_extended_dynamic_state"))
+		{
+			m_deviceExtensions.push_back("VK_EXT_extended_dynamic_state");
+
+			// Request extended features
+			physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+
+			// Add extension-specific structures here
+			VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
+			extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+			extendedDynamicStateFeatures.pNext = physicalDeviceFeatures2.pNext; // Chain with existing features
+
+			physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
+
+			vkGetPhysicalDeviceFeatures2(*m_gpu, &physicalDeviceFeatures2);
+		}
+		physicalDeviceFeatures2.features = features;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
+		createInfo.pNext = &physicalDeviceFeatures2;
 
-		createInfo.pEnabledFeatures = &deviceFeatures;
+		// createInfo.pEnabledFeatures = &deviceFeatures;
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
-
-		// VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
-		// shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
-		// shader_draw_parameters_features.pNext = nullptr;
-		// shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
-		// createInfo.pNext = &shader_draw_parameters_features;
 
 		if (m_validation)
 		{
@@ -304,10 +312,14 @@ namespace vke
 		setup_debug_messenger();
 	}
 
-	void vkboot::VulkanBooter::setup_devices()
+	void vkboot::VulkanBooter::setup_devices( )
 	{
+
 		pick_graphics_card_device();
-		create_logical_device();
+
+		VkPhysicalDeviceFeatures deviceFeatures{};
+		vkGetPhysicalDeviceFeatures(*m_gpu, &deviceFeatures);
+		create_logical_device(deviceFeatures);
 	}
 
 	void vkboot::VulkanBooter::setup_memory()

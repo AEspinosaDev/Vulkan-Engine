@@ -38,6 +38,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 lightColor;
     float lightIntensity;
     vec4 lightData;
+    vec4 lightData2;
     mat4 lightViewProj;
 
 } scene;
@@ -100,6 +101,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 lightColor;
     float lightIntensity;
     vec4 lightData;
+    vec4 lightData2;
     mat4 lightViewProj;
 } scene;
 

@@ -53,11 +53,51 @@ namespace vke
 			}
 		};
 
-		VkPhysicalDeviceProperties get_gpu_properties(VkPhysicalDevice& gpu);
+		VkPhysicalDeviceProperties get_gpu_properties(VkPhysicalDevice &gpu);
 
-		size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice& gpu);
+		VkPhysicalDeviceFeatures get_gpu_features(VkPhysicalDevice &gpu);
+		inline bool is_instance_extension_supported(const char *extensionName)
+		{
+			uint32_t extensionCount;
+			vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-		uint32_t find_memory_type(VkPhysicalDevice& gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+			std::vector<VkExtensionProperties> extensions(extensionCount);
+			vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+			for (const auto &extension : extensions)
+			{
+				if (strcmp(extension.extensionName, extensionName) == 0)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		// Check if device extension is supported
+		inline bool is_device_extension_supported(VkPhysicalDevice &physicalDevice, const char *extensionName)
+		{
+			uint32_t extensionCount;
+			vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+			std::vector<VkExtensionProperties> extensions(extensionCount);
+			vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
+
+			for (const auto &extension : extensions)
+			{
+				if (strcmp(extension.extensionName, extensionName) == 0)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu);
+
+		uint32_t find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 		bool check_validation_layer_suport(std::vector<const char *> validationLayers);
 

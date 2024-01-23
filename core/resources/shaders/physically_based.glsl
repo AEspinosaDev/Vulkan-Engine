@@ -40,7 +40,13 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 lightColor;
     float lightIntensity;
     vec4 lightData;
+
     mat4 lightViewProj;
+
+    float shadowBias;
+    bool apiBiasEnabled;
+    bool angleDependantBias;
+    float pcfKernel;
 
 } scene;
 layout(set = 1, binding = 0) uniform ObjectUniforms {
@@ -134,7 +140,13 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 lightColor;
     float lightIntensity;
     vec4 lightData;
+
     mat4 lightViewProj;
+
+    float shadowBias;
+    bool apiBiasEnabled;
+    bool angleDependantBias;
+    float pcfKernel;
 } scene;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -227,7 +239,7 @@ float computeShadow() {
         return 0.0;
 
     float bias = 0.1;
-    return filterPCF(7, projCoords, bias);
+    return filterPCF(int(scene.pcfKernel), projCoords, scene.apiBiasEnabled ? 0.0 : scene.shadowBias);
 
 }
 
@@ -332,7 +344,7 @@ void main() {
     }
 
     vec3 color = computeLighting();
-    if(v_receiveShadows == 1  && scene.lightData.w == 1)
+    if(v_receiveShadows == 1 && scene.lightData.w == 1)
         color *= (1.0 - computeShadow());
 
     //Ambient component

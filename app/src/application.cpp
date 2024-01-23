@@ -130,7 +130,7 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new vke::GUIOverlay((float)m_window->get_extent()->width, (float)m_window->get_extent()->height);
+    m_interface.overlay = new vke::GUIOverlay((float)m_window->get_extent()->width, (float)m_window->get_extent()->height,vke::GuiColorProfileType::DARK);
 
     vke::Panel *tutorialPanel = new vke::Panel("TUTORIAL", 0,0.8f, 0.2f, 0.2f, vke::PanelWidgetFlags::NoMove, false, true);
 
@@ -163,7 +163,7 @@ void VulkanRenderer::setup_gui()
     m_interface.overlay->add_panel(explorerPanel);
     m_interface.explorer = explorerPanel;
 
-    vke::Panel *propertiesPanel = new vke::Panel("PROPERTIES", 0.8f, 0, 0.2f, 0.8f, vke::PanelWidgetFlags::NoMove, true);
+    vke::Panel *propertiesPanel = new vke::Panel("PROPERTIES", 0.75f, 0, 0.25f, 0.8f, vke::PanelWidgetFlags::NoMove, true);
     m_interface.object = new vke::ObjectExplorerWidget();
     propertiesPanel->add_child(m_interface.object);
 

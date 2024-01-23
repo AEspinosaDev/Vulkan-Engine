@@ -134,7 +134,9 @@ namespace vke
 
 		VK_CHECK(glfwCreateWindowSurface(m_instance, m_window->get_window_obj(), nullptr, m_window->get_surface()));
 
-		booter.setup_devices(); // TO DO: Add to this function an entry parameter specifying the extensions to use
+		booter.pick_graphics_card_device();
+
+		booter.create_logical_device(vkutils::get_gpu_features(m_gpu));
 
 		booter.setup_memory();
 
@@ -403,6 +405,10 @@ namespace vke
 
 		set_viewport(commandBuffer, *m_window->get_extent());
 
+		vkCmdSetDepthTestEnable(commandBuffer, m_settings.depthTest);
+
+		vkCmdSetDepthWriteEnable(commandBuffer, m_settings.depthWrite);
+
 		if (scene->get_active_camera() && scene->get_active_camera()->is_active())
 		{
 			int mesh_idx = 0;
@@ -437,6 +443,12 @@ namespace vke
 
 							if (mat->m_isDirty)
 								setup_material(mat);
+
+							if (m_settings.depthTest)
+								vkCmdSetDepthTestEnable(commandBuffer, mat->get_parameters().depthTest);
+							if (m_settings.depthWrite)
+								vkCmdSetDepthWriteEnable(commandBuffer, mat->get_parameters().depthWrite);
+							vkCmdSetCullMode(commandBuffer, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
 
 							MaterialUniforms materialData = mat->get_uniforms();
 							m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
@@ -485,8 +497,9 @@ namespace vke
 
 		set_viewport(commandBuffer, shadowExtent);
 
-		// Required to avoid shadow mapping artifacts
-		float depthBiasConstant = 1.25f;
+		// float depthBiasConstant = 1.25f;
+		vkCmdSetDepthBiasEnable(commandBuffer, scene->get_light()->get_use_vulkan_bias());
+		float depthBiasConstant = scene->get_light()->get_shadow_bias();
 		float depthBiasSlope = 1.75f;
 		vkCmdSetDepthBias(
 			commandBuffer,
@@ -559,6 +572,10 @@ namespace vke
 
 		builder.multisampling = vkinit::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
 
+		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
+
 		// Setup shaderpasses
 		std::string shaderDir(VK_SHADER_DIR);
 		m_shaderPasses["unlit"] = new ShaderPass(shaderDir + "unlit.glsl");
@@ -622,10 +639,15 @@ namespace vke
 		builder.viewport.width = (float)shadowExtent.width;
 		builder.viewport.height = (float)shadowExtent.height;
 		builder.scissor.extent = shadowExtent;
-		// builder.rasterizer.depthBiasEnable = VK_TRUE;
+		builder.rasterizer.depthBiasEnable = VK_TRUE;
+
+		builder.dynamicStates.pop_back();
+		builder.dynamicStates.pop_back();
+		builder.dynamicStates.pop_back();
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
+		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
 		builder.colorBlending.attachmentCount = 0;
-		// builder.dynamicState = VK_TRUE;
+		//  builder.dynamicState = VK_TRUE;
 
 		builder.multisampling = vkinit::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 

@@ -43,6 +43,8 @@ namespace vke
 			}
 			void boot_vulkan();
 			void setup_devices();
+			void pick_graphics_card_device();
+			void create_logical_device(VkPhysicalDeviceFeatures features);
 			void setup_memory();
 
 		private:
@@ -58,14 +60,12 @@ namespace vke
 
 			const std::vector<const char *> m_validationLayers = {
 				"VK_LAYER_KHRONOS_validation"};
-			const std::vector<const char *> m_deviceExtensions = {
+			 std::vector<const char *> m_deviceExtensions = {
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 			void create_instance();
 			std::vector<const char *> get_required_extensions();
 			void setup_debug_messenger();
-			void pick_graphics_card_device();
-			void create_logical_device();
 			int rate_device_suitability(VkPhysicalDevice device);
 			bool check_device_extension_support(VkPhysicalDevice device);
 		};

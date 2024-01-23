@@ -31,13 +31,22 @@ namespace vke
 
 		return true;
 	}
-	VkPhysicalDeviceProperties vkutils::get_gpu_properties(VkPhysicalDevice& gpu)
+
+	VkPhysicalDeviceFeatures vkutils::get_gpu_features(VkPhysicalDevice &gpu)
+	{
+
+		VkPhysicalDeviceFeatures deviceFeatures{};
+		vkGetPhysicalDeviceFeatures(gpu, &deviceFeatures);
+		return deviceFeatures;
+	}
+
+	VkPhysicalDeviceProperties vkutils::get_gpu_properties(VkPhysicalDevice &gpu)
 	{
 		VkPhysicalDeviceProperties deviceFeatures;
 		vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
 		return deviceFeatures;
 	}
-	size_t vkutils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice& gpu)
+	size_t vkutils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu)
 	{
 		VkPhysicalDeviceProperties deviceFeatures;
 		vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
@@ -50,7 +59,7 @@ namespace vke
 		}
 		return alignedSize;
 	}
-	uint32_t vkutils::find_memory_type(VkPhysicalDevice& gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+	uint32_t vkutils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
 		vkGetPhysicalDeviceMemoryProperties(gpu, &memProperties);

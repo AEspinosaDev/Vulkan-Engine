@@ -9,14 +9,16 @@ namespace vke
 {
     enum Culling
     {
-        _FRONT,
-        _BACK
+        _FRONT = VK_CULL_MODE_FRONT_BIT,
+        _BACK = VK_CULL_MODE_BACK_BIT
     };
     struct MaterialSettings
     {
         bool blending{true};
         bool faceCulling{false};
         Culling culling{_BACK};
+        bool depthTest{true};
+        bool depthWrite{true};
     };
 
     class Material
@@ -49,9 +51,15 @@ namespace vke
 
         ~Material() {}
 
+        virtual std::string get_shaderpass_id() const { return m_shaderPassID; }
         virtual inline MaterialSettings get_parameters() const { return m_settings; }
         virtual void set_parameters(MaterialSettings p) { m_settings = p; }
+
+        virtual inline void set_enable_culling(bool op) { m_settings.faceCulling = op; }
+        virtual inline void set_culling_type(Culling t) { m_settings.culling = t; }
+        virtual inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
+		virtual inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
     };
-    
+
 }
 #endif

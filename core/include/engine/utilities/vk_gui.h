@@ -3,6 +3,7 @@
 
 #include "../private/vk_core.h"
 #include "../scene_objects/vk_scene.h"
+#include "../materials/vk_physically_based.h"
 
 // WIP..
 // MUCH TO DO HERE, JUST READY FOR A SIMPLE DEMO
@@ -113,7 +114,7 @@ namespace vke
 
     class ColorPicker : public Widget
     {
-        // TO DO
+       
     };
 
     class Separator : public Widget
@@ -217,12 +218,14 @@ namespace vke
 
     class GUIOverlay
     {
+    private:
         ImVec2 m_extent;
 
-    private:
         std::vector<Panel *> m_panels;
 
         VkDescriptorPool m_pool{};
+
+        GuiColorProfileType m_colorProfile;
 
         bool m_resized{false};
 
@@ -237,7 +240,7 @@ namespace vke
         friend class Renderer;
 
     public:
-        GUIOverlay(float extentX, float extentY) : m_extent({extentX, extentY}) {}
+        GUIOverlay(float extentX, float extentY, GuiColorProfileType color = GuiColorProfileType::DARK) : m_extent({extentX, extentY}),m_colorProfile(color) {}
         ~GUIOverlay()
         {
             for (auto p : m_panels)

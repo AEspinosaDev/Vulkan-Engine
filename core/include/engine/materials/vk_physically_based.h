@@ -11,6 +11,7 @@ namespace vke
     */
     enum MaskType
     {
+        NO_MASK = -1, 
         UNITY_HDRP = 0,
         UNREAL_ENGINE = 1,
         UNITY_URP = 2
@@ -44,13 +45,13 @@ namespace vke
         bool m_hasAOTexture{false};
 
         bool m_hasMaskTexture{false};
-        int m_maskType{0};
+        int m_maskType{-1};
 
         enum Textures
         {
             ALBEDO = 0,
             NORMAL = 1,
-            MASK_ROUGHNESS = 2, 
+            MASK_ROUGHNESS = 2,
             METALNESS = 3,
             AO = 4,
         };
@@ -208,6 +209,7 @@ namespace vke
             m_textures[AO] = t;
             m_isDirty = true;
         }
+        inline MaskType get_mask_type() const { return (MaskType)m_maskType; }
     };
 }
 #endif

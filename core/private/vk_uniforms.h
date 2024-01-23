@@ -16,8 +16,9 @@ namespace vke
     {
         glm::vec4 position = {0.0f, 0.0f, 0.0f, 0.0f}; // w for type
         glm::vec4 color = {0.0f, 0.0f, 0.0f, 0.0f};
-        glm::vec4 dataSlot = {0.0f, 0.0f, 0.0f, 0.0f};
+        glm::vec4 dataSlot1 = {0.0f, 0.0f, 0.0f, 0.0f};
         glm::mat4 viewProj;
+        glm::vec4 dataSlot2 = {0.0f, 0.0f, 0.0f, 0.0f};
     };
 
     struct SceneUniforms

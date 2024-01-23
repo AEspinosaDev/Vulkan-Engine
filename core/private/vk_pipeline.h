@@ -97,7 +97,8 @@ namespace vke
 		// Dynamic States
 		std::vector<VkDynamicState> dynamicStates = {
 			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR};
+			VK_DYNAMIC_STATE_SCISSOR,
+			};
 
 		VkPipelineLayout pipelineLayout;
 

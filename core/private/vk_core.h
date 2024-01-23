@@ -169,6 +169,14 @@ namespace vke
 		AREA = 3
 	} LightType;
 
+	typedef enum GuiColorProfileType
+	{
+		DARK=0,
+		BRIGHT=1,
+		CLASSIC=2,
+		CUSTOM=3
+	} GuiColorProfileType;
+
 	// Ahead declaration of some key classes
 	class Renderer;
 }

@@ -37,7 +37,19 @@ namespace vke
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         // ImGui::SetCurrentContext()
-        ImGui::StyleColorsDark();
+
+        switch (m_colorProfile)
+        {
+        case BRIGHT:
+            ImGui::StyleColorsLight();
+            break;
+        case DARK:
+            ImGui::StyleColorsDark();
+            break;
+        case CLASSIC:
+            ImGui::StyleColorsClassic();
+            break;
+        }
 
         // this initializes imgui for SDL
         ImGui_ImplGlfw_InitForVulkan(window, true);
@@ -303,7 +315,7 @@ namespace vke
             ImGui::BeginTable("Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
 
             ImGui::TableSetupColumn("Mesh", ImGuiTableColumnFlags_NoHide);
-            ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, m_parent->get_extent().x * 0.5f);
+            ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, m_parent->get_pixel_extent().x * 0.5f);
             // ImGui::TableSetupColumn("");
 
             // ImGui::table
@@ -361,206 +373,203 @@ namespace vke
             ImGui::EndTable();
 
             ImGui::SeparatorText("Material");
-            ImGui::BeginTable("Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+            ImGui::BeginTable("Mesh Details", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
             ImGui::TableSetupColumn("Material", ImGuiTableColumnFlags_NoHide);
 
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Total materials");
-            ImGui::TableNextColumn();
-            ImGui::Text(std::to_string(model->get_num_materials()).c_str());
+            for (size_t i = 0; i < model->get_num_materials(); i++)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                std::string str = "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_id() + " material";
+                ImGui::Text(str.c_str());
+                ImGui::Separator();
+
+                bool test = model->get_material(i)->get_parameters().depthTest;
+                if (ImGui::Checkbox("Depth Test", &test))
+                {
+                    model->get_material(i)->enable_depth_test(test);
+                }
+                bool write = model->get_material(i)->get_parameters().depthWrite;
+                  if (ImGui::Checkbox("Depth Write", &write))
+                {
+                    model->get_material(i)->enable_depth_writes(write);
+                }
+
+                bool culling = model->get_material(i)->get_parameters().faceCulling;
+                if (ImGui::Checkbox("Enable face culling", &culling))
+                {
+                    model->get_material(i)->set_enable_culling(culling);
+                }
+                if (culling)
+                {
+                    const char *faceVisibility[] = {"FRONT", "BACK"};
+                    static int currentFaceVisibility = model->get_material(i)->get_parameters().culling;
+                    if (ImGui::Combo("Face", &currentFaceVisibility, faceVisibility, IM_ARRAYSIZE(faceVisibility)))
+                    {
+                        MaterialSettings parameters = model->get_material(i)->get_parameters();
+                        switch (currentFaceVisibility)
+                        {
+                        case 0:
+                            model->get_material(i)->set_culling_type(_FRONT);
+                            break;
+                        case 1:
+                            model->get_material(i)->set_culling_type(_BACK);
+                            break;
+                        }
+                    };
+                }
+                ImGui::Text("BLENDING AND OPACITY UNSUPORTED FOR NOW");
+                const char *blending[] = {"NORMAL", "ADDITIVE", "CUSTOM"};
+                static int currentBlending = model->get_material(i)->get_parameters().blending;
+                if (ImGui::Combo("Blending function", &currentBlending, blending, IM_ARRAYSIZE(blending)))
+                {
+                    switch (currentBlending)
+                    {
+                    case 0:
+                        // model->getMaterialReference(i)->setBlending(BlendingType::NORMAL);
+                        break;
+                    case 1:
+                        // model->getMaterialReference(i)->setBlending(BlendingType::ADDITIVE);
+                        break;
+                    case 2:
+                        // model->getMaterialReference(i)->setBlending(BlendingType::CUSTOM);
+                        break;
+                    }
+                };
+                ImGui::Separator();
+                if (model->get_material(i)->get_shaderpass_id() == "physical")
+                {
+                    PhysicalBasedMaterial *mat = dynamic_cast<PhysicalBasedMaterial *>(model->get_material(i));
+                    glm::vec3 albedo = mat->get_albedo();
+                    if (ImGui::ColorEdit3("Albedo", (float *)&albedo))
+                    {
+                        mat->set_albedo(glm::vec4{albedo, 1.0f});
+                    };
+                    if (mat->get_albedo_texture())
+                    {
+                        float albedoWeight = mat->get_albedo_weight();
+                        if (ImGui::DragFloat("Albedo Text Weight", &albedoWeight, 0.05f, 0.0f, 1.0f))
+                        {
+                            mat->set_albedo_weight(albedoWeight);
+                        }
+                    }
+                    float metallic = mat->get_metalness();
+                    float roughness = mat->get_roughness();
+                    float ao = mat->get_occlusion();
+                    if (mat->get_mask_type() == NO_MASK)
+                    {
+
+                        if (ImGui::DragFloat("Metalness", &metallic, 0.05f, 0.0f, 1.0f))
+                        {
+                            mat->set_metalness(metallic);
+                        }
+                        if (mat->get_metallic_texture())
+                        {
+                            float weight = mat->get_metalness_weight();
+                            if (ImGui::DragFloat("Metal. Text Weight", &weight, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_metalness_weight(weight);
+                            }
+                        }
+                        if (ImGui::DragFloat("Roughness", &roughness, 0.05f, 0.0f, 1.0f))
+                        {
+                            mat->set_roughness(roughness);
+                        }
+                        if (mat->get_roughness_texture())
+                        {
+                            float weight = mat->get_roughness_weight();
+                            if (ImGui::DragFloat("Rough. Text Weight", &weight, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_roughness_weight(weight);
+                            }
+                        }
+                        if (ImGui::DragFloat("Occlusion", &ao, 0.05f, 0.0f, 1.0f))
+                        {
+                            mat->set_occlusion(ao);
+                        }
+                        if (mat->get_occlusion_texture())
+                        {
+                            float weight = mat->get_occlusion_weight();
+                            if (ImGui::DragFloat("AO Text Weight", &weight, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_occlusion_weight(weight);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        switch (mat->get_mask_type())
+                        {
+                        case UNREAL_ENGINE:
+                            break;
+                            ImGui::Text("Unreal Mask");
+                        case UNITY_HDRP:
+                            ImGui::Text("Unity HDRP Mask");
+                            break;
+                        case UNITY_URP:
+                            ImGui::Text("Unity URP Mask");
+                            break;
+                        }
+                        if (mat->get_mask_texture())
+                        {
+                            if (ImGui::DragFloat("Metalness", &metallic, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_metalness(metallic);
+                            }
+                            float mweight = mat->get_metalness_weight();
+                            if (ImGui::DragFloat("Metal. Text Weight", &mweight, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_metalness_weight(mweight);
+                            }
+                            if (ImGui::DragFloat("Roughness", &roughness, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_roughness(roughness);
+                            }
+                            float rweight = mat->get_roughness_weight();
+                            if (ImGui::DragFloat("Rough. Text Weight", &rweight, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_roughness_weight(rweight);
+                            }
+                            if (ImGui::DragFloat("Occlusion", &ao, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_occlusion(ao);
+                            }
+                            float oweight = mat->get_occlusion_weight();
+                            if (ImGui::DragFloat("AO Text Weight", &oweight, 0.05f, 0.0f, 1.0f))
+                            {
+                                mat->set_occlusion_weight(oweight);
+                            }
+                        }
+                    }
+
+                    ImGui::Separator();
+                    float tile_u = mat->get_tile().x;
+                    float tile_v = mat->get_tile().y;
+                    if (ImGui::DragFloat("Tile U", &tile_u, 0.5f, -100.0f, 100.0f))
+                    {
+                        mat->set_tile({tile_u, mat->get_tile().y});
+                    }
+                    if (ImGui::DragFloat("Tile V", &tile_v, 0.5f, -100.0f, 100.0f))
+                    {
+                        mat->set_tile({mat->get_tile().x, tile_v});
+                    }
+
+                    ImGui::Separator();
+                }
+
+                if (model->get_material(i)->get_shaderpass_id() == "phong")
+                {
+                    // TO DO...
+                }
+                if (model->get_material(i)->get_shaderpass_id() == "unlit")
+                {
+                    // TO DO...
+                }
+                ImGui::Separator();
+            }
             ImGui::EndTable();
-
-            //     for (size_t i = 0; i < model->getMesh()->getNumberOfMeshes(); i++)
-            //     {
-            //         ImGui::TableNextRow();
-            //         ImGui::TableNextColumn();
-            //         std::string str = "ID " + std::to_string(i) + " - " + model->getMaterialReference(i)->getShaderNameID();
-            //         ImGui::Text(str.c_str());
-            //         ImGui::Separator();
-            //         bool transparent = model->getMaterialReference(i)->getTransparency();
-            //         if (ImGui::Checkbox("Transparent", &transparent))
-            //         {
-            //             model->getMaterialReference(i)->setTransparency(transparent);
-            //         }
-            //         const char *faceVisibility[] = {"FRONT", "BACK", "BOTH"};
-            //         static int currentFaceVisibility = model->getMaterialReference(i)->getParameters().faceVisibility;
-            //         if (ImGui::Combo("Face visibility", &currentFaceVisibility, faceVisibility, IM_ARRAYSIZE(faceVisibility)))
-            //         {
-            //             switch (currentFaceVisibility)
-            //             {
-            //             case 0:
-            //                 model->getMaterialReference(i)->setFaceVisibility(FaceVisibility::FRONT);
-            //                 break;
-            //             case 1:
-            //                 model->getMaterialReference(i)->setFaceVisibility(FaceVisibility::BACK);
-            //                 break;
-            //             case 2:
-            //                 model->getMaterialReference(i)->setFaceVisibility(FaceVisibility::BOTH);
-            //                 break;
-            //             }
-            //         };
-            //         const char *blending[] = {"NORMAL", "ADDITIVE", "CUSTOM"};
-            //         static int currentBlending = model->getMaterialReference(i)->getParameters().blendingType;
-            //         if (ImGui::Combo("Blending function", &currentBlending, blending, IM_ARRAYSIZE(blending)))
-            //         {
-            //             switch (currentBlending)
-            //             {
-            //             case 0:
-            //                 model->getMaterialReference(i)->setBlending(BlendingType::NORMAL);
-            //                 break;
-            //             case 1:
-            //                 model->getMaterialReference(i)->setBlending(BlendingType::ADDITIVE);
-            //                 break;
-            //             case 2:
-            //                 model->getMaterialReference(i)->setBlending(BlendingType::CUSTOM);
-            //                 break;
-            //             }
-            //         };
-
-            //         if (model->getMaterialReference(i)->getShaderNameID() == "PhysicallyBasedShader")
-            //         {
-            //             // str += "Physical Material";
-            //             // ImGui::Text("Physical Material");
-            //             PhysicalMaterial *mat = dynamic_cast<PhysicalMaterial *>(model->getMaterialReference(i));
-            //             glm::vec3 albedo = mat->getAlbedoColor();
-            //             float metallic = mat->getMetalness();
-            //             float roughness = mat->getRoughness();
-            //             float ao = mat->getAO();
-            //             float op = mat->getOpacity();
-            //             bool receiveShadows = mat->getReceiveShadows();
-            //             if (!mat->getAlbedoText())
-            //             {
-            //                 if (ImGui::ColorEdit3("Albedo", (float *)&albedo))
-            //                 {
-            //                     mat->setAlbedoColor(albedo);
-            //                 };
-            //             }
-            //             else
-            //             {
-            //                 ImGui::Image(mat->getAlbedoText() ? (void *)mat->getAlbedoText()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                 ImGui::SameLine();
-            //                 ImGui::Text("Albedo");
-            //             }
-            //             if (!mat->getOpacityMask())
-            //             {
-            //                 if (ImGui::DragFloat("Opacity", &op, 0.005f, 0.0f, 1.0f))
-            //                 {
-            //                     mat->setOpacity(op);
-            //                 };
-            //             }
-            //             else
-            //             {
-            //                 ImGui::Image(mat->getOpacityMask() ? (void *)mat->getOpacityMask()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                 ImGui::SameLine();
-            //                 ImGui::Text("Opacity");
-            //             }
-            //             switch (mat->getMaskPreset())
-            //             {
-            //             case _NONE:
-            //                 if (!mat->getMetalnessText())
-            //                 {
-            //                     if (ImGui::DragFloat("Metalness", &metallic, 0.005f, 0.0f, 1.0f))
-            //                         mat->setMetalness(metallic);
-            //                 }
-            //                 else
-            //                 {
-            //                     ImGui::Image(mat->getMetalnessText() ? (void *)mat->getMetalnessText()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                     ImGui::SameLine();
-            //                     ImGui::Text("Metalness");
-            //                 }
-            //                 if (!mat->getRoughnessText())
-            //                 {
-            //                     if (ImGui::DragFloat("Roughness", &roughness, 0.005f, 0.0f, 1.0f))
-            //                         mat->setRoughness(roughness);
-            //                 }
-            //                 else
-            //                 {
-            //                     ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                     ImGui::SameLine();
-            //                     ImGui::Text("Roughness");
-            //                 }
-            //                 if (!mat->getAOText())
-            //                 {
-            //                     if (ImGui::DragFloat("Ambient Occ", &ao, 0.005f, 0.0f, 1.0f))
-            //                         mat->setAO(ao);
-            //                 }
-            //                 else
-            //                 {
-            //                     ImGui::Image(mat->getAOText() ? (void *)mat->getAOText()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                     ImGui::SameLine();
-            //                     ImGui::Text("Ambient Occ");
-            //                 }
-            //                 break;
-            //             case UNITY_HDRP:
-            //                 ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                 ImGui::SameLine();
-            //                 ImGui::Text("Unity HDRP Mask");
-            //                 break;
-            //             case UNITY_URP:
-            //                 break;
-            //             case UNREAL_ENGINE_4:
-            //                 ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .15f, size.x * .15f));
-            //                 ImGui::SameLine();
-            //                 ImGui::Text("Unreal 4 Mask");
-            //                 break;
-            //             default:
-            //                 break;
-            //             }
-
-            //             if (ImGui::Checkbox("Receive Shadows", &receiveShadows))
-            //             {
-            //                 mat->setReceiveShadows(receiveShadows);
-            //             };
-            //             if (ImGui::TreeNode("Texture info"))
-            //             {
-            //                 ImGui::Text("Albedo");
-            //                 ImGui::Image(mat->getAlbedoText() ? (void *)mat->getAlbedoText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                 ImGui::Text("Normal");
-            //                 ImGui::Image(mat->getNormalText() ? (void *)mat->getNormalText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                 switch (mat->getMaskPreset())
-            //                 {
-            //                 case _NONE:
-            //                     ImGui::Text("Roughness");
-            //                     ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                     ImGui::Text("Metalness");
-            //                     ImGui::Image(mat->getMetalnessText() ? (void *)mat->getMetalnessText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                     ImGui::Text("Ambient Occ");
-            //                     ImGui::Image(mat->getAOText() ? (void *)mat->getAOText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                     break;
-            //                 case UNITY_HDRP:
-            //                     ImGui::Text("Mask");
-            //                     ImGui::Text("R:Metallic G:Occlusion A:Roughness");
-            //                     ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                     break;
-            //                 case UNITY_URP:
-            //                     ImGui::Text("Roughness");
-            //                     ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                     break;
-            //                 case UNREAL_ENGINE_4:
-            //                     ImGui::Text("Mask");
-            //                     ImGui::Text("R:Occlusion G:Roughness B:Metallic");
-            //                     ImGui::Image(mat->getRoughnessText() ? (void *)mat->getRoughnessText()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-            //                     break;
-            //                 default:
-            //                     break;
-            //                 }
-            //                 ImGui::Text("Opacity");
-            //                 ImGui::Image(mat->getOpacityMask() ? (void *)mat->getOpacityMask()->getID() : nullptr, ImVec2(size.x * .5f, size.x * .5f));
-
-            //                 ImGui::TreePop();
-            //             }
-            //             ImGui::Separator();
-            //         }
-            //         if (model->getMaterialReference(i)->getShaderNameID() == "BasicPhongShader")
-            //         {
-            //         }
-            //         if (model->getMaterialReference(i)->getShaderNameID() == "UnlitBasicShader")
-            //         {
-            //         }
-            //     }
-            //     ImGui::EndTable();
         }
+
         if (m_object->get_type() == ObjectType::LIGHT)
         {
             ImGui::SeparatorText("Light");
@@ -606,6 +615,19 @@ namespace vke
                 {
                     light->set_shadow_target(glm::vec3(position[0], position[1], position[2]));
                 };
+                ImGui::Text("Advanced Shadow Settings:");
+                float bias = light->get_shadow_bias();
+                if (ImGui::DragFloat("Shadow Bias", &bias, 0.0001f, 0.0f, 1.0f))
+                    light->set_shadow_bias(bias);
+
+                bool vulkanBias = light->get_use_vulkan_bias();
+                if (ImGui::Checkbox("Use Vulkan API Bias", &vulkanBias))
+                {
+                    light->set_use_vulkan_bias(vulkanBias);
+                };
+                int kernel = light->get_shadow_pcf_kernel();
+                if (ImGui::DragInt("PC Filter Kernel", &kernel, 2, 3, 15))
+                    light->set_shadow_pcf_kernel(kernel);
             }
         }
         if (m_object->get_type() == ObjectType::CAMERA)
