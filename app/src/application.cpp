@@ -131,7 +131,7 @@ void VulkanRenderer::setup()
     kabutoMat->set_metalness(0.8f);
     kabutoMat->set_roughness(0.4f);
     kabutoMesh->set_material(kabutoMat);
-    m_lightDummy->set_name("Kabuto");
+    kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
 
    
