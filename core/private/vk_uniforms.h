@@ -24,7 +24,7 @@ namespace vke
     struct SceneUniforms
     {
         glm::vec4 fogColor;     // w is for exponent
-        glm::vec4 fogParams;    // x for near, y for far, z for intensity, w unused.
+        glm::vec4 fogParams;    // x for near, y for far, z for intensity, w enable.
         glm::vec4 ambientColor; // w intensity
         LightUniforms lightUniforms;
     };

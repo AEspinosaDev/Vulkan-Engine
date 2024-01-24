@@ -34,7 +34,7 @@ namespace vke
         // TO DO: check for the termination of the file and call the specific loader
         // FOR NOW it only supports OBJ
         m_fileRoute = fileName;
-        return OBJLoader::load_mesh(this, overrideGeometry, fileName, false, true);
+        return loaders::load_OBJ(this, overrideGeometry, fileName, false, true);
     }
     Mesh *Mesh::clone() const
     {

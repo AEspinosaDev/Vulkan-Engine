@@ -43,7 +43,7 @@ namespace vke
 		bool gammaCorrection{true};
 	};
 	/**
-	 * Core class whose porpuse is to render data on a window.
+	 * It renders a given scene data to a given window. Fully parametrizable.
 	 */
 	class Renderer
 	{
@@ -155,8 +155,7 @@ namespace vke
 		inline void set_gui_overlay(GUIOverlay *gui)
 		{
 			m_gui = gui;
-			
-		}
+				}
 
 		inline GUIOverlay *get_gui_overlay()
 		{
@@ -222,28 +221,48 @@ namespace vke
 
 #pragma endregion
 #pragma region Drawing
-
+		/*
+		Record a viewport resize to the command buffer
+		*/
 		void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth = 0.0f, float maxDepth = 1.0f,
 						  float x = 0.0f, float y = 0.0f, int offsetX = 0, int offsetY = 0);
-
+		/*
+		Default forward pass
+		*/
 		void default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
-
+		/*
+		Pass tom save depth values from ligh view and use it for shadow mapping
+		*/
 		void shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
-
+		/*
+		Render single geometry
+		*/
 		void draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g);
 
 #pragma endregion
 #pragma region BufferManagement
-
+		/*
+		Geometry vertex and index buffers upload to GPU
+		*/
 		void upload_geometry_data(Geometry *const g);
-
+		/*
+		Global descriptor layouts uniforms buffer upload to GPU
+		*/
 		void upload_global_data(Scene *const scene);
-
+		/*
+		Initialize and setup textures and uniforms in given material
+		*/
 		void setup_material(Material *const mat);
-
+		/*
+		Texture setup and upload to GPU. Mipmap and sampler creation
+		*/
 		void upload_texture(Texture *const t);
 #pragma region gui
+		/*
+		Initialize gui layout in case ther's one enabled
+		*/
 		void init_gui();
+		
 #pragma endregion
 	};
 

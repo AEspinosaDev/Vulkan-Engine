@@ -30,7 +30,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float fogMaxDistance;
     float fogIntensity;
 
-    float unusedSlot1;
+    bool enableFog;
 
     vec3 ambientColor;
     float ambientIntensity;
@@ -130,7 +130,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float fogMaxDistance;
     float fogIntensity;
 
-    float unusedSlot1;
+    bool enableFog;
 
     vec3 ambientColor;
     float ambientIntensity;
@@ -238,7 +238,12 @@ float computeShadow() {
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
         return 0.0;
 
-    float bias = 0.1;
+    // // float bias = 0.1;
+    //  vec3 lightDir = scene.lightType == 0 ? normalize(v_lightPos - v_pos) : normalize(v_lightPos);
+    // float bias = max(0.5 * tan(acos(dot(v_normal, -lightDir))), 0.05);
+
+    // // Apply the bias
+    // bias=  max(bias, 0.5);
     return filterPCF(int(scene.pcfKernel), projCoords, scene.apiBiasEnabled ? 0.0 : scene.shadowBias);
 
 }
@@ -344,8 +349,10 @@ void main() {
     }
 
     vec3 color = computeLighting();
-    if(v_receiveShadows == 1 && scene.lightData.w == 1)
+    if(v_receiveShadows == 1 && scene.lightData.w == 1) {
         color *= (1.0 - computeShadow());
+
+    }
 
     //Ambient component
     vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * g_ao;
@@ -354,7 +361,7 @@ void main() {
 	//Tone Up
     color = color / (color + vec3(1.0));
 
-    if(v_affectedByFog == 1) {
+    if(v_affectedByFog == 1 && scene.enableFog) {
         float f = computeFog();
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }

@@ -128,7 +128,7 @@ namespace vke
 									&m_gpu,
 									&m_device,
 									&m_graphicsQueue, m_window->get_surface(),
-									&m_presentQueue, &m_memory, &m_enableValidationLayers);
+									&m_presentQueue, &m_memory, m_enableValidationLayers);
 
 		booter.boot_vulkan();
 
@@ -257,9 +257,12 @@ namespace vke
 		shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_shadowTexture->m_image = shadowImage;
 
-		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_LINEAR , VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 		sampler.maxAnisotropy = 1.0f;
 		sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		sampler.mipLodBias = 0.0f;
+		sampler.minLod = 0.0f;
+		sampler.maxLod = 1.0f;
 
 		VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
 
@@ -409,6 +412,8 @@ namespace vke
 
 		vkCmdSetDepthWriteEnable(commandBuffer, m_settings.depthWrite);
 
+		// vkCmdSetRasterizationSamplesEXT(commandBuffer,VK_SAMPLE_COUNT_8_BIT);
+
 		if (scene->get_active_camera() && scene->get_active_camera()->is_active())
 		{
 			int mesh_idx = 0;
@@ -500,7 +505,7 @@ namespace vke
 		// float depthBiasConstant = 1.25f;
 		vkCmdSetDepthBiasEnable(commandBuffer, scene->get_light()->get_use_vulkan_bias());
 		float depthBiasConstant = scene->get_light()->get_shadow_bias();
-		float depthBiasSlope = 1.75f;
+		float depthBiasSlope = 0.0f;
 		vkCmdSetDepthBias(
 			commandBuffer,
 			depthBiasConstant,
@@ -575,6 +580,7 @@ namespace vke
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
+		// builder.dynamicStates.push_back(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
 
 		// Setup shaderpasses
 		std::string shaderDir(VK_SHADER_DIR);
@@ -644,6 +650,7 @@ namespace vke
 		builder.dynamicStates.pop_back();
 		builder.dynamicStates.pop_back();
 		builder.dynamicStates.pop_back();
+		// builder.dynamicStates.pop_back();
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
 		builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
 		builder.colorBlending.attachmentCount = 0;
@@ -804,7 +811,7 @@ namespace vke
 										   m_globalUniformsBuffer.strideSize * m_currentFrame);
 
 		SceneUniforms sceneParams;
-		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), 1.0f};
+		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(),scene->is_fog_active()};
 		sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
 		sceneParams.ambientColor = glm::vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 

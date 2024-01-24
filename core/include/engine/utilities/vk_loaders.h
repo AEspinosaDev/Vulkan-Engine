@@ -8,9 +8,9 @@
 namespace vke
 {
     // Meshes
-    namespace OBJLoader
+    namespace loaders
     {
-        bool load_mesh(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
+        bool load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
         void compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices);
     };
     // TO DO

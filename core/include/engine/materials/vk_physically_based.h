@@ -32,7 +32,7 @@ namespace vke
         float m_roughness{0.5f};
         float m_roughnessWeight{1.0f}; // Weight between parameter and roughness texture
 
-        float m_occlusion{0.0f};
+        float m_occlusion{1.0f};
         float m_occlusionWeight{1.0f}; // Weight between parameter and occlusion texture
 
         // float m_emmissive{0.0f};

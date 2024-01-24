@@ -157,6 +157,33 @@ namespace vke
 
 			vkGetPhysicalDeviceFeatures2(*m_gpu, &physicalDeviceFeatures2);
 		}
+
+		// Check and add VK_EXT_extended_dynamic_state2 extension
+		if (vkutils::is_device_extension_supported(*m_gpu, "VK_EXT_extended_dynamic_state2"))
+		{
+			m_deviceExtensions.push_back("VK_EXT_extended_dynamic_state2");
+
+			// Add extension-specific structures if needed for VK_EXT_extended_dynamic_state2
+			VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2Features = {};
+			extendedDynamicState2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
+			extendedDynamicState2Features.pNext = physicalDeviceFeatures2.pNext;
+
+			physicalDeviceFeatures2.pNext = &extendedDynamicState2Features;
+		}
+
+		// Check and add VK_EXT_extended_dynamic_state3 extension
+		if (vkutils::is_device_extension_supported(*m_gpu, "VK_EXT_extended_dynamic_state3"))
+		{
+			m_deviceExtensions.push_back("VK_EXT_extended_dynamic_state3");
+
+			// Add extension-specific structures if needed for VK_EXT_extended_dynamic_state3
+			VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3Features = {};
+			extendedDynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+			extendedDynamicState3Features.pNext = physicalDeviceFeatures2.pNext;
+
+			physicalDeviceFeatures2.pNext = &extendedDynamicState3Features;
+		}
+
 		physicalDeviceFeatures2.features = features;
 
 		VkDeviceCreateInfo createInfo{};
@@ -312,7 +339,7 @@ namespace vke
 		setup_debug_messenger();
 	}
 
-	void vkboot::VulkanBooter::setup_devices( )
+	void vkboot::VulkanBooter::setup_devices()
 	{
 
 		pick_graphics_card_device();

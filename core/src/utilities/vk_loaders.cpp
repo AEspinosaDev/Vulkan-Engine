@@ -1,7 +1,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "engine/utilities/vk_loaders.h"
 
-bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials, bool calculateTangents)
+bool vke::loaders::load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials, bool calculateTangents)
 {
 
     // Preparing output
@@ -145,7 +145,7 @@ bool vke::OBJLoader::load_mesh(Mesh *const mesh, bool overrideGeometry, const st
     }
     return true;
 }
-void vke::OBJLoader::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
+void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
 {
     if (!indices.empty())
         for (size_t i = 0; i < indices.size(); i += 3)

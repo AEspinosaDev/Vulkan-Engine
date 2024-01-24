@@ -4,6 +4,7 @@
 #include <engine/vk_renderer.h>
 #include <engine/utilities/vk_controller.h>
 #include <engine/utilities/vk_gui.h>
+#include <engine/utilities/vk_renderer_widget.h>
 #include <engine/materials/vk_unlit.h>
 #include <engine/materials/vk_phong.h>
 #include <engine/materials/vk_physically_based.h>
@@ -35,9 +36,15 @@ class VulkanRenderer
     vke::Controller *m_controller;
 
     vke::Mesh *m_lightDummy;
+    bool animateLight{true};
 
-    float m_deltaTime{0.0f};
-    float m_lastTime{0.0f};
+    struct Time
+    {
+        float delta{0.0f};
+        float last{0.0f};
+        float framesPerSecond{0.0f};
+    };
+    Time m_time{};
 
 public:
     void
@@ -58,8 +65,6 @@ private:
 
     void keyboard_callback(int key, int scancode, int action, int mods)
     {
-      
-    
 
         if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
@@ -70,11 +75,10 @@ private:
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
-
-        // if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_F10) == GLFW_PRESS)
-        // {
-        //     m_renderer->enable_gui_overlay(m_renderer->get_settings().enableUI ? false : false);
-        // }
+        if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_L) == GLFW_PRESS)
+        {
+            animateLight = animateLight ? false : true;
+        }
     }
 
     void mouse_callback(double xpos, double ypos)
@@ -88,7 +92,7 @@ private:
     void window_resize_callback(int width, int height)
     {
         m_window->set_size(width, height);
-        m_interface.overlay->set_extent({width,height});
+        m_interface.overlay->set_extent({width, height});
     }
 
 #pragma endregion
