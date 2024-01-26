@@ -19,12 +19,12 @@ namespace vke
         struct Shadow
         {
             bool cast{true};
-            float nearPlane{0.5f};
-            float farPlane{100.0f};
+            float nearPlane{1.0f};
+            float farPlane{96.0f};
             float fov{45.0f};
             glm::vec3 target{0.0f, 0.0f, 0.0f};
 
-            float bias{0.1f};
+            float bias{0.2f};
             bool angleDependableBias{false};
             bool enableVulkanBias{false};
             int pcfKernel{7};

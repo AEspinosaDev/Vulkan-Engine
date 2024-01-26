@@ -257,12 +257,10 @@ namespace vke
 		shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_shadowTexture->m_image = shadowImage;
 
-		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_LINEAR , VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_LINEAR , VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 		sampler.maxAnisotropy = 1.0f;
 		sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		sampler.mipLodBias = 0.0f;
-		sampler.minLod = 0.0f;
-		sampler.maxLod = 1.0f;
+		
 
 		VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
 
