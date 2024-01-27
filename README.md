@@ -40,3 +40,5 @@ First, build the project using Cmake, no further configuration needed. The proje
 Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run. The CMake configuration is set for a 64-bit architecture, but it can be changed. CMake also takes care of automatically configuring the paths for resource files.
 
 The project compiles dependencies, the 3D library, and the demonstration application, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
+
+![vulkan](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/58e12bf5-a5d3-4d9f-8a27-33de309a5fff)
