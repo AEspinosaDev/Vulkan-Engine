@@ -1,5 +1,0 @@
-// config.h.in
-#pragma once
-
-#define TEXTURE_DIR "@TEXTURE_DIR@"
-#define MODEL_DIR "@MODEL_DIR@"

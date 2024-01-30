@@ -1,0 +1,6 @@
+// config.h.in
+#pragma once
+
+#define VK_TEXTURE_DIR "@VK_TEXTURE_DIR@"
+#define VK_SHADER_DIR "@VK_SHADER_DIR@"
+#define VK_MODEL_DIR "@VK_MODEL_DIR@"

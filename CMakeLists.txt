@@ -80,8 +80,8 @@ endif()
 # Configure vulkan path
 link_directories(${VULKAN_SDK_ROOT})
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/core)
-add_subdirectory(${CMAKE_SOURCE_DIR}/app)
+add_subdirectory(${CMAKE_SOURCE_DIR}/vulkan-engine)
+add_subdirectory(${CMAKE_SOURCE_DIR}/demo)
 
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
