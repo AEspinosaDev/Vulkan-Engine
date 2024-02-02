@@ -1,4 +1,5 @@
 #define TINYOBJLOADER_IMPLEMENTATION
+#define TINYPLY_IMPLEMENTATION
 #include "engine/utilities/vk_loaders.h"
 
 bool vke::loaders::load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials, bool calculateTangents)
@@ -173,4 +174,263 @@ void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, co
             vertices[i + 1].tangent += tangent;
             vertices[i + 2].tangent += tangent;
         }
+}
+bool vke::loaders::load_PLY(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool preload, bool verbose, bool calculateTangents)
+{
+
+    std::unique_ptr<std::istream> file_stream;
+    std::vector<uint8_t> byte_buffer;
+    try
+    {
+        // For most files < 1gb, pre-loading the entire file upfront and wrapping it into a
+        // stream is a net win for parsing speed, about 40% faster.
+        if (preload)
+        {
+            byte_buffer = vkutils::read_file_binary(fileName);
+            file_stream.reset(new vkutils::memory_stream((char *)byte_buffer.data(), byte_buffer.size()));
+        }
+        else
+        {
+            file_stream.reset(new std::ifstream(fileName, std::ios::binary));
+        }
+
+        if (!file_stream || file_stream->fail())
+            throw std::runtime_error("file_stream failed to open " + fileName);
+
+        file_stream->seekg(0, std::ios::end);
+        const float size_mb = file_stream->tellg() * float(1e-6);
+        file_stream->seekg(0, std::ios::beg);
+
+        tinyply::PlyFile file;
+        file.parse_header(*file_stream);
+
+        if (verbose)
+        {
+            std::cout << "\t[ply_header] Type: " << (file.is_binary_file() ? "binary" : "ascii") << std::endl;
+            for (const auto &c : file.get_comments())
+                std::cout << "\t[ply_header] Comment: " << c << std::endl;
+            for (const auto &c : file.get_info())
+                std::cout << "\t[ply_header] Info: " << c << std::endl;
+
+            for (const auto &e : file.get_elements())
+            {
+                std::cout << "\t[ply_header] element: " << e.name << " (" << e.size << ")" << std::endl;
+                for (const auto &p : e.properties)
+                {
+                    std::cout << "\t[ply_header] \tproperty: " << p.name << " (type=" << tinyply::PropertyTable[p.propertyType].str << ")";
+                    if (p.isList)
+                        std::cout << " (list_type=" << tinyply::PropertyTable[p.listType].str << ")";
+                    std::cout << std::endl;
+                }
+            }
+        }
+        // Because most people have their own mesh types, tinyply treats parsed data as structured/typed byte buffers.
+        std::shared_ptr<tinyply::PlyData> positions, normals, colors, texcoords, faces, tripstrip;
+
+        // // The header information can be used to programmatically extract properties on elements
+        // // known to exist in the header prior to reading the data. For brevity of this sample, properties
+        // // like vertex position are hard-coded:
+        try
+        {
+            positions = file.request_properties_from_element("vertex", {"x", "y", "z"});
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        try
+        {
+            normals = file.request_properties_from_element("vertex", {"nx", "ny", "nz"});
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        try
+        {
+            colors = file.request_properties_from_element("vertex", {"red", "green", "blue", "alpha"});
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        try
+        {
+            colors = file.request_properties_from_element("vertex", {"r", "g", "b", "a"});
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        try
+        {
+            texcoords = file.request_properties_from_element("vertex", {"u", "v"});
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        try
+        {
+            texcoords = file.request_properties_from_element("vertex", {"s", "t"});
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        // Providing a list size hint (the last argument) is a 2x performance improvement. If you have
+        // arbitrary ply files, it is best to leave this 0.
+        try
+        {
+            faces = file.request_properties_from_element("face", {"vertex_indices"}, 3);
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+
+        // Tristrips must always be read with a 0 list size hint (unless you know exactly how many elements
+        // are specifically in the file, which is unlikely);
+        try
+        {
+            tripstrip = file.request_properties_from_element("tristrips", {"vertex_indices"}, 0);
+        }
+        catch (const std::exception &e)
+        {
+            if (verbose)
+                std::cerr << "tinyply exception: " << e.what() << std::endl;
+        }
+        vkutils::ManualTimer readTimer;
+
+        readTimer.start();
+        file.read(*file_stream);
+        readTimer.stop();
+
+        if (verbose)
+        {
+
+            const float parsingTime = static_cast<float>(readTimer.get()) / 1000.f;
+            std::cout << "\tparsing " << size_mb << "mb in " << parsingTime << " seconds [" << (size_mb / parsingTime) << " MBps]" << std::endl;
+
+            if (positions)
+                std::cout << "\tRead " << positions->count << " total vertices " << std::endl;
+            if (normals)
+                std::cout << "\tRead " << normals->count << " total vertex normals " << std::endl;
+            if (colors)
+                std::cout << "\tRead " << colors->count << " total vertex colors " << std::endl;
+            if (texcoords)
+                std::cout << "\tRead " << texcoords->count << " total vertex texcoords " << std::endl;
+            if (faces)
+                std::cout << "\tRead " << faces->count << " total faces (triangles) " << std::endl;
+            if (tripstrip)
+                std::cout << "\tRead " << (tripstrip->buffer.size_bytes() / tinyply::PropertyTable[tripstrip->t].stride) << " total indices (tristrip) " << std::endl;
+        }
+
+        std::vector<Vertex> vertices;
+        std::vector<uint16_t> indices;
+
+        if (positions)
+        {
+            const float *posData = reinterpret_cast<const float *>(positions->buffer.get());
+            const float *normalData;
+            const float *colorData;
+            const float *uvData;
+            if (normals)
+                normalData = reinterpret_cast<const float *>(normals->buffer.get());
+            if (colors)
+                colorData = reinterpret_cast<const float *>(colors->buffer.get());
+            if (texcoords)
+                uvData = reinterpret_cast<const float *>(texcoords->buffer.get());
+
+            for (size_t i = 0; i < positions->count; i++)
+            {
+
+                glm::vec3 position = glm::vec3(posData[i * 3], posData[i * 3 + 1], posData[i * 3 + 2]);
+                glm::vec3 normal = normals ? glm::vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]) : glm::vec3(0.0f);
+                glm::vec3 color = colors ? glm::vec3(colorData[i * 3], colorData[i * 3 + 1], colorData[i * 3 + 2]) : glm::vec3(1.0f);
+                glm::vec2 uv = texcoords ? glm::vec2(uvData[i * 2], uvData[i * 2 + 1]) : glm::vec2(0.0f);
+
+                vertices.push_back({position, normal, {0.0f, 0.0f, 0.0f}, uv, color});
+            }
+        }
+        unsigned *facesData = reinterpret_cast<unsigned *>(faces->buffer.get());
+        for (size_t i = 0; i < faces->count; ++i)
+        {
+            unsigned int vertexIndex1 = static_cast<unsigned int>(facesData[i]);
+            unsigned int vertexIndex2 = static_cast<unsigned int>(facesData[i + 1]);
+            unsigned int vertexIndex3 = static_cast<unsigned int>(facesData[i + 2]);
+
+            indices.push_back(facesData[3 * i]);
+            indices.push_back(facesData[3 * i + 1]);
+            indices.push_back(facesData[3 * i + 2]);
+        }
+
+        if (calculateTangents && normals)
+        {
+            compute_tangents_gram_smidt(vertices, indices);
+        }
+
+        if (overrideGeometry)
+        {
+            Geometry *oldGeom = mesh->get_geometry();
+            if (oldGeom)
+            {
+                oldGeom->fill(vertices, indices);
+            }
+            return true;
+        }
+
+        Geometry *g = new Geometry();
+        g->fill(vertices, indices);
+        mesh->set_geometry(g);
+
+        return true;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
+    }
+
+    return false;
+}
+bool vke::loaders::load_3D_file(Mesh *const mesh, bool overrideGeometry, const std::string fileName)
+{
+    size_t dotPosition = fileName.find_last_of(".");
+
+    if (dotPosition != std::string::npos)
+    {
+
+        std::string fileExtension = fileName.substr(dotPosition + 1);
+
+        if (fileExtension == "obj")
+        {
+            return loaders::load_OBJ(mesh, overrideGeometry, fileName, false, true);
+        }
+        else if (fileExtension == "ply")
+        {
+            return loaders::load_PLY(mesh, overrideGeometry, fileName, true, false, true);
+        }
+        else
+        {
+            std::cerr << "Unsupported file format: " << fileExtension << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        std::cerr << "Invalid file name: " << fileName << std::endl;
+        return false;
+    }
 }

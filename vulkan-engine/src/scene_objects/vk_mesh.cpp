@@ -31,10 +31,8 @@ namespace vke
 
     bool Mesh::load_file(const std::string fileName, bool overrideGeometry)
     {
-        // TO DO: check for the termination of the file and call the specific loader
-        // FOR NOW it only supports OBJ
         m_fileRoute = fileName;
-        return loaders::load_OBJ(this, overrideGeometry, fileName, false, true);
+        return loaders::load_3D_file(this, overrideGeometry, fileName);
     }
     Mesh *Mesh::clone() const
     {

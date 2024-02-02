@@ -17,6 +17,7 @@ target_include_directories(VKEngine
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_image
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyply
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/private
         ${glm_SOURCE_DIR}
@@ -79,6 +80,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
     file(GLOB deps_
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader/*h
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyply/*.h
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_image/*.h
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/*.h
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/*.cpp
