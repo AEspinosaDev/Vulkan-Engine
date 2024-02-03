@@ -33,9 +33,20 @@ The prequisites for using this code are:
 
 - Windows 10, 11 (Although it should be easy enough to set it up for Linux).
 - Vulkan SDK 1.3.* installed.
-- Cmake installed.
+- CMake installed.
 
-First, build the project using Cmake, no further configuration needed. The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, as well as importing them from the internet if they are not available, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in Visual Studio Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio.
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/AEspinosaDev/Vulkan-Engine.git
+   cd Vulkan-Engine
+   ```
+2. Build with CMake:
+   ```bash
+   mkdir build
+   cd build
+   cmake ..
+   ```
+The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, as well as importing them from the internet if they are not available, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in Visual Studio Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio.
 
 Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run. The CMake configuration is set for a 64-bit architecture, but it can be changed. CMake also takes care of automatically configuring the paths for resource files.
 
