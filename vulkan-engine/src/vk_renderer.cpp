@@ -257,10 +257,9 @@ namespace vke
 		shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_shadowTexture->m_image = shadowImage;
 
-		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_LINEAR , VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+		VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 		sampler.maxAnisotropy = 1.0f;
 		sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		
 
 		VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
 
@@ -395,6 +394,8 @@ namespace vke
 		VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 		// CLEAR SETUP
+		// if (scene->is_fog_active())
+		// 	m_settings.clearColor = glm::mix( m_settings.clearColor,glm::vec4(scene->get_fog_color(), 1.0f), scene->get_fog_intensity());
 		VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
 		VkClearValue clearDepth;
 		clearDepth.depthStencil.depth = 1.f;
@@ -809,7 +810,7 @@ namespace vke
 										   m_globalUniformsBuffer.strideSize * m_currentFrame);
 
 		SceneUniforms sceneParams;
-		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(),scene->is_fog_active()};
+		sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_active()};
 		sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
 		sceneParams.ambientColor = glm::vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 

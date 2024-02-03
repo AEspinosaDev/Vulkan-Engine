@@ -75,7 +75,7 @@ namespace vke
         inline Light *get_light() { return m_light; }
 
         inline void set_ambient_color(glm::vec3 c) { m_ambientColor = c; }
-        inline glm::vec3 get_ambient_color() const { return m_ambientColor; }
+        inline glm::vec3 get_ambient_color() const { return  m_ambientColor; }
 
         inline void set_ambient_intensity(float i) { m_ambientIntensity = i; }
         inline float get_ambient_intensity() const { return m_ambientIntensity; }

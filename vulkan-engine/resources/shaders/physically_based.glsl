@@ -235,6 +235,8 @@ float computeShadow() {
 
     vec3 projCoords = pos_lightSpace.xyz / pos_lightSpace.w;
 
+    projCoords.xy  = projCoords.xy * 0.5 + 0.5;
+
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
         return 0.0;
 
