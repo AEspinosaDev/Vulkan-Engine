@@ -3,10 +3,9 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
-
-#include "../private/vk_core.h"
-#include "../private/vk_buffer.h"
-#include "../private/vk_utils.h"
+#include <engine/vk_common.h>
+#include <engine/backend/vk_buffer.h>
+#include <engine/backend/vk_utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

@@ -9,8 +9,8 @@ class Camera : public Object3D
 {
 
 private:
-    glm::mat4 m_view;
-    glm::mat4 m_proj;
+    Mat4 m_view;
+    Mat4 m_proj;
 
     float m_fov;
     float m_near;
@@ -22,7 +22,7 @@ private:
     static int m_cameraCount;
 
 public:
-    Camera(glm::vec3 p = glm::vec3(0.0f, 1.0f, 8.0f), glm::vec3 f = glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_cameraCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
+    Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_cameraCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
     {
         set_rotation({-90, 0, 0});
         Camera::m_cameraCount++;
@@ -39,8 +39,8 @@ public:
         m_proj = glm::perspective(glm::radians(m_fov), (float)width / (float)height, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
-    inline glm::mat4 get_projection() const { return m_proj; }
-    inline glm::mat4 get_view() { return get_model_matrix(); }
+    inline Mat4 get_projection() const { return m_proj; }
+    inline Mat4 get_view() { return get_model_matrix(); }
     inline float get_far() const { return m_far; }
     inline void set_far(float f)
     {
@@ -54,7 +54,7 @@ public:
         isDirty = true;
     }
 
-    inline glm::mat4 get_model_matrix()
+    inline Mat4 get_model_matrix()
     {
         if (isDirty)
         {

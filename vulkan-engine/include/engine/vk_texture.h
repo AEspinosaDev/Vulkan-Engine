@@ -2,8 +2,8 @@
 #define VK_TEXTURE
 
 #include <stb_image.h>
-#include "../private/vk_image.h"
-#include "../private/vk_descriptors.h"
+#include <engine/backend/vk_image.h>
+#include <engine/backend/vk_descriptors.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

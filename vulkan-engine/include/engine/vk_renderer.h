@@ -1,17 +1,18 @@
 #ifndef VK_RENDERER
 #define VK_RENDERER
 
-#include "../private/vk_core.h"
-#include "../private/vk_utils.h"
-#include "../private/vk_bootstrap.h"
-#include "../private/vk_initializers.h"
-#include "../private/vk_swapchain.h"
-#include "../private/vk_pipeline.h"
-#include "../private/vk_frame.h"
-#include "../private/vk_image.h"
-#include "../private/vk_uniforms.h"
-#include "../private/vk_descriptors.h"
-#include "../private/vk_renderpass.h"
+#include <engine/vk_common.h>
+
+#include <engine/backend/vk_utils.h>
+#include <engine/backend/vk_bootstrap.h>
+#include <engine/backend/vk_initializers.h>
+#include <engine/backend/vk_swapchain.h>
+#include <engine/backend/vk_pipeline.h>
+#include <engine/backend/vk_frame.h>
+#include <engine/backend/vk_image.h>
+#include <engine/backend/vk_uniforms.h>
+#include <engine/backend/vk_descriptors.h>
+#include <engine/backend/vk_renderpass.h>
 
 #include <engine/vk_config.h>
 #include <engine/vk_window.h>

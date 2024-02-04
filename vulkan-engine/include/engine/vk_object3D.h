@@ -5,7 +5,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "../private/vk_core.h"
+#include <engine/vk_common.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

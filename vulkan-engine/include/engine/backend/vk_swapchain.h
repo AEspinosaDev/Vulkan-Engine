@@ -1,7 +1,7 @@
 #ifndef VK_SWAPCHAIN
 #define VK_SWAPCHAIN
 
-#include "vk_core.h"
+#include <engine/vk_common.h>
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 #include "vk_image.h"

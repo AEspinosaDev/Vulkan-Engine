@@ -2,7 +2,7 @@
 #define VK_DESCRIPTORS
 
 #include <unordered_map>
-#include "vk_core.h"
+#include <engine/vk_common.h>
 #include "vk_initializers.h"
 #include "vk_buffer.h"
 

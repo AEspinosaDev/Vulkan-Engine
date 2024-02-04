@@ -1,7 +1,7 @@
 #ifndef VK_PHONG_MATERIAL
 #define VK_PHONG_MATERIAL
 
-#include "../private/vk_descriptors.h"
+#include <engine/backend/vk_descriptors.h>
 #include <engine/vk_material.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

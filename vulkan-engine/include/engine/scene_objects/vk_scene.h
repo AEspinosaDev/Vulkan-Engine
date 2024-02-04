@@ -19,12 +19,12 @@ private:
     // LIGHTING
     //  For now, just ONE light
     Light *m_light{nullptr};
-    glm::vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
+    Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
     float m_ambientIntensity{0.2f};
 
     // FOG
     bool m_fog{true};
-    glm::vec3 m_fogColor{0.2f, 0.2f, 0.2f};
+    Vec3 m_fogColor{0.2f, 0.2f, 0.2f};
     float m_fogIntensity{0.25f};
     float m_fogExponent{1.0f};
 
@@ -73,8 +73,8 @@ public:
     inline void set_light(Light *l) { m_light = l; }
     inline Light *get_light() { return m_light; }
 
-    inline void set_ambient_color(glm::vec3 c) { m_ambientColor = c; }
-    inline glm::vec3 get_ambient_color() const { return m_ambientColor; }
+    inline void set_ambient_color(Vec3 c) { m_ambientColor = c; }
+    inline Vec3 get_ambient_color() const { return m_ambientColor; }
 
     inline void set_ambient_intensity(float i) { m_ambientIntensity = i; }
     inline float get_ambient_intensity() const { return m_ambientIntensity; }
@@ -82,8 +82,8 @@ public:
     inline void set_fog_active(bool op) { m_fog = op; }
     inline bool is_fog_active() const { return m_fog; }
 
-    inline void set_fog_color(glm::vec3 c) { m_fogColor = c; }
-    inline glm::vec3 get_fog_color() const { return m_fogColor; }
+    inline void set_fog_color(Vec3 c) { m_fogColor = c; }
+    inline Vec3 get_fog_color() const { return m_fogColor; }
 
     inline void set_fog_intensity(float i) { m_fogIntensity = i; }
     inline float get_fog_intensity() const { return m_fogIntensity; }

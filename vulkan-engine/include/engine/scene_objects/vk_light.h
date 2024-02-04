@@ -1,8 +1,8 @@
 #ifndef VK_LIGHT
 #define VK_LIGHT
 
-#include "../private/vk_uniforms.h"
-#include "../private/vk_descriptors.h"
+#include <engine/backend/vk_uniforms.h>
+#include <engine/backend/vk_descriptors.h>
 #include <engine/vk_object3D.h>
 #include <engine/vk_texture.h>
 
@@ -11,7 +11,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 class Light : public Object3D
 {
 protected:
-    glm::vec3 m_color;
+    Vec3 m_color;
     float m_intensity;
 
     // Shadows
@@ -21,7 +21,7 @@ protected:
         float nearPlane{.5f};
         float farPlane{96.0f};
         float fov{45.0f};
-        glm::vec3 target{0.0f, 0.0f, 0.0f};
+        Vec3 target{0.0f, 0.0f, 0.0f};
 
         float bias{0.005f};
         bool angleDependableBias{false};
@@ -40,11 +40,11 @@ protected:
     virtual LightUniforms get_uniforms() const = 0;
 
 public:
-    Light(std::string name, LightType type, glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Object3D(name, LIGHT), m_color(color),
+    Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Object3D(name, LIGHT), m_color(color),
                                                                                                                      m_intensity(intensity), m_lighType(type) {}
 
-    virtual inline glm::vec3 get_color() const { return m_color; }
-    virtual inline void set_color(glm::vec3 c) { m_color = c; }
+    virtual inline Vec3 get_color() const { return m_color; }
+    virtual inline void set_color(Vec3 c) { m_color = c; }
 
     virtual inline float get_intensity() const { return m_intensity; }
     virtual inline void set_intensity(float i) { m_intensity = i; }
@@ -52,8 +52,8 @@ public:
     virtual inline bool get_cast_shadows() const { return m_shadow.cast; }
     virtual inline void set_cast_shadows(bool o) { m_shadow.cast = o; }
 
-    virtual inline glm::vec3 get_shadow_target() const { return m_shadow.target; }
-    virtual inline void set_shadow_target(glm::vec3 o) { m_shadow.target = o; }
+    virtual inline Vec3 get_shadow_target() const { return m_shadow.target; }
+    virtual inline void set_shadow_target(Vec3 o) { m_shadow.target = o; }
 
     virtual inline float get_shadow_near() const { return m_shadow.nearPlane; }
     virtual inline void set_shadow_near(float n) { m_shadow.nearPlane = n; }
@@ -91,7 +91,7 @@ class PointLight : public Light
     virtual LightUniforms get_uniforms() const;
 
 public:
-    PointLight(glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f) : Light("Point Light", LightType::POINT, color, intensity), m_effectArea(12.0f), m_decaying(1.0f) {}
+    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f) : Light("Point Light", LightType::POINT, color, intensity), m_effectArea(12.0f), m_decaying(1.0f) {}
 
     inline float get_area_of_effect() const { return m_effectArea; }
     inline void set_area_of_effect(float a) { m_effectArea = a; }
@@ -104,15 +104,15 @@ public:
 
 class DirectionalLight : public Light
 {
-    glm::vec3 m_direction;
+    Vec3 m_direction;
 
     virtual LightUniforms get_uniforms() const;
 
 public:
-    DirectionalLight(glm::vec3 direction, glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Light("Directional Light", LightType::DIRECTIONAL, color, intensity), m_direction(direction) {}
+    DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Light("Directional Light", LightType::DIRECTIONAL, color, intensity), m_direction(direction) {}
 
-    inline glm::vec3 get_direction() const { return m_direction; }
-    inline void set_direction(glm::vec3 d) { m_direction = d; }
+    inline Vec3 get_direction() const { return m_direction; }
+    inline void set_direction(Vec3 d) { m_direction = d; }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

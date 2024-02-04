@@ -1,6 +1,7 @@
 #ifndef VK_BOOTSTRAP
 #define VK_BOOTSTRAP
-#include "vk_core.h"
+
+#include <engine/vk_common.h>
 #include "vk_utils.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

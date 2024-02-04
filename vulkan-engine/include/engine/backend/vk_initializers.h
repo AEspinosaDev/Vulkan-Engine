@@ -1,7 +1,7 @@
 #ifndef VK_INITIALIZERS
 #define VK_INITIALIZERS
 
-#include "vk_core.h"
+#include <engine/vk_common.h>
 #include "vk_bootstrap.h"
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

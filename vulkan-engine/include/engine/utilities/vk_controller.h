@@ -1,7 +1,7 @@
 #ifndef VK_CONTROLLER
 #define VK_CONTROLLER
 
-#include "../private/vk_core.h"
+#include <engine/vk_common.h>
 #include <engine/vk_object3D.h>
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

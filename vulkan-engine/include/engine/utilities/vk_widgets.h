@@ -1,8 +1,8 @@
 #ifndef VK_WIDGETS
 #define VK_WIDGETS
 
-#include "../private/vk_core.h"
 #include <functional>
+#include <engine/vk_common.h>
 #include <engine/scene_objects/vk_scene.h>
 #include <engine/materials/vk_physically_based.h>
 

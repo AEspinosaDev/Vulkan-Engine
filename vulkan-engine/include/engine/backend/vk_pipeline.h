@@ -1,7 +1,7 @@
 #ifndef VK_PIPELINE
 #define VK_PIPELINE
 
-#include "vk_core.h"
+#include <engine/vk_common.h>
 #include "vk_initializers.h"
 #include "vk_descriptors.h"
 #include "../include/engine/vk_geometry.h"

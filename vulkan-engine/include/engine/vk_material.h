@@ -3,8 +3,8 @@
 
 #include <unordered_map>
 #include <engine/vk_texture.h>
-#include "../private/vk_pipeline.h"
-#include "../private/vk_uniforms.h"
+#include <engine/backend/vk_pipeline.h>
+#include <engine/backend/vk_uniforms.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

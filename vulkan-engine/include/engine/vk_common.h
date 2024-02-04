@@ -1,5 +1,5 @@
-#ifndef VK_CORE
-#define VK_CORE
+#ifndef VK_COMMON
+#define VK_COMMON
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -58,9 +58,13 @@
 #define JPG "jpg"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-// Change name to glm objects
-//....
-//....
+
+typedef glm::vec4 Vec4;
+typedef glm::vec3 Vec3;
+typedef glm::vec2 Vec2;
+typedef glm::mat4 Mat4;
+typedef glm::mat3 Mat3;
+// typedef glm maths;
 
 typedef enum ObjectType
 {

@@ -1,10 +1,10 @@
 #ifndef VK_UTILS
 #define VK_UTILS
 
-#include "vk_core.h"
 #include <deque>
 #include <functional>
 #include <chrono>
+#include <engine/vk_common.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

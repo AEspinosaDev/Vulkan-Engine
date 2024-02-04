@@ -1,7 +1,7 @@
 #ifndef VK_RENDERPASS
 #define VK_RENDERPASS
 
-#include "vk_core.h"
+#include <engine/vk_common.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
