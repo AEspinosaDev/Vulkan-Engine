@@ -1,19 +1,22 @@
 #include "engine/materials/vk_phong.h"
 
-vke::MaterialUniforms vke::PhongMaterial::get_uniforms() const
+VULKAN_ENGINE_NAMESPACE_BEGIN
+
+/**
+ *  Alignment in shader
+ *  ---------------
+ *vec3 color;
+ *float opacity;
+ *float shininess;
+ *float glossiness;
+ *vec2 tileUV;
+ *bool hasColorTexture;
+ *bool hasOpacityTexture;
+ *bool hasNormalTexture;
+ *bool hasGlossinessTexture;
+*/
+MaterialUniforms PhongMaterial::get_uniforms() const
 {
-    // Alignment in shader
-    //-----------------
-    //  vec3 color;
-    //  float opacity;
-    //  float shininess;
-    //  float glossiness;
-    //  vec2 tileUV;
-    //  bool hasColorTexture;
-    //  bool hasOpacityTexture;
-    //  bool hasNormalTexture;
-    //  bool hasGlossinessTexture;
-    //-----------------
 
     MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_color;
@@ -22,3 +25,4 @@ vke::MaterialUniforms vke::PhongMaterial::get_uniforms() const
 
     return uniforms;
 }
+VULKAN_ENGINE_NAMESPACE_END

@@ -6,26 +6,25 @@
 #include "vk_initializers.h"
 #include "vk_descriptors.h"
 
-namespace vke
+VULKAN_ENGINE_NAMESPACE_BEGIN
+
+struct Frame
 {
+    // Control
+    VkSemaphore presentSemaphore;
+    VkSemaphore renderSemaphore;
+    VkFence renderFence;
 
-    struct Frame
-    {
-        // Control
-        VkSemaphore presentSemaphore;
-        VkSemaphore renderSemaphore;
-        VkFence renderFence;
+    // Command
+    VkCommandPool commandPool;
+    VkCommandBuffer commandBuffer;
 
-        // Command
-        VkCommandPool commandPool;
-        VkCommandBuffer commandBuffer;
+    DescriptorSet objectDescriptor;
+    Buffer objectUniformBuffer;
 
-        DescriptorSet objectDescriptor;
-        Buffer objectUniformBuffer;
+    void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR &surface);
+    void cleanup(VkDevice &device);
+};
 
-        void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR &surface);
-        void cleanup(VkDevice &device);
-    };
-
-}
+VULKAN_ENGINE_NAMESPACE_END
 #endif

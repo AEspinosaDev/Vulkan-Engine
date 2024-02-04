@@ -1,6 +1,7 @@
 #include "engine/materials/vk_physically_based.h"
 
-vke::MaterialUniforms vke::PhysicallyBasedMaterial::get_uniforms() const
+VULKAN_ENGINE_NAMESPACE_BEGIN
+MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const
 {
     // Alignment in shader
     //-----------------
@@ -37,3 +38,4 @@ vke::MaterialUniforms vke::PhysicallyBasedMaterial::get_uniforms() const
 
     return uniforms;
 }
+VULKAN_ENGINE_NAMESPACE_END

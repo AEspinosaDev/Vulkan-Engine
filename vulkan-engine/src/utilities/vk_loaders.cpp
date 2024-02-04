@@ -1,6 +1,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define TINYPLY_IMPLEMENTATION
-#include "engine/utilities/vk_loaders.h"
+#include <engine/utilities/vk_loaders.h>
 
 bool vke::loaders::load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials, bool calculateTangents)
 {
@@ -414,11 +414,11 @@ bool vke::loaders::load_3D_file(Mesh *const mesh, bool overrideGeometry, const s
 
         std::string fileExtension = fileName.substr(dotPosition + 1);
 
-        if (fileExtension == "obj")
+        if (fileExtension == OBJ)
         {
             return loaders::load_OBJ(mesh, overrideGeometry, fileName, false, true);
         }
-        else if (fileExtension == "ply")
+        else if (fileExtension == PLY)
         {
             return loaders::load_PLY(mesh, overrideGeometry, fileName, true, false, true);
         }

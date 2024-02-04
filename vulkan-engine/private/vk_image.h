@@ -4,36 +4,35 @@
 #include "vk_buffer.h"
 #include "vk_initializers.h"
 
-namespace vke
+VULKAN_ENGINE_NAMESPACE_BEGIN
+struct Image
 {
-    struct Image
-    {
-        VkImage image;
-        VkImageView view;
+    VkImage image;
+    VkImageView view;
 
-        VkExtent3D extent;
-        VkFormat format;
+    VkExtent3D extent;
+    VkFormat format;
 
-        uint32_t mipLevels{1};
+    uint32_t mipLevels{1};
 
-        VmaAllocation allocation;
+    VmaAllocation allocation;
 
-        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
-        void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
+    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
+    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
 
-        void create_view(VkDevice &device, VkImageAspectFlags aspectFlags);
+    void create_view(VkDevice &device, VkImageAspectFlags aspectFlags);
 
-        void upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer);
+    void upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer);
 
-        void generate_mipmaps(VkCommandBuffer &cmd);
+    void generate_mipmaps(VkCommandBuffer &cmd);
 
-        void cleanup(VkDevice &device, VmaAllocator &memory);
+    void cleanup(VkDevice &device, VmaAllocator &memory);
 
-        static const int BYTES_PER_PIXEL{4};
+    static const int BYTES_PER_PIXEL{4};
 
-        // static void create_sampler(VkDevice &device,);
-    };
+    // static void create_sampler(VkDevice &device,);
+};
 
-} // namespace vke
+VULKAN_ENGINE_NAMESPACE_END
 
 #endif

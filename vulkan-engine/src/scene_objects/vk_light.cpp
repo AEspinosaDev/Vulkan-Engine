@@ -1,6 +1,7 @@
-#include "engine/scene_objects/vk_light.h"
+#include <engine/scene_objects/vk_light.h>
 
-vke::LightUniforms vke::PointLight::get_uniforms() const
+VULKAN_ENGINE_NAMESPACE_BEGIN
+LightUniforms PointLight::get_uniforms() const
 {
     LightUniforms uniforms{};
     uniforms.position = {m_transform.position.x, m_transform.position.y, m_transform.position.z, m_lighType};
@@ -10,7 +11,7 @@ vke::LightUniforms vke::PointLight::get_uniforms() const
     return uniforms;
 }
 
-vke::LightUniforms vke::DirectionalLight::get_uniforms() const
+LightUniforms DirectionalLight::get_uniforms() const
 {
     LightUniforms uniforms{};
     uniforms.position = {m_transform.position.x, m_transform.position.y, m_transform.position.z, m_lighType};
@@ -19,3 +20,4 @@ vke::LightUniforms vke::DirectionalLight::get_uniforms() const
     uniforms.dataSlot2 = {m_shadow.bias, m_shadow.enableVulkanBias, m_shadow.angleDependableBias, m_shadow.pcfKernel};
     return uniforms;
 }
+VULKAN_ENGINE_NAMESPACE_END

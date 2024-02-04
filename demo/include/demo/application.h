@@ -15,27 +15,29 @@
 /**
  * Example app
  */
+USING_VULKAN_ENGINE_NAMESPACE
+
 class VulkanRenderer
 {
     struct UserInterface
     {
-        vke::GUIOverlay *overlay{nullptr};
+        GUIOverlay *overlay{nullptr};
 
-        vke::Panel *explorer{nullptr};
-        vke::Panel *tutorial{nullptr};
-        vke::Panel *properties{nullptr};
-        vke::SceneExplorerWidget *scene{nullptr};
-        vke::ObjectExplorerWidget *object{nullptr};
+        Panel *explorer{nullptr};
+        Panel *tutorial{nullptr};
+        Panel *properties{nullptr};
+        SceneExplorerWidget *scene{nullptr};
+        ObjectExplorerWidget *object{nullptr};
     };
     UserInterface m_interface{};
 
-    vke::Window *m_window;
-    vke::Renderer *m_renderer;
-    vke::Scene *m_scene;
-    vke::Camera *camera;
-    vke::Controller *m_controller;
+    Window *m_window;
+    Renderer *m_renderer;
+    Scene *m_scene;
+    Camera *camera;
+    Controller *m_controller;
 
-    vke::Mesh *m_lightDummy;
+    Mesh *m_lightDummy;
     bool animateLight{true};
 
     struct Time
