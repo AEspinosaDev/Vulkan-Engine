@@ -6,8 +6,8 @@ void PipelineBuilder::init(VkExtent2D &extent)
 {
 
 	// Default geometry assembly values
-	vertexInputInfo = vkinit::vertex_input_state_create_info();
-	inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+	vertexInputInfo = init::vertex_input_state_create_info();
+	inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 	auto bindingDescription = Vertex::getBindingDescription();
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
@@ -22,9 +22,9 @@ void PipelineBuilder::init(VkExtent2D &extent)
 	scissor.offset = {0, 0};
 	scissor.extent = extent;
 
-	rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+	rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
 
-	depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
+	depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
 }
 
 void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)
@@ -36,7 +36,7 @@ void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager 
 			descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first));
 	}
 
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkinit::pipeline_layout_create_info();
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = init::pipeline_layout_create_info();
 	pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorLayouts.size();
 	pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
 
@@ -81,8 +81,8 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &renderPass,
 	// Blending SETUP TO DO
 	if (!shaderPass.settings.blending)
 	{
-		colorBlendAttachment = vkinit::color_blend_attachment_state();
-		colorBlending = vkinit::color_blend_create_info();
+		colorBlendAttachment = init::color_blend_attachment_state();
+		colorBlending = init::color_blend_create_info();
 		colorBlending.attachmentCount = 1;
 		colorBlending.pAttachments = &colorBlendAttachment;
 	}
@@ -104,7 +104,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &renderPass,
 	std::vector<VkPipelineShaderStageCreateInfo> stages;
 	for (auto &stage : shaderPass.stages)
 	{
-		stages.push_back(vkinit::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
+		stages.push_back(init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
 	}
 
 	pipelineInfo.stageCount = (uint32_t)stages.size();

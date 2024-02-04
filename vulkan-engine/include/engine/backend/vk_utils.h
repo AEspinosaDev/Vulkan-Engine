@@ -8,7 +8,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace vkutils
+namespace utils
 {
 	struct DeletionQueue
 	{
@@ -184,7 +184,7 @@ namespace vkutils
 
 	void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 
-	glm::vec3 get_tangent_gram_smidt(glm::vec3 &p1, glm::vec3 &p2, glm::vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3, glm::vec3 normal);
+	Vec3 get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3, Vec3 normal);
 
 	template <typename T, typename... Rest>
 	void hash_combine(std::size_t &seed, const T &v, const Rest &...rest)

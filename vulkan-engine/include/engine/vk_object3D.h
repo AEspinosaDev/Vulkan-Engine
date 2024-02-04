@@ -12,23 +12,23 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 struct Transform
 {
 
-    glm::mat4 worldMatrix;
-    glm::vec3 position;
-    glm::vec3 rotation;
-    glm::vec3 scale;
-    glm::vec3 right;
-    glm::vec3 up;
-    glm::vec3 forward;
+    Mat4 worldMatrix;
+    Vec3 position;
+    Vec3 rotation;
+    Vec3 scale;
+    Vec3 right;
+    Vec3 up;
+    Vec3 forward;
 
 public:
     Transform(
-        glm::mat4 worldMatrix = glm::mat4(1.0f),
-        glm::vec3 rotation = glm::vec3(0.0f),
-        glm::vec3 scale = glm::vec3(1.0f),
-        glm::vec3 position = glm::vec3(0.0f),
-        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
-        glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0f),
-        glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f)
+        Mat4 worldMatrix = Mat4(1.0f),
+        Vec3 rotation = Vec3(0.0f),
+        Vec3 scale = Vec3(1.0f),
+        Vec3 position = Vec3(0.0f),
+        Vec3 up = Vec3(0.0f, 1.0f, 0.0f),
+        Vec3 forward = Vec3(0.0f, 0.0f, 1.0f),
+        Vec3 right = Vec3(1.0f, 0.0f, 0.0f)
 
             ) : position(position),
                 scale(scale),
@@ -57,30 +57,30 @@ public:
     Object3D(const std::string na, ObjectType t) : TYPE(t), m_name(na), enabled(true),
                                                    m_parent(nullptr)
     {
-        m_transform.position = glm::vec3(0.0f);
+        m_transform.position = Vec3(0.0f);
     }
 
-    Object3D(const std::string na, glm::vec3 p, ObjectType t) : TYPE(t), m_name(na), enabled(true),
-                                                                m_parent(nullptr)
+    Object3D(const std::string na, Vec3 p, ObjectType t) : TYPE(t), m_name(na), enabled(true),
+                                                           m_parent(nullptr)
     {
         m_transform.position = p;
     }
 
-    Object3D(glm::vec3 p, ObjectType t) : TYPE(t), m_name(""), enabled(true),
-                                          m_parent(nullptr)
+    Object3D(Vec3 p, ObjectType t) : TYPE(t), m_name(""), enabled(true),
+                                     m_parent(nullptr)
     {
         m_transform.position = p;
     }
     Object3D(ObjectType t) : TYPE(t), m_name(""), enabled(true),
                              m_parent(nullptr)
     {
-        m_transform.position = glm::vec3(0.0f);
+        m_transform.position = Vec3(0.0f);
     }
 
     Object3D() : TYPE(OTHER), m_name(""), enabled(true),
                  m_parent(nullptr)
     {
-        m_transform.position = glm::vec3(0.0f);
+        m_transform.position = Vec3(0.0f);
     }
 
     ~Object3D()
@@ -90,35 +90,38 @@ public:
     }
 
     virtual inline ObjectType get_type() const { return TYPE; };
-    virtual void set_position(const glm::vec3 p)
+    virtual void set_position(const Vec3 p)
     {
         m_transform.position = p;
         isDirty = true;
     }
 
-    virtual inline glm::vec3 get_position() { return m_transform.position; };
+    virtual inline Vec3 get_position() { return m_transform.position; };
 
-    virtual void set_rotation(const glm::vec3 p)
+    virtual void set_rotation(const Vec3 p, bool radians = false)
     {
-        m_transform.rotation = p;
+        if (!radians)
+            m_transform.rotation = glm::radians(p);
+        else
+            m_transform.rotation = p;
 
         // Update forward
-        glm::vec3 direction;
-        direction.x = cos(glm::radians(p.x)) * cos(glm::radians(p.y));
-        direction.y = sin(glm::radians(p.y));
-        direction.z = sin(glm::radians(p.x)) * cos(glm::radians(p.y));
-        m_transform.forward = -glm::normalize(direction);
+        Vec3 direction;
+        direction.x = cos(math::radians(p.x)) * cos(math::radians(p.y));
+        direction.y = sin(math::radians(p.y));
+        direction.z = sin(math::radians(p.x)) * cos(math::radians(p.y));
+        m_transform.forward = -math::normalize(direction);
         // Update up
 
         // Update right
-        m_transform.right = glm::cross(m_transform.forward, m_transform.up);
+        m_transform.right = math::cross(m_transform.forward, m_transform.up);
 
         isDirty = true;
     }
 
-    virtual inline glm::vec3 get_rotation() { return m_transform.rotation; };
+    virtual inline Vec3 get_rotation() { return m_transform.rotation; };
 
-    virtual void set_scale(const glm::vec3 s)
+    virtual void set_scale(const Vec3 s)
     {
         m_transform.scale = s;
         isDirty = true;
@@ -126,11 +129,11 @@ public:
 
     virtual void set_scale(const float s)
     {
-        m_transform.scale = glm::vec3(s);
+        m_transform.scale = Vec3(s);
         isDirty = true;
     }
 
-    virtual inline glm::vec3 get_scale() { return m_transform.scale; }
+    virtual inline Vec3 get_scale() { return m_transform.scale; }
 
     virtual inline Transform get_transform() { return m_transform; }
 
@@ -162,17 +165,17 @@ public:
         isDirty = true;
     }
 
-    virtual glm::mat4 get_model_matrix()
+    virtual Mat4 get_model_matrix()
     {
         if (isDirty)
         {
 
-            m_transform.worldMatrix = glm::mat4(1.0f);
-            m_transform.worldMatrix = glm::translate(m_transform.worldMatrix, m_transform.position);
-            m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.x, glm::vec3(1, 0, 0));
-            m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.y, glm::vec3(0, 1, 0));
-            m_transform.worldMatrix = glm::rotate(m_transform.worldMatrix, m_transform.rotation.z, glm::vec3(0, 0, 1));
-            m_transform.worldMatrix = glm::scale(m_transform.worldMatrix, m_transform.scale);
+            m_transform.worldMatrix = Mat4(1.0f);
+            m_transform.worldMatrix = math::translate(m_transform.worldMatrix, m_transform.position);
+            m_transform.worldMatrix = math::rotate(m_transform.worldMatrix, m_transform.rotation.x, Vec3(1, 0, 0));
+            m_transform.worldMatrix = math::rotate(m_transform.worldMatrix, m_transform.rotation.y, Vec3(0, 1, 0));
+            m_transform.worldMatrix = math::rotate(m_transform.worldMatrix, m_transform.rotation.z, Vec3(0, 0, 1));
+            m_transform.worldMatrix = math::scale(m_transform.worldMatrix, m_transform.scale);
 
             isDirty = false;
         }

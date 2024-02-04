@@ -4,8 +4,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface, GLFWwindow *window, VkExtent2D &windowExtent)
 {
-	vkboot::SwapChainSupportDetails swapChainSupport = vkboot::query_swapchain_support(gpu, surface);
-	vkboot::QueueFamilyIndices indices = vkboot::find_queue_families(gpu, surface);
+	boot::SwapChainSupportDetails swapChainSupport = boot::query_swapchain_support(gpu, surface);
+	boot::QueueFamilyIndices indices = boot::find_queue_families(gpu, surface);
 	uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 	VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats);
@@ -97,7 +97,7 @@ void Swapchain::create_framebuffers(VkDevice &device, VkRenderPass &defaultRende
 	auto size = m_presentImageViews.size();
 	m_framebuffers.resize(size);
 
-	VkFramebufferCreateInfo fb_info = vkinit::framebuffer_create_info(defaultRenderPass, windowExtent);
+	VkFramebufferCreateInfo fb_info = init::framebuffer_create_info(defaultRenderPass, windowExtent);
 	for (size_t i = 0; i < size; i++)
 	{
 		VkImageView attachments[3] = {

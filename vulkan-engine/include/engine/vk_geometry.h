@@ -11,11 +11,11 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 struct Vertex
 {
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec3 tangent;
-    glm::vec2 texCoord;
-    glm::vec3 color;
+    Vec3 pos;
+    Vec3 normal;
+    Vec3 tangent;
+    Vec2 texCoord;
+    Vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -131,7 +131,7 @@ public:
 
     void fill(std::vector<Vertex> vertexInfo);
     void fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
-    void fill(glm::vec3 *pos, glm::vec3 *normal, glm::vec2 *uv, glm::vec3 *tangent, uint32_t vertNumber);
+    void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
 };
 
 VULKAN_ENGINE_NAMESPACE_END;
@@ -144,7 +144,7 @@ namespace std
         size_t operator()(vke::Vertex const &vertex) const
         {
             size_t seed = 0;
-            vke::vkutils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
+            vke::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
             return seed;
         }
     };

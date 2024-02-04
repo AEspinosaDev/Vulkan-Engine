@@ -155,7 +155,7 @@ void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, co
             size_t i1 = indices[i + 1];
             size_t i2 = indices[i + 2];
 
-            glm::vec3 tangent = vkutils::get_tangent_gram_smidt(vertices[i0].pos, vertices[i1].pos, vertices[i2].pos,
+            Vec3 tangent = utils::get_tangent_gram_smidt(vertices[i0].pos, vertices[i1].pos, vertices[i2].pos,
                                                                 vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord,
                                                                 vertices[i0].normal);
 
@@ -166,7 +166,7 @@ void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, co
     else
         for (size_t i = 0; i < vertices.size(); i += 3)
         {
-            glm::vec3 tangent = vkutils::get_tangent_gram_smidt(vertices[i].pos, vertices[i + 1].pos, vertices[i + 2].pos,
+            Vec3 tangent = utils::get_tangent_gram_smidt(vertices[i].pos, vertices[i + 1].pos, vertices[i + 2].pos,
                                                                 vertices[i].texCoord, vertices[i + 1].texCoord, vertices[i + 2].texCoord,
                                                                 vertices[i].normal);
 
@@ -186,8 +186,8 @@ bool vke::loaders::load_PLY(Mesh *const mesh, bool overrideGeometry, const std::
         // stream is a net win for parsing speed, about 40% faster.
         if (preload)
         {
-            byte_buffer = vkutils::read_file_binary(fileName);
-            file_stream.reset(new vkutils::memory_stream((char *)byte_buffer.data(), byte_buffer.size()));
+            byte_buffer = utils::read_file_binary(fileName);
+            file_stream.reset(new utils::memory_stream((char *)byte_buffer.data(), byte_buffer.size()));
         }
         else
         {
@@ -312,7 +312,7 @@ bool vke::loaders::load_PLY(Mesh *const mesh, bool overrideGeometry, const std::
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
         }
-        vkutils::ManualTimer readTimer;
+        utils::ManualTimer readTimer;
 
         readTimer.start();
         file.read(*file_stream);
@@ -357,10 +357,10 @@ bool vke::loaders::load_PLY(Mesh *const mesh, bool overrideGeometry, const std::
             for (size_t i = 0; i < positions->count; i++)
             {
 
-                glm::vec3 position = glm::vec3(posData[i * 3], posData[i * 3 + 1], posData[i * 3 + 2]);
-                glm::vec3 normal = normals ? glm::vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]) : glm::vec3(0.0f);
-                glm::vec3 color = colors ? glm::vec3(colorData[i * 3], colorData[i * 3 + 1], colorData[i * 3 + 2]) : glm::vec3(1.0f);
-                glm::vec2 uv = texcoords ? glm::vec2(uvData[i * 2], uvData[i * 2 + 1]) : glm::vec2(0.0f);
+                Vec3 position = Vec3(posData[i * 3], posData[i * 3 + 1], posData[i * 3 + 2]);
+                Vec3 normal = normals ? Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]) : Vec3(0.0f);
+                Vec3 color = colors ? Vec3(colorData[i * 3], colorData[i * 3 + 1], colorData[i * 3 + 2]) : Vec3(1.0f);
+                Vec2 uv = texcoords ? Vec2(uvData[i * 2], uvData[i * 2 + 1]) : Vec2(0.0f);
 
                 vertices.push_back({position, normal, {0.0f, 0.0f, 0.0f}, uv, color});
             }

@@ -24,6 +24,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
+//Convenience functions definitions
 #define DEBUG_LOG(msg)                 \
 	{                                  \
 		std::cout << msg << std::endl; \
@@ -59,12 +60,13 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-typedef glm::vec4 Vec4;
-typedef glm::vec3 Vec3;
-typedef glm::vec2 Vec2;
-typedef glm::mat4 Mat4;
-typedef glm::mat3 Mat3;
-// typedef glm maths;
+// Mathematics library glm
+namespace math = glm;
+typedef math::vec4 Vec4;
+typedef math::vec3 Vec3;
+typedef math::vec2 Vec2;
+typedef math::mat4 Mat4;
+typedef math::mat3 Mat3;
 
 typedef enum ObjectType
 {

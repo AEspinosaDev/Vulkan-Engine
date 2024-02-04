@@ -5,7 +5,7 @@
 #include "vk_utils.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-namespace vkboot
+namespace boot
 {
 
 	struct QueueFamilyIndices

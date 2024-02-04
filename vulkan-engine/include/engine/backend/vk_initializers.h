@@ -5,7 +5,7 @@
 #include "vk_bootstrap.h"
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace vkinit
+namespace init
 {
 
 	VkCommandPoolCreateInfo command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);

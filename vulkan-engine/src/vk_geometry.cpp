@@ -21,11 +21,11 @@ void Geometry::fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertex
   indexed = true;
 }
 
-void Geometry::fill(glm::vec3 *pos, glm::vec3 *normal, glm::vec2 *uv, glm::vec3 *tangent, uint32_t vertNumber)
+void Geometry::fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber)
 {
   for (size_t i = 0; i < vertNumber; i++)
   {
-    m_vertexData.push_back({pos[i], normal[i], tangent[i], uv[i], glm::vec3(1.0)});
+    m_vertexData.push_back({pos[i], normal[i], tangent[i], uv[i], Vec3(1.0)});
   }
 }
 

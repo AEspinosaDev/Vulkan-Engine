@@ -57,8 +57,8 @@ public:
         return false;
     }
 
-    inline glm::vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
-    inline void set_extent(glm::vec2 p)
+    inline math::vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
+    inline void set_extent(math::vec2 p)
     {
         m_extent = {p.x, p.y};
         m_resized = true;

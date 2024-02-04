@@ -47,7 +47,7 @@ protected:
     bool m_isMouseMiddlePressed;
     bool m_isMouseRightPressed;
 
-    glm::vec3 m_orbitalCenter;
+    Vec3 m_orbitalCenter;
 
     Transform m_initialState;
 

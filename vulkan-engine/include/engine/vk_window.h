@@ -25,7 +25,7 @@ private:
 	bool m_resizeable;
 	bool m_fullscreen;
 
-	glm::ivec2 m_screenPos = glm::ivec2(45, 45);
+	math::ivec2 m_screenPos = math::ivec2(45, 45);
 
 	// Callbacks
 	std::function<void(int, int, int, int)> m_keyCallback;
@@ -74,8 +74,8 @@ public:
 	}
 	inline bool is_resizable() { return m_resizeable; }
 	inline void set_resizeable(bool t) { m_resizeable = t; /*glfwsetwindowresize(GLFW_RESIZABLE, t);*/ }
-	inline glm::ivec2 get_position() { return m_screenPos; }
-	inline void set_position(glm::ivec2 p)
+	inline math::ivec2 get_position() { return m_screenPos; }
+	inline void set_position(math::ivec2 p)
 	{
 		if (!m_initialized)
 			return;

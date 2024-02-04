@@ -68,7 +68,7 @@ void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool c
                     pitch = -89.0f;
             }
 
-            m_objPtr->set_rotation({yaw, pitch, 0.0});
+            m_objPtr->set_rotation({yaw, pitch, 0.0},true);
         }
         if (m_type == ORBITAL)
         {

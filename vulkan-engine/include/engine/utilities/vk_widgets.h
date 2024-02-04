@@ -33,13 +33,13 @@ public:
         w->m_parent = this;
         m_children.push_back(w);
     }
-    virtual inline glm::vec2 get_position() const { return {m_position.x, m_position.y}; }
-    virtual inline void set_position(glm::vec2 p) { m_position = {p.x, p.y}; }
+    virtual inline Vec2 get_position() const { return {m_position.x, m_position.y}; }
+    virtual inline void set_position(Vec2 p) { m_position = {p.x, p.y}; }
 
-    virtual inline glm::vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
-    virtual inline void set_extent(glm::vec2 p) { m_extent = {p.x, p.y}; }
+    virtual inline Vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
+    virtual inline void set_extent(Vec2 p) { m_extent = {p.x, p.y}; }
 
-    inline glm::vec2 get_pixel_extent() const { return {m_pixelExtent.x, m_pixelExtent.y}; }
+    inline Vec2 get_pixel_extent() const { return {m_pixelExtent.x, m_pixelExtent.y}; }
 };
 
 class Panel : public Widget
@@ -82,11 +82,11 @@ public:
             delete widget;
     }
 
-    inline glm::vec2 get_padding() const { return {m_padding.x, m_padding.y}; }
-    inline void set_padding(glm::vec2 p) { m_padding = {p.x, p.y}; }
+    inline Vec2 get_padding() const { return {m_padding.x, m_padding.y}; }
+    inline void set_padding(Vec2 p) { m_padding = {p.x, p.y}; }
 
-    inline glm::vec2 get_min_extent() const { return {m_minExtent.x, m_minExtent.y}; }
-    inline void set_min_extent(glm::vec2 p) { m_minExtent = {p.x, p.y}; }
+    inline Vec2 get_min_extent() const { return {m_minExtent.x, m_minExtent.y}; }
+    inline void set_min_extent(Vec2 p) { m_minExtent = {p.x, p.y}; }
 
     inline float get_rounding() const { return m_rounding; }
     inline void set_rounding(float t) { m_rounding = t; }
@@ -163,11 +163,11 @@ protected:
 
 public:
     TextLine(char *text) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_text(text) {}
-    TextLine(char *text, glm::vec4 color) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_text(text), m_color({color.r, color.g, color.b, color.a}) {}
+    TextLine(char *text, math::vec4 color) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_text(text), m_color({color.r, color.g, color.b, color.a}) {}
     TextLine(char *text, TextWidgetType type) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_text(text), m_type(type) {}
 
-    inline glm::vec4 get_color() const { return {m_color.x, m_color.y, m_color.z, m_color.w}; }
-    inline void get_color(glm::vec4 color) { m_color = {color.r, color.g, color.b, color.a}; }
+    inline math::vec4 get_color() const { return {m_color.x, m_color.y, m_color.z, m_color.w}; }
+    inline void get_color(math::vec4 color) { m_color = {color.r, color.g, color.b, color.a}; }
 
     inline TextWidgetType get_type() const { return m_type; }
     inline void set_type(TextWidgetType t) { m_type = t; }

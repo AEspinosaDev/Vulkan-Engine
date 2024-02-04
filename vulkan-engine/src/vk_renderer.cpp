@@ -53,7 +53,7 @@ void Renderer::render(Scene *const scene)
 	VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
 	VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, /*VkCommandBufferResetFlagBits*/ 0));
 
-	VkCommandBufferBeginInfo beginInfo = vkinit::command_buffer_begin_info();
+	VkCommandBufferBeginInfo beginInfo = init::command_buffer_begin_info();
 
 	if (vkBeginCommandBuffer(m_frames[m_currentFrame].commandBuffer, &beginInfo) != VK_SUCCESS)
 	{
@@ -75,7 +75,7 @@ void Renderer::render(Scene *const scene)
 	// prepare the submission to the queue.
 	// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
 	// we will signal the renderSemaphore, to signal that rendering has finished
-	VkSubmitInfo submitInfo = vkinit::submit_info(&m_frames[m_currentFrame].commandBuffer);
+	VkSubmitInfo submitInfo = init::submit_info(&m_frames[m_currentFrame].commandBuffer);
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkSemaphore waitSemaphores[] = {m_frames[m_currentFrame].presentSemaphore};
 	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -95,7 +95,7 @@ void Renderer::render(Scene *const scene)
 	// this will put the image we just rendered to into the visible window.
 	// we want to wait on the renderSemaphore for that,
 	// as its necessary that drawing commands have finished before the image is displayed to the user
-	VkPresentInfoKHR presentInfo = vkinit::present_info();
+	VkPresentInfoKHR presentInfo = init::present_info();
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
@@ -123,7 +123,7 @@ void Renderer::render(Scene *const scene)
 void Renderer::init_vulkan()
 {
 
-	vkboot::VulkanBooter booter(&m_instance,
+	boot::VulkanBooter booter(&m_instance,
 								&m_debugMessenger,
 								&m_gpu,
 								&m_device,
@@ -136,7 +136,7 @@ void Renderer::init_vulkan()
 
 	booter.pick_graphics_card_device();
 
-	booter.create_logical_device(vkutils::get_gpu_features(m_gpu));
+	booter.create_logical_device(utils::get_gpu_features(m_gpu));
 
 	booter.setup_memory();
 
@@ -172,7 +172,7 @@ void Renderer::cleanup()
 
 		if (m_enableValidationLayers)
 		{
-			vkutils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
+			utils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
 		}
 		vkDestroySurfaceKHR(m_instance, *m_window->get_surface(), nullptr);
 		vkDestroyInstance(m_instance, nullptr);
@@ -257,7 +257,7 @@ void Renderer::init_framebuffers()
 	shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
 	m_shadowTexture->m_image = shadowImage;
 
-	VkSamplerCreateInfo sampler = vkinit::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+	VkSamplerCreateInfo sampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	sampler.maxAnisotropy = 1.0f;
 	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
@@ -268,7 +268,7 @@ void Renderer::init_framebuffers()
 
 	//	To light
 	VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
-	VkFramebufferCreateInfo shadow_fb_info = vkinit::framebuffer_create_info(m_shadowPass, shadowRes);
+	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_shadowPass, shadowRes);
 	shadow_fb_info.pAttachments = &m_shadowTexture->m_image.view;
 
 	if (vkCreateFramebuffer(m_device, &shadow_fb_info, nullptr, &m_shadowFramebuffer) != VK_SUCCESS)
@@ -289,20 +289,20 @@ void Renderer::init_control_objects()
 									  { m_frames[i].cleanup(m_device); });
 	}
 
-	VkFenceCreateInfo uploadFenceCreateInfo = vkinit::fence_create_info();
+	VkFenceCreateInfo uploadFenceCreateInfo = init::fence_create_info();
 
 	VK_CHECK(vkCreateFence(m_device, &uploadFenceCreateInfo, nullptr, &m_uploadContext.uploadFence));
 	m_deletionQueue.push_function([=]()
 								  { vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr); });
 
-	VkCommandPoolCreateInfo uploadCommandPoolInfo = vkinit::command_pool_create_info(vkboot::find_queue_families(m_gpu, *m_window->get_surface()).graphicsFamily.value());
+	VkCommandPoolCreateInfo uploadCommandPoolInfo = init::command_pool_create_info(boot::find_queue_families(m_gpu, *m_window->get_surface()).graphicsFamily.value());
 	VK_CHECK(vkCreateCommandPool(m_device, &uploadCommandPoolInfo, nullptr, &m_uploadContext.commandPool));
 
 	m_deletionQueue.push_function([=]()
 								  { vkDestroyCommandPool(m_device, m_uploadContext.commandPool, nullptr); });
 
 	// allocate the default command buffer that we will use for the instant commands
-	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(m_uploadContext.commandPool, 1);
+	VkCommandBufferAllocateInfo cmdAllocInfo = init::command_buffer_allocate_info(m_uploadContext.commandPool, 1);
 
 	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_uploadContext.commandBuffer));
 }
@@ -313,28 +313,28 @@ void Renderer::init_descriptors()
 	m_descriptorMng.create_pool(10, 10, 10, 20, 10);
 
 	// GLOBAL SET
-	VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
-	VkDescriptorSetLayoutBinding sceneBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
+	VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
 	m_descriptorMng.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
 	// PER-OBJECT SET
-	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
-	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
+	VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
 	m_descriptorMng.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
 
 	// TEXTURE SET
-	VkDescriptorSetLayoutBinding textureBinding0 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0); // ShadowMap
-	VkDescriptorSetLayoutBinding textureBinding1 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-	VkDescriptorSetLayoutBinding textureBinding2 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
-	VkDescriptorSetLayoutBinding textureBinding3 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
-	VkDescriptorSetLayoutBinding textureBinding4 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-	VkDescriptorSetLayoutBinding textureBinding5 = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 5);
+	VkDescriptorSetLayoutBinding textureBinding0 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0); // ShadowMap
+	VkDescriptorSetLayoutBinding textureBinding1 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	VkDescriptorSetLayoutBinding textureBinding2 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+	VkDescriptorSetLayoutBinding textureBinding3 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+	VkDescriptorSetLayoutBinding textureBinding4 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+	VkDescriptorSetLayoutBinding textureBinding5 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 5);
 	VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding0, textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5};
 	m_descriptorMng.set_layout(DescriptorLayoutType::TEXTURE_LAYOUT, textureBindings, 6);
 
-	const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
+	const size_t strideSize = (utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
 	const size_t globalUBOSize = MAX_FRAMES_IN_FLIGHT * strideSize;
 	m_globalUniformsBuffer.init(m_memory, globalUBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
 
@@ -346,7 +346,7 @@ void Renderer::init_descriptors()
 	m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(CameraUniforms), 0,
 										 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
-	m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
+	m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
 										 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
 	// m_descriptorMng.allocate_descriptor_set(2, &m_textureDescriptor);
@@ -355,7 +355,7 @@ void Renderer::init_descriptors()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 
-		const size_t strideSize = (vkutils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+		const size_t strideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
 		m_frames[i].objectUniformBuffer.init(m_memory, MAX_OBJECTS_IN_FLIGHT * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
 		m_deletionQueue.push_function([=]()
 									  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
@@ -364,7 +364,7 @@ void Renderer::init_descriptors()
 
 		m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(ObjectUniforms), 0, &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
-		m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(MaterialUniforms), vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu), &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+		m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(MaterialUniforms), utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu), &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 	}
 
 	m_deletionQueue.push_function([=]()
@@ -391,7 +391,7 @@ void Renderer::set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, 
 void Renderer::default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 	// CLEAR SETUP
 	// if (scene->is_fog_active())
@@ -455,7 +455,7 @@ void Renderer::default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 						vkCmdSetCullMode(commandBuffer, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
 
 						MaterialUniforms materialData = mat->get_uniforms();
-						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + vkutils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
 
 						vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
 
@@ -490,7 +490,7 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
 
-	VkRenderPassBeginInfo renderPassInfo = vkinit::renderpass_begin_info(m_shadowPass, shadowExtent, m_shadowFramebuffer);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_shadowPass, shadowExtent, m_shadowFramebuffer);
 
 	VkClearValue clearDepth;
 	clearDepth.depthStencil = {1.0f, 0};
@@ -554,8 +554,8 @@ void Renderer::init_shaderpasses()
 	PipelineBuilder builder;
 
 	// Default geometry assembly values
-	builder.vertexInputInfo = vkinit::vertex_input_state_create_info();
-	builder.inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+	builder.vertexInputInfo = init::vertex_input_state_create_info();
+	builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 	auto bindingDescription = Vertex::getBindingDescription();
 	builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
 	builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
@@ -570,11 +570,11 @@ void Renderer::init_shaderpasses()
 	builder.scissor.offset = {0, 0};
 	builder.scissor.extent = *m_window->get_extent();
 
-	builder.rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+	builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
 
-	builder.depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
+	builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
 
-	builder.multisampling = vkinit::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
+	builder.multisampling = init::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
 
 	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
 	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
@@ -655,7 +655,7 @@ void Renderer::init_shaderpasses()
 	builder.colorBlending.attachmentCount = 0;
 	//  builder.dynamicState = VK_TRUE;
 
-	builder.multisampling = vkinit::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
+	builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
 	ShaderPass::build_shader_stages(m_device, *depthPass);
 
@@ -701,14 +701,14 @@ void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&funct
 {
 	VkCommandBuffer cmd = m_uploadContext.commandBuffer;
 
-	VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	VkCommandBufferBeginInfo cmdBeginInfo = init::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
 	function(cmd);
 
 	VK_CHECK(vkEndCommandBuffer(cmd));
 
-	VkSubmitInfo submit = vkinit::submit_info(&cmd);
+	VkSubmitInfo submit = init::submit_info(&cmd);
 
 	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, m_uploadContext.uploadFence));
 
@@ -822,13 +822,13 @@ void Renderer::upload_global_data(Scene *const scene)
 		{
 			sceneParams.lightUniforms = l->get_uniforms();
 			glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(l->m_shadow.fov), 1.0f, l->m_shadow.nearPlane, l->m_shadow.farPlane);
-			glm::mat4 depthViewMatrix = glm::lookAt(l->m_transform.position, l->m_shadow.target, glm::vec3(0, 1, 0));
+			glm::mat4 depthViewMatrix = glm::lookAt(l->m_transform.position, l->m_shadow.target, Vec3(0, 1, 0));
 			sceneParams.lightUniforms.viewProj = depthProjectionMatrix * depthViewMatrix;
 		}
 	}
 
 	m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
-									   m_globalUniformsBuffer.strideSize * m_currentFrame + vkutils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
+									   m_globalUniformsBuffer.strideSize * m_currentFrame + utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 }
 
 void Renderer::setup_material(Material *const mat)
@@ -916,11 +916,11 @@ void Renderer::upload_texture(Texture *const t)
 						 { t->m_image.generate_mipmaps(cmd); });
 	}
 	// CREATE SAMPLER
-	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info((VkFilter)t->m_settings.filter,
+	VkSamplerCreateInfo samplerInfo = init::sampler_create_info((VkFilter)t->m_settings.filter,
 																  VK_SAMPLER_MIPMAP_MODE_LINEAR,
 																  (float)t->m_settings.minMipLevel,
 																  t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
-																  t->m_settings.anisotropicFilter, vkutils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy,
+																  t->m_settings.anisotropicFilter, utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy,
 																  (VkSamplerAddressMode)t->m_settings.adressMode);
 	vkCreateSampler(m_device, &samplerInfo, nullptr, &t->m_sampler);
 

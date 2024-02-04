@@ -10,7 +10,7 @@ void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags us
 
     mipLevels = useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
 
-    VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent, mipLevels, samples);
+    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples);
 
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -27,7 +27,7 @@ void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags us
 
     mipLevels = useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
 
-    VkImageCreateInfo img_info = vkinit::image_create_info(format, usageFlags, extent, mipLevels, samples);
+    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples);
 
     vmaCreateImage(memory, &img_info, &allocInfo, &image, &allocation, nullptr);
 }
@@ -165,7 +165,7 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
 }
 void Image::create_view(VkDevice &device, VkImageAspectFlags aspectFlags)
 {
-    VkImageViewCreateInfo dview_info = vkinit::imageview_create_info(format, image, aspectFlags, mipLevels);
+    VkImageViewCreateInfo dview_info = init::imageview_create_info(format, image, aspectFlags, mipLevels);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 }
 void Image::cleanup(VkDevice &device, VmaAllocator &memory)

@@ -29,7 +29,7 @@ struct RendererSettings
 	BufferingType bufferingType{_DOUBLE};
 	ShadowResolution shadowResolution{LOW};
 
-	glm::vec4 clearColor{glm::vec4{0.0, 0.0, 0.0, 1.0}};
+	Vec4 clearColor{Vec4{0.0, 0.0, 0.0, 1.0}};
 
 	bool autoClearColor{true};
 	bool autoClearDepth{true};
@@ -87,7 +87,7 @@ class Renderer
 
 	Buffer m_globalUniformsBuffer{};
 
-	vkutils::DeletionQueue m_deletionQueue;
+	utils::DeletionQueue m_deletionQueue;
 
 	const int MAX_FRAMES_IN_FLIGHT{2};
 	const int MAX_OBJECTS_IN_FLIGHT{10};
@@ -117,7 +117,7 @@ public:
 	inline RendererSettings get_settings() { return m_settings; }
 	inline void set_settings(RendererSettings settings) { m_settings = settings; }
 
-	inline void set_clearcolor(glm::vec4 c)
+	inline void set_clearcolor(Vec4 c)
 	{
 		m_settings.clearColor = c;
 	}

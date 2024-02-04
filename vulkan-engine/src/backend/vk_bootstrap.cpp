@@ -3,9 +3,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void vkboot::VulkanBooter::create_instance()
+void boot::VulkanBooter::create_instance()
 {
-	if (m_validation && !vkutils::check_validation_layer_suport(m_validationLayers))
+	if (m_validation && !utils::check_validation_layer_suport(m_validationLayers))
 	{
 		throw std::runtime_error(" validation layers requested, but not available!");
 	}
@@ -33,7 +33,7 @@ void vkboot::VulkanBooter::create_instance()
 		createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
 		createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
-		vkutils::populate_debug_messenger_create_info(debugCreateInfo);
+		utils::populate_debug_messenger_create_info(debugCreateInfo);
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
 	}
 	else
@@ -49,7 +49,7 @@ void vkboot::VulkanBooter::create_instance()
 	}
 }
 
-std::vector<const char *> vkboot::VulkanBooter::get_required_extensions()
+std::vector<const char *> boot::VulkanBooter::get_required_extensions()
 {
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions;
@@ -66,26 +66,26 @@ std::vector<const char *> vkboot::VulkanBooter::get_required_extensions()
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 	std::vector<VkExtensionProperties> supported_extensions(extensionCount);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supported_extensions.data());
-	vkutils::log_available_extensions(supported_extensions);
+	utils::log_available_extensions(supported_extensions);
 #endif
 	return extensions;
 }
 
-void vkboot::VulkanBooter::setup_debug_messenger()
+void boot::VulkanBooter::setup_debug_messenger()
 {
 	if (!m_validation)
 		return;
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
-	vkutils::populate_debug_messenger_create_info(createInfo);
+	utils::populate_debug_messenger_create_info(createInfo);
 
-	if (vkutils::create_debug_utils_messenger_EXT(*m_instance, &createInfo, nullptr, m_debugMessenger) != VK_SUCCESS)
+	if (utils::create_debug_utils_messenger_EXT(*m_instance, &createInfo, nullptr, m_debugMessenger) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to set up debug messenger!");
 	}
 }
 
-void vkboot::VulkanBooter::pick_graphics_card_device()
+void boot::VulkanBooter::pick_graphics_card_device()
 {
 	*m_gpu = VK_NULL_HANDLE;
 
@@ -107,7 +107,7 @@ void vkboot::VulkanBooter::pick_graphics_card_device()
 		candidates.insert(std::make_pair(score, device));
 	}
 #ifndef NDEBUG
-	vkutils::log_available_gpus(candidates);
+	utils::log_available_gpus(candidates);
 #endif // !NDEBUG
 
 	// Check if the best candidate is suitable at all
@@ -120,9 +120,9 @@ void vkboot::VulkanBooter::pick_graphics_card_device()
 		throw std::runtime_error("failed to find a suitable GPU!");
 	}
 }
-void vkboot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features)
+void boot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features)
 {
-	vkboot::QueueFamilyIndices indices = vkboot::find_queue_families(*m_gpu, *m_surface);
+	boot::QueueFamilyIndices indices = boot::find_queue_families(*m_gpu, *m_surface);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -140,7 +140,7 @@ void vkboot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures featur
 
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
 
-	if (vkutils::is_device_extension_supported(*m_gpu, "VK_EXT_extended_dynamic_state"))
+	if (utils::is_device_extension_supported(*m_gpu, "VK_EXT_extended_dynamic_state"))
 	{
 		m_deviceExtensions.push_back("VK_EXT_extended_dynamic_state");
 
@@ -187,7 +187,7 @@ void vkboot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures featur
 	vkGetDeviceQueue(*m_device, indices.presentFamily.value(), 0, m_presentQueue);
 }
 
-int vkboot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
+int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 
@@ -207,7 +207,7 @@ int vkboot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 	// Maximum possible size of textures affects graphics quality
 	score += deviceProperties.limits.maxImageDimension2D;
 
-	vkboot::QueueFamilyIndices indices = find_queue_families(device, *m_surface);
+	boot::QueueFamilyIndices indices = find_queue_families(device, *m_surface);
 
 	// Application can't function without geometry shaders
 	if (!deviceFeatures.geometryShader || !indices.isComplete())
@@ -217,7 +217,7 @@ int vkboot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 	bool swapChainAdequate = false;
 	if (check_device_extension_support(device))
 	{
-		vkboot::SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, *m_surface);
+		boot::SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, *m_surface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		if (!swapChainAdequate)
 			return 0;
@@ -230,7 +230,7 @@ int vkboot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 	return score;
 }
 
-bool vkboot::VulkanBooter::check_device_extension_support(VkPhysicalDevice device)
+bool boot::VulkanBooter::check_device_extension_support(VkPhysicalDevice device)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -248,9 +248,9 @@ bool vkboot::VulkanBooter::check_device_extension_support(VkPhysicalDevice devic
 	return requiredExtensions.empty();
 }
 
-vkboot::QueueFamilyIndices vkboot::find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface)
+boot::QueueFamilyIndices boot::find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
-	vkboot::QueueFamilyIndices indices;
+	boot::QueueFamilyIndices indices;
 
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -282,9 +282,9 @@ vkboot::QueueFamilyIndices vkboot::find_queue_families(VkPhysicalDevice device, 
 	return indices;
 }
 
-vkboot::SwapChainSupportDetails vkboot::query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface)
+boot::SwapChainSupportDetails boot::query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
-	vkboot::SwapChainSupportDetails details;
+	boot::SwapChainSupportDetails details;
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
 	uint32_t formatCount;
@@ -306,13 +306,13 @@ vkboot::SwapChainSupportDetails vkboot::query_swapchain_support(VkPhysicalDevice
 	return details;
 }
 
-void vkboot::VulkanBooter::boot_vulkan()
+void boot::VulkanBooter::boot_vulkan()
 {
 	create_instance();
 	setup_debug_messenger();
 }
 
-void vkboot::VulkanBooter::setup_devices()
+void boot::VulkanBooter::setup_devices()
 {
 
 	pick_graphics_card_device();
@@ -322,7 +322,7 @@ void vkboot::VulkanBooter::setup_devices()
 	create_logical_device(deviceFeatures);
 }
 
-void vkboot::VulkanBooter::setup_memory()
+void boot::VulkanBooter::setup_memory()
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.physicalDevice = *m_gpu;

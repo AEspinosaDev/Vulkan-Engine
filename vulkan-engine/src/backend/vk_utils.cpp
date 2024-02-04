@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-bool vkutils::check_validation_layer_suport(std::vector<const char *> validationLayers)
+bool utils::check_validation_layer_suport(std::vector<const char *> validationLayers)
 {
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -32,7 +32,7 @@ bool vkutils::check_validation_layer_suport(std::vector<const char *> validation
 	return true;
 }
 
-VkPhysicalDeviceFeatures vkutils::get_gpu_features(VkPhysicalDevice &gpu)
+VkPhysicalDeviceFeatures utils::get_gpu_features(VkPhysicalDevice &gpu)
 {
 
 	VkPhysicalDeviceFeatures deviceFeatures{};
@@ -40,13 +40,13 @@ VkPhysicalDeviceFeatures vkutils::get_gpu_features(VkPhysicalDevice &gpu)
 	return deviceFeatures;
 }
 
-VkPhysicalDeviceProperties vkutils::get_gpu_properties(VkPhysicalDevice &gpu)
+VkPhysicalDeviceProperties utils::get_gpu_properties(VkPhysicalDevice &gpu)
 {
 	VkPhysicalDeviceProperties deviceFeatures;
 	vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
 	return deviceFeatures;
 }
-size_t vkutils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu)
+size_t utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu)
 {
 	VkPhysicalDeviceProperties deviceFeatures;
 	vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
@@ -59,7 +59,7 @@ size_t vkutils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &g
 	}
 	return alignedSize;
 }
-uint32_t vkutils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t utils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(gpu, &memProperties);
@@ -73,7 +73,7 @@ uint32_t vkutils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, V
 
 	throw std::runtime_error("failed to find suitable memory type!");
 }
-void vkutils::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
+void utils::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
 {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -82,7 +82,7 @@ void vkutils::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateIn
 	createInfo.pfnUserCallback = debugCallback;
 }
 
-void vkutils::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator)
+void utils::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator)
 {
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != nullptr)
@@ -90,7 +90,7 @@ void vkutils::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtil
 		func(instance, debugMessenger, pAllocator);
 	}
 }
-void vkutils::log_available_extensions(std::vector<VkExtensionProperties> ext)
+void utils::log_available_extensions(std::vector<VkExtensionProperties> ext)
 {
 	DEBUG_LOG("---------------------");
 	DEBUG_LOG("Available extensions");
@@ -101,7 +101,7 @@ void vkutils::log_available_extensions(std::vector<VkExtensionProperties> ext)
 	}
 	DEBUG_LOG("---------------------");
 }
-void vkutils::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates)
+void utils::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates)
 {
 	DEBUG_LOG("---------------------");
 	DEBUG_LOG("Suitable Devices");
@@ -114,7 +114,7 @@ void vkutils::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates
 	}
 	DEBUG_LOG("---------------------");
 }
-VkResult vkutils::create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
+VkResult utils::create_debug_utils_messenger_EXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
 {
 
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -127,16 +127,16 @@ VkResult vkutils::create_debug_utils_messenger_EXT(VkInstance instance, const Vk
 		return VK_ERROR_EXTENSION_NOT_PRESENT;
 	}
 }
-glm::vec3 vkutils::get_tangent_gram_smidt(glm::vec3 &p1, glm::vec3 &p2, glm::vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3, glm::vec3 normal)
+Vec3 utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3, Vec3 normal)
 {
 
-	glm::vec3 edge1 = p2 - p1;
-	glm::vec3 edge2 = p3 - p1;
+	Vec3 edge1 = p2 - p1;
+	Vec3 edge2 = p3 - p1;
 	glm::vec2 deltaUV1 = uv2 - uv1;
 	glm::vec2 deltaUV2 = uv3 - uv1;
 
 	float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-	glm::vec3 tangent;
+	Vec3 tangent;
 	tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
 	tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
 	tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);

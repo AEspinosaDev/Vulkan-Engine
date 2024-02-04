@@ -76,7 +76,7 @@ void VulkanRenderer::setup()
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
     toriiMesh->set_position({1.6, -2.3, 6.1});
-    toriiMesh->set_rotation({0.0, 28.0f * 3.14 / 180, 8.0f * 3.14 / 180});
+    toriiMesh->set_rotation({0.0, 28.0f, 8.0f});
     m_scene->add(toriiMesh);
 
     Mesh *terrainMesh = new Mesh();
@@ -101,7 +101,7 @@ void VulkanRenderer::setup()
 
     Mesh *boxMesh = new Mesh();
     boxMesh->set_position({-3, -2.5, 5.0});
-    boxMesh->set_rotation({0.0, 0.3f, 0.00});
+    boxMesh->set_rotation({0.0, 20.0f, 0.0f});
     boxMesh->load_file(engineMeshDir + "cube.obj");
     Texture *woodText = new Texture();
     woodText->load_image(textDir + "wood_diffuse.jpg");
@@ -122,7 +122,7 @@ void VulkanRenderer::setup()
 
     Mesh *kabutoMesh = new Mesh();
     kabutoMesh->load_file(meshDir + "kabuto.obj");
-    kabutoMesh->set_rotation(glm::vec3(0.0, 3.14, 0.0));
+    kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
     kabutoText->load_image(textDir + "kabuto_color.png");

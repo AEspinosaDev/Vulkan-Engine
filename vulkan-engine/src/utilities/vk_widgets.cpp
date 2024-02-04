@@ -153,7 +153,7 @@ void SceneExplorerWidget::render()
     ImGui::Spacing();
     ImGui::SeparatorText("Ambient Light");
     ImGui::Spacing();
-    glm::vec3 ambientColor = m_scene->get_ambient_color();
+    Vec3 ambientColor = m_scene->get_ambient_color();
     if (ImGui::ColorEdit3("Ambient Color", (float *)&ambientColor))
     {
         m_scene->set_ambient_color(ambientColor);
@@ -173,7 +173,7 @@ void SceneExplorerWidget::render()
     }
     if (useFog)
     {
-        glm::vec3 fogColor = m_scene->get_fog_color();
+        Vec3 fogColor = m_scene->get_fog_color();
         if (ImGui::ColorEdit3("Fog Color", (float *)&fogColor))
         {
             m_scene->set_fog_color(fogColor);
@@ -219,21 +219,21 @@ void ObjectExplorerWidget::render()
                          m_object->get_position().z};
     if (ImGui::DragFloat3("Position", position, 0.1f))
     {
-        m_object->set_position(glm::vec3(position[0], position[1], position[2]));
+        m_object->set_position(Vec3(position[0], position[1], position[2]));
     };
     float rotation[3] = {(m_object->get_rotation().x * 180) / PI,
                          (m_object->get_rotation().y * 180) / PI,
                          (m_object->get_rotation().z * 180) / PI};
     if (ImGui::DragFloat3("Rotation", rotation, 0.1f))
     {
-        m_object->set_rotation(glm::vec3((rotation[0] * PI) / 180, (rotation[1] * PI) / 180, (rotation[2] * PI) / 180));
+        m_object->set_rotation(Vec3((rotation[0] * PI) / 180, (rotation[1] * PI) / 180, (rotation[2] * PI) / 180));
     };
     float scale[3] = {m_object->get_scale().x,
                       m_object->get_scale().y,
                       m_object->get_scale().z};
     if (ImGui::DragFloat3("Scale", scale, 0.1f))
     {
-        m_object->set_scale(glm::vec3(scale[0], scale[1], scale[2]));
+        m_object->set_scale(Vec3(scale[0], scale[1], scale[2]));
     };
     if (m_object->get_type() == ObjectType::MESH)
     {
@@ -376,10 +376,10 @@ void ObjectExplorerWidget::render()
             if (model->get_material(i)->get_shaderpass_id() == "physical")
             {
                 PhysicallyBasedMaterial *mat = dynamic_cast<PhysicallyBasedMaterial *>(model->get_material(i));
-                glm::vec3 albedo = mat->get_albedo();
+                Vec3 albedo = mat->get_albedo();
                 if (ImGui::ColorEdit3("Albedo", (float *)&albedo))
                 {
-                    mat->set_albedo(glm::vec4{albedo, 1.0f});
+                    mat->set_albedo(Vec4{albedo, 1.0f});
                 };
                 if (mat->get_albedo_texture())
                 {
@@ -515,7 +515,7 @@ void ObjectExplorerWidget::render()
         float intensity = light->get_intensity();
         if (ImGui::DragFloat("Intensity", &intensity, 0.005f, 0.0f, 10.0f))
             light->set_intensity(intensity);
-        glm::vec3 color = light->get_color();
+        Vec3 color = light->get_color();
         if (ImGui::ColorEdit3("Color", (float *)&color))
         {
             light->set_color(color);
@@ -549,7 +549,7 @@ void ObjectExplorerWidget::render()
                                  light->get_shadow_target().z};
             if (ImGui::DragFloat3("Shadow Target", position, 0.1f))
             {
-                light->set_shadow_target(glm::vec3(position[0], position[1], position[2]));
+                light->set_shadow_target(Vec3(position[0], position[1], position[2]));
             };
             ImGui::Text("Advanced Shadow Settings:");
             float bias = light->get_shadow_bias();

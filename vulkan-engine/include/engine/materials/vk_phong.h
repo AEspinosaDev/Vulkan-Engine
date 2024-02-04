@@ -9,9 +9,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 class PhongMaterial : public Material
 {
 protected:
-    glm::vec2 m_tileUV{1.0f, 1.0f};
+    Vec2 m_tileUV{1.0f, 1.0f};
 
-    glm::vec4 m_color; // w for transparency
+    Vec4 m_color; // w for transparency
 
     float m_glossiness{40.0f};
     float m_shininess{10.0f};
@@ -50,18 +50,18 @@ protected:
     }
 
 public:
-    PhongMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("phong"), m_color(color) {}
-    PhongMaterial(glm::vec4 color, MaterialSettings params) : Material("phong", params), m_color(color) {}
+    PhongMaterial(Vec4 color = Vec4(1.0, 1.0, 0.5, 1.0)) : Material("phong"), m_color(color) {}
+    PhongMaterial(Vec4 color, MaterialSettings params) : Material("phong", params), m_color(color) {}
 
-    inline glm::vec2 get_tile() const { return m_tileUV; }
-    inline void set_tile(glm::vec2 tile)
+    inline Vec2 get_tile() const { return m_tileUV; }
+    inline void set_tile(Vec2 tile)
     {
         m_tileUV = tile;
         m_isDirty = true;
     }
 
-    inline glm::vec4 get_color() const { return m_color; }
-    inline void set_color(glm::vec4 c)
+    inline Vec4 get_color() const { return m_color; }
+    inline void set_color(Vec4 c)
     {
         m_color = c;
         m_isDirty = true;

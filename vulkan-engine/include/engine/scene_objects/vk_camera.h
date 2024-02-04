@@ -24,7 +24,7 @@ private:
 public:
     Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_cameraCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
     {
-        set_rotation({-90, 0, 0});
+        set_rotation({-90, 0, 0}, true);
         Camera::m_cameraCount++;
     }
 
@@ -36,7 +36,7 @@ public:
     inline float get_field_of_view() const { return m_fov; }
     inline void set_projection(int width, int height)
     {
-        m_proj = glm::perspective(glm::radians(m_fov), (float)width / (float)height, m_near, m_far);
+        m_proj = math::perspective(math::radians(m_fov), (float)width / (float)height, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
     inline Mat4 get_projection() const { return m_proj; }
@@ -58,7 +58,7 @@ public:
     {
         if (isDirty)
         {
-            m_view = glm::lookAt(m_transform.position, m_transform.position + m_transform.forward, m_transform.up);
+            m_view = math::lookAt(m_transform.position, m_transform.position + m_transform.forward, m_transform.up);
             isDirty = false;
         }
         return m_view;

@@ -11,9 +11,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 class PhysicallyBasedMaterial : public Material
 {
 protected:
-    glm::vec2 m_tileUV{1.0f, 1.0f};
+    Vec2 m_tileUV{1.0f, 1.0f};
 
-    glm::vec4 m_albedo;         // w for opacity
+    Vec4 m_albedo;         // w for opacity
     float m_albedoWeight{1.0f}; // Weight between parameter and albedo texture
 
     float m_metalness{0.5f};
@@ -26,7 +26,7 @@ protected:
     float m_occlusionWeight{1.0f}; // Weight between parameter and occlusion texture
 
     // float m_emmissive{0.0f};
-    // glm::vec4 m_emissionColor;
+    // Vec4 m_emissionColor;
 
     bool m_hasAlbedoTexture{false};
     bool m_hasNormalTexture{false};
@@ -70,18 +70,18 @@ protected:
     }
 
 public:
-    PhysicallyBasedMaterial(glm::vec4 albedo = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("physical"), m_albedo(albedo) {}
-    PhysicallyBasedMaterial(glm::vec4 albedo, MaterialSettings params) : Material("physical", params), m_albedo(albedo) {}
+    PhysicallyBasedMaterial(Vec4 albedo = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("physical"), m_albedo(albedo) {}
+    PhysicallyBasedMaterial(Vec4 albedo, MaterialSettings params) : Material("physical", params), m_albedo(albedo) {}
 
-    inline glm::vec2 get_tile() const { return m_tileUV; }
-    inline void set_tile(glm::vec2 tile)
+    inline Vec2 get_tile() const { return m_tileUV; }
+    inline void set_tile(Vec2 tile)
     {
         m_tileUV = tile;
         m_isDirty = true;
     }
 
-    inline glm::vec4 get_albedo() const { return m_albedo; }
-    inline void set_albedo(glm::vec4 c)
+    inline Vec4 get_albedo() const { return m_albedo; }
+    inline void set_albedo(Vec4 c)
     {
         m_albedo = c;
         m_isDirty = true;
