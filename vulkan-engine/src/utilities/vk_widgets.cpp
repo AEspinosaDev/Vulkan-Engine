@@ -238,7 +238,7 @@ void ObjectExplorerWidget::render()
     if (m_object->get_type() == ObjectType::MESH)
     {
         ImGui::SeparatorText("Mesh");
-        Mesh *model = dynamic_cast<Mesh *>(m_object);
+        Mesh *model = static_cast<Mesh *>(m_object);
 
         int faceCount = 0;
         int vertexCount = 0;
@@ -375,7 +375,7 @@ void ObjectExplorerWidget::render()
             ImGui::Separator();
             if (model->get_material(i)->get_shaderpass_id() == "physical")
             {
-                PhysicallyBasedMaterial *mat = dynamic_cast<PhysicallyBasedMaterial *>(model->get_material(i));
+                PhysicallyBasedMaterial *mat = static_cast<PhysicallyBasedMaterial *>(model->get_material(i));
                 Vec3 albedo = mat->get_albedo();
                 if (ImGui::ColorEdit3("Albedo", (float *)&albedo))
                 {
@@ -510,7 +510,7 @@ void ObjectExplorerWidget::render()
     {
         ImGui::SeparatorText("Light");
 
-        Light *light = dynamic_cast<Light *>(m_object);
+        Light *light = static_cast<Light *>(m_object);
 
         float intensity = light->get_intensity();
         if (ImGui::DragFloat("Intensity", &intensity, 0.005f, 0.0f, 10.0f))
@@ -523,9 +523,9 @@ void ObjectExplorerWidget::render()
 
         if (light->get_light_type() == LightType::POINT)
         {
-            float att = dynamic_cast<PointLight *>(light)->get_area_of_effect();
+            float att = static_cast<PointLight *>(light)->get_area_of_effect();
             if (ImGui::DragFloat("Area of Influence", &att, 0.005f, 0.0f, 50.0f))
-                dynamic_cast<PointLight *>(light)->set_area_of_effect(att);
+                static_cast<PointLight *>(light)->set_area_of_effect(att);
         }
         bool castShadows = light->get_cast_shadows();
 
@@ -570,7 +570,7 @@ void ObjectExplorerWidget::render()
     {
         ImGui::SeparatorText("Camera");
 
-        Camera *cam = dynamic_cast<Camera *>(m_object);
+        Camera *cam = static_cast<Camera *>(m_object);
         float _far = cam->get_far();
         float _near = cam->get_near();
         float fov = cam->get_field_of_view();

@@ -104,8 +104,8 @@ class Renderer
 	bool m_initialized{false};
 	uint32_t m_currentFrame{0};
 
-	Material *m_lastMaterial{nullptr};
-	Geometry *m_lastGeometry{nullptr};
+	// Material *m_lastMaterial{nullptr};
+	// Geometry *m_lastGeometry{nullptr};
 
 	GUIOverlay *m_gui{nullptr};
 

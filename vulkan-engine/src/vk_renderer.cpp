@@ -124,11 +124,11 @@ void Renderer::init_vulkan()
 {
 
 	boot::VulkanBooter booter(&m_instance,
-								&m_debugMessenger,
-								&m_gpu,
-								&m_device,
-								&m_graphicsQueue, m_window->get_surface(),
-								&m_presentQueue, &m_memory, m_enableValidationLayers);
+							  &m_debugMessenger,
+							  &m_gpu,
+							  &m_device,
+							  &m_graphicsQueue, m_window->get_surface(),
+							  &m_presentQueue, &m_memory, m_enableValidationLayers);
 
 	booter.boot_vulkan();
 
@@ -720,30 +720,23 @@ void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&funct
 
 void Renderer::draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g)
 {
-	if (m_lastGeometry != g)
-	{
+	// BIND OBJECT BUFFERS
+	if (!g->buffer_loaded)
+		upload_geometry_data(g);
 
-		// BIND OBJECT BUFFERS
-		if (!g->buffer_loaded)
-			upload_geometry_data(g);
-
-		VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
-		VkDeviceSize offsets[] = {0};
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	}
+	VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	if (g->indexed)
 	{
 		vkCmdBindIndexBuffer(commandBuffer, g->m_ibo->buffer, 0, VK_INDEX_TYPE_UINT16);
-		if (m_lastGeometry != g)
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(g->m_vertexIndex.size()), 1, 0, 0, 0);
 	}
 	else
 	{
 		vkCmdDraw(commandBuffer, static_cast<uint32_t>(g->m_vertexData.size()), 1, 0, 0);
 	}
-
-	m_lastGeometry = g;
 }
 void Renderer::upload_geometry_data(Geometry *const g)
 {
@@ -849,7 +842,7 @@ void Renderer::setup_material(Material *const mat)
 	for (auto pair : textures)
 	{
 		Texture *texture = pair.second;
-		if (texture)
+		if (texture )
 		{
 			// SET ACTUAL TEXTURE
 
@@ -917,11 +910,11 @@ void Renderer::upload_texture(Texture *const t)
 	}
 	// CREATE SAMPLER
 	VkSamplerCreateInfo samplerInfo = init::sampler_create_info((VkFilter)t->m_settings.filter,
-																  VK_SAMPLER_MIPMAP_MODE_LINEAR,
-																  (float)t->m_settings.minMipLevel,
-																  t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
-																  t->m_settings.anisotropicFilter, utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy,
-																  (VkSamplerAddressMode)t->m_settings.adressMode);
+																VK_SAMPLER_MIPMAP_MODE_LINEAR,
+																(float)t->m_settings.minMipLevel,
+																t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
+																t->m_settings.anisotropicFilter, utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy,
+																(VkSamplerAddressMode)t->m_settings.adressMode);
 	vkCreateSampler(m_device, &samplerInfo, nullptr, &t->m_sampler);
 
 	m_deletionQueue.push_function([=]()

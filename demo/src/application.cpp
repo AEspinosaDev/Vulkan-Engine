@@ -71,8 +71,7 @@ void VulkanRenderer::setup()
     toriiMat->set_normal_texture(toriiN);
     toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMesh->set_material(toriiMat);
-
-    toriiMesh->load_file(meshDir + "torii.obj");
+    toriiMesh->load_file(meshDir + "torii.obj",true);
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
     toriiMesh->set_position({1.6, -2.3, 6.1});
@@ -82,7 +81,7 @@ void VulkanRenderer::setup()
     Mesh *terrainMesh = new Mesh();
     terrainMesh->set_scale(10.0);
     terrainMesh->set_position({0.0, -4.0, 0.0});
-    terrainMesh->load_file(meshDir + "terrain.obj");
+    terrainMesh->load_file(meshDir + "terrain.obj",true);
     Texture *floorText = new Texture();
     floorText->load_image(textDir + "floor_diffuse.jpg");
     Texture *floorNormalText = new Texture();
@@ -141,8 +140,8 @@ void VulkanRenderer::setup()
     // // earth->set_rotation(glm::vec3(0.0, 3.14, 0.0));
     // auto earthMat = new PhysicallyBasedMaterial();
     // Texture *earthText = new Texture();
-    // earthText->load_image(textDir + "Earth_ALB.png");
-    // earthMat->set_albedo_texture(earthText);
+    // // earthText->load_image(textDir + "Earth_ALB.png");
+    // // earthMat->set_albedo_texture(earthText);
     // earthMat->set_albedo({0.0, 1.0, 0.0, 1.0});
     // earthMat->set_metalness(0.8f);
     // earthMat->set_roughness(0.4f);

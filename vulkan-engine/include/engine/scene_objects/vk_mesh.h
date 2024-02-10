@@ -82,7 +82,10 @@ public:
 	inline void set_affected_by_fog(bool op) { m_affectedByFog = op; }
 	inline bool is_affected_by_fog() const { return m_affectedByFog; }
 
-	bool load_file(const std::string fileName, bool overrideGeometry = false);
+	/*
+	* Asynchornously loads any kind of supported mesh file (ply, obj). Async can be deactivated.
+	*/
+	void load_file(const std::string fileName, bool asyncCall = true ,bool overrideGeometry = false);
 
 	inline std::string get_file_route() const { return m_fileRoute; }
 

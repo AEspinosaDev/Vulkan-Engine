@@ -2,8 +2,9 @@
 #define TINYPLY_IMPLEMENTATION
 #include <engine/utilities/vk_loaders.h>
 
-bool vke::loaders::load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool importMaterials, bool calculateTangents)
+void vke::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool importMaterials, bool calculateTangents, bool overrideGeometry)
 {
+    // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
 
     // Preparing output
     tinyobj::attrib_t attrib;
@@ -23,7 +24,7 @@ bool vke::loaders::load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::
     {
         ERR_LOG(err);
         DEBUG_LOG("ERROR: Couldn't load mesh");
-        return false;
+        return;
     }
 
     std::vector<Vertex> vertices;
@@ -144,7 +145,7 @@ bool vke::loaders::load_OBJ(Mesh *const mesh, bool overrideGeometry, const std::
 
         shape_id++;
     }
-    return true;
+    return;
 }
 void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
 {
@@ -156,8 +157,8 @@ void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, co
             size_t i2 = indices[i + 2];
 
             Vec3 tangent = utils::get_tangent_gram_smidt(vertices[i0].pos, vertices[i1].pos, vertices[i2].pos,
-                                                                vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord,
-                                                                vertices[i0].normal);
+                                                         vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord,
+                                                         vertices[i0].normal);
 
             vertices[i0].tangent += tangent;
             vertices[i1].tangent += tangent;
@@ -167,15 +168,15 @@ void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, co
         for (size_t i = 0; i < vertices.size(); i += 3)
         {
             Vec3 tangent = utils::get_tangent_gram_smidt(vertices[i].pos, vertices[i + 1].pos, vertices[i + 2].pos,
-                                                                vertices[i].texCoord, vertices[i + 1].texCoord, vertices[i + 2].texCoord,
-                                                                vertices[i].normal);
+                                                         vertices[i].texCoord, vertices[i + 1].texCoord, vertices[i + 2].texCoord,
+                                                         vertices[i].normal);
 
             vertices[i].tangent += tangent;
             vertices[i + 1].tangent += tangent;
             vertices[i + 2].tangent += tangent;
         }
 }
-bool vke::loaders::load_PLY(Mesh *const mesh, bool overrideGeometry, const std::string fileName, bool preload, bool verbose, bool calculateTangents)
+void vke::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool preload, bool verbose, bool calculateTangents, bool overrideGeometry)
 {
 
     std::unique_ptr<std::istream> file_stream;
@@ -389,23 +390,19 @@ bool vke::loaders::load_PLY(Mesh *const mesh, bool overrideGeometry, const std::
             {
                 oldGeom->fill(vertices, indices);
             }
-            return true;
+            return;
         }
 
         Geometry *g = new Geometry();
         g->fill(vertices, indices);
         mesh->set_geometry(g);
-
-        return true;
     }
     catch (const std::exception &e)
     {
         std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
     }
-
-    return false;
 }
-bool vke::loaders::load_3D_file(Mesh *const mesh, bool overrideGeometry, const std::string fileName)
+void vke::loaders::load_3D_file(Mesh *const mesh, const std::string fileName, bool asynCall, bool overrideGeometry)
 {
     size_t dotPosition = fileName.find_last_of(".");
 
@@ -416,21 +413,31 @@ bool vke::loaders::load_3D_file(Mesh *const mesh, bool overrideGeometry, const s
 
         if (fileExtension == OBJ)
         {
-            return loaders::load_OBJ(mesh, overrideGeometry, fileName, false, true);
+            if (asynCall)
+            {
+                std::thread loadThread(loaders::load_OBJ, mesh, fileName, false, true, overrideGeometry);
+                loadThread.detach();
+            }
+            else
+                loaders::load_OBJ(mesh, fileName, false, true, overrideGeometry);
         }
         else if (fileExtension == PLY)
         {
-            return loaders::load_PLY(mesh, overrideGeometry, fileName, true, false, true);
+            if (asynCall)
+            {
+                std::thread loadThread(loaders::load_PLY, mesh, fileName, true, false, true, overrideGeometry);
+                loadThread.detach();
+            }
+            else
+                loaders::load_PLY(mesh, fileName, true, false, true, overrideGeometry);
         }
         else
         {
             std::cerr << "Unsupported file format: " << fileExtension << std::endl;
-            return false;
         }
     }
     else
     {
         std::cerr << "Invalid file name: " << fileName << std::endl;
-        return false;
     }
 }

@@ -29,10 +29,10 @@ Material *Mesh::change_material(Material *m, size_t id)
     return old_m;
 }
 
-bool Mesh::load_file(const std::string fileName, bool overrideGeometry)
+void Mesh::load_file(const std::string fileName, bool asyncCall, bool overrideGeometry)
 {
     m_fileRoute = fileName;
-    return loaders::load_3D_file(this, overrideGeometry, fileName);
+    loaders::load_3D_file(this, fileName, asyncCall, overrideGeometry);
 }
 Mesh *Mesh::clone() const
 {
