@@ -55,6 +55,18 @@ public:
     virtual inline void set_culling_type(CullingMode t) { m_settings.culling = t; }
     virtual inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
     virtual inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
+
+    //  virtual bool is_dirty()
+    // {
+    //     for (auto pair : get_textures())
+    //     {
+    //         if(pair.second)
+    //             if(pair.second->is_dirty()){
+    //                 m_isDirty = true;
+    //                 return m_isDirty;
+    //             }
+    //     }
+    // }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

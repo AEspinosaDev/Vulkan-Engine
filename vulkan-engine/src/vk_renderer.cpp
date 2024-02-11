@@ -445,8 +445,8 @@ void Renderer::default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 							// USE DEBUG MAT;
 						}
 
-						if (mat->m_isDirty)
-							setup_material(mat);
+						// if (mat->is_dirty)
+						setup_material(mat);
 
 						if (m_settings.depthTest)
 							vkCmdSetDepthTestEnable(commandBuffer, mat->get_parameters().depthTest);
@@ -468,7 +468,7 @@ void Renderer::default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
 						// TEXTURE LAYOUT BINDING
-						if (mat->m_shaderPass->settings.descriptorSetLayoutIDs[2])
+						if (mat->m_shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::TEXTURE_LAYOUT])
 							vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 2, 1, &mat->m_textureDescriptor.descriptorSet, 0, nullptr);
 
 						draw_geometry(commandBuffer, g);
@@ -673,7 +673,7 @@ void Renderer::init_resources()
 
 	Texture::DEBUG_TEXTURE = new Texture();
 	std::string engineMeshDir(VK_TEXTURE_DIR);
-	Texture::DEBUG_TEXTURE->load_image(engineMeshDir + "dummy_.jpg");
+	Texture::DEBUG_TEXTURE->load_image(engineMeshDir + "dummy_.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 	upload_texture(Texture::DEBUG_TEXTURE);
 
@@ -842,24 +842,23 @@ void Renderer::setup_material(Material *const mat)
 	for (auto pair : textures)
 	{
 		Texture *texture = pair.second;
-		if (texture )
+		if (texture && texture->is_data_loaded())
 		{
 			// SET ACTUAL TEXTURE
-
-			if (!texture->is_buffer_loaded() && texture->is_data_loaded())
+			if (!texture->is_buffer_loaded())
 				upload_texture(texture);
 
 			// Set texture write
-			if (!mat->get_texture_binding_state()[pair.first])
+			if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
 			{
 				m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
 				mat->set_texture_binding_state(pair.first, true);
+				texture->m_isDirty = false;
 			}
 		}
 		else
 		{
 			// SET DUMMY TEXTURE
-
 			if (!mat->get_texture_binding_state()[pair.first])
 				m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
 			mat->set_texture_binding_state(pair.first, true);

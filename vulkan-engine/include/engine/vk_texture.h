@@ -2,6 +2,7 @@
 #define VK_TEXTURE
 
 #include <stb_image.h>
+#include <thread>
 #include <engine/backend/vk_image.h>
 #include <engine/backend/vk_descriptors.h>
 
@@ -36,6 +37,7 @@ class Texture
 
     bool m_loaded{false};
     bool m_buffer_loaded{false};
+    bool m_isDirty{true};
 
     friend class Renderer;
 
@@ -49,6 +51,7 @@ public:
 
     inline bool is_data_loaded() const { return m_loaded; }
     inline bool is_buffer_loaded() const { return m_buffer_loaded; }
+    inline bool is_dirty() const { return m_isDirty; }
 
     inline TextureSettings get_settings() const { return m_settings; }
     inline void set_settings(TextureSettings settings) { m_settings = settings; }
@@ -64,7 +67,7 @@ public:
     inline void set_filter(TextureFilterType f) { m_settings.filter = f; }
     inline void set_adress_mode(TextureAdressModeType am) { m_settings.adressMode = am; }
 
-    bool load_image(std::string fileName);
+    void load_image(std::string fileName,bool asyncCall=true);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

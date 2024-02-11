@@ -19,10 +19,7 @@ namespace loaders
     Generic loader. It automatically parses the file and find the needed loader for the file extension. Can be called asynchronously
     */
     void load_3D_file(Mesh *const mesh, const std::string fileName, bool asynCall = true, bool overrideGeometry = false);
-    /*
-    Generic texture loader. It automatically parses the file and find the needed loader for the file extension. Can be called asynchronously
-    */
-    void load_image_file(Texture *const texture, const std::string fileName, bool asynCall);
+  
 };
 
 VULKAN_ENGINE_NAMESPACE_END
