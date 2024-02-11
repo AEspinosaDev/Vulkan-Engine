@@ -90,8 +90,6 @@ class Renderer
 	utils::DeletionQueue m_deletionQueue;
 
 	const int MAX_FRAMES_IN_FLIGHT{2};
-	const int MAX_OBJECTS_IN_FLIGHT{10};
-	const int MAX_LIGHTS_IN_FLIGHT{10};
 
 #ifdef NDEBUG
 	const bool m_enableValidationLayers{false};

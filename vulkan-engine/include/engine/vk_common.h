@@ -51,6 +51,9 @@
 #define VULKAN_ENGINE_NAMESPACE_END }
 #define USING_VULKAN_ENGINE_NAMESPACE using namespace vke;
 
+#define VK_MAX_OBJECTS 100
+#define VK_MAX_LIGHTS 10
+
 // File terminations
 #define PLY "ply"
 #define OBJ "obj"

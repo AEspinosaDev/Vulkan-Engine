@@ -26,7 +26,8 @@ struct SceneUniforms
     Vec4 fogColor;     // w is for exponent
     Vec4 fogParams;    // x for near, y for far, z for intensity, w enable.
     Vec4 ambientColor; // w intensity
-    LightUniforms lightUniforms;
+    LightUniforms lightUniforms[VK_MAX_LIGHTS];
+    int numLights;
 };
 
 struct ObjectUniforms

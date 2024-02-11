@@ -11,11 +11,8 @@ layout(location = 3) in vec3 tangent;
 layout(location = 0) out vec3 v_pos;
 layout(location = 1) out vec3 v_normal;
 layout(location = 2) out vec2 v_uv;
-layout(location = 3) out vec3 v_lightPos;
-layout(location = 4) out int v_affectedByFog;
-layout(location = 5) out int v_receiveShadows;
-layout(location = 6) out vec3 v_modelPos;
-layout(location = 7) out mat3 v_TBN;
+layout(location = 3) out vec3 v_modelPos;
+layout(location = 4) out mat3 v_TBN;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -23,6 +20,22 @@ layout(set = 0, binding = 0) uniform CameraUniforms {
     mat4 proj;
     mat4 viewProj;
 } camera;
+
+struct LightUniform{
+   vec3 position;
+    int type;
+    vec3 color;
+    float intensity;
+    vec4 data;
+
+    mat4 viewProj;
+
+    float shadowBias;
+    bool apiBiasEnabled;
+    bool angleDependantBias;
+    float pcfKernel;
+};
+
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 fogColor;
     float fogExponent;
@@ -34,21 +47,12 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
 
     vec3 ambientColor;
     float ambientIntensity;
+    LightUniform lights[20];
+    int numLights;
 
-    vec3 lighPosition;
-    int lightType;
-    vec3 lightColor;
-    float lightIntensity;
-    vec4 lightData;
-
-    mat4 lightViewProj;
-
-    float shadowBias;
-    bool apiBiasEnabled;
-    bool angleDependantBias;
-    float pcfKernel;
-
+ 
 } scene;
+
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
     vec4 otherParams;
@@ -84,7 +88,6 @@ void main() {
 
     gl_Position = camera.viewProj * object.model * vec4(pos, 1.0);
 
-    //OUTS
     v_uv = vec2(uv.x * material.tileUV.x, uv.y * material.tileUV.y);
 
     mat4 mv = camera.view * object.model;
@@ -99,29 +102,38 @@ void main() {
         v_TBN = mat3(T, B, N);
     }
 
-    v_lightPos = scene.lightType == 0 ? (camera.view * vec4(scene.lighPosition, 1.0)).xyz : (camera.view * vec4(scene.lightData.xyz, 0.0)).xyz;
-
-    v_affectedByFog = int(object.otherParams.x);
-    v_receiveShadows = int(object.otherParams.y);
-
     v_modelPos = (object.model * vec4(pos, 1.0)).xyz;
 }
 
 #shader fragment
 #version 450
 
+#define MAX_LIGHTS 10
+
 //Input
 layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
 layout(location = 2) in vec2 v_uv;
-layout(location = 3) in vec3 v_lightPos;
-layout(location = 4) in flat int v_affectedByFog;
-layout(location = 5) in flat int v_receiveShadows;
-layout(location = 6) in vec3 v_modelPos;
-layout(location = 7) in mat3 v_TBN;
+layout(location = 3) in vec3 v_modelPos;
+layout(location = 4) in mat3 v_TBN;
 
 //Output
 layout(location = 0) out vec4 outColor;
+
+struct LightUniform{
+   vec3 position;
+    int type;
+    vec3 color;
+    float intensity;
+    vec4 data;
+
+    mat4 viewProj;
+
+    float shadowBias;
+    bool apiBiasEnabled;
+    bool angleDependantBias;
+    float pcfKernel;
+};
 
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 fogColor;
@@ -134,20 +146,14 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
 
     vec3 ambientColor;
     float ambientIntensity;
-
-    vec3 lighPosition;
-    int lightType;
-    vec3 lightColor;
-    float lightIntensity;
-    vec4 lightData;
-
-    mat4 lightViewProj;
-
-    float shadowBias;
-    bool apiBiasEnabled;
-    bool angleDependantBias;
-    float pcfKernel;
+    LightUniform lights[MAX_LIGHTS];
+    int numLights;
 } scene;
+
+layout(set = 1, binding = 0) uniform ObjectUniforms {
+    mat4 model;
+    vec4 otherParams;
+} object;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec3 albedo;
@@ -199,12 +205,12 @@ float computeFog() {
     return exp(-scene.fogIntensity * 0.01 * z);
 }
 
-float computeAttenuation() {
-    if(scene.lightType != 0)
+float computeAttenuation(LightUniform light) {
+    if(light.type != 0)
         return 1.0;
 
-    float d = length(v_lightPos - v_pos);
-    float influence = scene.lightData.x;
+    float d = length(light.position - v_pos);
+    float influence = light.data.x;
     float window = pow(max(1 - pow(d / influence, 2), 0), 2);
 
     return pow(10 / max(d, 0.0001), 2) * window;
@@ -229,9 +235,9 @@ float filterPCF(int kernelSize, vec3 coords, float bias) {
 
 }
 
-float computeShadow() {
+float computeShadow(LightUniform light) {
 
-    vec4 pos_lightSpace = scene.lightViewProj * vec4(v_modelPos.xyz, 1.0);
+    vec4 pos_lightSpace = light.viewProj * vec4(v_modelPos.xyz, 1.0);
 
     vec3 projCoords = pos_lightSpace.xyz / pos_lightSpace.w;
 
@@ -241,12 +247,12 @@ float computeShadow() {
         return 0.0;
 
     // // float bias = 0.1;
-    //  vec3 lightDir = scene.lightType == 0 ? normalize(v_lightPos - v_pos) : normalize(v_lightPos);
+    //  vec3 lightDir = scene.type == 0 ? normalize(v_lightPos - v_pos) : normalize(v_lightPos);
     // float bias = max(0.5 * tan(acos(dot(v_normal, -lightDir))), 0.05);
 
     // // Apply the bias
     // bias=  max(bias, 0.5);
-    return filterPCF(int(scene.pcfKernel), projCoords, scene.apiBiasEnabled ? 0.0 : scene.shadowBias);
+    return filterPCF(int(light.pcfKernel), projCoords, light.apiBiasEnabled ? 0.0 : light.shadowBias);
 
 }
 
@@ -290,10 +296,10 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-vec3 computeLighting() {
+vec3 computeLighting(LightUniform light) {
 
     //Vector setup
-    vec3 lightDir = scene.lightType == 0 ? normalize(v_lightPos - v_pos) : normalize(v_lightPos);
+    vec3 lightDir = light.type == 0 ? normalize(light.position - v_pos) : normalize(light.position);
     vec3 viewDir = normalize(-v_pos);
     vec3 halfVector = normalize(lightDir + viewDir); //normalize(viewDir + lightDir);
 
@@ -302,7 +308,7 @@ vec3 computeLighting() {
     F0 = mix(F0, g_albedo, g_metalness);
 
 	//Radiance
-    vec3 radiance = scene.lightColor * computeAttenuation() * scene.lightIntensity;
+    vec3 radiance = light.color * computeAttenuation(light) * light.intensity;
 
 	// Cook-Torrance BRDF
     float NDF = distributionGGX(g_normal, halfVector, g_roughness);
@@ -322,9 +328,8 @@ vec3 computeLighting() {
 
 }
 
-void main() {
-
-    //Setting input surface properties
+void setupSurfaceProperties(){
+  //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
     g_opacity = material.opacity;
     g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
@@ -349,11 +354,20 @@ void main() {
         g_metalness = material.hasMetallicTexture ? mix(material.metalness, texture(metalTex, v_uv).r, material.metalnessWeight) : material.metalness;
         g_ao = material.hasAOTexture ? mix(material.occlusion, texture(occlusionTex, v_uv).r, material.occlusionWeight) : material.occlusion;
     }
+}
 
-    vec3 color = computeLighting();
-    if(v_receiveShadows == 1 && scene.lightData.w == 1) {
-        color *= (1.0 - computeShadow());
+void main() {
 
+    setupSurfaceProperties();
+
+    //Compute all lights
+    vec3 color = vec3(0.0);
+    for(int i = 0; i < scene.numLights; i++) {
+        color += computeLighting(scene.lights[i]);
+        if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
+            color *= (1.0 - computeShadow(scene.lights[i]));
+
+        }
     }
 
     //Ambient component
@@ -363,7 +377,7 @@ void main() {
 	//Tone Up
     color = color / (color + vec3(1.0));
 
-    if(v_affectedByFog == 1 && scene.enableFog) {
+    if(int(object.otherParams.x) == 1 && scene.enableFog) {
         float f = computeFog();
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }

@@ -62,7 +62,7 @@ void Renderer::render(Scene *const scene)
 
 	upload_global_data(scene);
 
-	if (scene->get_light() && scene->get_light()->get_cast_shadows())
+	if (scene->get_lights()[0] && scene->get_lights()[0]->get_cast_shadows())
 		shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
 
 	default_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
@@ -319,7 +319,7 @@ void Renderer::init_descriptors()
 	m_descriptorMng.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
 	// PER-OBJECT SET
-	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
+	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
 	VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
 	m_descriptorMng.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
@@ -356,7 +356,7 @@ void Renderer::init_descriptors()
 	{
 
 		const size_t strideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
-		m_frames[i].objectUniformBuffer.init(m_memory, MAX_OBJECTS_IN_FLIGHT * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
+		m_frames[i].objectUniformBuffer.init(m_memory, VK_MAX_OBJECTS * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
 		m_deletionQueue.push_function([=]()
 									  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
 
@@ -394,8 +394,6 @@ void Renderer::default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 	// CLEAR SETUP
-	// if (scene->is_fog_active())
-	// 	m_settings.clearColor = glm::mix( m_settings.clearColor,glm::vec4(scene->get_fog_color(), 1.0f), scene->get_fog_intensity());
 	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
 	VkClearValue clearDepth;
 	clearDepth.depthStencil.depth = 1.f;
@@ -502,8 +500,8 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 	set_viewport(commandBuffer, shadowExtent);
 
 	// float depthBiasConstant = 1.25f;
-	vkCmdSetDepthBiasEnable(commandBuffer, scene->get_light()->get_use_vulkan_bias());
-	float depthBiasConstant = scene->get_light()->get_shadow_bias();
+	vkCmdSetDepthBiasEnable(commandBuffer, scene->get_lights()[0]->get_use_vulkan_bias());
+	float depthBiasConstant = scene->get_lights()[0]->get_shadow_bias();
 	float depthBiasSlope = 0.0f;
 	vkCmdSetDepthBias(
 		commandBuffer,
@@ -804,21 +802,29 @@ void Renderer::upload_global_data(Scene *const scene)
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_active()};
-	sceneParams.fogColor = glm::vec4(scene->get_fog_color(), 1.0f);
-	sceneParams.ambientColor = glm::vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
+	sceneParams.fogColor = Vec4(scene->get_fog_color(), 1.0f);
+	sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 
-	// SHOULD BE AN ARRAY OF LIGHTS... TO DO
-	if (scene->get_light())
+	std::vector<Light *> lights = scene->get_lights();
+	// if (lights.size() > VK_MAX_LIGHTS)
+	// 	std::sort(lights.begin(), lights.end(), [=](Camera *c, Light *a, Light *b)
+	// 			  { return math::length(a->get_position()-c->get_position()) < math::length(b->get_position()-c->get_position()); });
+
+	size_t lightIdx{0};
+	for (Light *l : lights)
 	{
-		Light *l = scene->get_light();
 		if (l->is_active())
 		{
-			sceneParams.lightUniforms = l->get_uniforms();
-			glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(l->m_shadow.fov), 1.0f, l->m_shadow.nearPlane, l->m_shadow.farPlane);
-			glm::mat4 depthViewMatrix = glm::lookAt(l->m_transform.position, l->m_shadow.target, Vec3(0, 1, 0));
-			sceneParams.lightUniforms.viewProj = depthProjectionMatrix * depthViewMatrix;
+			sceneParams.lightUniforms[lightIdx] = l->get_uniforms(camera->get_view());
+			Mat4 depthProjectionMatrix = math::perspective(math::radians(l->m_shadow.fov), 1.0f, l->m_shadow.nearPlane, l->m_shadow.farPlane);
+			Mat4 depthViewMatrix = math::lookAt(l->m_transform.position, l->m_shadow.target, Vec3(0, 1, 0));
+			sceneParams.lightUniforms[lightIdx].viewProj = depthProjectionMatrix * depthViewMatrix;
+			lightIdx++;
 		}
+		if (lightIdx >= VK_MAX_LIGHTS)
+			break;
 	}
+	sceneParams.numLights = (int)lights.size();
 
 	m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 									   m_globalUniformsBuffer.strideSize * m_currentFrame + utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));

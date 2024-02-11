@@ -14,11 +14,11 @@ private:
 
     std::vector<Camera *> m_cameras;
     std::vector<Mesh *> m_meshes;
-    // std::vector<Light*> m_lights;
+    std::vector<Light *> m_lights;
 
     // LIGHTING
     //  For now, just ONE light
-    Light *m_light{nullptr};
+    // Light *m_light{nullptr};
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
     float m_ambientIntensity{0.2f};
 
@@ -39,7 +39,8 @@ private:
             m_cameras.push_back((Camera *)obj);
             break;
         case LIGHT:
-            m_light = (Light *)obj;
+            // m_light = (Light *)obj;
+            m_lights.push_back((Light *)obj);
             break;
         }
         for (auto child : obj->get_children())
@@ -68,10 +69,10 @@ public:
     inline Camera *const get_active_camera() const { return m_activeCamera; }
     inline const std::vector<Mesh *> get_meshes() const { return m_meshes; }
     inline const std::vector<Camera *> get_cameras() const { return m_cameras; }
-    // inline const std::vector<Mesh *> get_lights() const { return m_meshes; }
+    inline const std::vector<Light *> get_lights() const { return m_lights; }
 
-    inline void set_light(Light *l) { m_light = l; }
-    inline Light *get_light() { return m_light; }
+    // inline void set_light(Light *l) { m_light = l; }
+    // inline Light *get_light() { return m_light; }
 
     inline void set_ambient_color(Vec3 c) { m_ambientColor = c; }
     inline Vec3 get_ambient_color() const { return m_ambientColor; }

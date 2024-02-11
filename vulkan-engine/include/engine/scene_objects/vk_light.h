@@ -37,7 +37,7 @@ protected:
 
     friend class Renderer;
 
-    virtual LightUniforms get_uniforms() const = 0;
+    virtual LightUniforms get_uniforms(Mat4 cameraView) const = 0;
 
 public:
     Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Object3D(name, LIGHT), m_color(color),
@@ -88,7 +88,7 @@ class PointLight : public Light
     float m_effectArea;
     float m_decaying;
 
-    virtual LightUniforms get_uniforms() const;
+    virtual LightUniforms get_uniforms(Mat4 cameraView) const;
 
 public:
     PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f) : Light("Point Light", LightType::POINT, color, intensity), m_effectArea(12.0f), m_decaying(1.0f) {}
@@ -106,7 +106,7 @@ class DirectionalLight : public Light
 {
     Vec3 m_direction;
 
-    virtual LightUniforms get_uniforms() const;
+    virtual LightUniforms get_uniforms(Mat4 cameraView) const;
 
 public:
     DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Light("Directional Light", LightType::DIRECTIONAL, color, intensity), m_direction(direction) {}

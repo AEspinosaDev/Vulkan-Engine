@@ -57,7 +57,9 @@ void VulkanRenderer::setup()
     m_scene = new Scene(camera);
 
     m_scene->add(new PointLight());
-    m_scene->get_light()->set_position({-3.0f, 3.0f, 0.0f});
+    m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
+    m_scene->add(new PointLight());
+    m_scene->get_lights()[1]->set_position({3.0f, 3.0f, 10.0f});
 
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();
@@ -111,7 +113,7 @@ void VulkanRenderer::setup()
     m_scene->add(boxMesh);
 
     auto lightMat = new UnlitMaterial();
-    lightMat->set_color(glm::vec4(m_scene->get_light()->get_color(), 1.0f));
+    lightMat->set_color(glm::vec4(m_scene->get_lights()[0]->get_color(), 1.0f));
     m_lightDummy = new Mesh();
     m_lightDummy->load_file(engineMeshDir + "sphere.obj");
     m_lightDummy->set_material(lightMat);
@@ -203,7 +205,7 @@ void VulkanRenderer::update()
         m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_time.delta);
 
     // Rotate the vector around the ZX plane
-    auto light = m_scene->get_light();
+    auto light = m_scene->get_lights()[0];
     if (animateLight)
     {
         float rotationAngle = glm::radians(10.0f * m_time.delta);
