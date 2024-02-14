@@ -1,6 +1,8 @@
 #shader vertex
 #version 450
 
+#define MAX_LIGHTS 10
+
 //Input
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
@@ -47,10 +49,8 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
 
     vec3 ambientColor;
     float ambientIntensity;
-    LightUniform lights[20];
+    LightUniform lights[MAX_LIGHTS];
     int numLights;
-
- 
 } scene;
 
 layout(set = 1, binding = 0) uniform ObjectUniforms {
@@ -181,7 +181,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec2 tileUV;
 } material;
 
-layout(set = 2, binding = 0) uniform sampler2D shadowMap;
+layout(set = 2, binding = 0) uniform sampler2DArray shadowMap;
 
 layout(set = 2, binding = 1) uniform sampler2D albedoTex;
 layout(set = 2, binding = 2) uniform sampler2D normalTex;
@@ -216,10 +216,10 @@ float computeAttenuation(LightUniform light) {
     return pow(10 / max(d, 0.0001), 2) * window;
 }
 
-float filterPCF(int kernelSize, vec3 coords, float bias) {
+float filterPCF(int lightId ,int kernelSize, vec3 coords, float bias) {
 
     int edge = kernelSize / 2;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec3 texelSize = 1.0 / textureSize(shadowMap, 0);
 
     float currentDepth = coords.z;
 
@@ -227,7 +227,7 @@ float filterPCF(int kernelSize, vec3 coords, float bias) {
 
     for(int x = -edge; x <= edge; ++x) {
         for(int y = -edge; y <= edge; ++y) {
-            float pcfDepth = texture(shadowMap, coords.xy + vec2(x, y) * texelSize).r;
+            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy,lightId)).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
@@ -235,7 +235,7 @@ float filterPCF(int kernelSize, vec3 coords, float bias) {
 
 }
 
-float computeShadow(LightUniform light) {
+float computeShadow(LightUniform light, int lightId) {
 
     vec4 pos_lightSpace = light.viewProj * vec4(v_modelPos.xyz, 1.0);
 
@@ -252,7 +252,7 @@ float computeShadow(LightUniform light) {
 
     // // Apply the bias
     // bias=  max(bias, 0.5);
-    return filterPCF(int(light.pcfKernel), projCoords, light.apiBiasEnabled ? 0.0 : light.shadowBias);
+    return filterPCF(lightId,int(light.pcfKernel), projCoords, light.apiBiasEnabled ? 0.0 : light.shadowBias);
 
 }
 
@@ -365,7 +365,7 @@ void main() {
     for(int i = 0; i < scene.numLights; i++) {
         color += computeLighting(scene.lights[i]);
         if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-            color *= (1.0 - computeShadow(scene.lights[i]));
+            color *= (1.0 - computeShadow(scene.lights[i],i));
 
         }
     }

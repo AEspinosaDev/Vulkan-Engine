@@ -252,9 +252,9 @@ void Renderer::init_framebuffers()
 	m_shadowTexture = new Texture();
 	Image shadowImage;
 	shadowImage.init(m_memory, m_swapchain.get_depthbuffer().format,
-					 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, false, VK_SAMPLE_COUNT_1_BIT);
+					 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, false, VK_SAMPLE_COUNT_1_BIT, VK_MAX_LIGHTS);
 
-	shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT);
+	shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 	m_shadowTexture->m_image = shadowImage;
 
 	VkSamplerCreateInfo sampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
@@ -270,6 +270,7 @@ void Renderer::init_framebuffers()
 	VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
 	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_shadowPass, shadowRes);
 	shadow_fb_info.pAttachments = &m_shadowTexture->m_image.view;
+	shadow_fb_info.layers = VK_MAX_LIGHTS;
 
 	if (vkCreateFramebuffer(m_device, &shadow_fb_info, nullptr, &m_shadowFramebuffer) != VK_SUCCESS)
 	{
@@ -314,12 +315,12 @@ void Renderer::init_descriptors()
 
 	// GLOBAL SET
 	VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
-	VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding};
 	m_descriptorMng.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
 	// PER-OBJECT SET
-	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |  VK_SHADER_STAGE_FRAGMENT_BIT, 0);
 	VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
 	m_descriptorMng.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);

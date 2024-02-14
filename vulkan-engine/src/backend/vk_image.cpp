@@ -2,15 +2,17 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples)
+void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers)
 {
     extent = imageExtent;
 
     format = imageFormat;
 
+    layers = imageLayers;
+
     mipLevels = useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
 
-    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples);
+    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples,layers);
 
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -19,15 +21,17 @@ void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags us
     vmaCreateImage(memory, &img_info, &img_allocinfo, &image, &allocation, nullptr);
 }
 
-void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples)
+void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers)
 {
     extent = imageExtent;
 
     format = imageFormat;
 
+    layers = imageLayers;
+
     mipLevels = useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
 
-    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples);
+    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples, layers);
 
     vmaCreateImage(memory, &img_info, &allocInfo, &image, &allocation, nullptr);
 }
@@ -163,9 +167,9 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
                          0, nullptr,
                          1, &imageBarrier_toReadable);
 }
-void Image::create_view(VkDevice &device, VkImageAspectFlags aspectFlags)
+void Image::create_view(VkDevice &device, VkImageAspectFlags aspectFlags, VkImageViewType viewType)
 {
-    VkImageViewCreateInfo dview_info = init::imageview_create_info(format, image, aspectFlags, mipLevels);
+    VkImageViewCreateInfo dview_info = init::imageview_create_info(format, image,viewType, aspectFlags, mipLevels, layers);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 }
 void Image::cleanup(VkDevice &device, VmaAllocator &memory)

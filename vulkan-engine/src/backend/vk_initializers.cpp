@@ -245,11 +245,11 @@ VkPipelineDepthStencilStateCreateInfo init::depth_stencil_create_info(bool bDept
 	return info;
 }
 
-VkDescriptorSetLayoutBinding init::descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding)
+VkDescriptorSetLayoutBinding init::descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount)
 {
 	VkDescriptorSetLayoutBinding setbind = {};
 	setbind.binding = binding;
-	setbind.descriptorCount = 1;
+	setbind.descriptorCount = descriptorCount;
 	setbind.descriptorType = type;
 	setbind.pImmutableSamplers = nullptr;
 	setbind.stageFlags = stageFlags;
@@ -272,7 +272,7 @@ VkWriteDescriptorSet init::write_descriptor_buffer(VkDescriptorType type, VkDesc
 	return write;
 }
 
-VkImageCreateInfo init::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, uint32_t mipLevels, VkSampleCountFlagBits samples)
+VkImageCreateInfo init::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, uint32_t mipLevels, VkSampleCountFlagBits samples, uint32_t layers)
 {
 
 	VkImageCreateInfo info = {};
@@ -285,27 +285,27 @@ VkImageCreateInfo init::image_create_info(VkFormat format, VkImageUsageFlags usa
 	info.extent = extent;
 
 	info.mipLevels = mipLevels;
-	info.arrayLayers = 1;
+	info.arrayLayers = layers;
 	info.samples = samples;
 	info.tiling = VK_IMAGE_TILING_OPTIMAL;
 	info.usage = usageFlags;
 
 	return info;
 }
-VkImageViewCreateInfo init::imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
+VkImageViewCreateInfo init::imageview_create_info(VkFormat format, VkImage image, VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t mipLevels, uint32_t layers)
 {
 	// build a image-view for the depth image to use for rendering
 	VkImageViewCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	info.pNext = nullptr;
 
-	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	info.viewType = viewType;
 	info.image = image;
 	info.format = format;
 	info.subresourceRange.baseMipLevel = 0;
 	info.subresourceRange.levelCount = mipLevels;
 	info.subresourceRange.baseArrayLayer = 0;
-	info.subresourceRange.layerCount = 1;
+	info.subresourceRange.layerCount = layers;
 	info.subresourceRange.aspectMask = aspectFlags;
 
 	return info;

@@ -13,14 +13,16 @@ struct Image
     VkExtent3D extent;
     VkFormat format;
 
+    uint32_t layers;
+
     uint32_t mipLevels{1};
 
     VmaAllocation allocation;
 
-    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
-    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples);
+    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers = 1);
+    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples,uint32_t imageLayers = 1);
 
-    void create_view(VkDevice &device, VkImageAspectFlags aspectFlags);
+    void create_view(VkDevice &device, VkImageAspectFlags aspectFlags, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
 
     void upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer);
 

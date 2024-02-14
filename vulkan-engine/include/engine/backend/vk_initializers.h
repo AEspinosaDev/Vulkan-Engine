@@ -46,14 +46,14 @@ namespace init
 
 	VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
 
-	VkDescriptorSetLayoutBinding descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding);
+	VkDescriptorSetLayoutBinding descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount = 1);
 
 	VkWriteDescriptorSet write_descriptor_buffer(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorBufferInfo *bufferInfo, uint32_t binding);
 
 	VkImageCreateInfo image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent, uint32_t mipLevels = 1,
-										VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
+										VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,uint32_t layers = 1);
 
-	VkImageViewCreateInfo imageview_create_info(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags, uint32_t mipLevels = 1);
+	VkImageViewCreateInfo imageview_create_info(VkFormat format, VkImage image, VkImageViewType viewType,VkImageAspectFlags aspectFlags, uint32_t mipLevels = 1, uint32_t layers = 1);
 
 	VkSamplerCreateInfo sampler_create_info(VkFilter filters, VkSamplerMipmapMode mipmapMode, float minLod, float maxLod,
 											bool anysotropicFilter, float maxAnysotropy, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
