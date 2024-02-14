@@ -41,7 +41,7 @@ protected:
 
 public:
     Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Object3D(name, LIGHT), m_color(color),
-                                                                                                                     m_intensity(intensity), m_lighType(type) {}
+                                                                                                           m_intensity(intensity), m_lighType(type) {}
 
     virtual inline Vec3 get_color() const { return m_color; }
     virtual inline void set_color(Vec3 c) { m_color = c; }
@@ -90,8 +90,10 @@ class PointLight : public Light
 
     virtual LightUniforms get_uniforms(Mat4 cameraView) const;
 
+    static int m_instanceCount;
+
 public:
-    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f) : Light("Point Light", LightType::POINT, color, intensity), m_effectArea(12.0f), m_decaying(1.0f) {}
+    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f) : Light("Point Light #" + std::to_string(PointLight::m_instanceCount), LightType::POINT, color, intensity), m_effectArea(12.0f), m_decaying(1.0f) { PointLight::m_instanceCount++; }
 
     inline float get_area_of_effect() const { return m_effectArea; }
     inline void set_area_of_effect(float a) { m_effectArea = a; }
@@ -108,11 +110,16 @@ class DirectionalLight : public Light
 
     virtual LightUniforms get_uniforms(Mat4 cameraView) const;
 
-public:
-    DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Light("Directional Light", LightType::DIRECTIONAL, color, intensity), m_direction(direction) {}
+    static int m_instanceCount;
 
-    inline Vec3 get_direction() const { return m_direction; }
-    inline void set_direction(Vec3 d) { m_direction = d; }
+public:
+    DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Light("Directional Light#"+ std::to_string(DirectionalLight::m_instanceCount), LightType::DIRECTIONAL, color, intensity), m_direction(direction) {
+        DirectionalLight::m_instanceCount++;}
+
+    inline Vec3 get_direction() const {
+        return m_direction; }
+    inline void set_direction(Vec3 d) {
+        m_direction = d; }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

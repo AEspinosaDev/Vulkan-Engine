@@ -363,11 +363,12 @@ void main() {
     //Compute all lights
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
-        color += computeLighting(scene.lights[i]);
+        vec3 lighting =computeLighting(scene.lights[i]);
         if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-            color *= (1.0 - computeShadow(scene.lights[i],i));
+            lighting *= (1.0 - computeShadow(scene.lights[i],i));
 
         }
+        color += lighting;
     }
 
     //Ambient component

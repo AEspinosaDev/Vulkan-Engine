@@ -3,7 +3,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-int Mesh::m_meshCount = 0;
+int Mesh::m_instanceCount = 0;
 
 Geometry *Mesh::change_geometry(Geometry *g, size_t id)
 {

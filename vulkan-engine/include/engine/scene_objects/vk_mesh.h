@@ -21,16 +21,16 @@ class Mesh : public Object3D
 	std::string m_fileRoute{"None"};
 
 	static Material *m_debugMaterial;
-	static int m_meshCount;
+	static int m_instanceCount;
 
 public:
-	Mesh() : Object3D("Mesh #" + std::to_string(Mesh::m_meshCount), MESH) { Mesh::m_meshCount++; }
-	Mesh(Geometry *geom, Material *mat) : Object3D("Mesh #" + std::to_string(Mesh::m_meshCount), MESH)
+	Mesh() : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), MESH) { Mesh::m_instanceCount++; }
+	Mesh(Geometry *geom, Material *mat) : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), MESH)
 	{
 		m_geometry.push_back(geom);
 		m_material.push_back(mat);
 
-		Mesh::m_meshCount++;
+		Mesh::m_instanceCount++;
 	}
 	~Mesh()
 	{

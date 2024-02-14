@@ -74,17 +74,19 @@ class Renderer
 
 	std::vector<Frame> m_frames;
 
-	VkRenderPass m_renderPass{};
+	VkRenderPass m_forwardPass{};
 	VkRenderPass m_shadowPass{};
+	VkRenderPass m_geometryPass{};
+	VkRenderPass m_lightingPass{};
 
-	Texture *m_shadowTexture;
+	Texture *m_shadowsTexture;
 	VkFramebuffer m_shadowFramebuffer{};
 
 	std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 
 	DescriptorManager m_descriptorMng{};
-	DescriptorSet m_globalDescriptor{};
 
+	DescriptorSet m_globalDescriptor{};
 	Buffer m_globalUniformsBuffer{};
 
 	utils::DeletionQueue m_deletionQueue;
@@ -225,13 +227,29 @@ private:
 	void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth = 0.0f, float maxDepth = 1.0f,
 					  float x = 0.0f, float y = 0.0f, int offsetX = 0, int offsetY = 0);
 	/*
+	Forward rendering
+	*/
+	void render_forward(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
+	/*
+	Deferred rendering
+	*/
+	void render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
+	/*
 	Default forward pass
 	*/
-	void default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
+	void forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
 	/*
 	Pass tom save depth values from ligh view and use it for shadow mapping
 	*/
 	void shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
+	/*
+	Geometry pass. Used for deferred rendering.
+	*/
+	void geometry_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
+	/*
+	Lighting pass. Used for deferred rendering.
+	*/
+	void lighting_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
 	/*
 	Render single geometry
 	*/

@@ -19,13 +19,13 @@ private:
 
     bool perspective;
 
-    static int m_cameraCount;
+    static int m_instanceCount;
 
 public:
-    Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_cameraCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
+    Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
     {
         set_rotation({-90, 0, 0}, true);
-        Camera::m_cameraCount++;
+        Camera::m_instanceCount++;
     }
 
     inline void set_field_of_view(float fov)

@@ -62,10 +62,7 @@ void Renderer::render(Scene *const scene)
 
 	upload_global_data(scene);
 
-	if (scene->get_lights()[0] && scene->get_lights()[0]->get_cast_shadows())
-		shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
-
-	default_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
+	render_forward(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
 
 	if (vkEndCommandBuffer(m_frames[m_currentFrame].commandBuffer) != VK_SUCCESS)
 	{
@@ -205,10 +202,10 @@ void Renderer::init_renderpasses()
 
 	builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
 
-	m_renderPass = builder.build_renderpass(m_device, true, true);
+	m_forwardPass = builder.build_renderpass(m_device, true, true);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_renderPass, nullptr); });
+								  { vkDestroyRenderPass(m_device, m_forwardPass, nullptr); });
 
 	if (m_initialized)
 		return;
@@ -244,32 +241,32 @@ void Renderer::init_renderpasses()
 void Renderer::init_framebuffers()
 {
 	// FOR THE SWAPCHAIN
-	m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_forwardPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 	// FOR SHADOW PASS
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
-	m_shadowTexture = new Texture();
+	m_shadowsTexture = new Texture();
 	Image shadowImage;
 	shadowImage.init(m_memory, m_swapchain.get_depthbuffer().format,
 					 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, false, VK_SAMPLE_COUNT_1_BIT, VK_MAX_LIGHTS);
 
 	shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-	m_shadowTexture->m_image = shadowImage;
+	m_shadowsTexture->m_image = shadowImage;
 
 	VkSamplerCreateInfo sampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	sampler.maxAnisotropy = 1.0f;
 	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-	VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowTexture->m_sampler));
+	VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowsTexture->m_sampler));
 
 	m_deletionQueue.push_function([=]()
-								  { m_shadowTexture->cleanup(m_device, m_memory); });
+								  { m_shadowsTexture->cleanup(m_device, m_memory); });
 
 	//	To light
 	VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
 	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_shadowPass, shadowRes);
-	shadow_fb_info.pAttachments = &m_shadowTexture->m_image.view;
+	shadow_fb_info.pAttachments = &m_shadowsTexture->m_image.view;
 	shadow_fb_info.layers = VK_MAX_LIGHTS;
 
 	if (vkCreateFramebuffer(m_device, &shadow_fb_info, nullptr, &m_shadowFramebuffer) != VK_SUCCESS)
@@ -320,7 +317,7 @@ void Renderer::init_descriptors()
 	m_descriptorMng.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
 	// PER-OBJECT SET
-	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |  VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+	VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
 	VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
 	m_descriptorMng.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
@@ -389,10 +386,26 @@ void Renderer::set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, 
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void Renderer::default_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
+void Renderer::render_forward(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
+{
+	if (!scene->get_lights().empty())
+		shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
+
+	forward_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
+}
+void Renderer::render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
+{
+	if (!scene->get_lights().empty())
+		shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
+
+	// geometry_pass();
+
+	// lighting_pass();
+}
+void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_forwardPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 	// CLEAR SETUP
 	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
@@ -510,7 +523,7 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 		0.0f,
 		depthBiasSlope);
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipeline);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipeline);
 
 	int mesh_idx = 0;
 	for (Mesh *m : scene->get_meshes())
@@ -534,10 +547,10 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 
 					// GLOBAL LAYOUT BINDING
 					uint32_t globalOffsets[] = {globalOffset, globalOffset};
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
 					// PER OBJECT LAYOUT BINDING
 					uint32_t objectOffsets[] = {objectOffset, objectOffset};
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["depth"]->pipelineLayout, 1, 1,
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipelineLayout, 1, 1,
 											&m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
 					draw_geometry(commandBuffer, g);
@@ -547,6 +560,12 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 		}
 	}
 	vkCmdEndRenderPass(commandBuffer);
+}
+void Renderer::geometry_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
+{
+}
+void Renderer::lighting_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
+{
 }
 void Renderer::init_shaderpasses()
 {
@@ -619,7 +638,7 @@ void Renderer::init_shaderpasses()
 		ShaderPass::build_shader_stages(m_device, *pass);
 
 		builder.build_pipeline_layout(m_device, m_descriptorMng, *pass);
-		builder.build_pipeline(m_device, m_renderPass, *pass);
+		builder.build_pipeline(m_device, m_forwardPass, *pass);
 
 		m_deletionQueue.push_function([=]()
 									  { pass->cleanup(m_device); });
@@ -628,7 +647,7 @@ void Renderer::init_shaderpasses()
 	if (m_initialized)
 		return;
 	// DEPTH PASS
-	ShaderPass *depthPass = new ShaderPass(shaderDir + "depth.glsl");
+	ShaderPass *depthPass = new ShaderPass(shaderDir + "shadows.glsl");
 	depthPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
 												  {DescriptorLayoutType::OBJECT_LAYOUT, true},
 												  {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
@@ -661,7 +680,7 @@ void Renderer::init_shaderpasses()
 	builder.build_pipeline_layout(m_device, m_descriptorMng, *depthPass);
 	builder.build_pipeline(m_device, m_shadowPass, *depthPass);
 
-	m_shaderPasses["depth"] = depthPass;
+	m_shaderPasses["shadows"] = depthPass;
 
 	m_deletionQueue.push_function([=]()
 								  { depthPass->cleanup(m_device); });
@@ -693,7 +712,7 @@ void Renderer::recreate_swap_chain()
 
 	m_swapchain.cleanup(m_device, m_memory);
 	create_swapchain();
-	m_swapchain.create_framebuffers(m_device, m_renderPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_forwardPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
@@ -842,7 +861,7 @@ void Renderer::setup_material(Material *const mat)
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::TEXTURE_LAYOUT, &mat->m_textureDescriptor);
 
 		// Set Shadow Map write
-		m_descriptorMng.set_descriptor_write(m_shadowTexture->m_sampler, m_shadowTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
+		m_descriptorMng.set_descriptor_write(m_shadowsTexture->m_sampler, m_shadowsTexture->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
 	}
 
 	auto textures = mat->get_textures();
@@ -930,7 +949,7 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPass, m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_forwardPass, m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

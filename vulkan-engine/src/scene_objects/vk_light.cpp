@@ -1,6 +1,10 @@
 #include <engine/scene_objects/vk_light.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+int PointLight::m_instanceCount = 0;
+int DirectionalLight::m_instanceCount = 0;
+
 LightUniforms PointLight::get_uniforms(Mat4 cameraView) const
 {
     LightUniforms uniforms{};
