@@ -4,8 +4,42 @@
 #include <engine/vk_object3D.h>
 #include <engine/vk_geometry.h>
 #include <engine/vk_material.h>
+#include <engine/scene_objects/vk_camera.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+// Ahead declare
+class Mesh;
+
+/*
+Bounding volume base struct
+*/
+struct Volume
+{
+	virtual void setup(Mesh *mesh) = 0;
+
+	virtual bool is_on_frustrum(const Frustum &frustum,
+								Object3D *const object) const = 0;
+};
+struct Sphere : public Volume
+{
+	Vec3 center{0.0f, 0.0f, 0.0f};
+	float radius{0.0f};
+
+	Sphere() = default;
+
+	Sphere(const Vec3 c, const float r) : center(c), radius(r) {}
+
+	virtual void setup(Mesh *mesh);
+
+	virtual bool is_on_frustrum(const Frustum &frustum,
+								Object3D *const object) const;
+};
+struct AABB : public Volume
+{
+	// TO DO
+};
+
 /*
 Class used to represent a 3D model.
 */
@@ -13,6 +47,8 @@ class Mesh : public Object3D
 {
 	std::vector<Geometry *> m_geometry;
 	std::vector<Material *> m_material;
+
+	Volume *m_volume{nullptr};
 
 	bool m_affectedByFog{true};
 	bool m_castShadows{true};
@@ -83,9 +119,9 @@ public:
 	inline bool is_affected_by_fog() const { return m_affectedByFog; }
 
 	/*
-	* Asynchornously loads any kind of supported mesh file (ply, obj). Async can be deactivated.
-	*/
-	void load_file(const std::string fileName, bool asyncCall = true ,bool overrideGeometry = false);
+	 * Asynchornously loads any kind of supported mesh file (ply, obj). Async can be deactivated.
+	 */
+	void load_file(const std::string fileName, bool asyncCall = true, bool overrideGeometry = false);
 
 	inline std::string get_file_route() const { return m_fileRoute; }
 

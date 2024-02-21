@@ -5,6 +5,37 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+struct Face
+{
+    Vec3 normal = {0.f, 1.f, 0.f}; // unit vector
+    float distance = 0.f;          // Distance with origin
+
+    Face() = default;
+
+    Face(const Vec3 &p1, const Vec3 &norm)
+        : normal(math::normalize(norm)),
+          distance(math::dot(normal, p1))
+    {
+    }
+
+    float get_signed_distance(const Vec3 &point) const
+    {
+        return math::dot(normal, point) - distance;
+    }
+};
+
+struct Frustum
+{
+    Face topFace;
+    Face bottomFace;
+
+    Face rightFace;
+    Face leftFace;
+
+    Face farFace;
+    Face nearFace;
+};
+
 class Camera : public Object3D
 {
 
@@ -12,14 +43,19 @@ private:
     Mat4 m_view;
     Mat4 m_proj;
 
+    Frustum m_frustrum;
+
     float m_fov;
     float m_near;
     float m_far;
     float m_zoom;
+    float m_aspect;
 
     bool perspective;
 
     static int m_instanceCount;
+
+    void set_frustum();
 
 public:
     Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
@@ -36,7 +72,8 @@ public:
     inline float get_field_of_view() const { return m_fov; }
     inline void set_projection(int width, int height)
     {
-        m_proj = math::perspective(math::radians(m_fov), (float)width / (float)height, m_near, m_far);
+        m_aspect = (float)width / (float)height;
+        m_proj = math::perspective(math::radians(m_fov), m_aspect, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
     inline Mat4 get_projection() const { return m_proj; }
@@ -59,9 +96,18 @@ public:
         if (isDirty)
         {
             m_view = math::lookAt(m_transform.position, m_transform.position + m_transform.forward, m_transform.up);
+            set_frustum();
             isDirty = false;
         }
         return m_view;
+    }
+    inline Frustum get_frustrum()
+    {
+        if (isDirty)
+        {
+            set_frustum();
+        }
+        return m_frustrum;
     }
 };
 

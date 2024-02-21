@@ -194,6 +194,12 @@ public:
 
     // virtual set_parent(Object3D* parent){m_parent=parent;}
 
+    virtual void reconcile()
+    {
+        if (isDirty)
+            isDirty = false;
+    };
+
     virtual Object3D *get_parent() const { return m_parent; }
 };
 VULKAN_ENGINE_NAMESPACE_END
