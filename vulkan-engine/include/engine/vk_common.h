@@ -24,7 +24,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-//Convenience functions definitions
+// Convenience functions definitions
 #define DEBUG_LOG(msg)                 \
 	{                                  \
 		std::cout << msg << std::endl; \
@@ -224,6 +224,13 @@ typedef enum GuiColorProfileType
 	CLASSIC = 2,
 	CUSTOM = 3
 } GuiColorProfileType;
+
+typedef enum VolumeType
+{
+	SPHERE = 0,
+	AABB = 1,
+	OBB = 2,
+} VolumeType;
 
 // Ahead declaration of some key classes
 class Renderer;

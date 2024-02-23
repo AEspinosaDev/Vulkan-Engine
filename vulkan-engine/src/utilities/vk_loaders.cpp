@@ -145,6 +145,7 @@ void vke::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool i
 
         shape_id++;
     }
+    mesh->setup_volume();
     return;
 }
 void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
@@ -396,6 +397,7 @@ void vke::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool p
         Geometry *g = new Geometry();
         g->fill(vertices, indices);
         mesh->set_geometry(g);
+        mesh->setup_volume();
     }
     catch (const std::exception &e)
     {

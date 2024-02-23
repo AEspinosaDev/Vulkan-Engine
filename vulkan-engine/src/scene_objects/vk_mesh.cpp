@@ -5,16 +5,46 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 int Mesh::m_instanceCount = 0;
 
-void Sphere::setup(Mesh *mesh)
+void Sphere::setup(Mesh *const mesh)
 {
+    Vec3 maxCoords = {0.0f, 0.0f, 0.0f};
+    Vec3 minCoords = {INFINITY, INFINITY, INFINITY};
+
+    for (Geometry *g : mesh->get_geometries())
+    {
+        GeometryStats stats;
+        stats.compute_statistics(g);
+
+        if (stats.maxCoords.x > maxCoords.x)
+            maxCoords.x = stats.maxCoords.x;
+        if (stats.maxCoords.y > maxCoords.y)
+            maxCoords.y = stats.maxCoords.y;
+        if (stats.maxCoords.z > maxCoords.z)
+            maxCoords.z = stats.maxCoords.z;
+        if (stats.minCoords.x < minCoords.x)
+            minCoords.x = stats.minCoords.x;
+        if (stats.minCoords.y < minCoords.y)
+            minCoords.y = stats.minCoords.y;
+        if (stats.minCoords.z < minCoords.z)
+            minCoords.z = stats.minCoords.z;
+    }
+
+    center = (maxCoords - minCoords) * 0.5f;
+    radius = math::length(center);
+    // center=Vec3(0.0f);
+    // radius=1.0f;
+
+    this->mesh = mesh;
+
+    // std::cout << center.x << center.y << center.z << std::endl;
 }
 
-bool Sphere::is_on_frustrum(const Frustum &frustum, Object3D *const object) const
+bool Sphere::is_on_frustrum(const Frustum &frustum) const
 
 {
-    const Vec3 globalScale = object->get_scale();
+    const Vec3 globalScale = mesh->get_scale();
 
-    const Vec3 globalCenter{object->get_model_matrix() * Vec4(center, 1.f)};
+    const Vec3 globalCenter{mesh->get_model_matrix() * Vec4(center, 1.f)};
 
     const float maxScale = max(max(globalScale.x, globalScale.y), globalScale.z);
     Sphere globalSphere(globalCenter, radius * (maxScale * 0.5f));
@@ -68,6 +98,26 @@ Mesh *Mesh::clone() const
         mesh->set_geometry(g);
     }
     return mesh;
+}
+void Mesh::set_volume_type(VolumeType t)
+{
+    m_volumeType = t;
+    if (m_volume)
+        delete m_volume;
+
+    switch (m_volumeType)
+    {
+    case SPHERE:
+        m_volume = new Sphere();
+        break;
+    case AABB:
+        /* code */
+        break;
+    case OBB:
+        /* code */
+        break;
+    }
+    m_volume->setup(this);
 }
 
 VULKAN_ENGINE_NAMESPACE_END

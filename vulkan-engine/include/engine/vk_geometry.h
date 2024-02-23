@@ -87,6 +87,17 @@ struct Vertex
     }
 };
 
+class Geometry;
+
+struct GeometryStats
+{
+    Vec3 maxCoords;
+    Vec3 minCoords;
+    Vec3 center;
+
+    void compute_statistics(Geometry *g);
+};
+
 class Geometry
 {
 
