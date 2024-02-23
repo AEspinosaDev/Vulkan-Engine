@@ -432,9 +432,9 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 		{
 			if (m)
 			{
-				if (m->is_active() &&
-					m->get_num_geometries() > 0 &&
-					m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()))
+				if (m->is_active() && //Check if is active
+					m->get_num_geometries() > 0 && //Check if has geometry
+					m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) //Check if is inside frustrum
 				{
 
 					// Offset calculation
