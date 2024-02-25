@@ -219,6 +219,7 @@ void VulkanRenderer::update()
     dynamic_cast<UnlitMaterial *>(m_lightDummy->get_material())->set_color(glm::vec4(light->get_color(), 1.0f));
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());
+    
 }
 
 void VulkanRenderer::tick()

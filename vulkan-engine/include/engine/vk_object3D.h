@@ -105,16 +105,16 @@ public:
         else
             m_transform.rotation = p;
 
-        // Update forward
+        // Update FORWARD
         Vec3 direction;
         direction.x = cos(math::radians(p.x)) * cos(math::radians(p.y));
         direction.y = sin(math::radians(p.y));
         direction.z = sin(math::radians(p.x)) * cos(math::radians(p.y));
         m_transform.forward = -math::normalize(direction);
-        // Update up
-
-        // Update right
-        m_transform.right = math::cross(m_transform.forward, m_transform.up);
+        // Update RIGHT
+        m_transform.right = math::cross(m_transform.forward, Vec3(0, 1, 0));
+        // Update UP
+        m_transform.up = math::cross(m_transform.right, m_transform.forward);
 
         isDirty = true;
     }

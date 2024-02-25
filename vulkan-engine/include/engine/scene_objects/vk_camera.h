@@ -17,6 +17,11 @@ struct Face
           distance(math::dot(normal, p1))
     {
     }
+    Face(const float dist, const Vec3 &norm)
+        : normal(math::normalize(norm)),
+          distance(dist)
+    {
+    }
 
     float get_signed_distance(const Vec3 &point) const
     {
@@ -55,7 +60,6 @@ private:
 
     static int m_instanceCount;
 
-    void set_frustum();
 
 public:
     Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
@@ -101,7 +105,10 @@ public:
         }
         return m_view;
     }
-    inline Frustum get_frustrum()
+
+    void set_frustum();
+
+    inline Frustum get_frustrum() 
     {
         if (isDirty)
         {

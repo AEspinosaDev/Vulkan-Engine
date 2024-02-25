@@ -232,6 +232,14 @@ typedef enum VolumeType
 	OBB = 2,
 } VolumeType;
 
+typedef enum RenderPassType{
+	FORWARD = 0,
+	SHADOW = 1,
+	GEOMETRY = 2,
+	LIGHTING = 3,
+	UI = 4,
+} RenderPassType;
+
 // Ahead declaration of some key classes
 class Renderer;
 

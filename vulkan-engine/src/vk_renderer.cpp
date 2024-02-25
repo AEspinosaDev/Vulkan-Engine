@@ -202,10 +202,10 @@ void Renderer::init_renderpasses()
 
 	builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
 
-	m_forwardPass = builder.build_renderpass(m_device, true, true);
+	m_renderPasses[FORWARD] = builder.build_renderpass(m_device, true, true);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_forwardPass, nullptr); });
+								  { vkDestroyRenderPass(m_device, m_renderPasses[FORWARD], nullptr); });
 
 	if (m_initialized)
 		return;
@@ -232,16 +232,16 @@ void Renderer::init_renderpasses()
 	dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-	m_shadowPass = builder.build_renderpass(m_device, false, true, dependencies);
+	m_renderPasses[SHADOW] = builder.build_renderpass(m_device, false, true, dependencies);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_shadowPass, nullptr); });
+								  { vkDestroyRenderPass(m_device, m_renderPasses[SHADOW], nullptr); });
 }
 
 void Renderer::init_framebuffers()
 {
 	// FOR THE SWAPCHAIN
-	m_swapchain.create_framebuffers(m_device, m_forwardPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_renderPasses[FORWARD], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 	// FOR SHADOW PASS
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
@@ -265,7 +265,7 @@ void Renderer::init_framebuffers()
 
 	//	To light
 	VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
-	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_shadowPass, shadowRes);
+	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_renderPasses[SHADOW], shadowRes);
 	shadow_fb_info.pAttachments = &m_shadowsTexture->m_image.view;
 	shadow_fb_info.layers = VK_MAX_LIGHTS;
 
@@ -405,7 +405,7 @@ void Renderer::render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageInd
 void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_forwardPass, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[FORWARD], *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 	// CLEAR SETUP
 	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
@@ -427,16 +427,16 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 
 	if (scene->get_active_camera() && scene->get_active_camera()->is_active())
 	{
+
 		int mesh_idx = 0;
 		for (Mesh *m : scene->get_meshes())
 		{
 			if (m)
 			{
-				if (m->is_active() && //Check if is active
-					m->get_num_geometries() > 0 && //Check if has geometry
-					m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) //Check if is inside frustrum
+				if (m->is_active() &&																	  // Check if is active
+					m->get_num_geometries() > 0 &&														  // Check if has geometry
+					m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
 				{
-
 					// Offset calculation
 					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
 					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
@@ -454,12 +454,7 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 						Material *mat = m->get_material(g->m_materialID);
 
 						if (!mat)
-						{
-							continue;
-							// USE DEBUG MAT;
-						}
-
-						// if (mat->is_dirty)
+							setup_material(Material::DEBUG_MATERIAL);
 						setup_material(mat);
 
 						if (m_settings.depthTest)
@@ -504,7 +499,7 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_shadowPass, shadowExtent, m_shadowFramebuffer);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[SHADOW], shadowExtent, m_shadowFramebuffer);
 
 	VkClearValue clearDepth;
 	clearDepth.depthStencil = {1.0f, 0};
@@ -640,7 +635,7 @@ void Renderer::init_shaderpasses()
 		ShaderPass::build_shader_stages(m_device, *pass);
 
 		builder.build_pipeline_layout(m_device, m_descriptorMng, *pass);
-		builder.build_pipeline(m_device, m_forwardPass, *pass);
+		builder.build_pipeline(m_device, m_renderPasses[FORWARD], *pass);
 
 		m_deletionQueue.push_function([=]()
 									  { pass->cleanup(m_device); });
@@ -680,7 +675,7 @@ void Renderer::init_shaderpasses()
 	ShaderPass::build_shader_stages(m_device, *depthPass);
 
 	builder.build_pipeline_layout(m_device, m_descriptorMng, *depthPass);
-	builder.build_pipeline(m_device, m_shadowPass, *depthPass);
+	builder.build_pipeline(m_device, m_renderPasses[SHADOW], *depthPass);
 
 	m_shaderPasses["shadows"] = depthPass;
 
@@ -714,7 +709,7 @@ void Renderer::recreate_swap_chain()
 
 	m_swapchain.cleanup(m_device, m_memory);
 	create_swapchain();
-	m_swapchain.create_framebuffers(m_device, m_forwardPass, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_renderPasses[FORWARD], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
@@ -828,9 +823,9 @@ void Renderer::upload_global_data(Scene *const scene)
 	sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 
 	std::vector<Light *> lights = scene->get_lights();
-	// if (lights.size() > VK_MAX_LIGHTS)
-	// 	std::sort(lights.begin(), lights.end(), [=](Camera *c, Light *a, Light *b)
-	// 			  { return math::length(a->get_position()-c->get_position()) < math::length(b->get_position()-c->get_position()); });
+	if (lights.size() > VK_MAX_LIGHTS)
+		std::sort(lights.begin(), lights.end(), [=](Light *a, Light *b)
+				  { return math::length(a->get_position()-camera->get_position()) < math::length(b->get_position()-camera->get_position()); });
 
 	size_t lightIdx{0};
 	for (Light *l : lights)
@@ -951,7 +946,7 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_forwardPass, m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPasses[FORWARD], m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

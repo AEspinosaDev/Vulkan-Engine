@@ -200,6 +200,17 @@ float g_ao;
 //Constant
 const float PI = 3.14159265359;
 
+bool isInAreaOfInfluence(LightUniform light){
+    if(light.type == 0){ //Point Light
+        return length(light.position - v_pos) <= light.data.x;
+    }
+    else if(light.type == 2){ //Spot light
+        //TO DO...
+        return true;
+    }
+    return true; //Directional influence is total
+}
+
 float computeFog() {
     float z = (2.0 * scene.fogMinDistance) / (scene.fogMaxDistance + scene.fogMinDistance - gl_FragCoord.z * (scene.fogMaxDistance - scene.fogMinDistance));
     return exp(-scene.fogIntensity * 0.01 * z);
@@ -363,12 +374,17 @@ void main() {
     //Compute all lights
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
-        vec3 lighting =computeLighting(scene.lights[i]);
-        if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-            lighting *= (1.0 - computeShadow(scene.lights[i],i));
+        //If inside liught area influence
+        if(isInAreaOfInfluence(scene.lights[i])){
 
-        }
+            vec3 lighting =computeLighting(scene.lights[i]);
+            if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
+                lighting *= (1.0 - computeShadow(scene.lights[i],i));
+
+            }
+
         color += lighting;
+        }
     }
 
     //Ambient component

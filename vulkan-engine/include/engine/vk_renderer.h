@@ -74,15 +74,12 @@ class Renderer
 
 	std::vector<Frame> m_frames;
 
-	VkRenderPass m_forwardPass{};
-	VkRenderPass m_shadowPass{};
-	VkRenderPass m_geometryPass{};
-	VkRenderPass m_lightingPass{};
-
-	Texture *m_shadowsTexture;
-	VkFramebuffer m_shadowFramebuffer{};
-
 	std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
+
+	std::unordered_map<uint32_t, VkRenderPass> m_renderPasses;
+
+	Texture *m_shadowsTexture; //Texture array
+	VkFramebuffer m_shadowFramebuffer{};
 
 	DescriptorManager m_descriptorMng{};
 
@@ -138,13 +135,6 @@ public:
 			m_framebufferResized = true;
 			m_changeInConfiguration = true;
 		}
-	}
-
-	inline void set_autoclear(bool clrColor, bool clrDepth = true, bool clrStencil = true)
-	{
-		m_settings.autoClearColor = clrColor;
-		m_settings.autoClearDepth = clrDepth;
-		m_settings.autoClearStencil = clrStencil;
 	}
 
 	inline void enable_depth_test(bool op) { m_settings.depthTest = op; }

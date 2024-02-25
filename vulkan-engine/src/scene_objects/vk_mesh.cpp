@@ -31,12 +31,9 @@ void Sphere::setup(Mesh *const mesh)
 
     center = (maxCoords - minCoords) * 0.5f;
     radius = math::length(center);
-    // center=Vec3(0.0f);
-    // radius=1.0f;
 
     this->mesh = mesh;
 
-    // std::cout << center.x << center.y << center.z << std::endl;
 }
 
 bool Sphere::is_on_frustrum(const Frustum &frustum) const
@@ -47,14 +44,14 @@ bool Sphere::is_on_frustrum(const Frustum &frustum) const
     const Vec3 globalCenter{mesh->get_model_matrix() * Vec4(center, 1.f)};
 
     const float maxScale = max(max(globalScale.x, globalScale.y), globalScale.z);
-    const float globalRadius = radius * (maxScale * 0.5f);
+    const float globalRadius = radius * maxScale;
 
-    return (frustum.leftFace.get_signed_distance(globalCenter) > -globalRadius &&
-            frustum.rightFace.get_signed_distance(globalCenter) > -globalRadius &&
-            frustum.farFace.get_signed_distance(globalCenter) > -globalRadius &&
-            frustum.nearFace.get_signed_distance(globalCenter) > -globalRadius &&
-            frustum.topFace.get_signed_distance(globalCenter) > -globalRadius &&
-            frustum.bottomFace.get_signed_distance(globalCenter) > -globalRadius);
+    return (frustum.leftFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.rightFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.farFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.nearFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.topFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.bottomFace.get_signed_distance(globalCenter) >= -globalRadius);
 }
 
 Geometry *Mesh::change_geometry(Geometry *g, size_t id)

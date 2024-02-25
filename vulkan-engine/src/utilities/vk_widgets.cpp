@@ -226,7 +226,7 @@ void ObjectExplorerWidget::render()
                          (m_object->get_rotation().z * 180) / PI};
     if (ImGui::DragFloat3("Rotation", rotation, 0.1f))
     {
-        m_object->set_rotation(Vec3((rotation[0] * PI) / 180, (rotation[1] * PI) / 180, (rotation[2] * PI) / 180));
+        m_object->set_rotation(Vec3(rotation[0], rotation[1], rotation[2] ));
     };
     float scale[3] = {m_object->get_scale().x,
                       m_object->get_scale().y,
