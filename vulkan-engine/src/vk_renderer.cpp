@@ -61,6 +61,7 @@ void Renderer::render(Scene *const scene)
 	}
 
 	upload_global_data(scene);
+	upload_object_data(scene);
 
 	render_forward(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
 
@@ -415,6 +416,7 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 	renderPassInfo.clearValueCount = 2;
 	renderPassInfo.pClearValues = clearValues;
 
+	// Setup global render state
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	set_viewport(commandBuffer, *m_window->get_extent());
@@ -428,7 +430,7 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 	if (scene->get_active_camera() && scene->get_active_camera()->is_active())
 	{
 
-		int mesh_idx = 0;
+		unsigned int mesh_idx = 0;
 		for (Mesh *m : scene->get_meshes())
 		{
 			if (m)
@@ -441,31 +443,20 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
 					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
 
-					// ObjectUniforms objectData;
-					ObjectUniforms objectData;
-					objectData.model = m->get_model_matrix();
-					objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
-					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
-
 					for (size_t i = 0; i < m->get_num_geometries(); i++)
 					{
 						Geometry *g = m->get_geometry(i);
 
 						Material *mat = m->get_material(g->m_materialID);
 
-						if (!mat)
-							setup_material(Material::DEBUG_MATERIAL);
-						setup_material(mat);
-
+						// Setup per object render state
 						if (m_settings.depthTest)
 							vkCmdSetDepthTestEnable(commandBuffer, mat->get_parameters().depthTest);
 						if (m_settings.depthWrite)
 							vkCmdSetDepthWriteEnable(commandBuffer, mat->get_parameters().depthWrite);
 						vkCmdSetCullMode(commandBuffer, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
 
-						MaterialUniforms materialData = mat->get_uniforms();
-						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
-
+						// Bind pipeline
 						vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
 
 						// GLOBAL LAYOUT BINDING
@@ -532,16 +523,8 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 				uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
 				uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
 
-				// ObjectUniforms objectData;
-				ObjectUniforms objectData;
-				objectData.model = m->get_model_matrix();
-				objectData.otherParams = {m->is_affected_by_fog(), false, false, false};
-				m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
-
 				for (size_t i = 0; i < m->get_num_geometries(); i++)
 				{
-					Geometry *g = m->get_geometry(i);
-
 					// GLOBAL LAYOUT BINDING
 					uint32_t globalOffsets[] = {globalOffset, globalOffset};
 					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
@@ -550,7 +533,7 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipelineLayout, 1, 1,
 											&m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
-					draw_geometry(commandBuffer, g);
+					draw_geometry(commandBuffer, m->get_geometry(i));
 				}
 			}
 			mesh_idx++;
@@ -735,9 +718,6 @@ void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&funct
 
 void Renderer::draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g)
 {
-	// BIND OBJECT BUFFERS
-	if (!g->buffer_loaded)
-		upload_geometry_data(g);
 
 	VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
 	VkDeviceSize offsets[] = {0};
@@ -804,6 +784,55 @@ void Renderer::upload_geometry_data(Geometry *const g)
 
 	g->buffer_loaded = true;
 }
+void Renderer::upload_object_data(Scene *const scene)
+{
+
+	if (scene->get_active_camera() && scene->get_active_camera()->is_active())
+	{
+
+		unsigned int mesh_idx = 0;
+		for (Mesh *m : scene->get_meshes())
+		{
+			if (m) // If mesh exists
+			{
+				if (m->is_active() &&																	  // Check if is active
+					m->get_num_geometries() > 0 &&														  // Check if has geometry
+					m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
+				{
+					// Offset calculation
+					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
+					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
+
+					// ObjectUniforms objectData;
+					ObjectUniforms objectData;
+					objectData.model = m->get_model_matrix();
+					objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
+					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+
+					for (size_t i = 0; i < m->get_num_geometries(); i++)
+					{
+						// Object vertex buffer setup
+						Geometry *g = m->get_geometry(i);
+						if (!g->buffer_loaded)
+							upload_geometry_data(g);
+
+						// Object material setup
+						Material *mat = m->get_material(g->m_materialID);
+						if (!mat)
+							setup_material(Material::DEBUG_MATERIAL);
+						setup_material(mat);
+
+						// ObjectUniforms materialData;
+						MaterialUniforms materialData = mat->get_uniforms();
+						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+					}
+				}
+			}
+			mesh_idx++;
+		}
+	}
+}
+
 void Renderer::upload_global_data(Scene *const scene)
 {
 	Camera *camera = scene->get_active_camera();
@@ -825,7 +854,7 @@ void Renderer::upload_global_data(Scene *const scene)
 	std::vector<Light *> lights = scene->get_lights();
 	if (lights.size() > VK_MAX_LIGHTS)
 		std::sort(lights.begin(), lights.end(), [=](Light *a, Light *b)
-				  { return math::length(a->get_position()-camera->get_position()) < math::length(b->get_position()-camera->get_position()); });
+				  { return math::length(a->get_position() - camera->get_position()) < math::length(b->get_position() - camera->get_position()); });
 
 	size_t lightIdx{0};
 	for (Light *l : lights)

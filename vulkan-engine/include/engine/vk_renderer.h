@@ -78,7 +78,7 @@ class Renderer
 
 	std::unordered_map<uint32_t, VkRenderPass> m_renderPasses;
 
-	Texture *m_shadowsTexture; //Texture array
+	Texture *m_shadowsTexture; // Texture array
 	VkFramebuffer m_shadowFramebuffer{};
 
 	DescriptorManager m_descriptorMng{};
@@ -252,9 +252,14 @@ private:
 	*/
 	void upload_geometry_data(Geometry *const g);
 	/*
+	Object descriptor layouts uniforms buffer upload to GPU
+	*/
+	void upload_object_data(Scene *const scene);
+	/*
 	Global descriptor layouts uniforms buffer upload to GPU
 	*/
 	void upload_global_data(Scene *const scene);
+
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
