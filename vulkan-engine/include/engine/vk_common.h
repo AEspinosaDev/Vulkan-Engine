@@ -152,17 +152,18 @@ typedef enum TextureFilterType
 	CUBIC = VK_FILTER_CUBIC_EXT,
 	MAX = VK_FILTER_MAX_ENUM
 } TextureFilterType;
-typedef enum TextureFormatType
+typedef enum ColorFormatType
 {
 	SRGBA_8 = VK_FORMAT_R8G8B8A8_SRGB,
 	SRGB_8 = VK_FORMAT_R8G8B8_SRGB,
+	SBGRA_8 = VK_FORMAT_B8G8R8A8_SRGB,
 	RGBA_8,
 	RGB_8,
 	SRGBA_16,
 	SRGB_16,
 	RGBA_16,
 	RGB_16,
-} TextureFormatType;
+} ColorFormatType;
 typedef enum TextureAdressModeType
 {
 	REPEAT = VK_SAMPLER_ADDRESS_MODE_REPEAT,						  // Repeat the texture when going beyond the image dimensions.
@@ -239,6 +240,15 @@ typedef enum RenderPassType{
 	LIGHTING = 3,
 	UI = 4,
 } RenderPassType;
+
+typedef enum SyncType{
+	NONE = VK_PRESENT_MODE_IMMEDIATE_KHR,
+	MAILBOX_SYNC = VK_PRESENT_MODE_MAILBOX_KHR,
+	V_SYNC = VK_PRESENT_MODE_FIFO_KHR,
+	RELAXED_V_SYNC = VK_PRESENT_MODE_FIFO_RELAXED_KHR, 
+}SyncType;
+
+
 
 // Ahead declaration of some key classes
 class Renderer;

@@ -183,7 +183,7 @@ void Renderer::cleanup()
 
 void Renderer::create_swapchain()
 {
-	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent());
+	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), (VkFormat)m_settings.colorFormat, (VkPresentModeKHR)m_settings.screenSync);
 
 	// COLOR BUFFER SETUP
 	m_swapchain.create_colorbuffer(m_device, m_memory, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);

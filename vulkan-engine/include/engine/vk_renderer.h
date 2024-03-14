@@ -27,6 +27,9 @@ struct RendererSettings
 {
 	AntialiasingType AAtype{MSAA_x4};
 	BufferingType bufferingType{_DOUBLE};
+	SyncType screenSync{MAILBOX_SYNC};
+	ColorFormatType colorFormat{SBGRA_8};
+
 	ShadowResolution shadowResolution{LOW};
 
 	Vec4 clearColor{Vec4{0.0, 0.0, 0.0, 1.0}};
@@ -107,8 +110,11 @@ class Renderer
 	GUIOverlay *m_gui{nullptr};
 
 #pragma endregion
-#pragma region Getters & Setters
 public:
+	Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
+	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
+
+#pragma region Getters & Setters
 	inline Window *const get_window() const { return m_window; }
 
 	inline RendererSettings get_settings() { return m_settings; }
@@ -154,8 +160,7 @@ public:
 
 #pragma endregion
 #pragma region Core Functions
-	Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
-	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
+
 	/**
 	 * Inits the renderer.
 	 */

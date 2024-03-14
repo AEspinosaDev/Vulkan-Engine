@@ -2,14 +2,15 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface, GLFWwindow *window, VkExtent2D &windowExtent)
+void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
+					   GLFWwindow *window, VkExtent2D &windowExtent, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
 {
 	boot::SwapChainSupportDetails swapChainSupport = boot::query_swapchain_support(gpu, surface);
 	boot::QueueFamilyIndices indices = boot::find_queue_families(gpu, surface);
 	uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-	VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats);
-	VkPresentModeKHR presentMode = choose_swap_present_mode(swapChainSupport.presentModes);
+	VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats, userDefinedcolorFormat);
+	VkPresentModeKHR presentMode = choose_swap_present_mode(swapChainSupport.presentModes, userDefinedPresentMode);
 	VkExtent2D extent = choose_swap_extent(swapChainSupport.capabilities, window);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -56,6 +57,7 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &su
 	VK_CHECK(vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_presentImages.data()));
 
 	m_presentFormat = surfaceFormat.format;
+	m_presentMode = presentMode;
 	windowExtent = extent;
 
 	create_image_views(device);
@@ -88,8 +90,8 @@ void Swapchain::create_depthbuffer(VkDevice &device, VmaAllocator &memory, VkExt
 	dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	m_depthBuffer.init(memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, bufferExtent, false, samples);
-	m_depthBuffer.create_view(device, VK_IMAGE_ASPECT_DEPTH_BIT);
+	m_depthStencilBuffer.init(memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, bufferExtent, false, samples);
+	m_depthStencilBuffer.create_view(device, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 void Swapchain::create_framebuffers(VkDevice &device, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
@@ -102,7 +104,7 @@ void Swapchain::create_framebuffers(VkDevice &device, VkRenderPass &defaultRende
 	{
 		VkImageView attachments[3] = {
 			m_colorBuffer.view,
-			m_depthBuffer.view,
+			m_depthStencilBuffer.view,
 			m_presentImageViews[i]};
 		fb_info.pAttachments = attachments;
 		fb_info.attachmentCount = 3;
@@ -111,7 +113,7 @@ void Swapchain::create_framebuffers(VkDevice &device, VkRenderPass &defaultRende
 		{
 			VkImageView _attachments[2] = {
 				m_presentImageViews[i],
-				m_depthBuffer.view};
+				m_depthStencilBuffer.view};
 			fb_info.pAttachments = _attachments;
 			fb_info.attachmentCount = 2;
 		}
@@ -137,32 +139,34 @@ void Swapchain::cleanup(VkDevice &device, VmaAllocator &memory)
 	vkDestroySwapchainKHR(device, m_swapchain, nullptr);
 
 	m_colorBuffer.cleanup(device, memory);
-	m_depthBuffer.cleanup(device, memory);
+	m_depthStencilBuffer.cleanup(device, memory);
 }
 
-VkSurfaceFormatKHR Swapchain::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+VkSurfaceFormatKHR Swapchain::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats, VkFormat desiredFormat)
 {
 	for (const auto &availableFormat : availableFormats)
 	{
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (availableFormat.format == desiredFormat && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 		{
 			return availableFormat;
 		}
 	}
 
+	// Fallback
 	return availableFormats[0];
 }
 
-VkPresentModeKHR Swapchain::choose_swap_present_mode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+VkPresentModeKHR Swapchain::choose_swap_present_mode(const std::vector<VkPresentModeKHR> &availablePresentModes, VkPresentModeKHR desiredMode)
 {
 	for (const auto &availablePresentMode : availablePresentModes)
 	{
-		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		if (availablePresentMode == desiredMode)
 		{
 			return availablePresentMode;
 		}
 	}
 
+	// Fallback
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 

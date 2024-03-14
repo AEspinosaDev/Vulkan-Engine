@@ -10,7 +10,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 struct TextureSettings
 {
-    TextureFormatType format{SRGBA_8};
+    ColorFormatType format{SRGBA_8};
     TextureFilterType filter{LINEAR};
     TextureAdressModeType adressMode{REPEAT};
 
@@ -63,7 +63,7 @@ public:
 
     inline void set_use_mipmaps(bool op) { m_settings.useMipmaps = op; }
     inline void set_anysotropic_filtering(bool op) { m_settings.anisotropicFilter = op; }
-    inline void set_format(TextureFormatType f) { m_settings.format = f; }
+    inline void set_format(ColorFormatType f) { m_settings.format = f; }
     inline void set_filter(TextureFilterType f) { m_settings.filter = f; }
     inline void set_adress_mode(TextureAdressModeType am) { m_settings.adressMode = am; }
 

@@ -14,22 +14,25 @@ private:
 	VkSwapchainKHR m_swapchain;
 
 	VkFormat m_presentFormat;
+	VkPresentModeKHR m_presentMode;
+
 	std::vector<VkImage> m_presentImages;
 	std::vector<VkImageView> m_presentImageViews;
 
 	// Resources
 	Image m_colorBuffer{};
-	Image m_depthBuffer{};
+	Image m_depthStencilBuffer{};
 
 	std::vector<VkFramebuffer> m_framebuffers;
 
-	VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats);
-	VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+	VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats, VkFormat desiredFormat);
+	VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> &availablePresentModes, VkPresentModeKHR desiredMode);
 	VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window);
 	void create_image_views(VkDevice &device);
 
 public:
-	void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface, GLFWwindow *window, VkExtent2D &windowExtent);
+	void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
+				GLFWwindow *window, VkExtent2D &windowExtent, VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB, VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
 	void create_colorbuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
 	void create_depthbuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
 	void create_framebuffers(VkDevice &device, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
@@ -61,7 +64,7 @@ public:
 	}
 	inline Image &get_depthbuffer()
 	{
-		return m_depthBuffer;
+		return m_depthStencilBuffer;
 	}
 };
 
