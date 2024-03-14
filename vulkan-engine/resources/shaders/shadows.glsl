@@ -11,10 +11,10 @@ void main() {
 #shader geometry
 #version 460
 
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 50
 
 layout(triangles) in;
-layout(triangle_strip, max_vertices = 20) out;
+layout(triangle_strip, max_vertices = 150) out;
 
 struct LightUniform{
    vec3 position;
@@ -46,6 +46,12 @@ layout(set = 1, binding = 0) uniform ObjectUniforms {
 
 void main() {
     for(int i = 0; i < MAX_LIGHTS; i++) {
+
+        //Stop emitting vertex if theres no more lights
+        if(i>=scene.numLights) break;
+
+        //Check if object inside area of light
+
         gl_Layer = i;
 
         gl_Position = scene.lights[i].viewProj * object.model*gl_in[0].gl_Position;
@@ -56,7 +62,9 @@ void main() {
         
         gl_Position = scene.lights[i].viewProj * object.model*gl_in[2].gl_Position;
         EmitVertex();
-    EndPrimitive();
+
+        EndPrimitive();
+        
       
     }
 }

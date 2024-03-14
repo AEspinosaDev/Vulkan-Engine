@@ -52,7 +52,7 @@
 #define USING_VULKAN_ENGINE_NAMESPACE using namespace vke;
 
 #define VK_MAX_OBJECTS 100
-#define VK_MAX_LIGHTS 10
+#define VK_MAX_LIGHTS 50
 
 // File terminations
 #define PLY "ply"
@@ -233,22 +233,29 @@ typedef enum VolumeType
 	OBB = 2,
 } VolumeType;
 
-typedef enum RenderPassType{
-	FORWARD = 0,
+typedef enum RenderPassType
+{
+	DEFAULT = 0,
 	SHADOW = 1,
 	GEOMETRY = 2,
 	LIGHTING = 3,
 	UI = 4,
 } RenderPassType;
 
-typedef enum SyncType{
-	NONE = VK_PRESENT_MODE_IMMEDIATE_KHR,
-	MAILBOX_SYNC = VK_PRESENT_MODE_MAILBOX_KHR,
-	V_SYNC = VK_PRESENT_MODE_FIFO_KHR,
-	RELAXED_V_SYNC = VK_PRESENT_MODE_FIFO_RELAXED_KHR, 
-}SyncType;
+typedef enum SyncType
+{
+	NONE = VK_PRESENT_MODE_IMMEDIATE_KHR,			   // No framerate cap (POTENTIAL TEARING)
+	MAILBOX_SYNC = VK_PRESENT_MODE_MAILBOX_KHR,		   // Triple buffering (Better V-Sync)
+	V_SYNC = VK_PRESENT_MODE_FIFO_KHR,				   // Classic V-Sync
+	RELAXED_V_SYNC = VK_PRESENT_MODE_FIFO_RELAXED_KHR, // V-Sync with a wait time. If wait time is not enough potential tearing
+} SyncType;
 
-
+typedef enum RendererType
+{
+	FORWARD = 0,
+	DEFERRED = 1,
+	FORWARD_PLUS = 2
+} RendererType;
 
 // Ahead declaration of some key classes
 class Renderer;

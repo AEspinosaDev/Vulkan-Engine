@@ -1,7 +1,7 @@
 #shader vertex
 #version 450
 
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 50
 
 //Input
 layout(location = 0) in vec3 pos;
@@ -108,7 +108,7 @@ void main() {
 #shader fragment
 #version 450
 
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 50
 
 //Input
 layout(location = 0) in vec3 v_pos;

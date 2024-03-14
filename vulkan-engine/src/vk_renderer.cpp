@@ -203,10 +203,10 @@ void Renderer::init_renderpasses()
 
 	builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
 
-	m_renderPasses[FORWARD] = builder.build_renderpass(m_device, true, true);
+	m_renderPasses[DEFAULT] = builder.build_renderpass(m_device, true, true);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_renderPasses[FORWARD], nullptr); });
+								  { vkDestroyRenderPass(m_device, m_renderPasses[DEFAULT], nullptr); });
 
 	if (m_initialized)
 		return;
@@ -242,7 +242,7 @@ void Renderer::init_renderpasses()
 void Renderer::init_framebuffers()
 {
 	// FOR THE SWAPCHAIN
-	m_swapchain.create_framebuffers(m_device, m_renderPasses[FORWARD], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_renderPasses[DEFAULT], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 	// FOR SHADOW PASS
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
@@ -406,7 +406,7 @@ void Renderer::render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageInd
 void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[FORWARD], *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[DEFAULT], *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 	// CLEAR SETUP
 	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
@@ -618,7 +618,7 @@ void Renderer::init_shaderpasses()
 		ShaderPass::build_shader_stages(m_device, *pass);
 
 		builder.build_pipeline_layout(m_device, m_descriptorMng, *pass);
-		builder.build_pipeline(m_device, m_renderPasses[FORWARD], *pass);
+		builder.build_pipeline(m_device, m_renderPasses[DEFAULT], *pass);
 
 		m_deletionQueue.push_function([=]()
 									  { pass->cleanup(m_device); });
@@ -692,7 +692,7 @@ void Renderer::recreate_swap_chain()
 
 	m_swapchain.cleanup(m_device, m_memory);
 	create_swapchain();
-	m_swapchain.create_framebuffers(m_device, m_renderPasses[FORWARD], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_renderPasses[DEFAULT], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
@@ -975,7 +975,7 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPasses[FORWARD], m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPasses[DEFAULT], m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

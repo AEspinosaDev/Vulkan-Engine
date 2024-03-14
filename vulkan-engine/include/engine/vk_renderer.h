@@ -25,6 +25,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 struct RendererSettings
 {
+	RendererType renderingType{FORWARD};
+
 	AntialiasingType AAtype{MSAA_x4};
 	BufferingType bufferingType{_DOUBLE};
 	SyncType screenSync{MAILBOX_SYNC};
@@ -99,8 +101,8 @@ class Renderer
 	const bool m_enableValidationLayers{true};
 #endif
 
-	bool m_framebufferResized{false};
-	bool m_changeInConfiguration{false};
+	bool m_updateSwapchain{false};
+	bool m_updateConfiguration{false};
 	bool m_initialized{false};
 	uint32_t m_currentFrame{0};
 
@@ -129,8 +131,8 @@ public:
 		m_settings.AAtype = msaa;
 		if (m_initialized)
 		{
-			m_framebufferResized = true;
-			m_changeInConfiguration = true;
+			m_updateSwapchain = true;
+			// m_changeInConfiguration = true;
 		}
 	}
 	inline void set_shadow_quality(ShadowResolution quality)
@@ -138,9 +140,21 @@ public:
 		m_settings.shadowResolution = quality;
 		if (m_initialized)
 		{
-			m_framebufferResized = true;
-			m_changeInConfiguration = true;
+			m_updateSwapchain = true;
+			// m_changeInConfiguration = true;
 		}
+	}
+	inline void set_color_format(ColorFormatType color)
+	{
+		m_settings.colorFormat = color;
+		if (m_initialized)
+			m_updateSwapchain = true;
+	}
+	inline void set_sync_type(SyncType sync)
+	{
+		m_settings.screenSync = sync;
+		if (m_initialized)
+			m_updateSwapchain = true;
 	}
 
 	inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
