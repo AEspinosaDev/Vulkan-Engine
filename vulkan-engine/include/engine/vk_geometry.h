@@ -1,3 +1,12 @@
+/*
+    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+
+    MIT License
+
+	Copyright (c) 2023 Antonio Espinosa Garcia
+
+*/
+
 #ifndef VK_GEOMETRY
 #define VK_GEOMETRY
 
