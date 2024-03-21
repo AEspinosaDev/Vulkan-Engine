@@ -5,6 +5,16 @@
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
+	////////////////////////////////////////////////////////////////////////////////////
+
+	Implementation of this class is fragmentated in four submodules:
+
+	* vk_renderer.cpp
+	* vk_renderer_api_mgr.cpp
+	* vk_renderer_data_mgr.cpp
+	* vk_renderer_drawing.cpp
+
+	////////////////////////////////////////////////////////////////////////////////////
 */
 #ifndef VK_RENDERER
 #define VK_RENDERER
@@ -56,11 +66,11 @@ struct RendererSettings
 	bool gammaCorrection{true};
 };
 /**
- * It renders a given scene data to a given window. Fully parametrizable.
+ * Renders a given scene data to a given window. Fully parametrizable. Main class of the library.
  */
 class Renderer
 {
-#pragma region Properties
+#pragma region ____________________ Properties _____________________
 
 	RendererSettings m_settings{};
 
@@ -124,7 +134,8 @@ public:
 	Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 
-#pragma region Getters & Setters
+#pragma region _____________________ Getters & Setters _____________________
+
 	inline Window *const get_window() const { return m_window; }
 
 	inline RendererSettings get_settings() { return m_settings; }
@@ -181,7 +192,7 @@ public:
 	}
 
 #pragma endregion
-#pragma region Core Functions
+#pragma region _____________________ Core Functions _____________________
 
 	/**
 	 * Inits the renderer.
@@ -214,7 +225,14 @@ private:
 	void cleanup();
 
 #pragma endregion
-#pragma region Vulkan API Management
+/*
+	////////////////////////////////////////////////////////////////////////////////////
+
+	Implementation of this region can be found in the module ==>> vk_renderer_api_mgr.cpp 
+
+	////////////////////////////////////////////////////////////////////////////////////
+*/
+#pragma region _____________________ Vulkan API Management _____________________
 
 	void create_swapchain();
 
@@ -237,7 +255,14 @@ private:
 	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 
 #pragma endregion
-#pragma region Drawing
+/*
+	////////////////////////////////////////////////////////////////////////////////////
+
+	Implementation of this region can be found in the module ==>> vk_renderer_drawing.cpp
+
+	////////////////////////////////////////////////////////////////////////////////////
+*/
+#pragma region _____________________ Drawing _____________________
 	/*
 	Record a viewport resize to the command buffer
 	*/
@@ -273,7 +298,14 @@ private:
 	void draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g);
 
 #pragma endregion
-#pragma region BufferManagement
+/*
+	////////////////////////////////////////////////////////////////////////////////////
+
+	Implementation of this region can be found in the module ==>> vk_renderer_data_mgr.cpp 
+
+	////////////////////////////////////////////////////////////////////////////////////
+*/
+#pragma region _____________________ Data Management _____________________
 	/*
 	Geometry vertex and index buffers upload to GPU
 	*/
@@ -295,7 +327,7 @@ private:
 	Texture setup and upload to GPU. Mipmap and sampler creation
 	*/
 	void upload_texture(Texture *const t);
-#pragma region gui
+#pragma region _____________________ GUI _____________________
 	/*
 	Initialize gui layout in case ther's one enabled
 	*/
