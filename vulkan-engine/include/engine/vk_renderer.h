@@ -99,10 +99,7 @@ class Renderer
 
 	std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 
-	std::unordered_map<uint32_t, VkRenderPass> m_renderPasses;
-
-	Texture *m_shadowsTexture; // Texture array
-	VkFramebuffer m_shadowFramebuffer{};
+	std::unordered_map<uint32_t, RenderPass> m_renderPasses;
 
 	DescriptorManager m_descriptorMng{};
 

@@ -104,7 +104,7 @@ void Renderer::render(Scene *const scene)
 
 	result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized())
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized() || m_updateSwapchain)
 	{
 		m_window->set_resized(false);
 		recreate_swap_chain();
@@ -187,7 +187,7 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPasses[DEFAULT], m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPasses[DEFAULT].obj, m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

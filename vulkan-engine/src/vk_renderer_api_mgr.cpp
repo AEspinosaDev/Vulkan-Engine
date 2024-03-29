@@ -1,16 +1,16 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
-    ////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////
 
 	In this Renderer's module you will find:
 
 	Implementation of functions focused on managing the subyacent Vulkan graphic API, in order
-    to boot it up, setting up the objects such as: swapchains, memory allocators, pipelines and descriptor sets.
+	to boot it up, setting up the objects such as: swapchains, memory allocators, pipelines and descriptor sets.
 
 	////////////////////////////////////////////////////////////////////////////////////
 */
@@ -34,86 +34,133 @@ void Renderer::init_renderpasses()
 
 	RenderPassBuilder builder;
 
-	// DEFAULT RENDER PASS
+	// ---------- DEFAULT RENDER PASS ------------
 
-	builder.add_color_attachment(m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype);
+	VkSampleCountFlagBits samples = (VkSampleCountFlagBits)m_settings.AAtype;
+	bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
 
-	builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, (VkSampleCountFlagBits)m_settings.AAtype);
+	VkAttachmentDescription colorAttachment = init::attachment_description(m_swapchain.get_image_format(),
+																		   multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_UNDEFINED, samples);
+	builder.add_attachment({colorAttachment});
+	VkAttachmentDescription depthAttachment = init::attachment_description(m_swapchain.get_depthbuffer().format,
+																		   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, samples);
+	builder.add_attachment({depthAttachment});
 
-	m_renderPasses[DEFAULT] = builder.build_renderpass(m_device, true, true);
+	if (multisampled)
+	{
+		VkAttachmentDescription resolveAttachment = init::attachment_description(m_swapchain.get_image_format(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		builder.add_attachment({resolveAttachment});
+	}
+
+	VkSubpassDependency colorDep = init::subpass_dependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+															0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+	builder.add_dependency(colorDep);
+	VkSubpassDependency depthDep = init::subpass_dependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+															0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+	builder.add_dependency(depthDep);
+
+	VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	VkAttachmentReference depthRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	VkSubpassDescription defaultSubpass = init::subpass_description(1, &colorRef, depthRef);
+	if (multisampled)
+	{
+		VkAttachmentReference resolveRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		defaultSubpass.pResolveAttachments = &resolveRef;
+	}
+	builder.add_subpass(defaultSubpass);
+
+	m_renderPasses[DEFAULT] = builder.build_renderpass(m_device);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_renderPasses[DEFAULT], nullptr); });
+								  { vkDestroyRenderPass(m_device, m_renderPasses[DEFAULT].obj, nullptr); });
 
-	if (m_initialized)
-		return;
+	// if (m_initialized)
+	// 	return;
 
-	// SHADOW RENDER PASS
-	builder.setup_depth_attachment(m_swapchain.get_depthbuffer().format, VK_SAMPLE_COUNT_1_BIT, false, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+	builder.dependencies.clear();
+	builder.subpasses.clear();
+	builder.attachments.clear();
 
-	std::vector<VkSubpassDependency> dependencies;
-	dependencies.resize(2);
+	// ---------- SHADOW RENDER PASS -----------
 
-	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[0].dstSubpass = 0;
-	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+	depthAttachment = init::attachment_description(m_swapchain.get_depthbuffer().format,
+												   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT, false);
+	builder.add_attachment({depthAttachment, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY});
 
-	dependencies[1].srcSubpass = 0;
-	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+	VkSubpassDependency earlyDepthDep = init::subpass_dependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+																 VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+	earlyDepthDep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+	builder.add_dependency(earlyDepthDep);
 
-	m_renderPasses[SHADOW] = builder.build_renderpass(m_device, false, true, dependencies);
+	VkSubpassDependency lateDepthDep = init::subpass_dependency(VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+																VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, 0, VK_SUBPASS_EXTERNAL);
+	lateDepthDep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+	builder.add_dependency(lateDepthDep);
+
+	depthRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	VkSubpassDescription depthSubpass = init::subpass_description(0, VK_NULL_HANDLE, depthRef);
+	builder.add_subpass(depthSubpass);
+
+	m_renderPasses[SHADOW] = builder.build_renderpass(m_device);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_renderPasses[SHADOW], nullptr); });
+								  { vkDestroyRenderPass(m_device, m_renderPasses[SHADOW].obj, nullptr); });
+
+	builder.dependencies.clear();
+	builder.subpasses.clear();
+	builder.attachments.clear();
+
+	/// ------ Geometry pass ------
+
+	/// -------- Light pass --------
 }
 
 void Renderer::init_framebuffers()
 {
 	// FOR THE SWAPCHAIN
-	m_swapchain.create_framebuffers(m_device, m_renderPasses[DEFAULT], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_renderPasses[DEFAULT].obj, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 
 	// FOR SHADOW PASS
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
-	m_shadowsTexture = new Texture();
 	Image shadowImage;
 	shadowImage.init(m_memory, m_swapchain.get_depthbuffer().format,
 					 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, {SHADOW_RES, SHADOW_RES, 1}, false, VK_SAMPLE_COUNT_1_BIT, VK_MAX_LIGHTS);
 
 	shadowImage.create_view(m_device, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-	m_shadowsTexture->m_image = shadowImage;
+
+	VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
+	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_renderPasses[SHADOW].obj, shadowRes);
+	shadow_fb_info.pAttachments = &shadowImage.view;
+	shadow_fb_info.layers = VK_MAX_LIGHTS;
+
+	if (vkCreateFramebuffer(m_device, &shadow_fb_info, nullptr, &m_renderPasses[SHADOW].framebuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create shadow framebuffer!");
+	}
+
+	Texture *shadowsTexture = new Texture();
+	// m_shadowsTexture->m_image = m_renderPasses[SHADOW].textureAttachments[0];
+	shadowsTexture->m_image = shadowImage;
 
 	VkSamplerCreateInfo sampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	sampler.maxAnisotropy = 1.0f;
 	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-	VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowsTexture->m_sampler));
+	VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &shadowsTexture->m_sampler));
+
+	m_renderPasses[SHADOW].textureAttachments.push_back(shadowsTexture);
 
 	m_deletionQueue.push_function([=]()
-								  { m_shadowsTexture->cleanup(m_device, m_memory); });
-
-	//	To light
-	VkExtent2D shadowRes{SHADOW_RES, SHADOW_RES};
-	VkFramebufferCreateInfo shadow_fb_info = init::framebuffer_create_info(m_renderPasses[SHADOW], shadowRes);
-	shadow_fb_info.pAttachments = &m_shadowsTexture->m_image.view;
-	shadow_fb_info.layers = VK_MAX_LIGHTS;
-
-	if (vkCreateFramebuffer(m_device, &shadow_fb_info, nullptr, &m_shadowFramebuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create shadow framebuffer!");
-	}
+								  { shadowsTexture->cleanup(m_device, m_memory); });
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyFramebuffer(m_device, m_shadowFramebuffer, nullptr); });
+								  { vkDestroyFramebuffer(m_device, m_renderPasses[SHADOW].framebuffer, nullptr); });
 }
 
 void Renderer::init_control_objects()
@@ -207,7 +254,6 @@ void Renderer::init_descriptors()
 								  { m_descriptorMng.cleanup(); });
 }
 
-
 void Renderer::init_shaderpasses()
 {
 	PipelineBuilder builder;
@@ -279,7 +325,7 @@ void Renderer::init_shaderpasses()
 		ShaderPass::build_shader_stages(m_device, *pass);
 
 		builder.build_pipeline_layout(m_device, m_descriptorMng, *pass);
-		builder.build_pipeline(m_device, m_renderPasses[DEFAULT], *pass);
+		builder.build_pipeline(m_device, m_renderPasses[DEFAULT].obj, *pass);
 
 		m_deletionQueue.push_function([=]()
 									  { pass->cleanup(m_device); });
@@ -319,7 +365,7 @@ void Renderer::init_shaderpasses()
 	ShaderPass::build_shader_stages(m_device, *depthPass);
 
 	builder.build_pipeline_layout(m_device, m_descriptorMng, *depthPass);
-	builder.build_pipeline(m_device, m_renderPasses[SHADOW], *depthPass);
+	builder.build_pipeline(m_device, m_renderPasses[SHADOW].obj, *depthPass);
 
 	m_shaderPasses["shadows"] = depthPass;
 
@@ -327,9 +373,9 @@ void Renderer::init_shaderpasses()
 								  { depthPass->cleanup(m_device); });
 }
 
-
 void Renderer::recreate_swap_chain()
 {
+
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
 
@@ -343,7 +389,7 @@ void Renderer::recreate_swap_chain()
 
 	m_swapchain.cleanup(m_device, m_memory);
 	create_swapchain();
-	m_swapchain.create_framebuffers(m_device, m_renderPasses[DEFAULT], *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create_framebuffers(m_device, m_renderPasses[DEFAULT].obj, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
@@ -366,6 +412,5 @@ void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&funct
 
 	vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
 }
-
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -88,6 +88,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &renderPass,
 	}
 	else
 	{
+		//TO DO: BLENDING
 	}
 
 	VkPipelineDynamicStateCreateInfo dynamicState{};

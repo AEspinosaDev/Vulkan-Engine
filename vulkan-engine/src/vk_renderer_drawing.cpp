@@ -57,7 +57,7 @@ void Renderer::render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageInd
 void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[DEFAULT], *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[DEFAULT].obj, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
 
 	// CLEAR SETUP
 	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
@@ -141,7 +141,7 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[SHADOW], shadowExtent, m_shadowFramebuffer);
+	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[SHADOW].obj, shadowExtent, m_renderPasses[SHADOW].framebuffer);
 
 	VkClearValue clearDepth;
 	clearDepth.depthStencil = {1.0f, 0};

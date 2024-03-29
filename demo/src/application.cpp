@@ -136,21 +136,6 @@ void VulkanRenderer::setup()
     kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
 
-    // Space scene
-
-    // Mesh *earth = new Mesh();
-    // earth->load_file(meshDir + "temple.obj");
-    // // earth->set_rotation(glm::vec3(0.0, 3.14, 0.0));
-    // auto earthMat = new PhysicallyBasedMaterial();
-    // Texture *earthText = new Texture();
-    // // earthText->load_image(textDir + "Earth_ALB.png");
-    // // earthMat->set_albedo_texture(earthText);
-    // earthMat->set_albedo({0.0, 1.0, 0.0, 1.0});
-    // earthMat->set_metalness(0.8f);
-    // earthMat->set_roughness(0.4f);
-    // earth->set_material(earthMat);
-    // earth->set_name("Earth");
-    // m_scene->add(earth);
 
     m_controller = new Controller(camera);
 }
@@ -183,7 +168,7 @@ void VulkanRenderer::setup_gui()
     explorerPanel->add_child(new Space());
     explorerPanel->add_child(new RendererSettingsWidget(m_renderer));
     explorerPanel->add_child(new Separator());
-    explorerPanel->add_child(new TextLine(" Application average (No cap)"));
+    explorerPanel->add_child(new TextLine(" Application average"));
     explorerPanel->add_child(new Profiler());
     explorerPanel->add_child(new Space());
 

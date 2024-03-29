@@ -348,4 +348,53 @@ VkWriteDescriptorSet init::write_descriptor_image(VkDescriptorType type, VkDescr
 
 	return write;
 }
+
+VkAttachmentDescription init::attachment_description(VkFormat format, VkImageLayout finalLayout, VkImageLayout initialLayout, VkSampleCountFlagBits samples, bool stencil)
+{
+	VkAttachmentDescription attachment{};
+	attachment.format = format;
+	attachment.samples = samples;
+	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachment.stencilLoadOp = stencil ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachment.stencilStoreOp = stencil ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachment.initialLayout = initialLayout;
+	attachment.finalLayout = finalLayout;
+
+	return attachment;
+}
+
+VkAttachmentReference init::attachment_reference(uint32_t slot, VkImageLayout layout)
+{
+	VkAttachmentReference attachmentRef{};
+	attachmentRef.attachment = slot;
+	attachmentRef.layout = layout;
+
+	return attachmentRef;
+}
+
+VkSubpassDependency init::subpass_dependency(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, uint32_t srcSubpass, uint32_t dstSubpass)
+{
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = srcSubpass;
+	dependency.dstSubpass = dstSubpass;
+	dependency.srcStageMask = srcStageMask;
+	dependency.dstStageMask = dstStageMask;
+	dependency.srcAccessMask = srcAccessMask;
+	dependency.dstAccessMask = dstAccessMask;
+
+	return dependency;
+}
+
+VkSubpassDescription init::subpass_description(uint32_t colorAttachmentCount, VkAttachmentReference *colorAttachmentRefs, VkAttachmentReference depthAttachmentRef, VkPipelineBindPoint bindPoint)
+{
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = bindPoint;
+	subpass.colorAttachmentCount = colorAttachmentCount;
+	subpass.pColorAttachments = colorAttachmentRefs;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+	return subpass;
+}
+
 VULKAN_ENGINE_NAMESPACE_END
