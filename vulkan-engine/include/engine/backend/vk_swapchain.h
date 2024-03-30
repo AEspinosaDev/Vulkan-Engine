@@ -13,6 +13,7 @@
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 #include "vk_image.h"
+#include "vk_renderpass.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -42,8 +43,9 @@ private:
 
 public:
 	void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
-				GLFWwindow *window, VkExtent2D &windowExtent, VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB, VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
+				GLFWwindow *window, VkExtent2D &windowExtent, uint32_t imageCount = 2 ,VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB, VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
 	void create_framebuffers(VkDevice &device, VmaAllocator &memory, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
+	void create_default_framebuffers(VkDevice &device, VmaAllocator &memory, RenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
 	void cleanup(VkDevice &device, VmaAllocator &memory);
 
 	inline VkSwapchainKHR &get_swapchain_obj()

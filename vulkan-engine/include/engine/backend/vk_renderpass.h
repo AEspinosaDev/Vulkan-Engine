@@ -32,12 +32,17 @@ struct RenderPass
     VkExtent2D extent;
 
     VkRenderPass obj;
-    VkFramebuffer framebuffer;
 
+    std::vector<VkFramebuffer> framebuffers;
     std::vector<AttachmentDescription> attachmentsInfo;
+
     std::vector<Texture *> textureAttachments;
 
-    void cleanup(VkDevice &device){};
+    static void begin(VkCommandBuffer &cmd, RenderPass &pass, VkExtent2D extent,
+               std::vector<VkClearValue> clearValues,
+               uint32_t framebufferId = 0, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+    static void end(VkCommandBuffer &cmd);
+    void cleanup(VkDevice &device);
 };
 
 struct RenderPassBuilder

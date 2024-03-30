@@ -148,7 +148,6 @@ public:
 		if (m_initialized)
 		{
 			m_updateSwapchain = true;
-			// m_changeInConfiguration = true;
 		}
 	}
 	inline void set_shadow_quality(ShadowResolution quality)
@@ -157,7 +156,6 @@ public:
 		if (m_initialized)
 		{
 			m_updateSwapchain = true;
-			// m_changeInConfiguration = true;
 		}
 	}
 	inline void set_color_format(ColorFormatType color)
@@ -239,7 +237,7 @@ private:
 	/*
 	Helper function that, given a pass, it creates the associated framebuffer and all its resources
 	*/
-	void create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers = 1);
+	void create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers = 1, uint32_t number = 1);
 
 	/*
 	Render flow control objects creation
@@ -261,8 +259,7 @@ private:
 	*/
 	void init_resources();
 
-	
-	void recreate_swap_chain();
+		void recreate_swap_chain();
 
 	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 
@@ -278,7 +275,7 @@ private:
 	/*
 	Record a viewport resize to the command buffer
 	*/
-	void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth = 0.0f, float maxDepth = 1.0f,
+	void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1.0f,
 					  float x = 0.0f, float y = 0.0f, int offsetX = 0, int offsetY = 0);
 	/*
 	Forward rendering

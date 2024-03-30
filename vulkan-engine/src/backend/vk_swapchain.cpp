@@ -3,7 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
-					   GLFWwindow *window, VkExtent2D &windowExtent, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
+					   GLFWwindow *window, VkExtent2D &windowExtent, uint32_t imageCount, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
 {
 	boot::SwapChainSupportDetails swapChainSupport = boot::query_swapchain_support(gpu, surface);
 	boot::QueueFamilyIndices indices = boot::find_queue_families(gpu, surface);
@@ -13,7 +13,7 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &su
 	VkPresentModeKHR presentMode = choose_swap_present_mode(swapChainSupport.presentModes, userDefinedPresentMode);
 	VkExtent2D extent = choose_swap_extent(swapChainSupport.capabilities, window);
 
-	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	imageCount = swapChainSupport.capabilities.minImageCount + (imageCount - 1);
 
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 	{
@@ -97,7 +97,8 @@ void Swapchain::create_depthbuffer(VkDevice &device, VmaAllocator &memory, VkExt
 void Swapchain::create_framebuffers(VkDevice &device, VmaAllocator &memory, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
 {
 	// COLOR BUFFER SETUP
-	create_colorbuffer(device, memory, windowExtent, samples);
+	if (samples > VK_SAMPLE_COUNT_1_BIT)
+		create_colorbuffer(device, memory, windowExtent, samples);
 	// DEPTH STENCIL BUFFER SETUP
 	create_depthbuffer(device, memory, windowExtent, samples);
 
@@ -130,6 +131,43 @@ void Swapchain::create_framebuffers(VkDevice &device, VmaAllocator &memory, VkRe
 	}
 }
 
+void Swapchain::create_default_framebuffers(VkDevice &device, VmaAllocator &memory, RenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
+{
+	// // COLOR BUFFER SETUP
+	// if (samples > VK_SAMPLE_COUNT_1_BIT)
+	// 	create_colorbuffer(device, memory, windowExtent, samples);
+
+	// // DEPTH STENCIL BUFFER SETUP
+	// create_depthbuffer(device, memory, windowExtent, samples);
+
+	// auto size = m_presentImageViews.size();
+	// m_framebuffers.resize(size);
+
+	// VkFramebufferCreateInfo fb_info = init::framebuffer_create_info(defaultRenderPass, windowExtent);
+	// for (size_t i = 0; i < size; i++)
+	// {
+	// 	VkImageView attachments[3] = {
+	// 		m_colorBuffer.view,
+	// 		m_depthStencilBuffer.view,
+	// 		m_presentImageViews[i]};
+	// 	fb_info.pAttachments = attachments;
+	// 	fb_info.attachmentCount = 3;
+
+	// 	if (samples & VK_SAMPLE_COUNT_1_BIT)
+	// 	{
+	// 		VkImageView _attachments[2] = {
+	// 			m_presentImageViews[i],
+	// 			m_depthStencilBuffer.view};
+	// 		fb_info.pAttachments = _attachments;
+	// 		fb_info.attachmentCount = 2;
+	// 	}
+
+	// 	if (vkCreateFramebuffer(device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
+	// 	{
+	// 		throw std::runtime_error("failed to create framebuffer!");
+	// 	}
+	// }
+}
 void Swapchain::cleanup(VkDevice &device, VmaAllocator &memory)
 {
 	for (size_t i = 0; i < m_framebuffers.size(); i++)

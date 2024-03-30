@@ -101,18 +101,13 @@ void Renderer::init_renderpasses()
 
 	m_renderPasses[SHADOW] = builder.build_renderpass(m_device);
 
-	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_renderPasses[SHADOW].obj, nullptr); });
-
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
 	create_framebuffer(m_renderPasses[SHADOW], {SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS);
 
 	m_deletionQueue.push_function([=]()
-								  { m_renderPasses[SHADOW].textureAttachments.front()->cleanup(m_device, m_memory); });
-
-	m_deletionQueue.push_function([=]()
-								  { vkDestroyFramebuffer(m_device, m_renderPasses[SHADOW].framebuffer, nullptr); });
+								  { m_renderPasses[SHADOW].cleanup(m_device);
+								   m_renderPasses[SHADOW].textureAttachments.front()->cleanup(m_device,m_memory); });
 
 	builder.clear_cache();
 
@@ -121,9 +116,10 @@ void Renderer::init_renderpasses()
 	/// -------- Light pass --------
 }
 
-void Renderer::create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers)
+void Renderer::create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers, uint32_t number)
 {
 	pass.extent = extent;
+	pass.framebuffers.resize(number);
 
 	std::vector<VkImageView> imgAttachments;
 	for (size_t i = 0; i < pass.attachmentsInfo.size(); i++)
@@ -146,9 +142,12 @@ void Renderer::create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t 
 	fbInfo.attachmentCount = (uint32_t)imgAttachments.size();
 	fbInfo.layers = layers;
 
-	if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &pass.framebuffer) != VK_SUCCESS)
+	for (size_t i = 0; i < number; i++)
 	{
-		throw std::runtime_error("failed to create framebuffer!");
+		if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &pass.framebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
 	}
 }
 
@@ -374,9 +373,9 @@ void Renderer::recreate_swap_chain()
 	VK_CHECK(vkDeviceWaitIdle(m_device));
 
 	m_swapchain.cleanup(m_device, m_memory);
-	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(),
-					   (VkFormat)m_settings.colorFormat, (VkPresentModeKHR)m_settings.screenSync);
-	m_swapchain.create_framebuffers(m_device, m_memory, m_renderPasses[DEFAULT].obj, *m_window->get_extent(), (VkSampleCountFlagBits)m_settings.AAtype);
+	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+	m_swapchain.create_framebuffers(m_device, m_memory, m_renderPasses[DEFAULT].obj, *m_window->get_extent(), static_cast<VkSampleCountFlagBits>(m_settings.AAtype));
 
 	// Recreate rest of framebuffers
 }

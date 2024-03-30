@@ -138,8 +138,8 @@ void Renderer::init_vulkan()
 
 	booter.setup_memory();
 
-	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(),
-					   (VkFormat)m_settings.colorFormat, (VkPresentModeKHR)m_settings.screenSync);
+	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+					  static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	init_renderpasses();
 

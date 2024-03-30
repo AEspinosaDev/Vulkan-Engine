@@ -1,7 +1,7 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
@@ -19,7 +19,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Renderer::set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D &extent, float minDepth, float maxDepth, float x, float y, int offsetX, int offsetY)
+void Renderer::set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D extent, float minDepth, float maxDepth, float x, float y, int offsetX, int offsetY)
 {
 	// Viewport setup
 	VkViewport viewport{};
@@ -133,24 +133,18 @@ void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex,
 	if (m_settings.enableUI && m_gui)
 		m_gui->upload_draw_data(commandBuffer);
 
-	vkCmdEndRenderPass(commandBuffer);
+	RenderPass::end(commandBuffer);
 }
 
 void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 {
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
-	VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
-
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[SHADOW].obj, shadowExtent, m_renderPasses[SHADOW].framebuffer);
-
 	VkClearValue clearDepth;
 	clearDepth.depthStencil = {1.0f, 0};
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearDepth;
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	RenderPass::begin(commandBuffer,m_renderPasses[SHADOW], {SHADOW_RES, SHADOW_RES}, {clearDepth});
 
-	set_viewport(commandBuffer, shadowExtent);
+	set_viewport(commandBuffer, {SHADOW_RES, SHADOW_RES});
 
 	// float depthBiasConstant = 1.25f;
 	vkCmdSetDepthBiasEnable(commandBuffer, scene->get_lights()[0]->get_use_vulkan_bias());
@@ -190,7 +184,8 @@ void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 			mesh_idx++;
 		}
 	}
-	vkCmdEndRenderPass(commandBuffer);
+
+	RenderPass::end(commandBuffer);
 }
 void Renderer::geometry_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 {
