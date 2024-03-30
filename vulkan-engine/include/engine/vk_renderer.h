@@ -1,7 +1,7 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
@@ -225,29 +225,44 @@ private:
 /*
 	////////////////////////////////////////////////////////////////////////////////////
 
-	Implementation of this region can be found in the module ==>> vk_renderer_api_mgr.cpp 
+	Implementation of this region can be found in the module ==>> vk_renderer_api_mgr.cpp
 
 	////////////////////////////////////////////////////////////////////////////////////
 */
 #pragma region _____________________ Vulkan API Management _____________________
 
-	void create_swapchain();
-
+	/*
+	Init renderpasses and create framebuffers attached to them
+	*/
 	void init_renderpasses();
 
-	void init_framebuffers();
+	/*
+	Helper function that, given a pass, it creates the associated framebuffer and all its resources
+	*/
+	void create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers = 1);
 
+	/*
+	Render flow control objects creation
+	*/
 	void init_control_objects();
 
+	/*
+	Descriptor pool and layouts creation
+	*/
 	void init_descriptors();
 
+	/*
+	Shader pass creation
+	*/
 	void init_shaderpasses();
 
+	/*
+	Resource like samplers, base textures and misc creation
+	*/
 	void init_resources();
 
+	
 	void recreate_swap_chain();
-
-	void reconfigure_vulkan();
 
 	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 
@@ -298,7 +313,7 @@ private:
 /*
 	////////////////////////////////////////////////////////////////////////////////////
 
-	Implementation of this region can be found in the module ==>> vk_renderer_data_mgr.cpp 
+	Implementation of this region can be found in the module ==>> vk_renderer_data_mgr.cpp
 
 	////////////////////////////////////////////////////////////////////////////////////
 */

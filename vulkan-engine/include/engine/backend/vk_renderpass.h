@@ -14,16 +14,6 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-struct RenderPass
-{
-    // VkExtent2D extent;
-
-    VkRenderPass obj;
-    VkFramebuffer framebuffer;
-    std::vector<Texture *> textureAttachments;
-
-    void cleanup(VkDevice &device){};
-};
 struct AttachmentDescription
 {
     VkAttachmentDescription description{};
@@ -37,6 +27,18 @@ struct AttachmentDescription
                           VkImageAspectFlags aspect,
                           VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) : description(d), viewUsage(usage), viewAspect(aspect), viewType(type){};
 };
+struct RenderPass
+{
+    VkExtent2D extent;
+
+    VkRenderPass obj;
+    VkFramebuffer framebuffer;
+
+    std::vector<AttachmentDescription> attachmentsInfo;
+    std::vector<Texture *> textureAttachments;
+
+    void cleanup(VkDevice &device){};
+};
 
 struct RenderPassBuilder
 {
@@ -48,7 +50,7 @@ struct RenderPassBuilder
     inline void add_attachment(AttachmentDescription attachment)
     {
         attachments.push_back(attachment);
-    }
+    };
     inline void add_subpass(VkSubpassDescription subpass)
     {
         subpasses.push_back(subpass);
@@ -56,10 +58,16 @@ struct RenderPassBuilder
     inline void add_dependency(VkSubpassDependency dep)
     {
         dependencies.push_back(dep);
-    }
+    };
+
+    inline void clear_cache()
+    {
+        attachments.clear();
+        subpasses.clear();
+        dependencies.clear();
+    };
 
     RenderPass build_renderpass(VkDevice &device);
-    void create_framebuffer(VkDevice &device, VmaAllocator &memory, RenderPass &pass, VkExtent3D extent, uint32_t layers = 1);
 };
 
 VULKAN_ENGINE_NAMESPACE_END

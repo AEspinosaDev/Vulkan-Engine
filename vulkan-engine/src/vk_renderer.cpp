@@ -138,11 +138,10 @@ void Renderer::init_vulkan()
 
 	booter.setup_memory();
 
-	create_swapchain();
+	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(),
+					   (VkFormat)m_settings.colorFormat, (VkPresentModeKHR)m_settings.screenSync);
 
 	init_renderpasses();
-
-	init_framebuffers();
 
 	init_control_objects();
 
@@ -180,8 +179,6 @@ void Renderer::cleanup()
 
 	glfwTerminate();
 }
-
-
 
 void Renderer::init_gui()
 {

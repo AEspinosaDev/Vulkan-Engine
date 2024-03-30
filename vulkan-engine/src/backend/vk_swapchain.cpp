@@ -94,8 +94,13 @@ void Swapchain::create_depthbuffer(VkDevice &device, VmaAllocator &memory, VkExt
 	m_depthStencilBuffer.create_view(device, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
-void Swapchain::create_framebuffers(VkDevice &device, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
+void Swapchain::create_framebuffers(VkDevice &device, VmaAllocator &memory, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
 {
+	// COLOR BUFFER SETUP
+	create_colorbuffer(device, memory, windowExtent, samples);
+	// DEPTH STENCIL BUFFER SETUP
+	create_depthbuffer(device, memory, windowExtent, samples);
+
 	auto size = m_presentImageViews.size();
 	m_framebuffers.resize(size);
 

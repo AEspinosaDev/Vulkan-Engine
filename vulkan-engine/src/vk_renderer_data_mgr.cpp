@@ -261,17 +261,10 @@ void Renderer::upload_texture(Texture *const t)
 void Renderer::init_resources()
 {
 
-	// // m_shadowsTexture = new Texture();
-	// // m_shadowsTexture->m_image = m_renderPasses[SHADOW].textureAttachments[0];
-	
-	// VkSamplerCreateInfo sampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-	// sampler.maxAnisotropy = 1.0f;
-	// sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-	// VK_CHECK(vkCreateSampler(m_device, &sampler, nullptr, &m_shadowsTexture->m_sampler));
-
-	// m_deletionQueue.push_function([=]()
-	// 							  { m_shadowsTexture->cleanup(m_device, m_memory); });
+	VkSamplerCreateInfo shadowSampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+	shadowSampler.maxAnisotropy = 1.0f;
+	shadowSampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	VK_CHECK(vkCreateSampler(m_device, &shadowSampler, nullptr, &m_renderPasses[SHADOW].textureAttachments.front()->m_sampler));
 
 	Texture::DEBUG_TEXTURE = new Texture();
 	std::string engineMeshDir(VK_TEXTURE_DIR);
