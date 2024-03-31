@@ -25,12 +25,7 @@ private:
 	VkFormat m_presentFormat;
 	VkPresentModeKHR m_presentMode;
 
-	std::vector<VkImage> m_presentImages;
-	std::vector<VkImageView> m_presentImageViews;
-
-	// Resources
-	Image m_colorBuffer{};
-	Image m_depthStencilBuffer{};
+	std::vector<Image> m_presentImages;
 
 	std::vector<VkFramebuffer> m_framebuffers;
 
@@ -38,14 +33,11 @@ private:
 	VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> &availablePresentModes, VkPresentModeKHR desiredMode);
 	VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window);
 	void create_image_views(VkDevice &device);
-	void create_colorbuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
-	void create_depthbuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
+	
 
 public:
 	void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
 				GLFWwindow *window, VkExtent2D &windowExtent, uint32_t imageCount = 2 ,VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB, VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
-	void create_framebuffers(VkDevice &device, VmaAllocator &memory, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
-	void create_default_framebuffers(VkDevice &device, VmaAllocator &memory, RenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples);
 	void cleanup(VkDevice &device, VmaAllocator &memory);
 
 	inline VkSwapchainKHR &get_swapchain_obj()
@@ -56,26 +48,11 @@ public:
 	{
 		return m_presentFormat;
 	}
-	inline std::vector<VkImage> get_images()
+	inline std::vector<Image> get_present_images()
 	{
 		return m_presentImages;
 	}
-	inline std::vector<VkImageView> get_image_views()
-	{
-		return m_presentImageViews;
-	}
-	inline std::vector<VkFramebuffer> get_framebuffers()
-	{
-		return m_framebuffers;
-	}
-	inline Image &get_colorbuffer()
-	{
-		return m_colorBuffer;
-	}
-	inline Image &get_depthbuffer()
-	{
-		return m_depthStencilBuffer;
-	}
+	
 };
 
 VULKAN_ENGINE_NAMESPACE_END

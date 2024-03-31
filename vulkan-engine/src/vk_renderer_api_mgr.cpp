@@ -28,23 +28,24 @@ void Renderer::init_renderpasses()
 	VkSampleCountFlagBits samples = (VkSampleCountFlagBits)m_settings.AAtype;
 	bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
 
-	VkAttachmentDescription colorAttachment = init::attachment_description(m_swapchain.get_image_format(),
+	VkAttachmentDescription colorAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.colorFormat),
 																		   multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_UNDEFINED, samples);
-	builder.add_attachment({colorAttachment});
-	VkAttachmentDescription depthAttachment = init::attachment_description(VK_FORMAT_D32_SFLOAT,
-																		   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, samples);
-	builder.add_attachment({depthAttachment});
+	builder.add_attachment({colorAttachment, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT});
 
 	if (multisampled)
 	{
-		VkAttachmentDescription resolveAttachment = init::attachment_description(m_swapchain.get_image_format(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		VkAttachmentDescription resolveAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.colorFormat), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		builder.add_attachment({resolveAttachment});
+		builder.add_attachment({resolveAttachment, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT});
 	}
+
+	VkAttachmentDescription depthAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.depthFormat),
+																		   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, samples);
+	builder.add_attachment({depthAttachment, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT});
 
 	VkSubpassDependency colorDep = init::subpass_dependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 															0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
@@ -54,11 +55,11 @@ void Renderer::init_renderpasses()
 	builder.add_dependency(depthDep);
 
 	VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	VkAttachmentReference depthRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	VkAttachmentReference depthRef = init::attachment_reference(static_cast<uint32_t>(builder.attachments.size()) - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	VkSubpassDescription defaultSubpass = init::subpass_description(1, &colorRef, depthRef);
 	if (multisampled)
 	{
-		VkAttachmentReference resolveRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		VkAttachmentReference resolveRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 		defaultSubpass.pResolveAttachments = &resolveRef;
 	}
 	builder.add_subpass(defaultSubpass);
@@ -66,19 +67,15 @@ void Renderer::init_renderpasses()
 	m_renderPasses[DEFAULT] = builder.build_renderpass(m_device);
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyRenderPass(m_device, m_renderPasses[DEFAULT].obj, nullptr); });
+								  { m_renderPasses[DEFAULT].cleanup(m_device); });
 
-	// if (m_initialized)
-	// 	return;
-
-	// Create swapchain fbos
-	m_swapchain.create_framebuffers(m_device, m_memory, m_renderPasses[DEFAULT].obj, *m_window->get_extent(), samples);
+	create_framebuffer(m_renderPasses[DEFAULT], *m_window->get_extent(), 1, static_cast<uint32_t>(m_settings.bufferingType) + 1);
 
 	builder.clear_cache();
 
 	// ---------- SHADOW RENDER PASS -----------
 
-	depthAttachment = init::attachment_description(m_swapchain.get_depthbuffer().format,
+	depthAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.depthFormat),
 												   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT, false);
 	builder.add_attachment({depthAttachment,
 							VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -101,13 +98,13 @@ void Renderer::init_renderpasses()
 
 	m_renderPasses[SHADOW] = builder.build_renderpass(m_device);
 
+	m_deletionQueue.push_function([=]()
+								  { m_renderPasses[SHADOW].cleanup(m_device); });
+
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
 	create_framebuffer(m_renderPasses[SHADOW], {SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS);
-
-	m_deletionQueue.push_function([=]()
-								  { m_renderPasses[SHADOW].cleanup(m_device);
-								   m_renderPasses[SHADOW].textureAttachments.front()->cleanup(m_device,m_memory); });
+	m_renderPasses[SHADOW].isFramebufferRecreatable = false;
 
 	builder.clear_cache();
 
@@ -116,38 +113,69 @@ void Renderer::init_renderpasses()
 	/// -------- Light pass --------
 }
 
-void Renderer::create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers, uint32_t number)
+void Renderer::create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers, uint32_t count)
 {
 	pass.extent = extent;
-	pass.framebuffers.resize(number);
+	pass.framebuffers.resize(count);
 
 	std::vector<VkImageView> imgAttachments;
+	imgAttachments.resize(pass.attachmentsInfo.size());
+
+	if (pass.textureAttachments.empty())
+		pass.textureAttachments.resize(pass.attachmentsInfo.size(), nullptr);
+
+	bool isDefaultRenderPass{false};
+	size_t presentViewIndex{0};
+
 	for (size_t i = 0; i < pass.attachmentsInfo.size(); i++)
 	{
 		// Create image and image view for framebuffer
-		Image image;
-		image.init(m_memory, pass.attachmentsInfo[i].description.format,
-				   pass.attachmentsInfo[i].viewUsage, {extent.width, extent.height, 1}, false, pass.attachmentsInfo[i].description.samples, layers);
-		image.create_view(m_device, pass.attachmentsInfo[i].viewAspect, pass.attachmentsInfo[i].viewType);
-		imgAttachments.push_back(image.view);
+		if (pass.attachmentsInfo[i].description.finalLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		{
+			Image image;
+			image.init(m_memory, pass.attachmentsInfo[i].description.format,
+					   pass.attachmentsInfo[i].viewUsage, {extent.width, extent.height, 1}, false, pass.attachmentsInfo[i].description.samples, layers);
+			image.create_view(m_device, pass.attachmentsInfo[i].viewAspect, pass.attachmentsInfo[i].viewType);
+			imgAttachments[i] = image.view;
 
-		// Save it in the texture inside the Renderpass
-		Texture *textAttachment = new Texture();
-		textAttachment->m_image = image;
-		pass.textureAttachments.push_back(textAttachment);
+			// Save it in the texture inside the Renderpass
+			if (!pass.textureAttachments[i])
+				pass.textureAttachments[i] = new Texture();
+			pass.textureAttachments[i]->m_image = image;
+		}
+		else
+		{
+			isDefaultRenderPass = true;
+			presentViewIndex = i;
+		}
 	}
 
-	VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(pass.obj, pass.extent);
-	fbInfo.pAttachments = imgAttachments.data();
-	fbInfo.attachmentCount = (uint32_t)imgAttachments.size();
-	fbInfo.layers = layers;
-
-	for (size_t i = 0; i < number; i++)
+	for (size_t fb = 0; fb < count; fb++)
 	{
-		if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &pass.framebuffers[i]) != VK_SUCCESS)
+		if (isDefaultRenderPass)
+			imgAttachments[presentViewIndex] = m_swapchain.get_present_images()[fb].view;
+
+		VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(pass.obj, pass.extent);
+		fbInfo.pAttachments = imgAttachments.data();
+		fbInfo.attachmentCount = (uint32_t)imgAttachments.size();
+		fbInfo.layers = layers;
+
+		if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &pass.framebuffers[fb]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create framebuffer!");
 		}
+	}
+}
+void Renderer::clean_framebuffer(RenderPass &pass)
+{
+
+	for (VkFramebuffer &fb : pass.framebuffers)
+		vkDestroyFramebuffer(m_device, fb, nullptr);
+
+	for (size_t i = 0; i < pass.textureAttachments.size(); i++)
+	{
+		if (pass.textureAttachments[i])
+			pass.textureAttachments[i]->m_image.cleanup(m_device, m_memory);
 	}
 }
 
@@ -375,9 +403,13 @@ void Renderer::recreate_swap_chain()
 	m_swapchain.cleanup(m_device, m_memory);
 	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
-	m_swapchain.create_framebuffers(m_device, m_memory, m_renderPasses[DEFAULT].obj, *m_window->get_extent(), static_cast<VkSampleCountFlagBits>(m_settings.AAtype));
 
-	// Recreate rest of framebuffers
+	for (auto &pass : m_renderPasses)
+	{
+		if (pass.second.isFramebufferRecreatable)
+			clean_framebuffer(pass.second);
+	}
+	create_framebuffer(m_renderPasses[DEFAULT], *m_window->get_extent(), 1, static_cast<uint32_t>(m_settings.bufferingType) + 1);
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)

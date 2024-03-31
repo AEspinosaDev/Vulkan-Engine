@@ -38,6 +38,8 @@ struct RenderPass
 
     std::vector<Texture *> textureAttachments;
 
+    bool isFramebufferRecreatable{true};
+
     static void begin(VkCommandBuffer &cmd, RenderPass &pass, VkExtent2D extent,
                std::vector<VkClearValue> clearValues,
                uint32_t framebufferId = 0, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);

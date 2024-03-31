@@ -49,6 +49,7 @@ struct RendererSettings
 	BufferingType bufferingType{_DOUBLE};
 	SyncType screenSync{MAILBOX_SYNC};
 	ColorFormatType colorFormat{SBGRA_8};
+	DepthFormatType depthFormat{D32F};
 
 	ShadowResolution shadowResolution{LOW};
 
@@ -86,11 +87,15 @@ class Renderer
 	VmaAllocator m_memory{};
 
 	Window *m_window;
+
 	VkInstance m_instance{};
+
 	VkPhysicalDevice m_gpu{};
 	VkDevice m_device{};
+
 	VkQueue m_graphicsQueue{};
 	VkQueue m_presentQueue{};
+
 	VkDebugUtilsMessengerEXT m_debugMessenger{};
 
 	Swapchain m_swapchain;
@@ -161,6 +166,12 @@ public:
 	inline void set_color_format(ColorFormatType color)
 	{
 		m_settings.colorFormat = color;
+		if (m_initialized)
+			m_updateSwapchain = true;
+	}
+	inline void set_depth_format(DepthFormatType d)
+	{
+		m_settings.depthFormat = d;
 		if (m_initialized)
 			m_updateSwapchain = true;
 	}
@@ -237,7 +248,7 @@ private:
 	/*
 	Helper function that, given a pass, it creates the associated framebuffer and all its resources
 	*/
-	void create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers = 1, uint32_t number = 1);
+	void create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers = 1, uint32_t count = 1);
 
 	/*
 	Render flow control objects creation
@@ -259,7 +270,9 @@ private:
 	*/
 	void init_resources();
 
-		void recreate_swap_chain();
+	void clean_framebuffer(RenderPass &pass);
+
+	void recreate_swap_chain();
 
 	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 

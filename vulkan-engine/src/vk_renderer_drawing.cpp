@@ -57,19 +57,12 @@ void Renderer::render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageInd
 void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_renderPasses[DEFAULT].obj, *m_window->get_extent(), m_swapchain.get_framebuffers()[imageIndex]);
-
-	// CLEAR SETUP
 	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
 	VkClearValue clearDepth;
 	clearDepth.depthStencil.depth = 1.f;
-	VkClearValue clearValues[] = {clearColor, clearDepth};
-	renderPassInfo.clearValueCount = 2;
-	renderPassInfo.pClearValues = clearValues;
-
-	// Setup global render state
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+	
+	RenderPass::begin(commandBuffer,m_renderPasses[DEFAULT],*m_window->get_extent(),{clearColor, clearColor,clearDepth},imageIndex);
+	
 	set_viewport(commandBuffer, *m_window->get_extent());
 
 	vkCmdSetDepthTestEnable(commandBuffer, m_settings.depthTest);

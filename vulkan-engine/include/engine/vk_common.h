@@ -172,6 +172,11 @@ typedef enum ColorFormatType
 	RGBA_16,
 	RGB_16,
 } ColorFormatType;
+typedef enum DepthFormatType
+{
+	D16F=VK_FORMAT_D16_UNORM,
+	D32F=VK_FORMAT_D32_SFLOAT
+} DepthFormatType;
 typedef enum TextureAdressModeType
 {
 	REPEAT = VK_SAMPLER_ADDRESS_MODE_REPEAT,						  // Repeat the texture when going beyond the image dimensions.

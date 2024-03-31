@@ -139,7 +139,7 @@ void Renderer::init_vulkan()
 	booter.setup_memory();
 
 	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-					  static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	init_renderpasses();
 
@@ -160,7 +160,12 @@ void Renderer::cleanup()
 	if (m_initialized)
 	{
 		m_deletionQueue.flush();
-
+		
+		for (auto& pass: m_renderPasses)
+		{
+			clean_framebuffer(pass.second);
+		}
+	
 		m_swapchain.cleanup(m_device, m_memory);
 
 		vmaDestroyAllocator(m_memory);

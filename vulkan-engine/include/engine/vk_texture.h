@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef VK_TEXTURE
@@ -49,6 +49,7 @@ class Texture
 
     friend class Renderer;
 
+    // friend void set_image(Texture *text, Image img);
     void cleanup(VkDevice &device, VmaAllocator &memory);
 
 public:
@@ -75,7 +76,7 @@ public:
     inline void set_filter(TextureFilterType f) { m_settings.filter = f; }
     inline void set_adress_mode(TextureAdressModeType am) { m_settings.adressMode = am; }
 
-    void load_image(std::string fileName,bool asyncCall=true);
+    void load_image(std::string fileName, bool asyncCall = true);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

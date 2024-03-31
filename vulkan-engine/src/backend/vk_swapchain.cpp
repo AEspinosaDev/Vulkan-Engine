@@ -50,11 +50,16 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &su
 
 	VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
 
-	VK_CHECK(vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
+	std::vector<VkImage> images;
+	images.resize(imageCount);
 
-			 m_presentImages.resize(imageCount));
+	VK_CHECK(vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, images.data()));
 
-	VK_CHECK(vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_presentImages.data()));
+	m_presentImages.resize(imageCount);
+	for (size_t i = 0; i < imageCount; i++)
+	{
+		m_presentImages[i].image = images[i];
+	}
 
 	m_presentFormat = surfaceFormat.format;
 	m_presentMode = presentMode;
@@ -63,126 +68,15 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &su
 	create_image_views(device);
 }
 
-void Swapchain::create_colorbuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
-{
-
-	VkExtent3D bufferExtent = {
-		windowExtent.width,
-		windowExtent.height,
-		1};
-
-	VmaAllocationCreateInfo cimg_allocinfo = {};
-	cimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	cimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	m_colorBuffer.init(memory, m_presentFormat, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, cimg_allocinfo, bufferExtent, false, samples);
-	m_colorBuffer.create_view(device, VK_IMAGE_ASPECT_COLOR_BIT);
-}
-
-void Swapchain::create_depthbuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
-{
-	VkExtent3D bufferExtent = {
-		windowExtent.width,
-		windowExtent.height,
-		1};
-
-	VmaAllocationCreateInfo dimg_allocinfo = {};
-	dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	m_depthStencilBuffer.init(memory, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, dimg_allocinfo, bufferExtent, false, samples);
-	m_depthStencilBuffer.create_view(device, VK_IMAGE_ASPECT_DEPTH_BIT);
-}
-
-void Swapchain::create_framebuffers(VkDevice &device, VmaAllocator &memory, VkRenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
-{
-	// COLOR BUFFER SETUP
-	if (samples > VK_SAMPLE_COUNT_1_BIT)
-		create_colorbuffer(device, memory, windowExtent, samples);
-	// DEPTH STENCIL BUFFER SETUP
-	create_depthbuffer(device, memory, windowExtent, samples);
-
-	auto size = m_presentImageViews.size();
-	m_framebuffers.resize(size);
-
-	VkFramebufferCreateInfo fb_info = init::framebuffer_create_info(defaultRenderPass, windowExtent);
-	for (size_t i = 0; i < size; i++)
-	{
-		VkImageView attachments[3] = {
-			m_colorBuffer.view,
-			m_depthStencilBuffer.view,
-			m_presentImageViews[i]};
-		fb_info.pAttachments = attachments;
-		fb_info.attachmentCount = 3;
-
-		if (samples & VK_SAMPLE_COUNT_1_BIT)
-		{
-			VkImageView _attachments[2] = {
-				m_presentImageViews[i],
-				m_depthStencilBuffer.view};
-			fb_info.pAttachments = _attachments;
-			fb_info.attachmentCount = 2;
-		}
-
-		if (vkCreateFramebuffer(device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-}
-
-void Swapchain::create_default_framebuffers(VkDevice &device, VmaAllocator &memory, RenderPass &defaultRenderPass, VkExtent2D &windowExtent, VkSampleCountFlagBits samples)
-{
-	// // COLOR BUFFER SETUP
-	// if (samples > VK_SAMPLE_COUNT_1_BIT)
-	// 	create_colorbuffer(device, memory, windowExtent, samples);
-
-	// // DEPTH STENCIL BUFFER SETUP
-	// create_depthbuffer(device, memory, windowExtent, samples);
-
-	// auto size = m_presentImageViews.size();
-	// m_framebuffers.resize(size);
-
-	// VkFramebufferCreateInfo fb_info = init::framebuffer_create_info(defaultRenderPass, windowExtent);
-	// for (size_t i = 0; i < size; i++)
-	// {
-	// 	VkImageView attachments[3] = {
-	// 		m_colorBuffer.view,
-	// 		m_depthStencilBuffer.view,
-	// 		m_presentImageViews[i]};
-	// 	fb_info.pAttachments = attachments;
-	// 	fb_info.attachmentCount = 3;
-
-	// 	if (samples & VK_SAMPLE_COUNT_1_BIT)
-	// 	{
-	// 		VkImageView _attachments[2] = {
-	// 			m_presentImageViews[i],
-	// 			m_depthStencilBuffer.view};
-	// 		fb_info.pAttachments = _attachments;
-	// 		fb_info.attachmentCount = 2;
-	// 	}
-
-	// 	if (vkCreateFramebuffer(device, &fb_info, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
-	// 	{
-	// 		throw std::runtime_error("failed to create framebuffer!");
-	// 	}
-	// }
-}
 void Swapchain::cleanup(VkDevice &device, VmaAllocator &memory)
 {
-	for (size_t i = 0; i < m_framebuffers.size(); i++)
+	for (size_t i = 0; i < m_presentImages.size(); i++)
 	{
-		vkDestroyFramebuffer(device, m_framebuffers[i], nullptr);
-	}
-	for (size_t i = 0; i < m_presentImageViews.size(); i++)
-	{
-		vkDestroyImageView(device, m_presentImageViews[i], nullptr);
+		vkDestroyImageView(device, m_presentImages[i].view, nullptr);
 	}
 
 	vkDestroySwapchainKHR(device, m_swapchain, nullptr);
 
-	m_colorBuffer.cleanup(device, memory);
-	m_depthStencilBuffer.cleanup(device, memory);
 }
 
 VkSurfaceFormatKHR Swapchain::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats, VkFormat desiredFormat)
@@ -237,13 +131,11 @@ VkExtent2D Swapchain::choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabil
 
 void Swapchain::create_image_views(VkDevice &device)
 {
-	m_presentImageViews.resize(m_presentImages.size());
-
 	for (size_t i = 0; i < m_presentImages.size(); i++)
 	{
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_presentImages[i];
+		createInfo.image = m_presentImages[i].image;
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		createInfo.format = m_presentFormat;
 		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -256,7 +148,7 @@ void Swapchain::create_image_views(VkDevice &device)
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &m_presentImageViews[i]));
+		VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &m_presentImages[i].view));
 	}
 }
 
