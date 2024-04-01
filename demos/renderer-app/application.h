@@ -10,7 +10,7 @@
 #include <engine/materials/vk_physically_based.h>
 #include <engine/vk_texture.h>
 #include <chrono>
-#include "config.h"
+#include "../config.h"
 
 /**
  * Example app

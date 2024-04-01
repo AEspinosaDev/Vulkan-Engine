@@ -57,8 +57,8 @@ void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool c
         if (m_type == WASD)
         {
 
-            float yaw = m_objPtr->get_rotation().x + m_mouseDeltaX;
-            float pitch = m_objPtr->get_rotation().y + m_mouseDeltaY;
+            float yaw = m_objPtr->get_rotation(true).x + m_mouseDeltaX;
+            float pitch = m_objPtr->get_rotation(true).y + m_mouseDeltaY;
 
             if (constrainPitch)
             {
@@ -73,8 +73,8 @@ void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool c
         if (m_type == ORBITAL)
         {
 
-            float yaw = m_objPtr->get_parent()->get_rotation().x + m_mouseDeltaX;
-            float pitch = m_objPtr->get_parent()->get_rotation().y + m_mouseDeltaY;
+            float yaw = m_objPtr->get_parent()->get_rotation(true).x + m_mouseDeltaX;
+            float pitch = m_objPtr->get_parent()->get_rotation(true).y + m_mouseDeltaY;
 
             if (constrainPitch)
             {

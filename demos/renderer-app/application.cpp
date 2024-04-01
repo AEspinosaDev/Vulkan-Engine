@@ -1,4 +1,4 @@
-#include <demo/application.h>
+#include "application.h"
 #include <filesystem>
 
 void VulkanRenderer::init()
@@ -17,7 +17,7 @@ void VulkanRenderer::init()
 
     RendererSettings settings{};
     settings.AAtype = AntialiasingType::MSAA_x8;
-    settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
+    settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
     // settings.shadowResolution = ShadowResolution::ULTRA;
 
@@ -44,13 +44,12 @@ void VulkanRenderer::run()
 
 void VulkanRenderer::setup()
 {
-    std::string meshDir(MODEL_DIR);
-    std::string textDir(TEXTURE_DIR);
-
-    std::string engineMeshDir(VK_MODEL_DIR);
+    const std::string MESH_PATH(DEMO_MODELS_PATH);
+    const std::string TEXTURE_PATH(DEMO_TEXTURES_PATH);
+    const std::string ENGINE_MESH_PATH(VK_MODEL_DIR);
 
     camera = new Camera();
-    camera->set_position(glm::vec3(0.0f, 0.0f, -5.0f));
+    camera->set_position(Vec3(0.0f, 0.0f, -5.0f));
     camera->set_far(100.0f);
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
@@ -66,16 +65,16 @@ void VulkanRenderer::setup()
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();
     Texture *toriiT = new Texture();
-    toriiT->load_image(textDir + "torii_color.png");
+    toriiT->load_image(TEXTURE_PATH + "torii_color.png");
     Texture *toriiN = new Texture();
-    toriiN->load_image(textDir + "torii_normal.png");
+    toriiN->load_image(TEXTURE_PATH + "torii_normal.png");
     Texture *toriiM = new Texture();
-    toriiM->load_image(textDir + "torii_mask.png");
+    toriiM->load_image(TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
     toriiMat->set_normal_texture(toriiN);
     toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMesh->set_material(toriiMat);
-    toriiMesh->load_file(meshDir + "torii.obj",true);
+    toriiMesh->load_file(MESH_PATH + "torii.obj", true);
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
     toriiMesh->set_position({1.6, -2.3, 6.1});
@@ -85,13 +84,13 @@ void VulkanRenderer::setup()
     Mesh *terrainMesh = new Mesh();
     terrainMesh->set_scale(10.0);
     terrainMesh->set_position({0.0, -4.0, 0.0});
-    terrainMesh->load_file(meshDir + "terrain.obj",true);
+    terrainMesh->load_file(MESH_PATH + "terrain.obj", true);
     Texture *floorText = new Texture();
-    floorText->load_image(textDir + "floor_diffuse.jpg");
+    floorText->load_image(TEXTURE_PATH + "floor_diffuse.jpg");
     Texture *floorNormalText = new Texture();
-    floorNormalText->load_image(textDir + "floor_normal.jpg");
+    floorNormalText->load_image(TEXTURE_PATH + "floor_normal.jpg");
     Texture *floorRoughText = new Texture();
-    floorRoughText->load_image(textDir + "floor_roughness.jpg");
+    floorRoughText->load_image(TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f, 1.0});
     terrainMat->set_albedo_texture(floorText);
@@ -105,9 +104,9 @@ void VulkanRenderer::setup()
     Mesh *boxMesh = new Mesh();
     boxMesh->set_position({-3, -2.5, 5.0});
     boxMesh->set_rotation({0.0, 20.0f, 0.0f});
-    boxMesh->load_file(engineMeshDir + "cube.obj");
+    boxMesh->load_file(ENGINE_MESH_PATH + "cube.obj");
     Texture *woodText = new Texture();
-    woodText->load_image(textDir + "wood_diffuse.jpg");
+    woodText->load_image(TEXTURE_PATH + "wood_diffuse.jpg");
     auto boxMat = new PhysicallyBasedMaterial();
     boxMat->set_albedo_texture(woodText);
     boxMesh->set_material(boxMat);
@@ -117,18 +116,18 @@ void VulkanRenderer::setup()
     auto lightMat = new UnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_lights()[0]->get_color(), 1.0f));
     m_lightDummy = new Mesh();
-    m_lightDummy->load_file(engineMeshDir + "sphere.obj");
+    m_lightDummy->load_file(ENGINE_MESH_PATH + "sphere.obj");
     m_lightDummy->set_material(lightMat);
     m_lightDummy->set_scale(0.5f);
     m_lightDummy->set_name("Light Gizmo");
     m_scene->add(m_lightDummy);
 
     Mesh *kabutoMesh = new Mesh();
-    kabutoMesh->load_file(meshDir + "kabuto.obj");
+    kabutoMesh->load_file(MESH_PATH + "kabuto.obj");
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
-    kabutoText->load_image(textDir + "kabuto_color.png");
+    kabutoText->load_image(TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0, 1.0});
     kabutoMat->set_metalness(0.8f);
@@ -136,7 +135,6 @@ void VulkanRenderer::setup()
     kabutoMesh->set_material(kabutoMat);
     kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
-
 
     m_controller = new Controller(camera);
 }
@@ -205,7 +203,6 @@ void VulkanRenderer::update()
     dynamic_cast<UnlitMaterial *>(m_lightDummy->get_material())->set_color(glm::vec4(light->get_color(), 1.0f));
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());
-    
 }
 
 void VulkanRenderer::tick()

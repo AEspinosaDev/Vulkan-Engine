@@ -7,10 +7,10 @@ file(GLOB LIB_INTERNAL_HEADERS "third_party/imgui/*.h")
 
 
 # Add the library target
-add_library(VKEngine STATIC ${LIB_SOURCES} ${LIB_HEADERS} ${LIB_INTERNAL_HEADERS})
+add_library(VulkanEngine STATIC ${LIB_SOURCES} ${LIB_HEADERS} ${LIB_INTERNAL_HEADERS})
 
 # Set include directories for users of your library
-target_include_directories(VKEngine
+target_include_directories(VulkanEngine
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
@@ -23,10 +23,10 @@ target_include_directories(VKEngine
 )
 
 # Link Vulkan, glfw, shaderc and include glm
-target_link_libraries(VKEngine Vulkan::Vulkan glfw shaderc_shared.lib)
+target_link_libraries(VulkanEngine Vulkan::Vulkan glfw shaderc_shared.lib)
 
 # Set properties
-set_target_properties(VKEngine PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set_target_properties(VulkanEngine PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!

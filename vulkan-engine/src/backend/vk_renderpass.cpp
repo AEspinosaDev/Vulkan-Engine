@@ -28,7 +28,7 @@ RenderPass RenderPassBuilder::build_renderpass(VkDevice &device)
     }
 
     RenderPass wrapper;
-    wrapper.attachmentCount = attachments.size();
+    wrapper.attachmentCount = (uint32_t)attachments.size();
     wrapper.attachmentsInfo = attachments;
     wrapper.obj = renderPass;
 

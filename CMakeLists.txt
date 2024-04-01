@@ -81,7 +81,12 @@ endif()
 link_directories(${VULKAN_SDK_ROOT})
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/vulkan-engine)
-add_subdirectory(${CMAKE_SOURCE_DIR}/demo)
+
+# Choose if building demos directory. User-Defined.
+option(BUILD_DEMOS "Build Demos Directory" ON)
+if(BUILD_DEMOS)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/demos)
+endif()
 
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
