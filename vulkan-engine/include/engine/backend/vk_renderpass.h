@@ -10,7 +10,7 @@
 #define VK_RENDERPASS
 
 #include <engine/vk_common.h>
-#include <engine/vk_texture.h>
+#include "vk_swapchain.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -33,17 +33,37 @@ struct RenderPass
 
     VkRenderPass obj;
 
+    uint32_t framebufferCount;
+    uint32_t attachmentCount;
+
     std::vector<VkFramebuffer> framebuffers;
     std::vector<AttachmentDescription> attachmentsInfo;
-
-    std::vector<Texture *> textureAttachments;
+    std::vector<Image> imageAttachments;
 
     bool isFramebufferRecreatable{true};
 
+    /**
+     * Begin render pass
+     */
     static void begin(VkCommandBuffer &cmd, RenderPass &pass, VkExtent2D extent,
-               std::vector<VkClearValue> clearValues,
-               uint32_t framebufferId = 0, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+                      std::vector<VkClearValue> clearValues,
+                      uint32_t framebufferId = 0, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+    /**
+     * End render pass
+     */
     static void end(VkCommandBuffer &cmd);
+
+    /**
+     * Create framebuffers and images attached to them necessary for the renderpass to work
+     */
+    void create_framebuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D extent, uint32_t layers = 1, uint32_t count = 1, Swapchain *swp = nullptr);
+    /**
+     * Destroy framebuffers and images attached to them necessary for the renderpass to work. If images have a sampler attached to them, contol the destruction of it too.
+     */
+    void clean_framebuffer(VkDevice &device, VmaAllocator &memory, bool destroyImageSamplers = true);
+    /**
+     * Destroy the renderpass object only.
+     */
     void cleanup(VkDevice &device);
 };
 

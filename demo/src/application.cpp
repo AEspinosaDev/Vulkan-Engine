@@ -19,6 +19,7 @@ void VulkanRenderer::init()
     settings.AAtype = AntialiasingType::MSAA_x8;
     settings.clearColor = glm::vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
+    // settings.shadowResolution = ShadowResolution::ULTRA;
 
     m_renderer = new Renderer(m_window, settings);
 

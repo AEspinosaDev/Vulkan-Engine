@@ -39,7 +39,6 @@ class Texture
     int m_channels;
 
     Image m_image;
-    VkSampler m_sampler;
 
     TextureSettings m_settings{};
 
@@ -48,9 +47,6 @@ class Texture
     bool m_isDirty{true};
 
     friend class Renderer;
-
-    // friend void set_image(Texture *text, Image img);
-    void cleanup(VkDevice &device, VmaAllocator &memory);
 
 public:
     static Texture *DEBUG_TEXTURE;

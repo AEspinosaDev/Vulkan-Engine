@@ -42,7 +42,7 @@ void Renderer::render(Scene *const scene)
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		recreate_swap_chain();
+		update_renderpasses();
 		return;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -104,10 +104,10 @@ void Renderer::render(Scene *const scene)
 
 	result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized() || m_updateSwapchain)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->is_resized() || m_updateFramebuffers)
 	{
 		m_window->set_resized(false);
-		recreate_swap_chain();
+		update_renderpasses();
 		scene->get_active_camera()->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
 	}
 	else if (result != VK_SUCCESS)
@@ -120,24 +120,24 @@ void Renderer::render(Scene *const scene)
 
 void Renderer::init_vulkan()
 {
-
+	//BOOT Vulkan
 	boot::VulkanBooter booter(&m_instance,
 							  &m_debugMessenger,
 							  &m_gpu,
 							  &m_device,
 							  &m_graphicsQueue, m_window->get_surface(),
 							  &m_presentQueue, &m_memory, m_enableValidationLayers);
-
 	booter.boot_vulkan();
 
+	//Create surface
 	VK_CHECK(glfwCreateWindowSurface(m_instance, m_window->get_window_obj(), nullptr, m_window->get_surface()));
 
+	//Create and setup devices and memory allocation
 	booter.pick_graphics_card_device();
-
 	booter.create_logical_device(utils::get_gpu_features(m_gpu));
-
 	booter.setup_memory();
 
+	//Create swapchain
 	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
@@ -160,12 +160,13 @@ void Renderer::cleanup()
 	if (m_initialized)
 	{
 		m_deletionQueue.flush();
-		
-		for (auto& pass: m_renderPasses)
+
+		//Destroy passes framebuffers and resources
+		for (auto &pass : m_renderPasses)
 		{
-			clean_framebuffer(pass.second);
+			pass.second.clean_framebuffer(m_device, m_memory);
 		}
-	
+
 		m_swapchain.cleanup(m_device, m_memory);
 
 		vmaDestroyAllocator(m_memory);

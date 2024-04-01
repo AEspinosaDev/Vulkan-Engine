@@ -121,13 +121,9 @@ class Renderer
 	const bool m_enableValidationLayers{true};
 #endif
 
-	bool m_updateSwapchain{false};
-	bool m_updateConfiguration{false};
 	bool m_initialized{false};
 	uint32_t m_currentFrame{0};
-
-	// Material *m_lastMaterial{nullptr};
-	// Geometry *m_lastGeometry{nullptr};
+	bool m_updateFramebuffers{false};
 
 	GUIOverlay *m_gui{nullptr};
 
@@ -152,7 +148,7 @@ public:
 		m_settings.AAtype = msaa;
 		if (m_initialized)
 		{
-			m_updateSwapchain = true;
+			m_updateFramebuffers = true;
 		}
 	}
 	inline void set_shadow_quality(ShadowResolution quality)
@@ -160,26 +156,26 @@ public:
 		m_settings.shadowResolution = quality;
 		if (m_initialized)
 		{
-			m_updateSwapchain = true;
+			m_updateFramebuffers = true;
 		}
 	}
 	inline void set_color_format(ColorFormatType color)
 	{
 		m_settings.colorFormat = color;
 		if (m_initialized)
-			m_updateSwapchain = true;
+			m_updateFramebuffers = true;
 	}
 	inline void set_depth_format(DepthFormatType d)
 	{
 		m_settings.depthFormat = d;
 		if (m_initialized)
-			m_updateSwapchain = true;
+			m_updateFramebuffers = true;
 	}
 	inline void set_sync_type(SyncType sync)
 	{
 		m_settings.screenSync = sync;
 		if (m_initialized)
-			m_updateSwapchain = true;
+			m_updateFramebuffers = true;
 	}
 
 	inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
@@ -241,14 +237,9 @@ private:
 #pragma region _____________________ Vulkan API Management _____________________
 
 	/*
-	Init renderpasses and create framebuffers attached to them
+	Init renderpasses and create framebuffers and image resources attached to them
 	*/
 	void init_renderpasses();
-
-	/*
-	Helper function that, given a pass, it creates the associated framebuffer and all its resources
-	*/
-	void create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers = 1, uint32_t count = 1);
 
 	/*
 	Render flow control objects creation
@@ -270,9 +261,10 @@ private:
 	*/
 	void init_resources();
 
-	void clean_framebuffer(RenderPass &pass);
-
-	void recreate_swap_chain();
+	/*
+	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing or reconfiguring context
+	*/
+	void update_renderpasses();
 
 	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 

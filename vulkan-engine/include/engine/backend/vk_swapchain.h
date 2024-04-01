@@ -13,7 +13,6 @@
 #include "vk_bootstrap.h"
 #include "vk_initializers.h"
 #include "vk_image.h"
-#include "vk_renderpass.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

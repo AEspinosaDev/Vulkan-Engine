@@ -69,7 +69,7 @@ void Renderer::init_renderpasses()
 	m_deletionQueue.push_function([=]()
 								  { m_renderPasses[DEFAULT].cleanup(m_device); });
 
-	create_framebuffer(m_renderPasses[DEFAULT], *m_window->get_extent(), 1, static_cast<uint32_t>(m_settings.bufferingType) + 1);
+	m_renderPasses[DEFAULT].create_framebuffer(m_device, m_memory, *m_window->get_extent(), 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
 
 	builder.clear_cache();
 
@@ -103,7 +103,7 @@ void Renderer::init_renderpasses()
 
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
-	create_framebuffer(m_renderPasses[SHADOW], {SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS);
+	m_renderPasses[SHADOW].create_framebuffer(m_device, m_memory, {SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS);
 	m_renderPasses[SHADOW].isFramebufferRecreatable = false;
 
 	builder.clear_cache();
@@ -111,72 +111,6 @@ void Renderer::init_renderpasses()
 	/// ------ Geometry pass ------
 
 	/// -------- Light pass --------
-}
-
-void Renderer::create_framebuffer(RenderPass &pass, VkExtent2D extent, uint32_t layers, uint32_t count)
-{
-	pass.extent = extent;
-	pass.framebuffers.resize(count);
-
-	std::vector<VkImageView> imgAttachments;
-	imgAttachments.resize(pass.attachmentsInfo.size());
-
-	if (pass.textureAttachments.empty())
-		pass.textureAttachments.resize(pass.attachmentsInfo.size(), nullptr);
-
-	bool isDefaultRenderPass{false};
-	size_t presentViewIndex{0};
-
-	for (size_t i = 0; i < pass.attachmentsInfo.size(); i++)
-	{
-		// Create image and image view for framebuffer
-		if (pass.attachmentsInfo[i].description.finalLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		{
-			Image image;
-			image.init(m_memory, pass.attachmentsInfo[i].description.format,
-					   pass.attachmentsInfo[i].viewUsage, {extent.width, extent.height, 1}, false, pass.attachmentsInfo[i].description.samples, layers);
-			image.create_view(m_device, pass.attachmentsInfo[i].viewAspect, pass.attachmentsInfo[i].viewType);
-			imgAttachments[i] = image.view;
-
-			// Save it in the texture inside the Renderpass
-			if (!pass.textureAttachments[i])
-				pass.textureAttachments[i] = new Texture();
-			pass.textureAttachments[i]->m_image = image;
-		}
-		else
-		{
-			isDefaultRenderPass = true;
-			presentViewIndex = i;
-		}
-	}
-
-	for (size_t fb = 0; fb < count; fb++)
-	{
-		if (isDefaultRenderPass)
-			imgAttachments[presentViewIndex] = m_swapchain.get_present_images()[fb].view;
-
-		VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(pass.obj, pass.extent);
-		fbInfo.pAttachments = imgAttachments.data();
-		fbInfo.attachmentCount = (uint32_t)imgAttachments.size();
-		fbInfo.layers = layers;
-
-		if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &pass.framebuffers[fb]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-}
-void Renderer::clean_framebuffer(RenderPass &pass)
-{
-
-	for (VkFramebuffer &fb : pass.framebuffers)
-		vkDestroyFramebuffer(m_device, fb, nullptr);
-
-	for (size_t i = 0; i < pass.textureAttachments.size(); i++)
-	{
-		if (pass.textureAttachments[i])
-			pass.textureAttachments[i]->m_image.cleanup(m_device, m_memory);
-	}
 }
 
 void Renderer::init_control_objects()
@@ -386,12 +320,11 @@ void Renderer::init_shaderpasses()
 								  { depthPass->cleanup(m_device); });
 }
 
-void Renderer::recreate_swap_chain()
+void Renderer::update_renderpasses()
 {
-
+	// GLFW update framebuffer
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
-
 	while (width == 0 || height == 0)
 	{
 		glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
@@ -400,16 +333,20 @@ void Renderer::recreate_swap_chain()
 
 	VK_CHECK(vkDeviceWaitIdle(m_device));
 
+	// Swapchain recreation
 	m_swapchain.cleanup(m_device, m_memory);
 	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
+	// Renderpass framebuffer updating
 	for (auto &pass : m_renderPasses)
 	{
 		if (pass.second.isFramebufferRecreatable)
-			clean_framebuffer(pass.second);
+			pass.second.clean_framebuffer(m_device, m_memory, false);
 	}
-	create_framebuffer(m_renderPasses[DEFAULT], *m_window->get_extent(), 1, static_cast<uint32_t>(m_settings.bufferingType) + 1);
+
+	m_renderPasses[DEFAULT].create_framebuffer(m_device, m_memory, *m_window->get_extent(), 1,
+											   static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)

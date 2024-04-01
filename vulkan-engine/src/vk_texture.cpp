@@ -35,10 +35,6 @@ void Texture::load_image(std::string fileName, bool asyncCall)
 	}
 }
 
-void Texture::cleanup(VkDevice &device, VmaAllocator &memory)
-{
-	m_image.cleanup(device, memory);
-	vkDestroySampler(device, m_sampler, VK_NULL_HANDLE);
-}
+
 
 VULKAN_ENGINE_NAMESPACE_END

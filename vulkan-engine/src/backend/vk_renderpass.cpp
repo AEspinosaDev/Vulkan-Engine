@@ -28,6 +28,7 @@ RenderPass RenderPassBuilder::build_renderpass(VkDevice &device)
     }
 
     RenderPass wrapper;
+    wrapper.attachmentCount = attachments.size();
     wrapper.attachmentsInfo = attachments;
     wrapper.obj = renderPass;
 
@@ -53,5 +54,67 @@ void RenderPass::cleanup(VkDevice &device)
     vkDestroyRenderPass(device, obj, nullptr);
 }
 
+void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, VkExtent2D extent, uint32_t layers, uint32_t count, Swapchain *swp)
+{
+    extent = extent;
+    framebufferCount = count;
 
+    // Prepare data structures
+    framebuffers.resize(framebufferCount);
+    std::vector<VkImageView> viewAttachments;
+    viewAttachments.resize(attachmentCount);
+    if (imageAttachments.empty())
+        imageAttachments.resize(attachmentCount);
+
+    // Is defaulf comprobation
+    bool isDefaultRenderPass{false};
+    size_t presentViewIndex{0};
+
+    for (size_t i = 0; i < attachmentCount; i++)
+    {
+        // Create image and image view for framebuffer
+        if (attachmentsInfo[i].description.finalLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) //If its not default renderpass
+        {
+            Image image;
+            image.init(memory, attachmentsInfo[i].description.format,
+                       attachmentsInfo[i].viewUsage, {extent.width, extent.height, 1}, false, attachmentsInfo[i].description.samples, layers);
+            image.create_view(device, attachmentsInfo[i].viewAspect, attachmentsInfo[i].viewType);
+            viewAttachments[i] = image.view;
+
+            imageAttachments[i] = image;
+        }
+        else
+        {
+            isDefaultRenderPass = true;
+            presentViewIndex = i;
+        }
+    }
+
+    for (size_t fb = 0; fb < count; fb++)
+    {
+        if (isDefaultRenderPass) //If its default need swapchain PRESENT images
+            viewAttachments[presentViewIndex] = swp->get_present_images()[fb].view;
+
+        VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(obj, extent);
+        fbInfo.pAttachments = viewAttachments.data();
+        fbInfo.attachmentCount = (uint32_t)viewAttachments.size();
+        fbInfo.layers = layers;
+
+        if (vkCreateFramebuffer(device, &fbInfo, nullptr, &framebuffers[fb]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
+}
+
+void RenderPass::clean_framebuffer(VkDevice &device, VmaAllocator &memory, bool destroyImageSamplers)
+{
+    for (VkFramebuffer &fb : framebuffers)
+        vkDestroyFramebuffer(device, fb, nullptr);
+
+    for (size_t i = 0; i < attachmentCount; i++)
+    {
+        imageAttachments[i].cleanup(device, memory, destroyImageSamplers);
+    }
+}
 VULKAN_ENGINE_NAMESPACE_END

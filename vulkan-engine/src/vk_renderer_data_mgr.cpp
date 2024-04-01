@@ -1,7 +1,7 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
@@ -9,7 +9,7 @@
 
 	In this Renderer's module you will find:
 
-	Implementation of functions focused on managing the uploading to the GPU and caching of data needed for 
+	Implementation of functions focused on managing the uploading to the GPU and caching of data needed for
 	rendering.
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +172,7 @@ void Renderer::setup_material(Material *const mat)
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::TEXTURE_LAYOUT, &mat->m_textureDescriptor);
 
 		// Set Shadow Map write
-		m_descriptorMng.set_descriptor_write(m_renderPasses[SHADOW].textureAttachments.front()->m_sampler, m_renderPasses[SHADOW].textureAttachments.front()->m_image.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
+		m_descriptorMng.set_descriptor_write(m_renderPasses[SHADOW].imageAttachments.front().sampler, m_renderPasses[SHADOW].imageAttachments.front().view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
 	}
 
 	auto textures = mat->get_textures();
@@ -188,7 +188,7 @@ void Renderer::setup_material(Material *const mat)
 			// Set texture write
 			if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
 			{
-				m_descriptorMng.set_descriptor_write(texture->m_sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
+				m_descriptorMng.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
 				mat->set_texture_binding_state(pair.first, true);
 				texture->m_isDirty = false;
 			}
@@ -197,7 +197,7 @@ void Renderer::setup_material(Material *const mat)
 		{
 			// SET DUMMY TEXTURE
 			if (!mat->get_texture_binding_state()[pair.first])
-				m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
+				m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
 			mat->set_texture_binding_state(pair.first, true);
 		}
 	}
@@ -207,6 +207,8 @@ void Renderer::setup_material(Material *const mat)
 
 void Renderer::upload_texture(Texture *const t)
 {
+
+	// INIT IMAGE AND CREATE VIEW
 	VkExtent3D extent = {(uint32_t)t->m_width,
 						 (uint32_t)t->m_height,
 						 (uint32_t)t->m_depth};
@@ -245,34 +247,30 @@ void Renderer::upload_texture(Texture *const t)
 						 { t->m_image.generate_mipmaps(cmd); });
 	}
 	// CREATE SAMPLER
-	VkSamplerCreateInfo samplerInfo = init::sampler_create_info((VkFilter)t->m_settings.filter,
-																VK_SAMPLER_MIPMAP_MODE_LINEAR,
-																(float)t->m_settings.minMipLevel,
-																t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
-																t->m_settings.anisotropicFilter, utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy,
-																(VkSamplerAddressMode)t->m_settings.adressMode);
-	vkCreateSampler(m_device, &samplerInfo, nullptr, &t->m_sampler);
+	t->m_image.create_sampler(m_device, (VkFilter)t->m_settings.filter,
+							  VK_SAMPLER_MIPMAP_MODE_LINEAR,
+							  (VkSamplerAddressMode)t->m_settings.adressMode,
+							  (float)t->m_settings.minMipLevel,
+							  t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
+							  t->m_settings.anisotropicFilter, utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy);
 
 	m_deletionQueue.push_function([=]()
-								  { t->cleanup(m_device, m_memory); });
+								  { t->m_image.cleanup(m_device, m_memory); });
 }
-
 
 void Renderer::init_resources()
 {
+	//Create sampler for shadow pass image
+	m_renderPasses[SHADOW].imageAttachments.front().create_sampler(m_device, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+																   0.0f, 1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-	VkSamplerCreateInfo shadowSampler = init::sampler_create_info(VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, 0.0f, 1.0f, false, 1.0f, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-	shadowSampler.maxAnisotropy = 1.0f;
-	shadowSampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	VK_CHECK(vkCreateSampler(m_device, &shadowSampler, nullptr, &m_renderPasses[SHADOW].textureAttachments.front()->m_sampler));
 
+	//Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
 	std::string engineMeshDir(VK_TEXTURE_DIR);
 	Texture::DEBUG_TEXTURE->load_image(engineMeshDir + "dummy_.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 	upload_texture(Texture::DEBUG_TEXTURE);
-
-	// Material::DEBUG_MATERIAL = new B
 }
 
 VULKAN_ENGINE_NAMESPACE_END
