@@ -61,6 +61,7 @@ void VulkanRenderer::setup()
     m_scene->add(new PointLight());
     m_scene->get_lights()[1]->set_position({3.0f, 3.0f, 10.0f});
     m_scene->get_lights()[1]->set_shadow_target({3.0f, 0.0f, 10.0f});
+    
 
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();

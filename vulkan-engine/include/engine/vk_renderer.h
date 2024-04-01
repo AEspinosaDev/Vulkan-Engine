@@ -64,6 +64,9 @@ struct RendererSettings
 
 	bool enableUI{false};
 
+	bool enableHardwareDepthBias{false};
+	float hardwareDepthBias{0.0005f};
+
 	bool gammaCorrection{true};
 };
 /**
@@ -192,6 +195,7 @@ public:
 	{
 		return m_gui;
 	}
+	inline void set_hardware_depth_bias(bool op){m_settings.enableHardwareDepthBias = op;};
 
 #pragma endregion
 #pragma region _____________________ Core Functions _____________________

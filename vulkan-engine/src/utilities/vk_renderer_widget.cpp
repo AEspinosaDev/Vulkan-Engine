@@ -37,6 +37,11 @@ void RendererSettingsWidget::render()
     {
         m_renderer->enable_depth_writes(depthWrite);
     }
+    bool hwBias =  m_renderer->get_settings().enableHardwareDepthBias;
+    if (ImGui::Checkbox("Hardware Depth Bias", &hwBias))
+    {
+        m_renderer->set_hardware_depth_bias(hwBias);
+    };
 
     ImGui::BulletText("Gamma Correction Enabled");
     ImGui::BulletText("Device Dependable Anisotropic Filter Enabled");

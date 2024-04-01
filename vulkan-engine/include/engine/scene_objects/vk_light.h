@@ -33,7 +33,7 @@ protected:
 
         float bias{0.005f};
         bool angleDependableBias{false};
-        bool enableVulkanBias{false};
+        // bool enableVulkanBias{false};
         int pcfKernel{7};
 
         Texture *map;
@@ -77,9 +77,6 @@ public:
 
     virtual inline int get_shadow_pcf_kernel() const { return m_shadow.pcfKernel; }
     virtual inline void set_shadow_pcf_kernel(int k) { m_shadow.pcfKernel = k; }
-
-    virtual inline bool get_use_vulkan_bias() const { return m_shadow.enableVulkanBias; }
-    virtual inline void set_use_vulkan_bias(bool o) { m_shadow.enableVulkanBias = o; }
 
     virtual inline bool get_angle_dependant_bias() const { return m_shadow.angleDependableBias; }
     virtual inline void set_angle_dependant_bias(bool o) { m_shadow.angleDependableBias = o; }

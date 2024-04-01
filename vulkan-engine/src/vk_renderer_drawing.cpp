@@ -19,7 +19,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Renderer::set_viewport(VkCommandBuffer& commandBuffer, VkExtent2D extent, float minDepth, float maxDepth, float x, float y, int offsetX, int offsetY)
+void Renderer::set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D extent, float minDepth, float maxDepth, float x, float y, int offsetX, int offsetY)
 {
 	// Viewport setup
 	VkViewport viewport{};
@@ -31,20 +31,20 @@ void Renderer::set_viewport(VkCommandBuffer& commandBuffer, VkExtent2D extent, f
 	viewport.maxDepth = maxDepth;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 	VkRect2D scissor{};
-	scissor.offset = { offsetX, offsetY };
+	scissor.offset = {offsetX, offsetY};
 	scissor.extent = extent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void Renderer::render_forward(VkCommandBuffer& commandBuffer, uint32_t imageIndex, Scene* const scene)
+void Renderer::render_forward(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
-	if (!scene->get_lights().empty())
-		shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
+	// if (!scene->get_lights().empty())
+	shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
 
 	forward_pass(m_frames[m_currentFrame].commandBuffer, imageIndex, scene);
 }
 
-void Renderer::render_deferred(VkCommandBuffer& commandBuffer, uint32_t imageIndex, Scene* const scene)
+void Renderer::render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 	if (!scene->get_lights().empty())
 		shadow_pass(m_frames[m_currentFrame].commandBuffer, scene);
@@ -54,15 +54,16 @@ void Renderer::render_deferred(VkCommandBuffer& commandBuffer, uint32_t imageInd
 	// lighting_pass();
 }
 
-void Renderer::forward_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex, Scene* const scene)
+void Renderer::forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene)
 {
 
-	VkClearValue clearColor = { {{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}} };
+	VkClearValue clearColor = {{{m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}}};
 	VkClearValue clearDepth;
 	clearDepth.depthStencil.depth = 1.f;
-	std::vector<VkClearValue> clearValues = { clearColor, clearColor, clearDepth };
+	std::vector<VkClearValue> clearValues = {clearColor, clearColor, clearDepth};
 	bool multisampled = static_cast<VkSampleCountFlagBits>(m_settings.AAtype) > VK_SAMPLE_COUNT_1_BIT;
-	if (!multisampled) clearValues = { clearColor, clearDepth };
+	if (!multisampled)
+		clearValues = {clearColor, clearDepth};
 
 	RenderPass::begin(commandBuffer, m_renderPasses[DEFAULT], *m_window->get_extent(), clearValues, imageIndex);
 
@@ -78,7 +79,7 @@ void Renderer::forward_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex,
 	{
 
 		unsigned int mesh_idx = 0;
-		for (Mesh* m : scene->get_meshes())
+		for (Mesh *m : scene->get_meshes())
 		{
 			if (m)
 			{
@@ -92,9 +93,9 @@ void Renderer::forward_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex,
 
 					for (size_t i = 0; i < m->get_num_geometries(); i++)
 					{
-						Geometry* g = m->get_geometry(i);
+						Geometry *g = m->get_geometry(i);
 
-						Material* mat = m->get_material(g->m_materialID);
+						Material *mat = m->get_material(g->m_materialID);
 
 						// Setup per object render state
 						if (m_settings.depthTest)
@@ -107,11 +108,11 @@ void Renderer::forward_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex,
 						vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipeline);
 
 						// GLOBAL LAYOUT BINDING
-						uint32_t globalOffsets[] = { globalOffset, globalOffset };
+						uint32_t globalOffsets[] = {globalOffset, globalOffset};
 						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
 
 						// PER OBJECT LAYOUT BINDING
-						uint32_t objectOffsets[] = { objectOffset, objectOffset };
+						uint32_t objectOffsets[] = {objectOffset, objectOffset};
 						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->m_shaderPass->pipelineLayout, 1, 1, &m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
 						// TEXTURE LAYOUT BINDING
@@ -133,19 +134,18 @@ void Renderer::forward_pass(VkCommandBuffer& commandBuffer, uint32_t imageIndex,
 	RenderPass::end(commandBuffer);
 }
 
-void Renderer::shadow_pass(VkCommandBuffer& commandBuffer, Scene* const scene)
+void Renderer::shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 {
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	VkClearValue clearDepth;
-	clearDepth.depthStencil = { 1.0f, 0 };
+	clearDepth.depthStencil = {1.0f, 0};
 
-	RenderPass::begin(commandBuffer, m_renderPasses[SHADOW], { SHADOW_RES, SHADOW_RES }, { clearDepth });
+	RenderPass::begin(commandBuffer, m_renderPasses[SHADOW], {SHADOW_RES, SHADOW_RES}, {clearDepth});
 
-	set_viewport(commandBuffer, { SHADOW_RES, SHADOW_RES });
+	set_viewport(commandBuffer, {SHADOW_RES, SHADOW_RES});
 
-	// float depthBiasConstant = 1.25f;
-	vkCmdSetDepthBiasEnable(commandBuffer, scene->get_lights()[0]->get_use_vulkan_bias());
-	float depthBiasConstant = scene->get_lights()[0]->get_shadow_bias();
+	vkCmdSetDepthBiasEnable(commandBuffer, m_settings.enableHardwareDepthBias);
+	float depthBiasConstant = m_settings.hardwareDepthBias;
 	float depthBiasSlope = 0.0f;
 	vkCmdSetDepthBias(
 		commandBuffer,
@@ -156,7 +156,7 @@ void Renderer::shadow_pass(VkCommandBuffer& commandBuffer, Scene* const scene)
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipeline);
 
 	int mesh_idx = 0;
-	for (Mesh* m : scene->get_meshes())
+	for (Mesh *m : scene->get_meshes())
 	{
 		if (m)
 		{
@@ -168,12 +168,12 @@ void Renderer::shadow_pass(VkCommandBuffer& commandBuffer, Scene* const scene)
 				for (size_t i = 0; i < m->get_num_geometries(); i++)
 				{
 					// GLOBAL LAYOUT BINDING
-					uint32_t globalOffsets[] = { globalOffset, globalOffset };
+					uint32_t globalOffsets[] = {globalOffset, globalOffset};
 					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipelineLayout, 0, 1, &m_globalDescriptor.descriptorSet, 2, globalOffsets);
 					// PER OBJECT LAYOUT BINDING
-					uint32_t objectOffsets[] = { objectOffset, objectOffset };
+					uint32_t objectOffsets[] = {objectOffset, objectOffset};
 					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shaderPasses["shadows"]->pipelineLayout, 1, 1,
-						&m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
+											&m_frames[m_currentFrame].objectDescriptor.descriptorSet, 2, objectOffsets);
 
 					if (m->get_geometry(i)->is_buffer_loaded())
 						draw_geometry(commandBuffer, m->get_geometry(i));
@@ -185,17 +185,17 @@ void Renderer::shadow_pass(VkCommandBuffer& commandBuffer, Scene* const scene)
 
 	RenderPass::end(commandBuffer);
 }
-void Renderer::geometry_pass(VkCommandBuffer& commandBuffer, Scene* const scene)
+void Renderer::geometry_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 {
 }
-void Renderer::lighting_pass(VkCommandBuffer& commandBuffer, Scene* const scene)
+void Renderer::lighting_pass(VkCommandBuffer &commandBuffer, Scene *const scene)
 {
 }
-void Renderer::draw_geometry(VkCommandBuffer& commandBuffer, Geometry* const g)
+void Renderer::draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g)
 {
 
-	VkBuffer vertexBuffers[] = { g->m_vbo->buffer };
-	VkDeviceSize offsets[] = { 0 };
+	VkBuffer vertexBuffers[] = {g->m_vbo->buffer};
+	VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	if (g->indexed)

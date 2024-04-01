@@ -263,7 +263,7 @@ float computeShadow(LightUniform light, int lightId) {
 
     // // Apply the bias
     // bias=  max(bias, 0.5);
-    return filterPCF(lightId,int(light.pcfKernel), projCoords, light.apiBiasEnabled ? 0.0 : light.shadowBias);
+    return filterPCF(lightId,int(light.pcfKernel), projCoords, light.shadowBias);
 
 }
 

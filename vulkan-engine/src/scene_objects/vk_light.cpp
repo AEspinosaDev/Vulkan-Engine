@@ -13,7 +13,7 @@ LightUniforms PointLight::get_uniforms(Mat4 cameraView) const
     uniforms.position.w = (float)m_lighType;
     uniforms.color = {m_color.r, m_color.g, m_color.b, m_intensity};
     uniforms.dataSlot1 = {m_effectArea, m_decaying, 0.0f, m_shadow.cast};
-    uniforms.dataSlot2 = {m_shadow.bias, m_shadow.enableVulkanBias, m_shadow.angleDependableBias, m_shadow.pcfKernel};
+    uniforms.dataSlot2 = {m_shadow.bias, 0, m_shadow.angleDependableBias, m_shadow.pcfKernel};
     return uniforms;
 }
 
@@ -28,7 +28,7 @@ LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const
     // Transform to camera view for shader
     uniforms.dataSlot1 = cameraView * Vec4(m_direction, 0.0f);
     uniforms.dataSlot1.w = m_shadow.cast;
-    uniforms.dataSlot2 = {m_shadow.bias, m_shadow.enableVulkanBias, m_shadow.angleDependableBias, m_shadow.pcfKernel};
+    uniforms.dataSlot2 = {m_shadow.bias, 0, m_shadow.angleDependableBias, m_shadow.pcfKernel};
     return uniforms;
 }
 VULKAN_ENGINE_NAMESPACE_END

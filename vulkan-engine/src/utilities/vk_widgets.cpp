@@ -556,11 +556,7 @@ void ObjectExplorerWidget::render()
             if (ImGui::DragFloat("Shadow Bias", &bias, 0.0001f, 0.0f, 1.0f))
                 light->set_shadow_bias(bias);
 
-            bool vulkanBias = light->get_use_vulkan_bias();
-            if (ImGui::Checkbox("Use Vulkan API Bias", &vulkanBias))
-            {
-                light->set_use_vulkan_bias(vulkanBias);
-            };
+           
             int kernel = light->get_shadow_pcf_kernel();
             if (ImGui::DragInt("PC Filter Kernel", &kernel, 2, 3, 15))
                 light->set_shadow_pcf_kernel(kernel);
