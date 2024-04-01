@@ -27,7 +27,7 @@ The main feautures of the library are:
 
 This project is a work in progress. It has a long way until becoming a decent library, there are no fancy features for now, but all the basics are here. Eventually, with time, I will be adding more advanced functionality.
 
-## Project building and usage 🛠️
+## Project Building 🛠️
 
 The prequisites for using this code are:
 
@@ -57,7 +57,9 @@ The project compiles dependencies, the 3D library, and the demonstration applica
 cmake -DBUILD_DEMOS=OFF /path/to/source
 ```
 
-4. Here is a simple snippet for creating a basic scene:
+## Project Usage ✨
+
+Here is a simple snippet for creating a basic scene:
 
 ```cpp
 #include <iostream>
@@ -129,7 +131,14 @@ int main()
 }
 ```
 
+The code provided generates this output:
+
+<img src="https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/35755111-00af-43f6-a940-06a9ae60e1e9" alt="image" width="75%" height="75%">
+
+With a little extra effort, you can create much richer and interactive applications:
+
+![vulkan](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/58e12bf5-a5d3-4d9f-8a27-33de309a5fff)
+
 As you can see, the library is easy to use: with a window, a camera, a scene filled with some meshes and of course a renderer, you have everything you need to start working. 
 
 
-![vulkan](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/58e12bf5-a5d3-4d9f-8a27-33de309a5fff)
