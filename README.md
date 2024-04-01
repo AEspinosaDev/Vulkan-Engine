@@ -11,7 +11,7 @@ It consists of two parts:
 
 - The library itself, a place where you can find a lot of abstracted functionality.
 
-- A demo application that links against the library.
+- A demos directory that links against the library where you can find useful examples.
 
 The main feautures of the library are:
 
@@ -20,14 +20,14 @@ The main feautures of the library are:
 - Texture loading with mipmapping.
 - On the fly shader compiling.
 - Dynamic renderer states for some graphic features.
-- Multipass (depth pass for shadows).
+- Multipass (depth pass for shadows and SSAO).
 - Vulkan object and functionality abstraction.
 - Simple to use user interface (Unfinished).
 - Easy to distribute source code.
 
-This project is finished for now, It has a long way until becoming a decent library, there are no fancy features for now, but all the basics are here. I will continue working on it in a couple of months, adding more advance functionality.
+This project is a work in progress. It has a long way until becoming a decent library, there are no fancy features for now, but all the basics are here. Eventually, with time, I will be adding more advanced functionality.
 
-## Project building and usage 🛠️
+## Project Building 🛠️
 
 The prequisites for using this code are:
 
@@ -50,6 +50,95 @@ The project is configured in such a way that, during the build process, CMake ta
 
 Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run. The CMake configuration is set for a 64-bit architecture, but it can be changed. CMake also takes care of automatically configuring the paths for resource files.
 
-The project compiles dependencies, the 3D library, and the demonstration application, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
+The project compiles dependencies, the 3D library, and the demonstration applications directory, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
+
+3. Building of the demos directory is optional, and can be turned off in CMake:
+```bash
+cmake -DBUILD_DEMOS=OFF /path/to/source
+```
+
+## Project Usage ✨
+
+Here is a simple snippet for creating a basic scene:
+
+```cpp
+#include <iostream>
+#include <engine/vk_renderer.h>
+
+USING_VULKAN_ENGINE_NAMESPACE
+
+int main()
+{
+
+	try
+	{
+//Get sample meshes path from the engine to easy access them
+		const std::string MODEL_PATH(VK_MODEL_DIR);
+
+//Setup a window
+		Window* window = new Window("Example", 800, 600);
+		window->init();
+
+  		//Create the renderer, you can play with the settings here
+		RendererSettings settings{};
+		settings.AAtype = AntialiasingType::MSAA_x4;
+		settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
+		Renderer* renderer = new Renderer(window, settings);
+
+//Create a camera
+		Camera* camera = new Camera();
+		camera->set_position(Vec3(0.0f, 0.15f, -1.0f));
+		camera->set_far(10);
+		camera->set_near(0.1f);
+		camera->set_field_of_view(65.0f);
+
+//Create a scene and fill it with a light and a model
+		Scene* scene = new Scene(camera);
+		PointLight* light = new PointLight();
+		light->set_position({ -3.0f, -3.0f, -1.0f });
+		light->set_cast_shadows(false);
+		scene->add(light);
+
+		Mesh* model = new Mesh();
+		model->load_file(MODEL_PATH + "cube.obj", true); 
+		model->set_scale(0.4f);
+		model->set_rotation({ 45.0f,45.0f,0.0f });
+
+		PhysicallyBasedMaterial* material = new PhysicallyBasedMaterial();
+		material->set_albedo(Vec4{ 1.0 });
+		model->set_material(material);
+
+		scene->add(model);
+
+//Rendering loop by quering the window obj
+		while (!window->get_window_should_close())
+		{
+			Window::poll_events();
+			renderer->render(scene);
+		}
+//Call this function conviniently shut down the renderer
+//By doing this, the renderer will clean all memory used by its resources
+		renderer->shutdown();
+
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+```
+
+The code provided generates this output:
+
+<img src="https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/35755111-00af-43f6-a940-06a9ae60e1e9" alt="image" width="75%" height="75%">
+
+With a little extra effort, you can create much richer and interactive applications:
 
 ![vulkan](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/58e12bf5-a5d3-4d9f-8a27-33de309a5fff)
+
+As you can see, the library is easy to use: with a window, a camera, a scene filled with some meshes and of course a renderer, you have everything you need to start working. 
+
+
