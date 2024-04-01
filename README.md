@@ -52,7 +52,7 @@ Once the project is opened in the IDE of choice, compile it in the desired mode,
 
 The project compiles dependencies, the 3D library, and the demonstration applications directory, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
 
-3. Building of the demos directory is optional, and can be turn off in CMake:
+3. Building of the demos directory is optional, and can be turned off in CMake:
 ```bash
 cmake -DBUILD_DEMOS=OFF /path/to/source
 ```
@@ -70,27 +70,27 @@ int main()
 
 	try
 	{
-  //Get sample meshes path from the engine to easy access them
+//Get sample meshes path from the engine to easy access them
 		const std::string MODEL_PATH(VK_MODEL_DIR);
 
-  //Setup the window
+//Setup a window
 		Window* window = new Window("Example", 800, 600);
 		window->init();
 
-  //Create the renderer, you can play with the settings here
+  		//Create the renderer, you can play with the settings here
 		RendererSettings settings{};
 		settings.AAtype = AntialiasingType::MSAA_x4;
 		settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
 		Renderer* renderer = new Renderer(window, settings);
 
-  //Create the camera
+//Create a camera
 		Camera* camera = new Camera();
 		camera->set_position(Vec3(0.0f, 0.15f, -1.0f));
 		camera->set_far(10);
 		camera->set_near(0.1f);
 		camera->set_field_of_view(65.0f);
 
-  //Create the scene and fill it with a light and a model
+//Create a scene and fill it with a light and a model
 		Scene* scene = new Scene(camera);
 		PointLight* light = new PointLight();
 		light->set_position({ -3.0f, -3.0f, -1.0f });
@@ -98,7 +98,7 @@ int main()
 		scene->add(light);
 
 		Mesh* model = new Mesh();
-		model->load_file(MODEL_PATH + "cube.obj", true); //Call the model path and 
+		model->load_file(MODEL_PATH + "cube.obj", true); 
 		model->set_scale(0.4f);
 		model->set_rotation({ 45.0f,45.0f,0.0f });
 
@@ -108,13 +108,14 @@ int main()
 
 		scene->add(model);
 
-  //Rendering loop by quering the window obj
+//Rendering loop by quering the window obj
 		while (!window->get_window_should_close())
 		{
 			Window::poll_events();
 			renderer->render(scene);
 		}
-
+//Call this function conviniently shut down the renderer
+//By doing this, the renderer will clean all memory used by its resources
 		renderer->shutdown();
 
 	}
