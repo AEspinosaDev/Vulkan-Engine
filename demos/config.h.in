@@ -1,5 +1,0 @@
-// config.h.in
-#pragma once
-
-#define DEMO_TEXTURES_PATH "@DEMO_TEXTURES_PATH@"
-#define DEMO_MODELS_PATH "@DEMO_MODELS_PATH@"

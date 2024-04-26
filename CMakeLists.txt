@@ -1,13 +1,12 @@
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
 project(VulkanEngine)
 
 # Place inside source dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
-#Activate all warnings
-
+# Activate all warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # using Visual Studio C++
     message("Visual Studio C++")
@@ -36,61 +35,113 @@ endif()
 # Get the root path for Vulkan from the Vulkan_LIBRARY variable
 get_filename_component(VULKAN_SDK_ROOT ${Vulkan_LIBRARY} DIRECTORY)
 
-# Include CMake FetchContent
-include(FetchContent)
-# Set the directory where FetchContent will download and build content
-set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/dependencies")
+# Set up dependencies
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(thirdparty/glfw-3.4)
+add_subdirectory(thirdparty/glm-1.0.1)
+add_subdirectory(thirdparty/imgui) 
+add_subdirectory(thirdparty/stb_image)
+add_subdirectory(thirdparty/tiny_obj_loader)	
+add_subdirectory(thirdparty/tinyply)	
 
-# GLFW
-find_package(glfw QUIET)
-if (NOT glfw_FOUND)
-    message(STATUS "GLFW not found, fetching GLFW using FetchContent.")
-   #Exclude addons
-    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+# Setup
+file(GLOB LIB_SOURCES 
+    "src/core/*.cpp" 
+    "src/utilities/*.cpp" 
+    "src/scene/*.cpp"
+    "src/materials/*.cpp" 
+    "src/backend/*.cpp" )
+    
+file(GLOB LIB_HEADERS 
+    "include/engine/*.h"
+    "include/engine/core/*.h" 
+    "include/engine/utilities/*.h" 
+    "include/engine/scene/*.h" 
+    "include/engine/materials/*.h" 
+    "include/engine/backend/*.h")
 
-    FetchContent_Declare(
-        glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG 3.3.4 # Use the version you need
-    )
-    FetchContent_MakeAvailable(glfw)
-
-else()
-    message(STATUS "GLFW found.")
-endif()
-
-# GLM
-find_package(glm QUIET)
-if (NOT glm_FOUND)
-    message(STATUS "GLM not found, fetching GLM using FetchContent.")
-    FetchContent_Declare(
-        glm
-        GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 0.9.9.8 # Use the version you need
-        CMAKE_ARGS -DGLM_TEST_ENABLE=OFF
-    )
-    FetchContent_MakeAvailable(glm)
-  
-else()
-    message(STATUS "GLM found.")
-endif()
+add_library(VulkanEngine STATIC ${LIB_SOURCES} ${LIB_HEADERS})
 
 # Configure vulkan path
 link_directories(${VULKAN_SDK_ROOT})
+# Include directories
+target_include_directories(VulkanEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+# Link libraries
+target_link_libraries(VulkanEngine PUBLIC 
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/vulkan-engine)
+    Vulkan::Vulkan 
+    shaderc_shared.lib 
+    glm 
+    glfw 
+    stb_image 
+    imgui 
+    tiny_obj_loader 
+    tinyply)
 
-# Choose if building demos directory. User-Defined.
-option(BUILD_DEMOS "Build Demos Directory" ON)
-if(BUILD_DEMOS)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/demos)
+# Set dependencies inside folder
+set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply PROPERTY FOLDER "thirdparty")
+
+# For VISUAL STUDIO SLN EXPLORER ONLY !!!
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    file(GLOB scene_objects_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/scene/*.h
+    )
+    file(GLOB materials_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/materials/*.h
+    )
+    file(GLOB utilities_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/utilities/*.h
+    )
+    file(GLOB core_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/core/*.h
+    )
+    file(GLOB backend_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/backend/*.h
+    )
+    source_group("Header Files\\Utilities" FILES ${utilities_h})
+    source_group("Header Files\\Scene Objects" FILES ${scene_objects_h})
+    source_group("Header Files\\Materials" FILES ${materials_h})
+    source_group("Header Files\\Core" FILES ${core_h})
+    source_group("Header Files\\Backend" FILES ${backend_h})
+    
+    
+    file(GLOB scene_objects_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/*.cpp
+    )
+    file(GLOB materials_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/materials/*.cpp
+    )
+    file(GLOB utilities_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/*.cpp
+    )
+    file(GLOB core_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp
+    )
+    file(GLOB backend_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/*.cpp
+    )
+    
+    source_group("Source Files\\Utilities" FILES ${utilities_cpp})
+    source_group("Source Files\\Scene Objects" FILES ${scene_objects_cpp})
+    source_group("Source Files\\Materials" FILES ${materials_cpp})
+    source_group("Source Files\\Core" FILES ${core_cpp})
+    source_group("Source Files\\Backend" FILES ${backend_cpp})
+
 endif()
 
+# Choose if building demos directory. User-Defined.
+option(BUILD_EXAMPLES "Build Examples Directory" ON)
+if(BUILD_EXAMPLES)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
+endif()
 
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-# Set the output directory for debug build
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug)
-# Set the output directory for release build
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
+target_compile_definitions(VulkanEngine PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+
+#Where to
+set_target_properties(VulkanEngine PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/release
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/debug
+)
