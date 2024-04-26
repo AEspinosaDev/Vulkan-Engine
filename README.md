@@ -57,13 +57,17 @@ The project compiles dependencies, the 3D library, and the demonstration applica
 cmake -DBUILD_DEMOS=OFF /path/to/source
 ```
 
+## Project Integration 🗄️
+
+Working on it ....
+
 ## Project Usage ✨
 
 Here is a simple snippet for creating a basic scene:
 
 ```cpp
 #include <iostream>
-#include <engine/vk_renderer.h>
+#include <engine/core/renderer.h>
 
 USING_VULKAN_ENGINE_NAMESPACE
 
@@ -73,7 +77,7 @@ int main()
 	try
 	{
 //Get sample meshes path from the engine to easy access them
-		const std::string MODEL_PATH(VK_MODEL_DIR);
+		const std::string MODEL_PATH(ENGINE_RESOURCES_PATH"meshes/");
 
 //Setup a window
 		Window* window = new Window("Example", 800, 600);
