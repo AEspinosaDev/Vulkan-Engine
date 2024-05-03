@@ -3,7 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 bool GUIOverlay::m_initialized = false;
 
-void GUIOverlay::init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass &renderPass,
+void GUIOverlay::init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass renderPass,
                       VkFormat format, VkSampleCountFlagBits samples, GLFWwindow *window)
 {
     if (GUIOverlay::m_initialized)

@@ -53,7 +53,8 @@ file(GLOB LIB_SOURCES
     "src/utilities/*.cpp" 
     "src/scene/*.cpp"
     "src/materials/*.cpp" 
-    "src/backend/*.cpp" )
+    "src/backend/*.cpp"
+    "src/renderpasses/*.cpp" )
     
 file(GLOB LIB_HEADERS 
     "include/engine/*.h"
@@ -61,7 +62,8 @@ file(GLOB LIB_HEADERS
     "include/engine/utilities/*.h" 
     "include/engine/scene/*.h" 
     "include/engine/materials/*.h" 
-    "include/engine/backend/*.h")
+    "include/engine/backend/*.h"
+    "include/engine/renderpasses/*.h")
 
 add_library(VulkanEngine STATIC ${LIB_SOURCES} ${LIB_HEADERS})
 
@@ -101,27 +103,34 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     file(GLOB backend_h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/backend/*.h
     )
+    file(GLOB rpass_h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/renderpasses/*.h
+    )
     source_group("Header Files\\Utilities" FILES ${utilities_h})
     source_group("Header Files\\Scene Objects" FILES ${scene_objects_h})
     source_group("Header Files\\Materials" FILES ${materials_h})
     source_group("Header Files\\Core" FILES ${core_h})
     source_group("Header Files\\Backend" FILES ${backend_h})
+    source_group("Header Files\\RenderPasses" FILES ${rpass_h})
     
     
     file(GLOB scene_objects_cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/*.cpp
     )
     file(GLOB materials_cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/materials/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/materials/*.cpp
     )
     file(GLOB utilities_cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/*.cpp
     )
     file(GLOB core_cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp
     )
     file(GLOB backend_cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/*.cpp
+    )
+    file(GLOB rpass_cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderpasses/*.cpp
     )
     
     source_group("Source Files\\Utilities" FILES ${utilities_cpp})
@@ -129,6 +138,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     source_group("Source Files\\Materials" FILES ${materials_cpp})
     source_group("Source Files\\Core" FILES ${core_cpp})
     source_group("Source Files\\Backend" FILES ${backend_cpp})
+    source_group("Source Files\\RenderPasses" FILES ${rpass_cpp})
 
 endif()
 

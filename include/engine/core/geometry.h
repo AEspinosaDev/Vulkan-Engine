@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 
@@ -18,6 +18,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+/*
+Canonical vertex definition. Most meshes will use some or all of these attributes.
+*/
 struct Vertex
 {
     Vec3 pos;
@@ -107,20 +110,24 @@ struct GeometryStats
     void compute_statistics(Geometry *g);
 };
 
+/*
+Class that defines the mesh geometry. Can be setup by filling it with a canonical vertex type array. 
+*/
 class Geometry
 {
 
 private:
-    std::vector<uint16_t> m_vertexIndex;
-    std::vector<Vertex> m_vertexData;
     Buffer *m_vbo;
     Buffer *m_ibo;
 
+    std::vector<uint16_t> m_vertexIndex;
+    std::vector<Vertex> m_vertexData;
+
     size_t m_materialID{0};
 
-    bool loaded{false};
-    bool indexed{false};
-    bool buffer_loaded{false};
+    bool m_loaded{false};
+    bool m_indexed{false};
+    bool m_buffers_loaded{false};
 
     friend class Renderer;
 
@@ -130,9 +137,10 @@ public:
 
     inline size_t get_material_ID() const { return m_materialID; }
     inline void set_material_ID(size_t id) { m_materialID = id; }
-    inline bool is_data_loaded() const { return loaded; }
-    inline bool is_buffer_loaded() const { return buffer_loaded; }
-    inline bool is_indexed() const { return indexed; }
+
+    inline bool is_data_loaded() const { return m_loaded; }
+    inline bool is_buffer_loaded() const { return m_buffers_loaded; }
+    inline bool is_indexed() const { return m_indexed; }
 
     inline std::vector<uint16_t> const get_vertex_index() const
     {
@@ -144,7 +152,6 @@ public:
     }
     ~Geometry()
     {
-
         delete m_vbo;
         delete m_ibo;
     }
@@ -152,6 +159,9 @@ public:
     void fill(std::vector<Vertex> vertexInfo);
     void fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
+
+    //Utility function for drawing purposes
+    static void draw(VkCommandBuffer &cmd, Geometry *const g);
 };
 
 VULKAN_ENGINE_NAMESPACE_END;

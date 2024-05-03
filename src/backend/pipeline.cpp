@@ -42,13 +42,13 @@ void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager 
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pass.pipelineLayout) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to create pipeline layout!");
+		throw new VKException("failed to create pipeline layout!");
 	}
 
 	pipelineLayout = pass.pipelineLayout;
 }
 
-void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass &renderPass, ShaderPass &shaderPass)
+void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, ShaderPass &shaderPass)
 {
 	// Viewport setup (JUST ONE FOR NOW)
 	VkPipelineViewportStateCreateInfo viewportState = {};

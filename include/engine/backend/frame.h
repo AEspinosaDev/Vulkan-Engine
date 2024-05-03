@@ -27,6 +27,11 @@ struct Frame
     VkCommandPool commandPool;
     VkCommandBuffer commandBuffer;
 
+    // GlobalLayout Descriptor
+    DescriptorSet globalDescriptor;
+    Buffer globalUniformBuffer;
+
+    // ObjectLayout descriptors
     DescriptorSet objectDescriptor;
     Buffer objectUniformBuffer;
 

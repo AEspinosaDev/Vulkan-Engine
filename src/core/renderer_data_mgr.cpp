@@ -43,7 +43,7 @@ void Renderer::upload_geometry_data(Geometry *const g)
 								  { g->m_vbo->cleanup(m_memory); });
 	vboStagingBuffer.cleanup(m_memory);
 
-	if (g->indexed)
+	if (g->m_indexed)
 	{
 		// Staging index buffer (CPU only)
 		size_t iboSize = sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size();
@@ -67,7 +67,7 @@ void Renderer::upload_geometry_data(Geometry *const g)
 		iboStagingBuffer.cleanup(m_memory);
 	}
 
-	g->buffer_loaded = true;
+	g->m_buffers_loaded = true;
 }
 void Renderer::upload_object_data(Scene *const scene)
 {
@@ -86,7 +86,6 @@ void Renderer::upload_object_data(Scene *const scene)
 				{
 					// Offset calculation
 					uint32_t objectOffset = m_frames[m_currentFrame].objectUniformBuffer.strideSize * mesh_idx;
-					uint32_t globalOffset = m_globalUniformsBuffer.strideSize * m_currentFrame;
 
 					// ObjectUniforms objectData;
 					ObjectUniforms objectData;
@@ -98,7 +97,7 @@ void Renderer::upload_object_data(Scene *const scene)
 					{
 						// Object vertex buffer setup
 						Geometry *g = m->get_geometry(i);
-						if (!g->buffer_loaded)
+						if (!g->m_buffers_loaded)
 							upload_geometry_data(g);
 
 						// Object material setup
@@ -128,8 +127,8 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.proj = camera->get_projection();
 	camData.viewProj = camera->get_projection() * camera->get_view();
 
-	m_globalUniformsBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
-									   m_globalUniformsBuffer.strideSize * m_currentFrame);
+	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
+															 0);
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_active()};
@@ -157,22 +156,20 @@ void Renderer::upload_global_data(Scene *const scene)
 	}
 	sceneParams.numLights = (int)lights.size();
 
-	m_globalUniformsBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
-									   m_globalUniformsBuffer.strideSize * m_currentFrame + utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
+	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
+															 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
 }
 
 void Renderer::setup_material(Material *const mat)
 {
-	if (!mat->m_shaderPass)
-	{
-		mat->m_shaderPass = m_shaderPasses[mat->m_shaderPassID];
-	}
 	if (!mat->m_textureDescriptor.allocated)
 	{
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::TEXTURE_LAYOUT, &mat->m_textureDescriptor);
 
 		// Set Shadow Map write
-		m_descriptorMng.set_descriptor_write(m_renderPasses[SHADOW].imageAttachments.front().sampler, m_renderPasses[SHADOW].imageAttachments.front().view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
+		m_descriptorMng.set_descriptor_write(m_pipeline.renderpasses.front()->get_attachments().front().image.sampler,
+											 m_pipeline.renderpasses.front()->get_attachments().front().image.view,
+											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
 	}
 
 	auto textures = mat->get_textures();
@@ -260,12 +257,11 @@ void Renderer::upload_texture(Texture *const t)
 
 void Renderer::init_resources()
 {
-	//Create sampler for shadow pass image
-	m_renderPasses[SHADOW].imageAttachments.front().create_sampler(m_device, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-																   0.0f, 1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+	// Create sampler for shadow pass image
+	m_pipeline.renderpasses.front()->get_attachments()[0].image.create_sampler(m_device, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+																			   0.0f, 1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-
-	//Setup dummy texture in case materials dont have textures
+	// Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
 	Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);

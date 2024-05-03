@@ -7,12 +7,11 @@
 
 	////////////////////////////////////////////////////////////////////////////////////
 
-	Implementation of this class is fragmentated in four submodules:
+	Implementation of this class is fragmentated in three submodules:
 
 	* vk_renderer.cpp
 	* vk_renderer_api_mgr.cpp
 	* vk_renderer_data_mgr.cpp
-	* vk_renderer_drawing.cpp
 
 	////////////////////////////////////////////////////////////////////////////////////
 */
@@ -30,18 +29,21 @@
 #include <engine/backend/image.h>
 #include <engine/backend/uniforms.h>
 #include <engine/backend/descriptors.h>
-#include <engine/backend/renderpass.h>
 
 #include <engine/core/window.h>
 #include <engine/core/material.h>
 #include <engine/core/texture.h>
+#include <engine/core/renderpass.h>
 
-#include <engine/scene/scene.h>
-
-#include <engine/utilities/gui.h>
+#include <engine/renderpasses/forwardpass.h>
+#include <engine/renderpasses/shadowpass.h>
+#include <engine/renderpasses/guipass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+/*
+Renderer Global Settings Data
+*/
 struct RendererSettings
 {
 	RendererType renderingType{FORWARD};
@@ -70,13 +72,26 @@ struct RendererSettings
 
 	bool gammaCorrection{true};
 };
+/*
+Structure that contains a list of renderpasses. These renderpasses will render in the order they where added.
+*/
+struct RenderPipeline
+{
+	std::vector<RenderPass *> renderpasses;
+
+	void push_renderpass(RenderPass *pass)
+	{
+		renderpasses.push_back(pass);
+	};
+};
+
 /**
- * Renders a given scene data to a given window. Fully parametrizable. Main class of the library.
+ * Renders a given scene data to a given window. Fully parametrizable. Main class of the library. It can be inherited for achieving a higher end application.
  */
 class Renderer
 {
-#pragma region ____________________ Properties _____________________
-
+#pragma region Properties
+protected:
 	RendererSettings m_settings{};
 
 	struct UploadContext
@@ -88,32 +103,23 @@ class Renderer
 
 	UploadContext m_uploadContext{};
 
-	VmaAllocator m_memory{};
-
 	Window *m_window;
 
 	VkInstance m_instance{};
-
 	VkPhysicalDevice m_gpu{};
 	VkDevice m_device{};
-
+	VmaAllocator m_memory{};
 	VkQueue m_graphicsQueue{};
 	VkQueue m_presentQueue{};
-
 	VkDebugUtilsMessengerEXT m_debugMessenger{};
 
 	Swapchain m_swapchain;
 
 	std::vector<Frame> m_frames;
 
-	std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
-
-	std::unordered_map<uint32_t, RenderPass> m_renderPasses;
+	RenderPipeline m_pipeline;
 
 	DescriptorManager m_descriptorMng{};
-
-	DescriptorSet m_globalDescriptor{};
-	Buffer m_globalUniformsBuffer{};
 
 	utils::DeletionQueue m_deletionQueue;
 
@@ -133,10 +139,11 @@ class Renderer
 
 #pragma endregion
 public:
-	Renderer(Window *window) : m_window(window) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
-	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
+	Renderer(Window *window) : m_window(window) { on_awake(); }
+	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { on_awake(); }
+	Renderer(Window *window, RenderPipeline pipeline, RendererSettings settings = {}) : m_window(window), m_settings(settings), m_pipeline(pipeline) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 
-#pragma region _____________________ Getters & Setters _____________________
+#pragma region Getters & Setters
 
 	inline Window *const get_window() const { return m_window; }
 
@@ -190,46 +197,62 @@ public:
 	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
+		static_cast<ForwardPass *>(m_pipeline.renderpasses[1])->set_gui(gui);
 	}
 
 	inline GUIOverlay *get_gui_overlay()
 	{
 		return m_gui;
 	}
-	inline void set_hardware_depth_bias(bool op){m_settings.enableHardwareDepthBias = op;};
+	inline void set_hardware_depth_bias(bool op) { m_settings.enableHardwareDepthBias = op; };
+
+	inline RenderPipeline get_render_pipeline() const { return m_pipeline; }
 
 #pragma endregion
-#pragma region _____________________ Core Functions _____________________
+#pragma region Core Functions
 
 	/**
 	 * Inits the renderer.
 	 */
 	inline void init()
 	{
-		if (!m_window->m_initialized)
-			m_window->init();
-
-		init_vulkan();
-
+		on_init();
 		m_initialized = true;
 	}
 	/**
-	 * Standalone pre-implemented render loop for the renderer. Call init before using this function
+	 * Standalone pre-implemented render loop for the renderer.
 	 */
-	void run(Scene *const scene);
+	virtual void run(Scene *const scene);
 	/**
-	 * Renders a scene on the default backbuffer.
+	 * Renders a given scene.
 	 */
-	void render(Scene *const scene);
+	virtual void render(Scene *const scene);
 	/**
 	 * Shut the renderer down.
 	 */
 	void shutdown();
 
-private:
-	void init_vulkan();
-
-	void cleanup();
+protected:
+	/*
+	What to do when instancing the renderer
+	*/
+	virtual void on_awake();
+	/*
+	What to do when initiating the renderer
+	*/
+	virtual void on_init();
+	/*
+	What to do just before rendering
+	*/
+	virtual void on_before_render(Scene *const scene);
+	/*
+	What to do just before rendering
+	*/
+	virtual void on_after_render(VkResult &renderResult, Scene *const scene);
+	/*
+	What to do when shutting down the renderer
+	*/
+	virtual void on_shutdown();
 
 #pragma endregion
 /*
@@ -239,82 +262,39 @@ private:
 
 	////////////////////////////////////////////////////////////////////////////////////
 */
-#pragma region _____________________ Vulkan API Management _____________________
+#pragma region Vulkan Management
 
 	/*
 	Init renderpasses and create framebuffers and image resources attached to them
 	*/
-	void init_renderpasses();
+	virtual void init_renderpasses();
 
 	/*
 	Render flow control objects creation
 	*/
-	void init_control_objects();
+	virtual void init_control_objects();
 
 	/*
 	Descriptor pool and layouts creation
 	*/
-	void init_descriptors();
+	virtual void init_descriptors();
 
 	/*
 	Shader pass creation
 	*/
-	void init_shaderpasses();
+	virtual void init_shaderpasses();
 
 	/*
 	Resource like samplers, base textures and misc creation
 	*/
-	void init_resources();
+	virtual void init_resources();
 
 	/*
 	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing or reconfiguring context
 	*/
-	void update_renderpasses();
+	virtual void update_renderpasses();
 
 	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
-
-#pragma endregion
-/*
-	////////////////////////////////////////////////////////////////////////////////////
-
-	Implementation of this region can be found in the module ==>> vk_renderer_drawing.cpp
-
-	////////////////////////////////////////////////////////////////////////////////////
-*/
-#pragma region _____________________ Drawing _____________________
-	/*
-	Record a viewport resize to the command buffer
-	*/
-	void set_viewport(VkCommandBuffer &commandBuffer, VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1.0f,
-					  float x = 0.0f, float y = 0.0f, int offsetX = 0, int offsetY = 0);
-	/*
-	Forward rendering
-	*/
-	void render_forward(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
-	/*
-	Deferred rendering
-	*/
-	void render_deferred(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
-	/*
-	Default forward pass
-	*/
-	void forward_pass(VkCommandBuffer &commandBuffer, uint32_t imageIndex, Scene *const scene);
-	/*
-	Pass tom save depth values from ligh view and use it for shadow mapping
-	*/
-	void shadow_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
-	/*
-	Geometry pass. Used for deferred rendering.
-	*/
-	void geometry_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
-	/*
-	Lighting pass. Used for deferred rendering.
-	*/
-	void lighting_pass(VkCommandBuffer &commandBuffer, Scene *const scene);
-	/*
-	Render single geometry
-	*/
-	void draw_geometry(VkCommandBuffer &commandBuffer, Geometry *const g);
 
 #pragma endregion
 /*
@@ -324,33 +304,33 @@ private:
 
 	////////////////////////////////////////////////////////////////////////////////////
 */
-#pragma region _____________________ Data Management _____________________
+#pragma region Data Management
 	/*
 	Geometry vertex and index buffers upload to GPU
 	*/
-	void upload_geometry_data(Geometry *const g);
+	virtual void upload_geometry_data(Geometry *const g);
 	/*
 	Object descriptor layouts uniforms buffer upload to GPU
 	*/
-	void upload_object_data(Scene *const scene);
+	virtual void upload_object_data(Scene *const scene);
 	/*
 	Global descriptor layouts uniforms buffer upload to GPU
 	*/
-	void upload_global_data(Scene *const scene);
+	virtual void upload_global_data(Scene *const scene);
 
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
-	void setup_material(Material *const mat);
+	virtual void setup_material(Material *const mat);
 	/*
 	Texture setup and upload to GPU. Mipmap and sampler creation
 	*/
-	void upload_texture(Texture *const t);
-#pragma region _____________________ GUI _____________________
+	virtual void upload_texture(Texture *const t);
+#pragma region GUI
 	/*
 	Initialize gui layout in case ther's one enabled
 	*/
-	void init_gui();
+	virtual void init_gui();
 
 #pragma endregion
 };

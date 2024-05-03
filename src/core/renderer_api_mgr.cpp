@@ -20,97 +20,24 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Renderer::init_renderpasses()
 {
-
-	RenderPassBuilder builder;
-
-	// ---------- DEFAULT RENDER PASS ------------
-
-	VkSampleCountFlagBits samples = (VkSampleCountFlagBits)m_settings.AAtype;
-	bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
-
-	VkAttachmentDescription colorAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.colorFormat),
-																		   multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_UNDEFINED, samples);
-	builder.add_attachment({colorAttachment, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT});
-
-	if (multisampled)
+	for (RenderPass *pass : m_pipeline.renderpasses)
 	{
-		VkAttachmentDescription resolveAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.colorFormat), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-		resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		builder.add_attachment({resolveAttachment, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT});
-	}
+		pass->init(m_device);
 
-	VkAttachmentDescription depthAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.depthFormat),
-																		   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, samples);
-	builder.add_attachment({depthAttachment, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT});
-
-	VkSubpassDependency colorDep = init::subpass_dependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-															0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-	builder.add_dependency(colorDep);
-	VkSubpassDependency depthDep = init::subpass_dependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-															0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-	builder.add_dependency(depthDep);
-
-	VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	VkAttachmentReference depthRef = init::attachment_reference(static_cast<uint32_t>(builder.attachments.size()) - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-	VkSubpassDescription defaultSubpass = init::subpass_description(1, &colorRef, depthRef);
-	if (multisampled)
-	{
-		VkAttachmentReference resolveRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		defaultSubpass.pResolveAttachments = &resolveRef;
-	}
-	builder.add_subpass(defaultSubpass);
-
-	m_renderPasses[DEFAULT] = builder.build_renderpass(m_device);
+		if (pass->is_resolve()) // Check if its default in order to get swapchain image views
+			pass->create_framebuffer(m_device, m_memory, &m_swapchain);
+		else
+		{
+			pass->create_framebuffer(m_device, m_memory);
+		}
+	};
 
 	m_deletionQueue.push_function([=]()
-								  { m_renderPasses[DEFAULT].cleanup(m_device); });
-
-	m_renderPasses[DEFAULT].create_framebuffer(m_device, m_memory, *m_window->get_extent(), 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
-
-	builder.clear_cache();
-
-	// ---------- SHADOW RENDER PASS -----------
-
-	depthAttachment = init::attachment_description(static_cast<VkFormat>(m_settings.depthFormat),
-												   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT, false);
-	builder.add_attachment({depthAttachment,
-							VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-							VK_IMAGE_ASPECT_DEPTH_BIT,
-							VK_IMAGE_VIEW_TYPE_2D_ARRAY});
-
-	VkSubpassDependency earlyDepthDep = init::subpass_dependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-																 VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-	earlyDepthDep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-	builder.add_dependency(earlyDepthDep);
-
-	VkSubpassDependency lateDepthDep = init::subpass_dependency(VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-																VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, 0, VK_SUBPASS_EXTERNAL);
-	lateDepthDep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-	builder.add_dependency(lateDepthDep);
-
-	depthRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-	VkSubpassDescription depthSubpass = init::subpass_description(0, VK_NULL_HANDLE, depthRef);
-	builder.add_subpass(depthSubpass);
-
-	m_renderPasses[SHADOW] = builder.build_renderpass(m_device);
-
-	m_deletionQueue.push_function([=]()
-								  { m_renderPasses[SHADOW].cleanup(m_device); });
-
-	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
-
-	m_renderPasses[SHADOW].create_framebuffer(m_device, m_memory, {SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS);
-	m_renderPasses[SHADOW].isFramebufferRecreatable = false;
-
-	builder.clear_cache();
-
-	/// ------ Geometry pass ------
-
-	/// -------- Light pass --------
+								  { 	
+									for (RenderPass *pass : m_pipeline.renderpasses)
+		{
+			pass->cleanup(m_device);
+		} });
 }
 
 void Renderer::init_control_objects()
@@ -167,26 +94,26 @@ void Renderer::init_descriptors()
 	VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding0, textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5};
 	m_descriptorMng.set_layout(DescriptorLayoutType::TEXTURE_LAYOUT, textureBindings, 6);
 
-	const size_t strideSize = (utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
-	const size_t globalUBOSize = MAX_FRAMES_IN_FLIGHT * strideSize;
-	m_globalUniformsBuffer.init(m_memory, globalUBOSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
-
-	m_deletionQueue.push_function([=]()
-								  { m_globalUniformsBuffer.cleanup(m_memory); });
-
-	m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_globalDescriptor);
-
-	m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(CameraUniforms), 0,
-										 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-
-	m_descriptorMng.set_descriptor_write(&m_globalUniformsBuffer, sizeof(SceneUniforms), utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
-										 &m_globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
+		// Global Descriptor
+		const size_t globalStrideSize = (utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
+		m_frames[i].globalUniformBuffer.init(m_memory, globalStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
 
-		const size_t strideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
-		m_frames[i].objectUniformBuffer.init(m_memory, VK_MAX_OBJECTS * strideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)strideSize);
+		m_deletionQueue.push_function([=]()
+									  { m_frames[i].globalUniformBuffer.cleanup(m_memory); });
+
+		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_frames[i].globalDescriptor);
+
+		m_descriptorMng.set_descriptor_write(&m_frames[i].globalUniformBuffer, sizeof(CameraUniforms), 0,
+											 &m_frames[i].globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+
+		m_descriptorMng.set_descriptor_write(&m_frames[i].globalUniformBuffer, sizeof(SceneUniforms), utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
+											 &m_frames[i].globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+
+		// Object Descriptor
+		const size_t objectStrideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+		m_frames[i].objectUniformBuffer.init(m_memory, VK_MAX_OBJECTS * objectStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
 		m_deletionQueue.push_function([=]()
 									  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
 
@@ -203,120 +130,10 @@ void Renderer::init_descriptors()
 
 void Renderer::init_shaderpasses()
 {
-	PipelineBuilder builder;
-
-	// Default geometry assembly values
-	builder.vertexInputInfo = init::vertex_input_state_create_info();
-	builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-	auto bindingDescription = Vertex::getBindingDescription();
-	builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-	builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-	// Viewport
-	builder.viewport.x = 0.0f;
-	builder.viewport.y = 0.0f;
-	builder.viewport.width = (float)m_window->get_extent()->width;
-	builder.viewport.height = (float)m_window->get_extent()->height;
-	builder.viewport.minDepth = 0.0f;
-	builder.viewport.maxDepth = 1.0f;
-	builder.scissor.offset = {0, 0};
-	builder.scissor.extent = *m_window->get_extent();
-
-	builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-	builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
-
-	builder.multisampling = init::multisampling_state_create_info((VkSampleCountFlagBits)m_settings.AAtype);
-
-	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
-	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
-	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
-	// builder.dynamicStates.push_back(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
-
-	// Setup shaderpasses
-	m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/unlit.glsl");
-	m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-																{DescriptorLayoutType::OBJECT_LAYOUT, true},
-																{DescriptorLayoutType::TEXTURE_LAYOUT, false}};
-	m_shaderPasses["unlit"]->settings.attributes = {{VertexAttributeType::POSITION, true},
-													{VertexAttributeType::NORMAL, false},
-													{VertexAttributeType::UV, false},
-													{VertexAttributeType::TANGENT, false},
-													{VertexAttributeType::COLOR, false}};
-
-	m_shaderPasses["phong"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/phong.glsl");
-	m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-																{DescriptorLayoutType::OBJECT_LAYOUT, true},
-																{DescriptorLayoutType::TEXTURE_LAYOUT, true}};
-	m_shaderPasses["phong"]->settings.attributes = {{VertexAttributeType::POSITION, true},
-													{VertexAttributeType::NORMAL, true},
-													{VertexAttributeType::UV, true},
-													{VertexAttributeType::TANGENT, false},
-													{VertexAttributeType::COLOR, false}};
-
-	m_shaderPasses["physical"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/physically_based.glsl");
-	m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-																   {DescriptorLayoutType::OBJECT_LAYOUT, true},
-																   {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
-	m_shaderPasses["physical"]->settings.attributes = {{VertexAttributeType::POSITION, true},
-													   {VertexAttributeType::NORMAL, true},
-													   {VertexAttributeType::UV, true},
-													   {VertexAttributeType::TANGENT, true},
-													   {VertexAttributeType::COLOR, false}};
-
-	for (auto pair : m_shaderPasses)
+	for (RenderPass *pass : m_pipeline.renderpasses)
 	{
-		ShaderPass *pass = pair.second;
-
-		ShaderPass::build_shader_stages(m_device, *pass);
-
-		builder.build_pipeline_layout(m_device, m_descriptorMng, *pass);
-		builder.build_pipeline(m_device, m_renderPasses[DEFAULT].obj, *pass);
-
-		m_deletionQueue.push_function([=]()
-									  { pass->cleanup(m_device); });
+		pass->init_shaderpasses(m_device, m_descriptorMng);
 	}
-
-	if (m_initialized)
-		return;
-	// DEPTH PASS
-	ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH  "shaders/shadows.glsl");
-	depthPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-												  {DescriptorLayoutType::OBJECT_LAYOUT, true},
-												  {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
-	depthPass->settings.attributes = {{VertexAttributeType::POSITION, true},
-									  {VertexAttributeType::NORMAL, false},
-									  {VertexAttributeType::UV, false},
-									  {VertexAttributeType::TANGENT, false},
-									  {VertexAttributeType::COLOR, false}};
-
-	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
-	VkExtent2D shadowExtent{SHADOW_RES, SHADOW_RES};
-	builder.viewport.width = (float)shadowExtent.width;
-	builder.viewport.height = (float)shadowExtent.height;
-	builder.scissor.extent = shadowExtent;
-	builder.rasterizer.depthBiasEnable = VK_TRUE;
-
-	builder.dynamicStates.pop_back();
-	builder.dynamicStates.pop_back();
-	builder.dynamicStates.pop_back();
-	// builder.dynamicStates.pop_back();
-	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
-	builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
-	builder.colorBlending.attachmentCount = 0;
-	//  builder.dynamicState = VK_TRUE;
-
-	builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
-
-	ShaderPass::build_shader_stages(m_device, *depthPass);
-
-	builder.build_pipeline_layout(m_device, m_descriptorMng, *depthPass);
-	builder.build_pipeline(m_device, m_renderPasses[SHADOW].obj, *depthPass);
-
-	m_shaderPasses["shadows"] = depthPass;
-
-	m_deletionQueue.push_function([=]()
-								  { depthPass->cleanup(m_device); });
 }
 
 void Renderer::update_renderpasses()
@@ -338,14 +155,14 @@ void Renderer::update_renderpasses()
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	// Renderpass framebuffer updating
-	for (auto &pass : m_renderPasses)
+	for (RenderPass *pass : m_pipeline.renderpasses)
 	{
-		if (pass.second.isFramebufferRecreatable)
-			pass.second.clean_framebuffer(m_device, m_memory, false);
-	}
-
-	m_renderPasses[DEFAULT].create_framebuffer(m_device, m_memory, *m_window->get_extent(), 1,
-											   static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
+		if (pass->is_resizeable())
+		{
+			m_pipeline.renderpasses[1]->set_extent(*m_window->get_extent());
+			m_pipeline.renderpasses[1]->update(m_device, m_memory, 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
+		}
+	};
 }
 
 void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)

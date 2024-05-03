@@ -316,7 +316,7 @@ void ObjectExplorerWidget::render()
         {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            std::string str = "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_id() + " material";
+            std::string str = "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_ID() + " material";
             ImGui::Text(str.c_str());
             ImGui::Separator();
 
@@ -373,7 +373,7 @@ void ObjectExplorerWidget::render()
                 }
             };
             ImGui::Separator();
-            if (model->get_material(i)->get_shaderpass_id() == "physical")
+            if (model->get_material(i)->get_shaderpass_ID() == "physical")
             {
                 PhysicallyBasedMaterial *mat = static_cast<PhysicallyBasedMaterial *>(model->get_material(i));
                 Vec3 albedo = mat->get_albedo();
@@ -493,11 +493,11 @@ void ObjectExplorerWidget::render()
                 ImGui::Separator();
             }
 
-            if (model->get_material(i)->get_shaderpass_id() == "phong")
+            if (model->get_material(i)->get_shaderpass_ID() == "phong")
             {
                 // TO DO...
             }
-            if (model->get_material(i)->get_shaderpass_id() == "unlit")
+            if (model->get_material(i)->get_shaderpass_ID() == "unlit")
             {
                 // TO DO...
             }

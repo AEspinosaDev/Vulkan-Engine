@@ -30,10 +30,9 @@ private:
 
     static bool m_initialized;
 
-    void init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass &renderPass,
+    void init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass renderPass,
               VkFormat format, VkSampleCountFlagBits samples, GLFWwindow *window);
     void render();
-    void upload_draw_data(VkCommandBuffer &cmd);
     void cleanup(VkDevice &device);
 
     friend class Renderer;
@@ -71,6 +70,7 @@ public:
         m_extent = {p.x, p.y};
         m_resized = true;
     }
+    void upload_draw_data(VkCommandBuffer &cmd);
 };
 
 VULKAN_ENGINE_NAMESPACE_END

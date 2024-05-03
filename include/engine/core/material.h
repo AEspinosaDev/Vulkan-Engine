@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef MATERIAL_H
@@ -28,8 +28,6 @@ struct MaterialSettings
 class Material
 {
 protected:
-    ShaderPass *m_shaderPass{nullptr};
-
     MaterialSettings m_settings{};
 
     std::string m_shaderPassID{};
@@ -39,6 +37,7 @@ protected:
     bool m_isDirty{true};
 
     friend class Renderer;
+    friend class RenderPass;
 
     virtual MaterialUniforms get_uniforms() const = 0;
 
@@ -55,7 +54,7 @@ public:
 
     ~Material() {}
 
-    virtual std::string get_shaderpass_id() const { return m_shaderPassID; }
+    virtual std::string get_shaderpass_ID() const { return m_shaderPassID; }
     virtual inline MaterialSettings get_parameters() const { return m_settings; }
     virtual void set_parameters(MaterialSettings p) { m_settings = p; }
 
@@ -64,17 +63,7 @@ public:
     virtual inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
     virtual inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
 
-    //  virtual bool is_dirty()
-    // {
-    //     for (auto pair : get_textures())
-    //     {
-    //         if(pair.second)
-    //             if(pair.second->is_dirty()){
-    //                 m_isDirty = true;
-    //                 return m_isDirty;
-    //             }
-    //     }
-    // }
+    virtual inline DescriptorSet& get_texture_descriptor()  { return m_textureDescriptor; }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

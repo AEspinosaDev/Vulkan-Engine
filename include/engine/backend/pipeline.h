@@ -113,7 +113,7 @@ struct PipelineBuilder
 
 	void build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass);
 
-	void build_pipeline(VkDevice &device, VkRenderPass &renderPass, ShaderPass &shaderPass);
+	void build_pipeline(VkDevice &device, VkRenderPass renderPass, ShaderPass &shaderPass);
 };
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -69,6 +69,13 @@
 #define PNG "png"
 #define JPG "jpg"
 
+/// Simple exception class, which stores a human-readable error description
+class VKException : public std::runtime_error {
+public:
+    template <typename... Args> VKException(const char *fmt, const Args &... args) 
+     : std::runtime_error(fmt) { }
+};
+
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 // Mathematics library glm
@@ -190,25 +197,25 @@ typedef enum PanelWidgetFlags
 {
 
 	None = ImGuiWindowFlags_None,
-	NoTitleBar = ImGuiWindowFlags_NoTitleBar,								// Disable title-bar
-	NoResize = ImGuiWindowFlags_NoResize,									// Disable user resizing with the lower-right grip
-	NoMove = ImGuiWindowFlags_NoMove,										// Disable user moving the window
-	NoScrollbar = ImGuiWindowFlags_NoScrollbar,								// Disable scrollbars (window can still scroll with mouse or programmatically)
-	NoScrollWithMouse = ImGuiWindowFlags_NoScrollWithMouse,					// Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
-	NoCollapse = ImGuiWindowFlags_NoCollapse,								// Disable user collapsing window by double-clicking on it. Also referred to as Window Menu Button (e.g. within a docking node).
-	AlwaysAutoResize = ImGuiWindowFlags_AlwaysAutoResize,					// Resize every window to its content every frame
-	NoBackground = ImGuiWindowFlags_NoBackground,							// Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
-	NoSavedSettings = ImGuiWindowFlags_NoSavedSettings,						// Never load/save settings in .ini file
-	NoMouseInputs = ImGuiWindowFlags_NoMouseInputs,							// Disable catching mouse, hovering test with pass through.
-	MenuBar = ImGuiWindowFlags_MenuBar,										// Has a menu-bar
-	HorizontalScrollbar = ImGuiWindowFlags_HorizontalScrollbar,				// Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
-	NoFocusOnAppearing = ImGuiWindowFlags_NoFocusOnAppearing,				// Disable taking focus when transitioning from hidden to visible state
-	NoBringToFrontOnFocus = ImGuiWindowFlags_NoBringToFrontOnFocus,			// Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
-	AlwaysVerticalScrollbar = ImGuiWindowFlags_AlwaysVerticalScrollbar,		// Always show vertical scrollbar (even if ContentSize.y < Size.y)
-	AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar, // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
-	NoNavInputs = ImGuiWindowFlags_NoNavInputs,								// No gamepad/keyboard navigation within the window
-	NoNavFocus = ImGuiWindowFlags_NoNavFocus,								// No focusing toward this window with gamepad/keyboard navigation (e.g. skipped by CTRL+TAB)
-	UnsavedDocument = ImGuiWindowFlags_UnsavedDocument,						// Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
+	NoTitleBar = ImGuiWindowFlags_NoTitleBar,								
+	NoResize = ImGuiWindowFlags_NoResize,									
+	NoMove = ImGuiWindowFlags_NoMove,										
+	NoScrollbar = ImGuiWindowFlags_NoScrollbar,								
+	NoScrollWithMouse = ImGuiWindowFlags_NoScrollWithMouse,					
+	NoCollapse = ImGuiWindowFlags_NoCollapse,								
+	AlwaysAutoResize = ImGuiWindowFlags_AlwaysAutoResize,					
+	NoBackground = ImGuiWindowFlags_NoBackground,							
+	NoSavedSettings = ImGuiWindowFlags_NoSavedSettings,						
+	NoMouseInputs = ImGuiWindowFlags_NoMouseInputs,							
+	MenuBar = ImGuiWindowFlags_MenuBar,										
+	HorizontalScrollbar = ImGuiWindowFlags_HorizontalScrollbar,				
+	NoFocusOnAppearing = ImGuiWindowFlags_NoFocusOnAppearing,				
+	NoBringToFrontOnFocus = ImGuiWindowFlags_NoBringToFrontOnFocus,			
+	AlwaysVerticalScrollbar = ImGuiWindowFlags_AlwaysVerticalScrollbar,		
+	AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar, 
+	NoNavInputs = ImGuiWindowFlags_NoNavInputs,								
+	NoNavFocus = ImGuiWindowFlags_NoNavFocus,								
+	UnsavedDocument = ImGuiWindowFlags_UnsavedDocument,					
 	NoNav = ImGuiWindowFlags_NoNav,
 	NoDecoration = ImGuiWindowFlags_NoDecoration,
 	NoInputs = ImGuiWindowFlags_NoInputs,
@@ -245,15 +252,6 @@ typedef enum VolumeType
 	AABB = 1,
 	OBB = 2,
 } VolumeType;
-
-typedef enum RenderPassType
-{
-	DEFAULT = 0,
-	SHADOW = 1,
-	GEOMETRY = 2,
-	LIGHTING = 3,
-	UI = 4,
-} RenderPassType;
 
 typedef enum SyncType
 {
