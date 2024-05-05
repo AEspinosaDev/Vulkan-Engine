@@ -38,7 +38,7 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_pipeline.renderpasses[1]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
+	m_renderPipeline.renderpasses[1]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -77,7 +77,7 @@ void Renderer::render(Scene *const scene)
 	}
 
 	VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
-	VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, /*VkCommandBufferResetFlagBits*/ 0));
+	VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, 0));
 
 	VkCommandBufferBeginInfo beginInfo = init::command_buffer_begin_info();
 
@@ -85,21 +85,16 @@ void Renderer::render(Scene *const scene)
 	{
 		throw VKException("failed to begin recording command buffer!");
 	}
-
-	for (RenderPass *pass : m_pipeline.renderpasses)
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		if (pass->is_active())
 			pass->render(m_frames[m_currentFrame], m_currentFrame, scene, imageIndex);
 	}
-
 	if (vkEndCommandBuffer(m_frames[m_currentFrame].commandBuffer) != VK_SUCCESS)
 	{
 		throw VKException("failed to record command buffer!");
 	}
-
-	// prepare the submission to the queue.
-	// we want to wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
-	// we will signal the renderSemaphore, to signal that rendering has finished
+	
 	VkSubmitInfo submitInfo = init::submit_info(&m_frames[m_currentFrame].commandBuffer);
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkSemaphore waitSemaphores[] = {m_frames[m_currentFrame].presentSemaphore};
@@ -117,9 +112,6 @@ void Renderer::render(Scene *const scene)
 		throw VKException("failed to submit draw command buffer!");
 	}
 
-	// this will put the image we just rendered to into the visible window.
-	// we want to wait on the renderSemaphore for that,
-	// as its necessary that drawing commands have finished before the image is displayed to the user
 	VkPresentInfoKHR presentInfo = init::present_info();
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
@@ -147,14 +139,9 @@ void Renderer::on_awake()
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS, m_settings.depthFormat);
 
-	GUIPass *guiPass = new GUIPass(*m_window->get_extent(),
-								   (uint32_t)m_settings.bufferingType + 1,
-								   m_settings.colorFormat,
-								   m_settings.depthFormat,
-								   (VkSampleCountFlagBits)m_settings.AAtype, m_gui);
 
-	m_pipeline.push_renderpass(shadowPass);
-	m_pipeline.push_renderpass(forwardPass);
+	m_renderPipeline.push_renderpass(shadowPass);
+	m_renderPipeline.push_renderpass(forwardPass);
 }
 
 void Renderer::on_init()
@@ -183,13 +170,13 @@ void Renderer::on_init()
 	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
-	init_renderpasses();
-
 	init_control_objects();
+
+	init_renderpasses();
 
 	init_descriptors();
 
-	init_shaderpasses();
+	init_pipelines();
 
 	init_resources();
 
@@ -204,7 +191,7 @@ void Renderer::on_shutdown()
 		m_deletionQueue.flush();
 
 		// Destroy passes framebuffers and resources
-		for (RenderPass *pass : m_pipeline.renderpasses)
+		for (RenderPass *pass : m_renderPipeline.renderpasses)
 		{
 			pass->clean_framebuffer(m_device, m_memory);
 		}
@@ -232,7 +219,7 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_pipeline.renderpasses[1]->get_obj(), m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPipeline.renderpasses[1]->get_obj(), m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

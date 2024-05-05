@@ -27,16 +27,7 @@ void RendererSettingsWidget::render()
     {
         m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
     }
-    bool depthTest = m_renderer->get_settings().depthTest;
-    bool depthWrite = m_renderer->get_settings().depthWrite;
-    if (ImGui::Checkbox("Depth Test", &depthTest))
-    {
-        m_renderer->enable_depth_test(depthTest);
-    }
-    if (ImGui::Checkbox("Depth Write", &depthWrite))
-    {
-        m_renderer->enable_depth_writes(depthWrite);
-    }
+   
     bool hwBias =  m_renderer->get_settings().enableHardwareDepthBias;
     if (ImGui::Checkbox("Hardware Depth Bias", &hwBias))
     {

@@ -69,15 +69,10 @@ namespace init
 
 	VkWriteDescriptorSet write_descriptor_image(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorImageInfo *imageInfo, uint32_t binding);
 
-	VkAttachmentDescription attachment_description(VkFormat format, VkImageLayout finalLayout, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT, bool stencil = true);
-
 	VkAttachmentReference attachment_reference(uint32_t slot, VkImageLayout layout);
 
-	VkSubpassDescription subpass_description(uint32_t colorAttachmentCount, VkAttachmentReference *colorAttachmentRefs, VkAttachmentReference depthAttachmentRef, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
-
-	VkSubpassDependency subpass_dependency(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-										   VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, 
-										   uint32_t srcSubpass = VK_SUBPASS_EXTERNAL, uint32_t dstSubpass = 0);
+	VkViewport viewport(VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1.0f,
+						float x = 0.0f, float y = 0.0f);
 
 }
 

@@ -35,9 +35,9 @@
 #include <engine/core/texture.h>
 #include <engine/core/renderpass.h>
 
-#include <engine/renderpasses/forwardpass.h>
-#include <engine/renderpasses/shadowpass.h>
-#include <engine/renderpasses/guipass.h>
+#include <engine/renderpasses/forward_pass.h>
+#include <engine/renderpasses/shadow_pass.h>
+#include <engine/renderpasses/geometry_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -61,9 +61,6 @@ struct RendererSettings
 	bool autoClearColor{true};
 	bool autoClearDepth{true};
 	bool autoClearStencil{true};
-
-	bool depthTest{true};
-	bool depthWrite{true};
 
 	bool enableUI{false};
 
@@ -117,7 +114,7 @@ protected:
 
 	std::vector<Frame> m_frames;
 
-	RenderPipeline m_pipeline;
+	RenderPipeline m_renderPipeline;
 
 	DescriptorManager m_descriptorMng{};
 
@@ -141,7 +138,7 @@ protected:
 public:
 	Renderer(Window *window) : m_window(window) { on_awake(); }
 	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { on_awake(); }
-	Renderer(Window *window, RenderPipeline pipeline, RendererSettings settings = {}) : m_window(window), m_settings(settings), m_pipeline(pipeline) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
+	Renderer(Window *window, RenderPipeline pipeline, RendererSettings settings = {}) : m_window(window), m_settings(settings), m_renderPipeline(pipeline) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 
 #pragma region Getters & Setters
 
@@ -189,15 +186,12 @@ public:
 			m_updateFramebuffers = true;
 	}
 
-	inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
-	inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
-
 	inline void enable_gui_overlay(bool op) { m_settings.enableUI; }
 
 	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
-		static_cast<ForwardPass *>(m_pipeline.renderpasses[1])->set_gui(gui);
+		static_cast<ForwardPass *>(m_renderPipeline.renderpasses[1])->set_gui(gui);
 	}
 
 	inline GUIOverlay *get_gui_overlay()
@@ -206,7 +200,7 @@ public:
 	}
 	inline void set_hardware_depth_bias(bool op) { m_settings.enableHardwareDepthBias = op; };
 
-	inline RenderPipeline get_render_pipeline() const { return m_pipeline; }
+	inline RenderPipeline get_render_pipeline() const { return m_renderPipeline; }
 
 #pragma endregion
 #pragma region Core Functions
@@ -280,9 +274,9 @@ protected:
 	virtual void init_descriptors();
 
 	/*
-	Shader pass creation
+	Graphic pipeline creation
 	*/
-	virtual void init_shaderpasses();
+	virtual void init_pipelines();
 
 	/*
 	Resource like samplers, base textures and misc creation

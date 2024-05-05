@@ -128,7 +128,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
 	if (vkCreateGraphicsPipelines(
 			device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
 	{
-		std::cout << "failed to create pipline\n";
+		throw VKException("Failed to create Grahic Pipeline")
 	}
 	else
 	{

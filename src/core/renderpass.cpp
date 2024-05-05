@@ -2,34 +2,6 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void RenderPass::build(VkDevice &device,
-                       std::vector<VkSubpassDescription> subpasses,
-                       std::vector<VkSubpassDependency> dependencies)
-{
-    std::vector<VkAttachmentDescription> attachmentsSubDescriptions;
-    attachmentsSubDescriptions.reserve(m_attachments.size());
-    for (Attachment &attachment : m_attachments)
-    {
-        attachmentsSubDescriptions.push_back(attachment.description.description);
-    }
-
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = (uint32_t)attachmentsSubDescriptions.size();
-    renderPassInfo.pAttachments = attachmentsSubDescriptions.data();
-    renderPassInfo.subpassCount = (uint32_t)subpasses.size();
-    renderPassInfo.pSubpasses = subpasses.data();
-    renderPassInfo.dependencyCount = (uint32_t)dependencies.size();
-    renderPassInfo.pDependencies = dependencies.data();
-
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
-    {
-        throw VKException("failed to create renderpass!");
-    }
-
-    m_initiatized = true;
-}
-
 void RenderPass::begin(VkCommandBuffer &cmd, uint32_t framebufferId, VkSubpassContents subpassContents)
 {
     VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_obj, m_extent, m_framebuffers[framebufferId]);
@@ -80,15 +52,21 @@ void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, Swap
     for (size_t i = 0; i < attachmentCount; i++)
     {
         // Create image and image view for framebuffer
-        if (m_attachments[i].description.description.finalLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) // If its not default renderpass
+        if (!m_attachments[i].isPresentImage) // If its not default renderpass
         {
-            Image image;
-            image.init(memory, m_attachments[i].description.description.format,
-                       m_attachments[i].description.viewUsage, {m_extent.width, m_extent.height, 1}, false, m_attachments[i].description.description.samples, m_framebufferImageDepth);
-            image.create_view(device, m_attachments[i].description.viewAspect, m_attachments[i].description.viewType);
-            viewAttachments[i] = image.view;
+            m_attachments[i].image.init(memory,
+                                        m_attachments[i].image.format,
+                                        m_attachments[i].viewUsage,
+                                        {m_extent.width, m_extent.height, 1},
+                                        false,
+                                        m_attachments[i].samples,
+                                        m_framebufferImageDepth);
 
-            m_attachments[i].image = image;
+            m_attachments[i].image.create_view(device,
+                                               m_attachments[i].viewAspect,
+                                               m_attachments[i].viewType);
+
+            viewAttachments[i] = m_attachments[i].image.view;
         }
         else
         {
@@ -98,7 +76,7 @@ void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, Swap
 
     for (size_t fb = 0; fb < m_framebufferCount; fb++)
     {
-        if (m_isResolve) // If its default need swapchain PRESENT images
+        if (m_isDefault) // If its default need swapchain PRESENT images
             viewAttachments[presentViewIndex] = swp->get_present_images()[fb].view;
 
         VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(m_obj, m_extent);
@@ -137,21 +115,5 @@ void RenderPass::update(VkDevice &device, VmaAllocator &memory, uint32_t layers,
     create_framebuffer(device, memory, swp);
 }
 
-void RenderPass::set_viewport(VkCommandBuffer &cmd, VkExtent2D extent, float minDepth, float maxDepth, float x, float y, int offsetX, int offsetY)
-{
-    // Viewport setup
-    VkViewport viewport{};
-    viewport.x = x;
-    viewport.y = y;
-    viewport.width = (float)extent.width;
-    viewport.height = (float)extent.height;
-    viewport.minDepth = minDepth;
-    viewport.maxDepth = maxDepth;
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
-    VkRect2D scissor{};
-    scissor.offset = {offsetX, offsetY};
-    scissor.extent = extent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
-}
 
 VULKAN_ENGINE_NAMESPACE_END

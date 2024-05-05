@@ -167,8 +167,8 @@ void Renderer::setup_material(Material *const mat)
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::TEXTURE_LAYOUT, &mat->m_textureDescriptor);
 
 		// Set Shadow Map write
-		m_descriptorMng.set_descriptor_write(m_pipeline.renderpasses.front()->get_attachments().front().image.sampler,
-											 m_pipeline.renderpasses.front()->get_attachments().front().image.view,
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses.front()->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses.front()->get_attachments().front().image.view,
 											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
 	}
 
@@ -258,7 +258,7 @@ void Renderer::upload_texture(Texture *const t)
 void Renderer::init_resources()
 {
 	// Create sampler for shadow pass image
-	m_pipeline.renderpasses.front()->get_attachments()[0].image.create_sampler(m_device, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+	m_renderPipeline.renderpasses.front()->get_attachments()[0].image.create_sampler(m_device, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
 																			   0.0f, 1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	// Setup dummy texture in case materials dont have textures

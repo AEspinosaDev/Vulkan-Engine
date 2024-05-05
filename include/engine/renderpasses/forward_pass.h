@@ -6,9 +6,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 class ForwardPass : public RenderPass
 {
-    VkSampleCountFlagBits m_samples;
     ColorFormatType m_colorFormat;
     DepthFormatType m_depthFormat;
+    VkSampleCountFlagBits m_samples;
     GUIOverlay *m_gui;
 
 public:
@@ -17,10 +17,12 @@ public:
                 ColorFormatType colorFormat,
                 DepthFormatType depthFormat,
                 VkSampleCountFlagBits samples) : RenderPass(extent, framebufferCount, 1, true),
-                                                 m_colorFormat(colorFormat), m_depthFormat(depthFormat), m_samples(samples) {}
+                                                 m_colorFormat(colorFormat),
+                                                 m_depthFormat(depthFormat),
+                                                 m_samples(samples) {}
     void init(VkDevice &device);
-    
-    void init_shaderpasses(VkDevice &device, DescriptorManager &descriptorManager);
+
+    void create_pipelines(VkDevice &device, DescriptorManager &descriptorManager);
 
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t framebufferIndex = 0);
 

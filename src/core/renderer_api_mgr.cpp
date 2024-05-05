@@ -20,11 +20,11 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Renderer::init_renderpasses()
 {
-	for (RenderPass *pass : m_pipeline.renderpasses)
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		pass->init(m_device);
 
-		if (pass->is_resolve()) // Check if its default in order to get swapchain image views
+		if (pass->is_default()) // Check if its default in order to get swapchain image views
 			pass->create_framebuffer(m_device, m_memory, &m_swapchain);
 		else
 		{
@@ -34,7 +34,7 @@ void Renderer::init_renderpasses()
 
 	m_deletionQueue.push_function([=]()
 								  { 	
-									for (RenderPass *pass : m_pipeline.renderpasses)
+									for (RenderPass *pass : m_renderPipeline.renderpasses)
 		{
 			pass->cleanup(m_device);
 		} });
@@ -128,11 +128,11 @@ void Renderer::init_descriptors()
 								  { m_descriptorMng.cleanup(); });
 }
 
-void Renderer::init_shaderpasses()
+void Renderer::init_pipelines()
 {
-	for (RenderPass *pass : m_pipeline.renderpasses)
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->init_shaderpasses(m_device, m_descriptorMng);
+		pass->create_pipelines(m_device, m_descriptorMng);
 	}
 }
 
@@ -155,12 +155,12 @@ void Renderer::update_renderpasses()
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	// Renderpass framebuffer updating
-	for (RenderPass *pass : m_pipeline.renderpasses)
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		if (pass->is_resizeable())
 		{
-			m_pipeline.renderpasses[1]->set_extent(*m_window->get_extent());
-			m_pipeline.renderpasses[1]->update(m_device, m_memory, 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
+			m_renderPipeline.renderpasses[1]->set_extent(*m_window->get_extent());
+			m_renderPipeline.renderpasses[1]->update(m_device, m_memory, 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
 		}
 	};
 }
