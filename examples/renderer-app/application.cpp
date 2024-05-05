@@ -142,7 +142,7 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new GUIOverlay((float)m_window->get_extent()->width, (float)m_window->get_extent()->height, GuiColorProfileType::DARK);
+    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
     Panel *tutorialPanel = new Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 

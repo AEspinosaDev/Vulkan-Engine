@@ -10,8 +10,8 @@ class ShadowPass : public RenderPass
 
 public:
     ShadowPass(VkExtent2D extent,
-               uint32_t framebufferDepth,
-               DepthFormatType depthFormat) : RenderPass(extent, 1, framebufferDepth),
+               uint32_t numLights,
+               DepthFormatType depthFormat) : RenderPass(extent, 1, numLights),
                                               m_depthFormat(depthFormat) {}
 
     void init(VkDevice &device);

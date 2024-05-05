@@ -101,16 +101,16 @@ protected:
 	UploadContext m_uploadContext{};
 
 	Window *m_window;
+	Swapchain m_swapchain;
 
-	VkInstance m_instance{};
-	VkPhysicalDevice m_gpu{};
-	VkDevice m_device{};
-	VmaAllocator m_memory{};
+	VkInstance m_instance{VK_NULL_HANDLE};
+	VkPhysicalDevice m_gpu{VK_NULL_HANDLE};
+	VkDevice m_device{VK_NULL_HANDLE};
+	VmaAllocator m_memory{VK_NULL_HANDLE};
+	VkDebugUtilsMessengerEXT m_debugMessenger{VK_NULL_HANDLE};
+
 	VkQueue m_graphicsQueue{};
 	VkQueue m_presentQueue{};
-	VkDebugUtilsMessengerEXT m_debugMessenger{};
-
-	Swapchain m_swapchain;
 
 	std::vector<Frame> m_frames;
 

@@ -3,7 +3,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void boot::VulkanBooter::create_instance()
+VkInstance boot::VulkanBooter::create_instance()
 {
 	if (m_validation && !utils::check_validation_layer_suport(m_validationLayers))
 	{
@@ -43,10 +43,12 @@ void boot::VulkanBooter::create_instance()
 		createInfo.pNext = nullptr;
 	}
 
-	if (vkCreateInstance(&createInfo, nullptr, m_instance) != VK_SUCCESS)
+	VkInstance instance{};
+	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create instance!");
 	}
+	return instance;
 }
 
 std::vector<const char *> boot::VulkanBooter::get_required_extensions()
@@ -71,38 +73,24 @@ std::vector<const char *> boot::VulkanBooter::get_required_extensions()
 	return extensions;
 }
 
-void boot::VulkanBooter::setup_debug_messenger()
+VkPhysicalDevice boot::VulkanBooter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface)
 {
-	if (!m_validation)
-		return;
-
-	VkDebugUtilsMessengerCreateInfoEXT createInfo;
-	utils::populate_debug_messenger_create_info(createInfo);
-
-	if (utils::create_debug_utils_messenger_EXT(*m_instance, &createInfo, nullptr, m_debugMessenger) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to set up debug messenger!");
-	}
-}
-
-void boot::VulkanBooter::pick_graphics_card_device()
-{
-	*m_gpu = VK_NULL_HANDLE;
+	VkPhysicalDevice gpu = VK_NULL_HANDLE;
 
 	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(*m_instance, &deviceCount, nullptr);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 	if (deviceCount == 0)
 	{
 		throw std::runtime_error("failed to find GPUs with Vulkan support!");
 	}
 	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(*m_instance, &deviceCount, devices.data());
+	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 	std::multimap<int, VkPhysicalDevice> candidates;
 
 	for (const auto &device : devices)
 	{
-		int score = rate_device_suitability(device);
+		int score = rate_device_suitability(device, surface);
 
 		candidates.insert(std::make_pair(score, device));
 	}
@@ -113,16 +101,23 @@ void boot::VulkanBooter::pick_graphics_card_device()
 	// Check if the best candidate is suitable at all
 	if (candidates.rbegin()->first > 0)
 	{
-		*m_gpu = candidates.rbegin()->second;
+		gpu = candidates.rbegin()->second;
 	}
 	else
 	{
 		throw std::runtime_error("failed to find a suitable GPU!");
 	}
+
+	return gpu;
 }
-void boot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features)
+VkDevice boot::VulkanBooter::create_logical_device(
+	VkQueue &graphicsQueue,
+	VkQueue &presentQueue,
+	VkPhysicalDevice gpu,
+	VkPhysicalDeviceFeatures features,
+	VkSurfaceKHR surface)
 {
-	boot::QueueFamilyIndices indices = boot::find_queue_families(*m_gpu, *m_surface);
+	boot::QueueFamilyIndices indices = boot::find_queue_families(gpu, surface);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -140,7 +135,7 @@ void boot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features
 
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
 
-	if (utils::is_device_extension_supported(*m_gpu, "VK_EXT_extended_dynamic_state"))
+	if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
 	{
 		m_deviceExtensions.push_back("VK_EXT_extended_dynamic_state");
 
@@ -154,7 +149,7 @@ void boot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features
 
 		physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
 
-		vkGetPhysicalDeviceFeatures2(*m_gpu, &physicalDeviceFeatures2);
+		vkGetPhysicalDeviceFeatures2(gpu, &physicalDeviceFeatures2);
 	}
 
 	physicalDeviceFeatures2.features = features;
@@ -179,15 +174,17 @@ void boot::VulkanBooter::create_logical_device(VkPhysicalDeviceFeatures features
 	{
 		createInfo.enabledLayerCount = 0;
 	}
-	if (vkCreateDevice(*m_gpu, &createInfo, nullptr, m_device) != VK_SUCCESS)
+	VkDevice device{};
+	if (vkCreateDevice(gpu, &createInfo, nullptr, &device) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create logical device!");
 	}
-	vkGetDeviceQueue(*m_device, indices.graphicsFamily.value(), 0, m_graphicsQueue);
-	vkGetDeviceQueue(*m_device, indices.presentFamily.value(), 0, m_presentQueue);
+	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+	return device;
 }
 
-int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
+int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 
@@ -207,7 +204,7 @@ int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 	// Maximum possible size of textures affects graphics quality
 	score += deviceProperties.limits.maxImageDimension2D;
 
-	boot::QueueFamilyIndices indices = find_queue_families(device, *m_surface);
+	boot::QueueFamilyIndices indices = find_queue_families(device, surface);
 
 	// Application can't function without geometry shaders
 	if (!deviceFeatures.geometryShader || !indices.isComplete())
@@ -217,7 +214,7 @@ int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device)
 	bool swapChainAdequate = false;
 	if (check_device_extension_support(device))
 	{
-		boot::SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, *m_surface);
+		boot::SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, surface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		if (!swapChainAdequate)
 			return 0;
@@ -306,28 +303,35 @@ boot::SwapChainSupportDetails boot::query_swapchain_support(VkPhysicalDevice dev
 	return details;
 }
 
-void boot::VulkanBooter::boot_vulkan()
+VkInstance boot::VulkanBooter::boot_vulkan()
 {
-	create_instance();
-	setup_debug_messenger();
+	VkInstance instance = create_instance();
+	return instance;
 }
 
-void boot::VulkanBooter::setup_devices()
+VkDebugUtilsMessengerEXT boot::VulkanBooter::create_debug_messenger(VkInstance instance)
 {
+	if (!m_validation)
+		return VK_NULL_HANDLE;
 
-	pick_graphics_card_device();
+	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+	utils::populate_debug_messenger_create_info(createInfo);
 
-	VkPhysicalDeviceFeatures deviceFeatures{};
-	vkGetPhysicalDeviceFeatures(*m_gpu, &deviceFeatures);
-	create_logical_device(deviceFeatures);
+	VkDebugUtilsMessengerEXT debugMessenger{};
+	if (utils::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to set up debug messenger!");
+	}
+	return debugMessenger;
 }
-
-void boot::VulkanBooter::setup_memory()
+VmaAllocator boot::VulkanBooter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.physicalDevice = *m_gpu;
-	allocatorInfo.device = *m_device;
-	allocatorInfo.instance = *m_instance;
-	vmaCreateAllocator(&allocatorInfo, m_memory);
+	allocatorInfo.physicalDevice = gpu;
+	allocatorInfo.device = device;
+	allocatorInfo.instance = instance;
+	VmaAllocator memoryAllocator;
+	vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
+	return memoryAllocator;
 }
 VULKAN_ENGINE_NAMESPACE_END

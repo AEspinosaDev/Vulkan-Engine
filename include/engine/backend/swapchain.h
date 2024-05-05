@@ -35,8 +35,8 @@ private:
 	
 
 public:
-	void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
-				GLFWwindow *window, VkExtent2D &windowExtent, uint32_t imageCount = 2 ,VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB, VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
+	void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface,
+				GLFWwindow *window, VkExtent2D windowExtent, uint32_t imageCount = 2 ,VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB, VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
 	void cleanup(VkDevice &device, VmaAllocator &memory);
 
 	inline VkSwapchainKHR &get_swapchain_obj()

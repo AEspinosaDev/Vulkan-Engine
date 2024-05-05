@@ -61,10 +61,12 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
 	viewportState.pScissors = &scissor;
 
 	// Attribute setup
-	auto attributeDescriptions = Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::NORMAL],
-																  shaderPass.settings.attributes[VertexAttributeType::TANGENT],
-																  shaderPass.settings.attributes[VertexAttributeType::UV],
-																  shaderPass.settings.attributes[VertexAttributeType::COLOR]);
+	auto attributeDescriptions = Vertex::getAttributeDescriptions(
+		shaderPass.settings.attributes[VertexAttributeType::NORMAL],
+		shaderPass.settings.attributes[VertexAttributeType::TANGENT],
+		shaderPass.settings.attributes[VertexAttributeType::UV],
+		shaderPass.settings.attributes[VertexAttributeType::COLOR]);
+		
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -88,7 +90,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
 	}
 	else
 	{
-		//TO DO: BLENDING
+		// TO DO: BLENDING
 	}
 
 	VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -125,10 +127,9 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
 	VkPipeline newPipeline;
-	if (vkCreateGraphicsPipelines(
-			device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
 	{
-		throw VKException("Failed to create Grahic Pipeline")
+		throw VKException("Failed to create Grahic Pipeline");
 	}
 	else
 	{

@@ -10,7 +10,7 @@ void Window::init()
 
     glfwWindowHint(GLFW_RESIZABLE, m_resizeable);
 
-    m_GLFWwindow = glfwCreateWindow(m_extent->width, m_extent->height, m_title.c_str(), nullptr, nullptr);
+    m_GLFWwindow = glfwCreateWindow(m_extent.width, m_extent.height, m_title.c_str(), nullptr, nullptr);
 
     if (!m_GLFWwindow)
     {
@@ -45,5 +45,11 @@ void Window::init()
 
     m_initialized = true;
 }
+
+void Window::create_surface(VkInstance &instance)
+{
+    VK_CHECK(glfwCreateWindowSurface(instance, m_GLFWwindow, nullptr, &m_surface));
+}
+
 
 VULKAN_ENGINE_NAMESPACE_END

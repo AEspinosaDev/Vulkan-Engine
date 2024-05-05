@@ -47,7 +47,7 @@ void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 	{
 		m_window->set_resized(false);
 		update_renderpasses();
-		scene->get_active_camera()->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
+		scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
 	}
 	else if (renderResult != VK_SUCCESS)
 	{
@@ -94,7 +94,7 @@ void Renderer::render(Scene *const scene)
 	{
 		throw VKException("failed to record command buffer!");
 	}
-	
+
 	VkSubmitInfo submitInfo = init::submit_info(&m_frames[m_currentFrame].commandBuffer);
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkSemaphore waitSemaphores[] = {m_frames[m_currentFrame].presentSemaphore};
@@ -130,7 +130,7 @@ void Renderer::on_awake()
 	m_frames.resize(MAX_FRAMES_IN_FLIGHT);
 
 	// Creating default renderpasses
-	ForwardPass *forwardPass = new ForwardPass(*m_window->get_extent(),
+	ForwardPass *forwardPass = new ForwardPass(m_window->get_extent(),
 											   (uint32_t)m_settings.bufferingType + 1,
 											   m_settings.colorFormat,
 											   m_settings.depthFormat,
@@ -139,35 +139,41 @@ void Renderer::on_awake()
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS, m_settings.depthFormat);
 
-
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(forwardPass);
 }
 
 void Renderer::on_init()
 {
-	if (!m_window->m_initialized)
-		m_window->init();
 
 	// BOOT Vulkan
-	boot::VulkanBooter booter(&m_instance,
-							  &m_debugMessenger,
-							  &m_gpu,
-							  &m_device,
-							  &m_graphicsQueue, m_window->get_surface(),
-							  &m_presentQueue, &m_memory, m_enableValidationLayers);
-	booter.boot_vulkan();
+	boot::VulkanBooter booter(m_enableValidationLayers);
 
-	// Create surface
-	VK_CHECK(glfwCreateWindowSurface(m_instance, m_window->get_window_obj(), nullptr, m_window->get_surface()));
+	// Create instance
+	m_instance = booter.boot_vulkan();
+	m_debugMessenger = booter.create_debug_messenger(m_instance);
 
-	// Create and setup devices and memory allocation
-	booter.pick_graphics_card_device();
-	booter.create_logical_device(utils::get_gpu_features(m_gpu));
-	booter.setup_memory();
+	// Create window and surface
+	if (!m_window->m_initialized)
+		m_window->init();
+	m_window->create_surface(m_instance);
+
+	// Get gpu
+	m_gpu = booter.pick_graphics_card_device(m_instance, m_window->get_surface());
+
+	// Create logical device
+	m_device = booter.create_logical_device(
+		m_graphicsQueue,
+		m_presentQueue,
+		m_gpu,
+		utils::get_gpu_features(m_gpu),
+		m_window->get_surface());
+
+	// Setup VMA
+	m_memory = booter.setup_memory(m_instance, m_device, m_gpu);
 
 	// Create swapchain
-	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	init_control_objects();
@@ -206,7 +212,7 @@ void Renderer::on_shutdown()
 		{
 			utils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
 		}
-		vkDestroySurfaceKHR(m_instance, *m_window->get_surface(), nullptr);
+		vkDestroySurfaceKHR(m_instance, m_window->get_surface(), nullptr);
 		vkDestroyInstance(m_instance, nullptr);
 	}
 

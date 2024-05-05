@@ -44,7 +44,7 @@ void Renderer::init_control_objects()
 {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		m_frames[i].init(m_device, m_gpu, *m_window->get_surface());
+		m_frames[i].init(m_device, m_gpu, m_window->get_surface());
 		m_deletionQueue.push_function([=]()
 									  { m_frames[i].cleanup(m_device); });
 	}
@@ -55,7 +55,7 @@ void Renderer::init_control_objects()
 	m_deletionQueue.push_function([=]()
 								  { vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr); });
 
-	VkCommandPoolCreateInfo uploadCommandPoolInfo = init::command_pool_create_info(boot::find_queue_families(m_gpu, *m_window->get_surface()).graphicsFamily.value());
+	VkCommandPoolCreateInfo uploadCommandPoolInfo = init::command_pool_create_info(boot::find_queue_families(m_gpu, m_window->get_surface()).graphicsFamily.value());
 	VK_CHECK(vkCreateCommandPool(m_device, &uploadCommandPoolInfo, nullptr, &m_uploadContext.commandPool));
 
 	m_deletionQueue.push_function([=]()
@@ -151,7 +151,7 @@ void Renderer::update_renderpasses()
 
 	// Swapchain recreation
 	m_swapchain.cleanup(m_device, m_memory);
-	m_swapchain.create(m_gpu, m_device, *m_window->get_surface(), m_window->get_window_obj(), *m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(),m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	// Renderpass framebuffer updating
@@ -159,7 +159,7 @@ void Renderer::update_renderpasses()
 	{
 		if (pass->is_resizeable())
 		{
-			m_renderPipeline.renderpasses[1]->set_extent(*m_window->get_extent());
+			m_renderPipeline.renderpasses[1]->set_extent(m_window->get_extent());
 			m_renderPipeline.renderpasses[1]->update(m_device, m_memory, 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
 		}
 	};

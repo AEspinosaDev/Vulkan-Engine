@@ -121,7 +121,7 @@ void Renderer::upload_global_data(Scene *const scene)
 {
 	Camera *camera = scene->get_active_camera();
 	if (camera->is_dirty())
-		camera->set_projection(m_window->get_extent()->width, m_window->get_extent()->height);
+		camera->set_projection(m_window->get_extent().width, m_window->get_extent().height);
 	CameraUniforms camData;
 	camData.view = camera->get_view();
 	camData.proj = camera->get_projection();

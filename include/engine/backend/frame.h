@@ -35,7 +35,7 @@ struct Frame
     DescriptorSet objectDescriptor;
     Buffer objectUniformBuffer;
 
-    void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR &surface);
+    void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface);
     void cleanup(VkDevice &device);
 };
 

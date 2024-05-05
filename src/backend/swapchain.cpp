@@ -2,8 +2,8 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR &surface,
-					   GLFWwindow *window, VkExtent2D &windowExtent, uint32_t imageCount, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
+void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface,
+					   GLFWwindow *window, VkExtent2D windowExtent, uint32_t imageCount, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
 {
 	boot::SwapChainSupportDetails swapChainSupport = boot::query_swapchain_support(gpu, surface);
 	boot::QueueFamilyIndices indices = boot::find_queue_families(gpu, surface);
