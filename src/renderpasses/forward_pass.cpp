@@ -181,11 +181,11 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
         builder.build_pipeline(device, m_obj, *pass);
     }
 }
-void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t framebufferIndex)
+void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
 
-    begin(cmd, framebufferIndex);
+    begin(cmd, presentImageIndex);
 
     // Viewport setup
     VkViewport viewport = init::viewport(m_extent);

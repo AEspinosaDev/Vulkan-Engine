@@ -46,9 +46,9 @@ void Window::init()
     m_initialized = true;
 }
 
-void Window::create_surface(VkInstance &instance)
+void create_surface(VkInstance &instance, Window *window)
 {
-    VK_CHECK(glfwCreateWindowSurface(instance, m_GLFWwindow, nullptr, &m_surface));
+    VK_CHECK(glfwCreateWindowSurface(instance, window->m_GLFWwindow, nullptr, &window->m_surface));
 }
 
 

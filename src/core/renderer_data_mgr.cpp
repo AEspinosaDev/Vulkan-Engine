@@ -31,7 +31,7 @@ void Renderer::upload_geometry_data(Geometry *const g)
 	// GPU vertex buffer
 	g->m_vbo->init(m_memory, vboSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
-	immediate_submit([=](VkCommandBuffer cmd)
+	m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[=](VkCommandBuffer cmd)
 					 {
 				VkBufferCopy copy;
 				copy.dstOffset = 0;
@@ -54,7 +54,7 @@ void Renderer::upload_geometry_data(Geometry *const g)
 		// GPU index buffer
 		g->m_ibo->init(m_memory, iboSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
-		immediate_submit([=](VkCommandBuffer cmd)
+		m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[=](VkCommandBuffer cmd)
 						 {
 
 					VkBufferCopy index_copy;
@@ -223,7 +223,7 @@ void Renderer::upload_texture(Texture *const t)
 
 	free(t->m_tmpCache);
 
-	immediate_submit([&](VkCommandBuffer cmd)
+	m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[&](VkCommandBuffer cmd)
 					 { t->m_image.upload_image(cmd, &stagingBuffer); });
 
 	stagingBuffer.cleanup(m_memory);
@@ -240,7 +240,7 @@ void Renderer::upload_texture(Texture *const t)
 			throw std::runtime_error("texture image format does not support linear blitting!");
 		}
 
-		immediate_submit([&](VkCommandBuffer cmd)
+		m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[&](VkCommandBuffer cmd)
 						 { t->m_image.generate_mipmaps(cmd); });
 	}
 	// CREATE SAMPLER

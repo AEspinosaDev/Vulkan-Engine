@@ -42,9 +42,10 @@ private:
 	std::function<void(int, int)> m_windowSizeCallback;
 	std::function<void(double, double)> m_mouseCallBack;
 
-	friend class Renderer;
 
-	void create_surface(VkInstance &instance);
+	// friends :) 
+	friend void create_surface(VkInstance &instance, Window* window);
+	
 
 public:
 	Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_extent(VkExtent2D{w, h}), m_windowedExtent({w, h}), m_surface(VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
@@ -93,6 +94,8 @@ public:
 		{
 			const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 			glfwSetWindowMonitor(m_GLFWwindow, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+			m_extent.width = mode->width;
+			m_extent.height = mode->height;
 		}
 	}
 	inline bool is_resizable() { return m_resizeable; }
@@ -135,5 +138,8 @@ public:
 
 	inline void set_mouse_callback(std::function<void(double, double)> callback) { m_mouseCallBack = callback; }
 };
+
+void create_surface(VkInstance &instance, Window* window);
+
 VULKAN_ENGINE_NAMESPACE_END
 #endif

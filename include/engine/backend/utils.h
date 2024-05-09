@@ -1,7 +1,7 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
@@ -13,11 +13,23 @@
 #include <functional>
 #include <chrono>
 #include <engine/common.h>
+#include <engine/backend/initializers.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace utils
 {
+	struct UploadContext
+	{
+		VkFence uploadFence;
+		VkCommandPool commandPool;
+		VkCommandBuffer commandBuffer;
+
+		void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface);
+		void cleanup(VkDevice &device);
+		void immediate_submit(VkDevice &device , VkQueue &gfxQueue, std::function<void(VkCommandBuffer cmd)> &&function);
+	};
+
 	struct DeletionQueue
 	{
 		std::deque<std::function<void()>> deletors;

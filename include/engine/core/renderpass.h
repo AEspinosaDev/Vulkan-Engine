@@ -75,6 +75,9 @@ protected:
     uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
 
     std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
+    std::unordered_map<std::string, DescriptorSet> m_descriptorSets;
+    std::unordered_map<std::string, Buffer> m_buffers;
+
 
     bool m_initiatized{false};
     bool m_isResizeable{true};
@@ -134,7 +137,7 @@ public:
     /*
     Render
     */
-    virtual void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t framebufferIndex = 0) = 0;
+    virtual void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0) = 0;
 
     /**
      * Create framebuffers and images attached to them necessary for the renderpass to work. It also sets the extent of the renderpass.

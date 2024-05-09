@@ -24,7 +24,7 @@ public:
 
     void create_pipelines(VkDevice &device, DescriptorManager &descriptorManager);
 
-    void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t framebufferIndex = 0);
+    void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
     inline void set_gui(GUIOverlay *gui) { m_gui = gui; }
 };

@@ -49,22 +49,10 @@ void Renderer::init_control_objects()
 									  { m_frames[i].cleanup(m_device); });
 	}
 
-	VkFenceCreateInfo uploadFenceCreateInfo = init::fence_create_info();
-
-	VK_CHECK(vkCreateFence(m_device, &uploadFenceCreateInfo, nullptr, &m_uploadContext.uploadFence));
-	m_deletionQueue.push_function([=]()
-								  { vkDestroyFence(m_device, m_uploadContext.uploadFence, nullptr); });
-
-	VkCommandPoolCreateInfo uploadCommandPoolInfo = init::command_pool_create_info(boot::find_queue_families(m_gpu, m_window->get_surface()).graphicsFamily.value());
-	VK_CHECK(vkCreateCommandPool(m_device, &uploadCommandPoolInfo, nullptr, &m_uploadContext.commandPool));
+	m_uploadContext.init(m_device,m_gpu,m_window->get_surface());
 
 	m_deletionQueue.push_function([=]()
-								  { vkDestroyCommandPool(m_device, m_uploadContext.commandPool, nullptr); });
-
-	// allocate the default command buffer that we will use for the instant commands
-	VkCommandBufferAllocateInfo cmdAllocInfo = init::command_buffer_allocate_info(m_uploadContext.commandPool, 1);
-
-	VK_CHECK(vkAllocateCommandBuffers(m_device, &cmdAllocInfo, &m_uploadContext.commandBuffer));
+									  { m_uploadContext.cleanup(m_device); });
 }
 
 void Renderer::init_descriptors()
@@ -163,27 +151,6 @@ void Renderer::update_renderpasses()
 			m_renderPipeline.renderpasses[1]->update(m_device, m_memory, 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
 		}
 	};
-}
-
-void Renderer::immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function)
-{
-	VkCommandBuffer cmd = m_uploadContext.commandBuffer;
-
-	VkCommandBufferBeginInfo cmdBeginInfo = init::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
-
-	function(cmd);
-
-	VK_CHECK(vkEndCommandBuffer(cmd));
-
-	VkSubmitInfo submit = init::submit_info(&cmd);
-
-	VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submit, m_uploadContext.uploadFence));
-
-	vkWaitForFences(m_device, 1, &m_uploadContext.uploadFence, true, 9999999999);
-	vkResetFences(m_device, 1, &m_uploadContext.uploadFence);
-
-	vkResetCommandPool(m_device, m_uploadContext.commandPool, 0);
 }
 
 VULKAN_ENGINE_NAMESPACE_END

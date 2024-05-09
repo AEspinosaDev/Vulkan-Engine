@@ -154,9 +154,11 @@ void Renderer::on_init()
 	m_debugMessenger = booter.create_debug_messenger(m_instance);
 
 	// Create window and surface
-	if (!m_window->m_initialized)
+	if (!m_window->is_initialized())
 		m_window->init();
-	m_window->create_surface(m_instance);
+
+	create_surface(m_instance, m_window);
+	// m_window->create_surface(m_instance);
 
 	// Get gpu
 	m_gpu = booter.pick_graphics_card_device(m_instance, m_window->get_surface());

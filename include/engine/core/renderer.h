@@ -10,7 +10,7 @@
 	Implementation of this class is fragmentated in three submodules:
 
 	* vk_renderer.cpp
-	* vk_renderer_api_mgr.cpp
+	* vk_renderer_vk_mgr.cpp
 	* vk_renderer_data_mgr.cpp
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -91,14 +91,7 @@ class Renderer
 protected:
 	RendererSettings m_settings{};
 
-	struct UploadContext
-	{
-		VkFence uploadFence;
-		VkCommandPool commandPool;
-		VkCommandBuffer commandBuffer;
-	};
-
-	UploadContext m_uploadContext{};
+	utils::UploadContext m_uploadContext{};
 
 	Window *m_window;
 	Swapchain m_swapchain;
@@ -252,7 +245,7 @@ protected:
 /*
 	////////////////////////////////////////////////////////////////////////////////////
 
-	Implementation of this region can be found in the module ==>> vk_renderer_api_mgr.cpp
+	Implementation of this region can be found in the module ==>> vk_renderer_vk_mgr.cpp
 
 	////////////////////////////////////////////////////////////////////////////////////
 */
@@ -288,7 +281,7 @@ protected:
 	*/
 	virtual void update_renderpasses();
 
-	void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
+	
 
 #pragma endregion
 /*

@@ -114,7 +114,7 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
 
     m_shaderPasses["shadow"] = depthPass;
 }
-void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t framebufferIndex)
+void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
 

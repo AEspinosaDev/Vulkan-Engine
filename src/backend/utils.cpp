@@ -147,4 +147,45 @@ Vec3 utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1,
 	// return glm::normalize(tangent);
 }
 
+void utils::UploadContext::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
+{
+	VkFenceCreateInfo uploadFenceCreateInfo = init::fence_create_info();
+
+	VK_CHECK(vkCreateFence(device, &uploadFenceCreateInfo, nullptr, &uploadFence));
+
+	VkCommandPoolCreateInfo uploadCommandPoolInfo = init::command_pool_create_info(boot::find_queue_families(gpu, surface).graphicsFamily.value());
+	VK_CHECK(vkCreateCommandPool(device, &uploadCommandPoolInfo, nullptr, &commandPool));
+
+	// allocate the default command buffer that we will use for the instant commands
+	VkCommandBufferAllocateInfo cmdAllocInfo = init::command_buffer_allocate_info(commandPool, 1);
+
+	VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &commandBuffer));
+}
+void utils::UploadContext::cleanup(VkDevice &device)
+{
+	 vkDestroyFence(device, uploadFence, nullptr);
+	 vkDestroyCommandPool(device, commandPool, nullptr);
+}
+
+void utils::UploadContext::immediate_submit(VkDevice &device , VkQueue &gfxQueue, std::function<void(VkCommandBuffer cmd)> &&function)
+{
+	VkCommandBuffer cmd = commandBuffer;
+
+	VkCommandBufferBeginInfo cmdBeginInfo = init::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+	function(cmd);
+
+	VK_CHECK(vkEndCommandBuffer(cmd));
+
+	VkSubmitInfo submit = init::submit_info(&cmd);
+
+	VK_CHECK(vkQueueSubmit(gfxQueue, 1, &submit, uploadFence));
+
+	vkWaitForFences(device, 1, &uploadFence, true, 9999999999);
+	vkResetFences(device, 1, &uploadFence);
+
+	vkResetCommandPool(device, commandPool, 0);
+}
+
 VULKAN_ENGINE_NAMESPACE_END
