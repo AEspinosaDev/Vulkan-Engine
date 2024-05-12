@@ -146,10 +146,14 @@ void Renderer::on_awake()
 												  m_settings.depthFormat);
 
 	Mesh *vignette = Mesh::create_quad();
+	m_deletionQueue.push_function([=]()
+								  { vignette->get_geometry()->cleanup(m_memory); });
+
 	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), vignette);
 
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(geometryPass);
+	m_renderPipeline.push_renderpass(ssaoPass);
 	m_renderPipeline.push_renderpass(forwardPass);
 }
 

@@ -6,7 +6,7 @@ void SSAOPass::init(VkDevice &device)
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
-    attachmentsInfo[0].format = VK_FORMAT_R8_UNORM;
+    attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_UNORM;
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -16,7 +16,7 @@ void SSAOPass::init(VkDevice &device)
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_attachments.push_back(
-        Attachment(VK_FORMAT_R8_UNORM,
+        Attachment(VK_FORMAT_R8G8B8A8_UNORM,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT,
                    VK_IMAGE_VIEW_TYPE_2D));
@@ -26,8 +26,8 @@ void SSAOPass::init(VkDevice &device)
     // Subpass
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 0;
-    subpass.pDepthStencilAttachment = &ref;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &ref;
 
     // Subpass dependencies for layout transitions
     std::array<VkSubpassDependency, 2> dependencies;
@@ -80,16 +80,16 @@ void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
     VkDescriptorSetLayoutBinding normalTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     VkDescriptorSetLayoutBinding depthTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding noiseTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
-    VkDescriptorSetLayoutBinding kernelBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    VkDescriptorSetLayoutBinding kernelBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
     VkDescriptorSetLayoutBinding bindings[] = {normalTextureBinding, depthTextureBinding, noiseTextureBinding, kernelBufferBinding};
-    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
+    // m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
 
-    m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
+    // m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
 
     // m_descriptorManager.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
     // m_descriptorManager.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
     // m_descriptorManager.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 2);
-    m_descriptorManager.set_descriptor_write(&m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 3);
+    // m_descriptorManager.set_descriptor_write(&m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 3);
 }
 
 void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
@@ -124,7 +124,7 @@ void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
     ssaoPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, false},
-         {VertexAttributeType::UV, false},
+         {VertexAttributeType::UV, true},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
 
@@ -195,7 +195,7 @@ void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
     ShaderPass *shaderPass = m_shaderPasses["ssao"];
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
+    // vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
     Geometry::draw(cmd, m_vignette->get_geometry());
 
     end(cmd);
