@@ -18,57 +18,6 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Renderer::upload_geometry_data(Geometry *const g)
-{
-	// Should be executed only once if geometry data is not changed
-
-	// Staging vertex buffer (CPU only)
-	size_t vboSize = sizeof(g->m_vertexData[0]) * g->m_vertexData.size();
-	Buffer vboStagingBuffer;
-	vboStagingBuffer.init(m_memory, vboSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-	vboStagingBuffer.upload_data(m_memory, g->m_vertexData.data(), vboSize);
-
-	// GPU vertex buffer
-	g->m_vbo->init(m_memory, vboSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-
-	m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[=](VkCommandBuffer cmd)
-					 {
-				VkBufferCopy copy;
-				copy.dstOffset = 0;
-				copy.srcOffset = 0;
-				copy.size = vboSize;
-				vkCmdCopyBuffer(cmd, vboStagingBuffer.buffer, g->m_vbo->buffer, 1, &copy); });
-
-	m_deletionQueue.push_function([=]()
-								  { g->m_vbo->cleanup(m_memory); });
-	vboStagingBuffer.cleanup(m_memory);
-
-	if (g->m_indexed)
-	{
-		// Staging index buffer (CPU only)
-		size_t iboSize = sizeof(g->m_vertexIndex[0]) * g->m_vertexIndex.size();
-		Buffer iboStagingBuffer;
-		iboStagingBuffer.init(m_memory, iboSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-		iboStagingBuffer.upload_data(m_memory, g->m_vertexIndex.data(), iboSize);
-
-		// GPU index buffer
-		g->m_ibo->init(m_memory, iboSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-
-		m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[=](VkCommandBuffer cmd)
-						 {
-
-					VkBufferCopy index_copy;
-					index_copy.dstOffset = 0;
-					index_copy.srcOffset = 0;
-					index_copy.size = iboSize;
-					vkCmdCopyBuffer(cmd, iboStagingBuffer.buffer, g->m_ibo->buffer, 1, &index_copy); });
-		m_deletionQueue.push_function([=]()
-									  { g->m_ibo->cleanup(m_memory); });
-		iboStagingBuffer.cleanup(m_memory);
-	}
-
-	g->m_buffers_loaded = true;
-}
 void Renderer::upload_object_data(Scene *const scene)
 {
 
@@ -97,11 +46,15 @@ void Renderer::upload_object_data(Scene *const scene)
 					{
 						// Object vertex buffer setup
 						Geometry *g = m->get_geometry(i);
-						if (!g->m_buffers_loaded)
-							upload_geometry_data(g);
+						if (!g->is_buffer_loaded())
+						{
+							Geometry::upload_buffers(m_device, m_memory, m_graphicsQueue, m_uploadContext, g);
+							m_deletionQueue.push_function([=]()
+														  { g->cleanup(m_memory); });
+						}
 
 						// Object material setup
-						Material *mat = m->get_material(g->m_materialID);
+						Material *mat = m->get_material(g->get_material_ID());
 						if (!mat)
 							setup_material(Material::DEBUG_MATERIAL);
 						setup_material(mat);
@@ -180,7 +133,11 @@ void Renderer::setup_material(Material *const mat)
 		{
 			// SET ACTUAL TEXTURE
 			if (!texture->is_buffer_loaded())
-				upload_texture(texture);
+			{
+				Texture::upload_data(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext, texture);
+				m_deletionQueue.push_function([=]()
+											  { texture->m_image.cleanup(m_device, m_memory); });
+			}
 
 			// Set texture write
 			if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
@@ -202,70 +159,21 @@ void Renderer::setup_material(Material *const mat)
 	mat->m_isDirty = false;
 }
 
-void Renderer::upload_texture(Texture *const t)
-{
-
-	// INIT IMAGE AND CREATE VIEW
-	VkExtent3D extent = {(uint32_t)t->m_width,
-						 (uint32_t)t->m_height,
-						 (uint32_t)t->m_depth};
-
-	t->m_image.init(m_memory, (VkFormat)t->m_settings.format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, extent, t->m_settings.useMipmaps, VK_SAMPLE_COUNT_1_BIT);
-	t->m_image.create_view(m_device, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	Buffer stagingBuffer;
-
-	void *pixel_ptr = t->m_tmpCache;
-	VkDeviceSize imageSize = t->m_width * t->m_height * t->m_depth * Image::BYTES_PER_PIXEL;
-
-	stagingBuffer.init(m_memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-	stagingBuffer.upload_data(m_memory, pixel_ptr, static_cast<size_t>(imageSize));
-
-	free(t->m_tmpCache);
-
-	m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[&](VkCommandBuffer cmd)
-					 { t->m_image.upload_image(cmd, &stagingBuffer); });
-
-	stagingBuffer.cleanup(m_memory);
-
-	t->m_buffer_loaded = true;
-
-	// GENERATE MIPMAPS
-	if (t->m_settings.useMipmaps)
-	{
-		VkFormatProperties formatProperties;
-		vkGetPhysicalDeviceFormatProperties(m_gpu, t->m_image.format, &formatProperties);
-		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
-		{
-			throw std::runtime_error("texture image format does not support linear blitting!");
-		}
-
-		m_uploadContext.immediate_submit(m_device, m_graphicsQueue,[&](VkCommandBuffer cmd)
-						 { t->m_image.generate_mipmaps(cmd); });
-	}
-	// CREATE SAMPLER
-	t->m_image.create_sampler(m_device, (VkFilter)t->m_settings.filter,
-							  VK_SAMPLER_MIPMAP_MODE_LINEAR,
-							  (VkSamplerAddressMode)t->m_settings.adressMode,
-							  (float)t->m_settings.minMipLevel,
-							  t->m_settings.useMipmaps ? (float)t->m_image.mipLevels : 1.0f,
-							  t->m_settings.anisotropicFilter, utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy);
-
-	m_deletionQueue.push_function([=]()
-								  { t->m_image.cleanup(m_device, m_memory); });
-}
-
 void Renderer::init_resources()
 {
-	// Create sampler for shadow pass image
-	m_renderPipeline.renderpasses.front()->get_attachments()[0].image.create_sampler(m_device, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-																			   0.0f, 1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
 	// Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
 	Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
-	upload_texture(Texture::DEBUG_TEXTURE);
+	Texture::upload_data(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext, Texture::DEBUG_TEXTURE);
+	m_deletionQueue.push_function([=]()
+								  { Texture::DEBUG_TEXTURE->m_image.cleanup(m_device, m_memory); });
+
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
+	{
+		pass->init_resources(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext);
+	}
 }
 
 VULKAN_ENGINE_NAMESPACE_END

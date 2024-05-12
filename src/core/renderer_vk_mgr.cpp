@@ -36,7 +36,7 @@ void Renderer::init_renderpasses()
 								  { 	
 									for (RenderPass *pass : m_renderPipeline.renderpasses)
 		{
-			pass->cleanup(m_device);
+			pass->cleanup(m_device,m_memory);
 		} });
 }
 

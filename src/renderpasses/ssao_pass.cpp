@@ -6,45 +6,45 @@ void SSAOPass::init(VkDevice &device)
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
-    attachmentsInfo[0].format = static_cast<VkFormat>(m_depthFormat);
+    attachmentsInfo[0].format = VK_FORMAT_R8_UNORM;
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentsInfo[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_attachments.push_back(
-        Attachment(static_cast<VkFormat>(m_depthFormat),
-                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                   VK_IMAGE_ASPECT_DEPTH_BIT,
-                   VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+        Attachment(VK_FORMAT_R8_UNORM,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                   VK_IMAGE_ASPECT_COLOR_BIT,
+                   VK_IMAGE_VIEW_TYPE_2D));
 
-    VkAttachmentReference depthRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference ref = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 0;
-    subpass.pDepthStencilAttachment = &depthRef;
+    subpass.pDepthStencilAttachment = &ref;
 
-    // Depdencies
-    std::array<VkSubpassDependency, 2> dependencies = {};
+    // Subpass dependencies for layout transitions
+    std::array<VkSubpassDependency, 2> dependencies;
 
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     dependencies[1].srcSubpass = 0;
     dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
@@ -63,10 +63,35 @@ void SSAOPass::init(VkDevice &device)
         new VKException("failed to create renderpass!");
     }
 
-    m_isResizeable = false;
-
     m_initiatized = true;
 }
+
+void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
+{
+
+    // Init kernel buffer
+    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec3) * KERNEL_MEMBERS, gpu);
+    m_kernelBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+
+    // Init and configure local descriptors
+    m_descriptorManager.init(device);
+    m_descriptorManager.create_pool(10, 10, 10, 20, 10);
+
+    VkDescriptorSetLayoutBinding normalTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding depthTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding noiseTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+    VkDescriptorSetLayoutBinding kernelBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    VkDescriptorSetLayoutBinding bindings[] = {normalTextureBinding, depthTextureBinding, noiseTextureBinding, kernelBufferBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
+
+    m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
+
+    // m_descriptorManager.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
+    // m_descriptorManager.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
+    // m_descriptorManager.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 2);
+    m_descriptorManager.set_descriptor_write(&m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 3);
+}
+
 void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
     PipelineBuilder builder;
@@ -114,6 +139,46 @@ void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
 
     m_shaderPasses["ssao"] = ssaoPass;
 }
+void SSAOPass::init_resources(VkDevice &device,
+                              VkPhysicalDevice &gpu,
+                              VmaAllocator &memory,
+                              VkQueue &gfxQueue,
+                              utils::UploadContext &uploadContext)
+{
+    Geometry::upload_buffers(device, memory, gfxQueue, uploadContext, m_vignette->get_geometry());
+
+    // SSAO KERNEL BUFFER -----------
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+
+    std::vector<Vec3> ssaoKernel;
+    ssaoKernel.reserve(KERNEL_MEMBERS);
+    for (unsigned int i = 0; i < KERNEL_MEMBERS; ++i)
+    {
+        Vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+        sample = math::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+
+        auto lerp = [](float a, float b, float f)
+        {
+            return a + f * (b - a);
+        };
+
+        // Center importance sampling
+        scale = lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+
+    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec3) * KERNEL_MEMBERS, gpu);
+    m_kernelBuffer.upload_data(memory, ssaoKernel.data(), BUFFER_SIZE);
+
+    /// SSAO NOISE TEXTURE -----------
+
+
+
+}
 void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
@@ -129,23 +194,18 @@ void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
 
     ShaderPass *shaderPass = m_shaderPasses["ssao"];
 
-    vkCmdSetDepthBiasEnable(cmd, true);
-    float depthBiasConstant = 0.0;
-    float depthBiasSlope = 0.0f;
-    vkCmdSetDepthBias(
-        cmd,
-        depthBiasConstant,
-        0.0f,
-        depthBiasSlope);
-
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline); // DEPENDENCY !!!!
-
-    // Bind normal and depth textures and kernel
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
-
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
     Geometry::draw(cmd, m_vignette->get_geometry());
 
     end(cmd);
+}
+
+void SSAOPass::cleanup(VkDevice &device, VmaAllocator &memory)
+{
+    RenderPass::cleanup(device, memory);
+    m_descriptorManager.cleanup();
+    m_kernelBuffer.cleanup(memory);
 }
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -111,7 +111,7 @@ struct GeometryStats
 };
 
 /*
-Class that defines the mesh geometry. Can be setup by filling it with a canonical vertex type array. 
+Class that defines the mesh geometry. Can be setup by filling it with a canonical vertex type array.
 */
 class Geometry
 {
@@ -128,8 +128,6 @@ private:
     bool m_loaded{false};
     bool m_indexed{false};
     bool m_buffers_loaded{false};
-
-    friend class Renderer;
 
 public:
     Geometry() : m_vbo{new Buffer},
@@ -160,8 +158,18 @@ public:
     void fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
 
-    //Utility function for drawing purposes
+    inline void cleanup(VmaAllocator &memory)
+    {
+        m_vbo->cleanup(memory);
+        if (m_indexed)
+            m_ibo->cleanup(memory);
+    }
+
+    // Utility function for drawing purposes
     static void draw(VkCommandBuffer &cmd, Geometry *const g);
+
+    // Utility funciton that sends the vertex buffers data to the GPU
+    static void upload_buffers(VkDevice &device, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext, Geometry *const g);
 };
 
 VULKAN_ENGINE_NAMESPACE_END;

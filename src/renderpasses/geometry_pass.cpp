@@ -129,6 +129,34 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
 
     m_shaderPasses["geometry"] = geomPass;
 }
+void GeometryPass::init_resources(VkDevice &device,
+                                VkPhysicalDevice &gpu,
+                                VmaAllocator &memory,
+                                VkQueue &gfxQueue,
+                                utils::UploadContext &uploadContext)
+{
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+
+    m_attachments[1].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+}
 void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;

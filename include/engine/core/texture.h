@@ -73,6 +73,10 @@ public:
     inline void set_adress_mode(TextureAdressModeType am) { m_settings.adressMode = am; }
 
     void load_image(std::string fileName, bool asyncCall = true);
+    
+
+    // Utility function that creates and sends the texture data to the GPU
+    static void upload_data(VkDevice &device, VkPhysicalDevice &gpu ,VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext, Texture *const t);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

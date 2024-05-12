@@ -116,6 +116,24 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
 
     m_shaderPasses["shadow"] = depthPass;
 }
+void ShadowPass::init_resources(VkDevice &device,
+                                VkPhysicalDevice &gpu,
+                                VmaAllocator &memory,
+                                VkQueue &gfxQueue,
+                                utils::UploadContext &uploadContext)
+{
+    // Create sampler for shadow image
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+}
 void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
@@ -157,7 +175,7 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
                     // GLOBAL LAYOUT BINDING
                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
-                    
+
                     // PER OBJECT LAYOUT BINDING
                     uint32_t objectOffsets[] = {objectOffset, objectOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,

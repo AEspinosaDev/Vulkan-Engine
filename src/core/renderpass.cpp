@@ -23,7 +23,7 @@ void RenderPass::end(VkCommandBuffer &cmd)
 {
     vkCmdEndRenderPass(cmd);
 }
-void RenderPass::cleanup(VkDevice &device)
+void RenderPass::cleanup(VkDevice &device, VmaAllocator &memory)
 {
     if (!m_initiatized)
         return;

@@ -38,7 +38,7 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[1]->set_attachment_clear_value({0.0,0.0,0.0,1.0});
+	m_renderPipeline.renderpasses[1]->set_attachment_clear_value({0.0, 0.0, 0.0, 1.0});
 	m_renderPipeline.renderpasses.back()->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 }
 
@@ -141,9 +141,12 @@ void Renderer::on_awake()
 	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS, m_settings.depthFormat);
 
 	GeometryPass *geometryPass = new GeometryPass(m_window->get_extent(),
-											   (uint32_t)m_settings.bufferingType + 1,
-											   
-											   m_settings.depthFormat);
+												  (uint32_t)m_settings.bufferingType + 1,
+
+												  m_settings.depthFormat);
+
+	Mesh *vignette = Mesh::create_quad();
+	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), vignette);
 
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(geometryPass);

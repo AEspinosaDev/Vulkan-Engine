@@ -75,8 +75,6 @@ protected:
     uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
 
     std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
-    std::unordered_map<std::string, DescriptorSet> m_descriptorSets;
-    std::unordered_map<std::string, Buffer> m_buffers;
 
     bool m_initiatized{false};
     bool m_isResizeable{true};
@@ -131,11 +129,19 @@ public:
     /*
     Use it in case renderpass needs local descriptor sets
     */
-    virtual void create_descriptors(VkDevice &device, VkPhysicalDevice &gpy, VmaAllocator &memory, uint32_t framesPerFlight) {}
+    virtual void create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight) {}
     /*
     Configures and creates the shaderpasses subscribed to the renderpass
     */
     virtual void create_pipelines(VkDevice &device, DescriptorManager &descriptorManager) = 0;
+    /*
+    Filling of uniform data and attachment samplers setup
+    */
+    virtual void init_resources(VkDevice &device,
+                                VkPhysicalDevice &gpu,
+                                VmaAllocator &memory,
+                                VkQueue &gfxQueue,
+                                utils::UploadContext &uploadContext) {}
     /*
     Render
     */
@@ -157,7 +163,7 @@ public:
     /**
      * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a sepparate function for felxibilty matters
      */
-    virtual void cleanup(VkDevice &device);
+    virtual void cleanup(VkDevice &device, VmaAllocator &memory);
 };
 
 VULKAN_ENGINE_NAMESPACE_END

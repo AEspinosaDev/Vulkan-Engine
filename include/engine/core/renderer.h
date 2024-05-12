@@ -38,6 +38,7 @@
 #include <engine/renderpasses/forward_pass.h>
 #include <engine/renderpasses/shadow_pass.h>
 #include <engine/renderpasses/geometry_pass.h>
+#include <engine/renderpasses/ssao_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -293,10 +294,6 @@ protected:
 */
 #pragma region Data Management
 	/*
-	Geometry vertex and index buffers upload to GPU
-	*/
-	virtual void upload_geometry_data(Geometry *const g);
-	/*
 	Object descriptor layouts uniforms buffer upload to GPU
 	*/
 	virtual void upload_object_data(Scene *const scene);
@@ -309,10 +306,6 @@ protected:
 	Initialize and setup textures and uniforms in given material
 	*/
 	virtual void setup_material(Material *const mat);
-	/*
-	Texture setup and upload to GPU. Mipmap and sampler creation
-	*/
-	virtual void upload_texture(Texture *const t);
 #pragma region GUI
 	/*
 	Initialize gui layout in case ther's one enabled

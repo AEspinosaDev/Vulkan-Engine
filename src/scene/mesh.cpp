@@ -33,7 +33,6 @@ void Sphere::setup(Mesh *const mesh)
     radius = math::length(center);
 
     this->mesh = mesh;
-
 }
 
 bool Sphere::is_on_frustrum(const Frustum &frustum) const
@@ -95,6 +94,24 @@ Mesh *Mesh::clone() const
         mesh->set_geometry(g);
     }
     return mesh;
+}
+Mesh *Mesh::create_quad()
+{
+    Mesh *quad = new Mesh();
+    Geometry *g = new Geometry();
+    
+    g->fill(
+        {{{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+         {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+         {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},
+         {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},
+
+        {0, 1, 2, 1, 3, 2});
+
+    quad->set_geometry(g);
+    quad->setup_volume();
+
+    return quad;
 }
 void Mesh::set_volume_type(VolumeType t)
 {

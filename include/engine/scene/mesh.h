@@ -143,13 +143,17 @@ public:
 	inline const Volume *const get_bounding_volume() const { return m_volume; }
 
 	/*
-	 * Asynchornously loads any kind of supported mesh file (ply, obj). Async can be deactivated.
+	 * Loads any kind of supported mesh file (ply, obj). Can be done asynchronoulsy.
 	 */
 	void load_file(const std::string fileName, bool asyncCall = true, bool overrideGeometry = false);
 
 	inline std::string get_file_route() const { return m_fileRoute; }
 
 	Mesh *clone() const;
+
+	static Mesh * create_quad();
+
+
 };
 
 VULKAN_ENGINE_NAMESPACE_END

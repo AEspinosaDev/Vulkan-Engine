@@ -31,5 +31,11 @@ layout(location = 0) in vec3 v_normal;
 layout(location = 0) out vec4 outNormal;
 
 void main() {
-    outNormal = vec4(v_normal, 1.0);
+    vec3 normal = v_normal * 0.5 + 0.5;
+
+    outNormal = vec4(
+        1-normal.x,
+        normal.y,
+        1-normal.z,
+        1.0);
 }
