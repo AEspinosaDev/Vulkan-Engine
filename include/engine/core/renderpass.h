@@ -78,7 +78,6 @@ protected:
     std::unordered_map<std::string, DescriptorSet> m_descriptorSets;
     std::unordered_map<std::string, Buffer> m_buffers;
 
-
     bool m_initiatized{false};
     bool m_isResizeable{true};
     bool m_enabled{true};
@@ -95,9 +94,9 @@ protected:
 
 public:
     RenderPass(VkExtent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1, bool isDefault = false) : m_extent(extent),
-                                                                                                                                                                 m_framebufferCount(framebufferCount),
-                                                                                                                                                                 m_framebufferImageDepth(framebufferDepth),
-                                                                                                                                                                 m_isDefault(isDefault) {}
+                                                                                                                          m_framebufferCount(framebufferCount),
+                                                                                                                          m_framebufferImageDepth(framebufferDepth),
+                                                                                                                          m_isDefault(isDefault) {}
 
     virtual inline void set_active(const bool s) { m_enabled = s; }
     virtual inline bool is_active() { return m_enabled; }
@@ -129,7 +128,10 @@ public:
     Configures and creates the renderpass. Rendeerer will call this function when necessary
     */
     virtual void init(VkDevice &device) = 0;
-
+    /*
+    Use it in case renderpass needs local descriptor sets
+    */
+    virtual void create_descriptors(VkDevice &device, VkPhysicalDevice &gpy, VmaAllocator &memory, uint32_t framesPerFlight) {}
     /*
     Configures and creates the shaderpasses subscribed to the renderpass
     */
@@ -156,7 +158,6 @@ public:
      * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a sepparate function for felxibilty matters
      */
     virtual void cleanup(VkDevice &device);
-
 };
 
 VULKAN_ENGINE_NAMESPACE_END

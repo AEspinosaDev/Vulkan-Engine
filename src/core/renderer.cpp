@@ -38,7 +38,8 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[1]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
+	m_renderPipeline.renderpasses[1]->set_attachment_clear_value({0.0,0.0,0.0,1.0});
+	m_renderPipeline.renderpasses.back()->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -139,7 +140,13 @@ void Renderer::on_awake()
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS, m_settings.depthFormat);
 
+	GeometryPass *geometryPass = new GeometryPass(m_window->get_extent(),
+											   (uint32_t)m_settings.bufferingType + 1,
+											   
+											   m_settings.depthFormat);
+
 	m_renderPipeline.push_renderpass(shadowPass);
+	m_renderPipeline.push_renderpass(geometryPass);
 	m_renderPipeline.push_renderpass(forwardPass);
 }
 
@@ -227,7 +234,7 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPipeline.renderpasses[1]->get_obj(), m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPipeline.renderpasses.back()->get_obj(), m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

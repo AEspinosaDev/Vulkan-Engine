@@ -1,8 +1,8 @@
-#include <engine/renderpasses/shadow_pass.h>
+#include <engine/renderpasses/ssao_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void ShadowPass::init(VkDevice &device)
+void SSAOPass::init(VkDevice &device)
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
@@ -67,7 +67,7 @@ void ShadowPass::init(VkDevice &device)
 
     m_initiatized = true;
 }
-void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
     PipelineBuilder builder;
 
@@ -86,19 +86,17 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
     builder.rasterizer.depthBiasEnable = VK_TRUE;
     builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
 
-    builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
+    builder.depthStencil = init::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS);
 
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
     builder.colorBlending.attachmentCount = 0;
 
     // DEPTH PASS
-    ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows.glsl");
-    depthPass->settings.descriptorSetLayoutIDs =
+    ShaderPass *ssaoPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/ssao.glsl");
+    ssaoPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_LAYOUT, true},
+         {DescriptorLayoutType::OBJECT_LAYOUT, false},
          {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
-    depthPass->settings.attributes =
+    ssaoPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, false},
          {VertexAttributeType::UV, false},
@@ -109,14 +107,14 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
 
     builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
-    ShaderPass::build_shader_stages(device, *depthPass);
+    ShaderPass::build_shader_stages(device, *ssaoPass);
 
-    builder.build_pipeline_layout(device, descriptorManager, *depthPass);
-    builder.build_pipeline(device, m_obj, *depthPass);
+    builder.build_pipeline_layout(device, m_descriptorManager, *ssaoPass);
+    builder.build_pipeline(device, m_obj, *ssaoPass);
 
-    m_shaderPasses["shadow"] = depthPass;
+    m_shaderPasses["ssao"] = ssaoPass;
 }
-void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
+void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
 
@@ -129,7 +127,7 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    ShaderPass *shaderPass = m_shaderPasses["shadow"];
+    ShaderPass *shaderPass = m_shaderPasses["ssao"];
 
     vkCmdSetDepthBiasEnable(cmd, true);
     float depthBiasConstant = 0.0;
@@ -142,34 +140,10 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline); // DEPENDENCY !!!!
 
-    int mesh_idx = 0;
-    for (Mesh *m : scene->get_meshes())
-    {
-        if (m)
-        {
-            if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
-            {
-                uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
-                uint32_t globalOffset = 0; // DEPENDENCY !!!!
+    // Bind normal and depth textures and kernel
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
 
-                for (size_t i = 0; i < m->get_num_geometries(); i++)
-                {
-                    // GLOBAL LAYOUT BINDING
-                    uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
-                    
-                    // PER OBJECT LAYOUT BINDING
-                    uint32_t objectOffsets[] = {objectOffset, objectOffset};
-                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
-                                            &frame.objectDescriptor.descriptorSet, 2, objectOffsets);
-
-                    if (m->get_geometry(i)->is_buffer_loaded())
-                        Geometry::draw(cmd, m->get_geometry(i));
-                }
-            }
-            mesh_idx++;
-        }
-    }
+    Geometry::draw(cmd, m_vignette->get_geometry());
 
     end(cmd);
 }
