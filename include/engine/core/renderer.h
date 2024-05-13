@@ -109,6 +109,14 @@ protected:
 	std::vector<Frame> m_frames;
 
 	RenderPipeline m_renderPipeline;
+	enum DefaultRenderPasses
+	{
+		SHADOW = 0,
+		GEOMETRY = 1,
+		SSAO = 2,
+		// SSAO_BLUR = 3,
+		FORWARD = 3
+	};
 
 	DescriptorManager m_descriptorMng{};
 
@@ -132,7 +140,6 @@ protected:
 public:
 	Renderer(Window *window) : m_window(window) { on_awake(); }
 	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { on_awake(); }
-	Renderer(Window *window, RenderPipeline pipeline, RendererSettings settings = {}) : m_window(window), m_settings(settings), m_renderPipeline(pipeline) { m_frames.resize(MAX_FRAMES_IN_FLIGHT); }
 
 #pragma region Getters & Setters
 
@@ -185,7 +192,7 @@ public:
 	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
-		static_cast<ForwardPass *>(m_renderPipeline.renderpasses[1])->set_gui(gui);
+		static_cast<ForwardPass *>(m_renderPipeline.renderpasses[FORWARD])->set_gui(gui);
 	}
 
 	inline GUIOverlay *get_gui_overlay()
@@ -281,8 +288,6 @@ protected:
 	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing or reconfiguring context
 	*/
 	virtual void update_renderpasses();
-
-	
 
 #pragma endregion
 /*

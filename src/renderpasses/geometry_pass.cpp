@@ -5,9 +5,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 void GeometryPass::init(VkDevice &device)
 {
 
-    std::array<VkAttachmentDescription, 2> attachmentsInfo = {};
+    std::array<VkAttachmentDescription, 3> attachmentsInfo = {};
 
-    // Normals attachment
+    // Position attachment
     attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_UNORM;
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -23,17 +23,35 @@ void GeometryPass::init(VkDevice &device)
                    VK_IMAGE_ASPECT_COLOR_BIT,
                    VK_IMAGE_VIEW_TYPE_2D));
 
-    VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference posRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    // Depth attachment
-    attachmentsInfo[1].format = static_cast<VkFormat>(m_depthFormat);
+    // Normals attachment
+    attachmentsInfo[1].format = VK_FORMAT_R8G8B8A8_UNORM;
     attachmentsInfo[1].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentsInfo[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachmentsInfo[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachmentsInfo[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attachmentsInfo[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    m_attachments.push_back(
+        Attachment(VK_FORMAT_R8G8B8A8_UNORM,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                   VK_IMAGE_ASPECT_COLOR_BIT,
+                   VK_IMAGE_VIEW_TYPE_2D));
+
+    VkAttachmentReference normalRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // Depth attachment
+    attachmentsInfo[2].format = static_cast<VkFormat>(m_depthFormat);
+    attachmentsInfo[2].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentsInfo[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachmentsInfo[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachmentsInfo[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachmentsInfo[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachmentsInfo[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachmentsInfo[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
     m_attachments.push_back(
         Attachment(static_cast<VkFormat>(m_depthFormat),
@@ -41,13 +59,14 @@ void GeometryPass::init(VkDevice &device)
                    VK_IMAGE_ASPECT_DEPTH_BIT,
                    VK_IMAGE_VIEW_TYPE_2D));
 
-    VkAttachmentReference depthRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference depthRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorRef;
+    subpass.colorAttachmentCount = 2;
+    std::array<VkAttachmentReference, 2> colorRefs = {posRef, normalRef};
+    subpass.pColorAttachments = colorRefs.data();
     subpass.pDepthStencilAttachment = &depthRef;
 
     // Subpass dependencies for layout transitions
@@ -108,6 +127,11 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
 
     builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
+    std::array<VkPipelineColorBlendAttachmentState, 2> colorBlendingAttchments = {init::color_blend_attachment_state(), init::color_blend_attachment_state()};
+    builder.colorBlending = init::color_blend_create_info();
+    builder.colorBlending.attachmentCount = 2;
+    builder.colorBlending.pAttachments = colorBlendingAttchments.data();
+
     // Setup shaderpasses
 
     ShaderPass *geomPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/deferred.glsl");
@@ -121,6 +145,7 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
          {VertexAttributeType::UV, false},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
+    geomPass->settings.blending = true;
 
     ShaderPass::build_shader_stages(device, *geomPass);
 
@@ -130,10 +155,10 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
     m_shaderPasses["geometry"] = geomPass;
 }
 void GeometryPass::init_resources(VkDevice &device,
-                                VkPhysicalDevice &gpu,
-                                VmaAllocator &memory,
-                                VkQueue &gfxQueue,
-                                utils::UploadContext &uploadContext)
+                                  VkPhysicalDevice &gpu,
+                                  VmaAllocator &memory,
+                                  VkQueue &gfxQueue,
+                                  utils::UploadContext &uploadContext)
 {
     m_attachments[0].image.create_sampler(
         device,
@@ -145,7 +170,6 @@ void GeometryPass::init_resources(VkDevice &device,
         false,
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-
     m_attachments[1].image.create_sampler(
         device,
         VK_FILTER_LINEAR,
@@ -156,6 +180,20 @@ void GeometryPass::init_resources(VkDevice &device,
         false,
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+
+    m_attachments[2].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+
+    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 0);
+    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 1);
 }
 void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {

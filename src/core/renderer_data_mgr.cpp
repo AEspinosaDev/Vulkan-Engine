@@ -80,8 +80,8 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.proj = camera->get_projection();
 	camData.viewProj = camera->get_projection() * camera->get_view();
 
-	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms),
-															 0);
+	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 0);
+	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_camera_uniforms(m_memory, camData, sizeof(CameraUniforms));
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_active()};
@@ -120,9 +120,13 @@ void Renderer::setup_material(Material *const mat)
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::TEXTURE_LAYOUT, &mat->m_textureDescriptor);
 
 		// Set Shadow Map write
-		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses.front()->get_attachments().front().image.sampler,
-											 m_renderPipeline.renderpasses.front()->get_attachments().front().image.view,
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.view,
 											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
+		// Set SSAO
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO]->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses[SSAO]->get_attachments().front().image.view,
+											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 6);
 	}
 
 	auto textures = mat->get_textures();
@@ -170,9 +174,15 @@ void Renderer::init_resources()
 	m_deletionQueue.push_function([=]()
 								  { Texture::DEBUG_TEXTURE->m_image.cleanup(m_device, m_memory); });
 
+	size_t i = 0;
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		pass->init_resources(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext);
+
+		if (i == 1)
+			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_geometry_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image, pass->get_attachments()[2].image);
+
+		i++;
 	}
 }
 

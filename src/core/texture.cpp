@@ -52,7 +52,7 @@ void Texture::upload_data(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator 
 	stagingBuffer.init(memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	stagingBuffer.upload_data(memory, pixel_ptr, static_cast<size_t>(imageSize));
 
-	free(t->m_tmpCache);
+	// free(t->m_tmpCache);
 
 	uploadContext.immediate_submit(device, gfxQueue, [&](VkCommandBuffer cmd)
 								   { t->m_image.upload_image(cmd, &stagingBuffer); });

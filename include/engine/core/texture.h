@@ -53,6 +53,7 @@ public:
 
     Texture() : m_tmpCache(nullptr), m_depth(1) {}
     Texture(TextureSettings settings) : m_settings(settings), m_tmpCache(nullptr), m_depth(1) {}
+    Texture(unsigned char *data, int w, int h, TextureSettings settings = {}) : m_settings(settings), m_width(w), m_height(h), m_tmpCache(data), m_depth(1) {}
 
     inline bool is_data_loaded() const { return m_loaded; }
     inline bool is_buffer_loaded() const { return m_buffer_loaded; }
@@ -65,6 +66,7 @@ public:
     inline int get_height() const { return m_height; }
     inline int get_depth() const { return m_depth; }
     inline int get_num_channels() const { return m_channels; }
+    inline Image get_image() const { return m_image; }
 
     inline void set_use_mipmaps(bool op) { m_settings.useMipmaps = op; }
     inline void set_anysotropic_filtering(bool op) { m_settings.anisotropicFilter = op; }
@@ -73,10 +75,9 @@ public:
     inline void set_adress_mode(TextureAdressModeType am) { m_settings.adressMode = am; }
 
     void load_image(std::string fileName, bool asyncCall = true);
-    
 
     // Utility function that creates and sends the texture data to the GPU
-    static void upload_data(VkDevice &device, VkPhysicalDevice &gpu ,VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext, Texture *const t);
+    static void upload_data(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext, Texture *const t);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

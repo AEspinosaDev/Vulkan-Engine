@@ -189,6 +189,9 @@ layout(set = 2, binding = 3) uniform sampler2D maskRoughTex;
 layout(set = 2, binding = 4) uniform sampler2D metalTex;
 layout(set = 2, binding = 5) uniform sampler2D occlusionTex;
 
+layout(set = 2, binding = 6) uniform sampler2D ssaoMap;
+
+
 //Surface global properties
 vec3 g_normal;
 vec3 g_albedo;
@@ -257,12 +260,7 @@ float computeShadow(LightUniform light, int lightId) {
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
         return 0.0;
 
-    // // float bias = 0.1;
-    //  vec3 lightDir = scene.type == 0 ? normalize(v_lightPos - v_pos) : normalize(v_lightPos);
-    // float bias = max(0.5 * tan(acos(dot(v_normal, -lightDir))), 0.05);
-
-    // // Apply the bias
-    // bias=  max(bias, 0.5);
+    
     return filterPCF(lightId,int(light.pcfKernel), projCoords, light.shadowBias);
 
 }
@@ -403,5 +401,6 @@ void main() {
 
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+
 
 }

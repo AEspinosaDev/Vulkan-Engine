@@ -12,10 +12,16 @@ class SSAOPass : public RenderPass
 
     const size_t KERNEL_MEMBERS = 64;
 
-    DescriptorManager m_descriptorManager;
+    DescriptorManager m_descriptorManager{};
 
-    DescriptorSet m_descriptorSet;
-    Buffer m_kernelBuffer;
+    DescriptorSet m_descriptorSet{};
+    Buffer m_kernelBuffer{};
+    Buffer m_cameraBuffer{};
+    Texture *m_noiseTexture{nullptr};
+
+    Image m_positionBuffer;
+    Image m_normalsBuffer;
+    Image m_depthBuffer;
 
 public:
     SSAOPass(VkExtent2D extent,
@@ -37,6 +43,14 @@ public:
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
     void cleanup(VkDevice &device, VmaAllocator &memory);
+
+    inline void set_geometry_buffer(Image position, Image normals, Image depth)
+    {
+        m_positionBuffer = position;
+        m_normalsBuffer = normals;
+        m_depthBuffer = depth;
+    }
+    void update_camera_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, size_t size);
 };
 
 VULKAN_ENGINE_NAMESPACE_END

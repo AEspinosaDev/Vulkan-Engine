@@ -38,7 +38,6 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[1]->set_attachment_clear_value({0.0, 0.0, 0.0, 1.0});
 	m_renderPipeline.renderpasses.back()->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 }
 
