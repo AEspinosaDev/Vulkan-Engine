@@ -103,10 +103,9 @@ void RenderPass::clean_framebuffer(VkDevice &device, VmaAllocator &memory, bool 
         m_attachments[i].image.cleanup(device, memory, destroyImageSamplers);
     }
 }
-void RenderPass::update(VkDevice &device, VmaAllocator &memory, uint32_t layers, uint32_t count, Swapchain *swp)
+void RenderPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
 {
-    m_framebufferCount = count;
-    m_framebufferImageDepth = layers;
+   
 
     if (!m_initiatized)
         return;

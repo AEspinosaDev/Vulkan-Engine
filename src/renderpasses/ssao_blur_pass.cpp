@@ -1,8 +1,8 @@
-#include <engine/renderpasses/ssao_pass.h>
+#include <engine/renderpasses/ssao_blur_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void SSAOPass::init(VkDevice &device)
+void SSAOBlurPass::init(VkDevice &device)
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
@@ -66,34 +66,20 @@ void SSAOPass::init(VkDevice &device)
     m_initiatized = true;
 }
 
-void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
+void SSAOBlurPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
 {
-
-    // Init kernel buffer
-
-    const size_t KERNEL_MEMBERS = 64;
-    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4) * KERNEL_MEMBERS, gpu);
-    m_kernelBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
-    const size_t CAMERA_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu);
-    m_cameraBuffer.init(memory, CAMERA_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)CAMERA_SIZE);
-
+   
     // Init and configure local descriptors
     m_descriptorManager.init(device);
-    m_descriptorManager.create_pool(3, 1, 1, 5, 1);
+    m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
-    VkDescriptorSetLayoutBinding positionTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding normalTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding depthTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
-    VkDescriptorSetLayoutBinding noiseTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
-    VkDescriptorSetLayoutBinding kernelBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    VkDescriptorSetLayoutBinding cameraBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 5);
-    VkDescriptorSetLayoutBinding bindings[] = {positionTextureBinding, normalTextureBinding, depthTextureBinding, noiseTextureBinding, kernelBufferBinding, cameraBufferBinding};
-    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 6);
+    VkDescriptorSetLayoutBinding ssaoTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, &ssaoTextureBinding, 1);
 
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
 }
 
-void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
     PipelineBuilder builder;
 
@@ -115,7 +101,7 @@ void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
     builder.depthStencil = init::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS);
 
     // DEPTH PASS
-    ShaderPass *ssaoPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/ssao.glsl");
+    ShaderPass *ssaoPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/ssao_blur.glsl");
     ssaoPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, false},
@@ -134,15 +120,14 @@ void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
     builder.build_pipeline_layout(device, m_descriptorManager, *ssaoPass);
     builder.build_pipeline(device, m_obj, *ssaoPass);
 
-    m_shaderPasses["ssao"] = ssaoPass;
+    m_shaderPasses["ssaoBlur"] = ssaoPass;
 }
-void SSAOPass::init_resources(VkDevice &device,
+void SSAOBlurPass::init_resources(VkDevice &device,
                               VkPhysicalDevice &gpu,
                               VmaAllocator &memory,
                               VkQueue &gfxQueue,
                               utils::UploadContext &uploadContext)
 {
-    Geometry::upload_buffers(device, memory, gfxQueue, uploadContext, m_vignette->get_geometry());
 
     m_attachments[0].image.create_sampler(
         device,
@@ -155,56 +140,10 @@ void SSAOPass::init_resources(VkDevice &device,
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
-    // SSAO KERNEL BUFFER -----------
-    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-    std::default_random_engine generator;
+    m_descriptorManager.set_descriptor_write(m_ssao.sampler, m_ssao.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
 
-    std::vector<Vec4> ssaoKernel;
-    const size_t KERNEL_MEMBERS = 64;
-    ssaoKernel.reserve(KERNEL_MEMBERS);
-    for (unsigned int i = 0; i < KERNEL_MEMBERS; ++i)
-    {
-        Vec4 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator), 0.0f);
-        sample = math::normalize(sample);
-        sample *= randomFloats(generator);
-        float scale = float(i) / 64.0f;
-
-        auto lerp = [](float a, float b, float f)
-        {
-            return a + f * (b - a);
-        };
-
-        // Center importance sampling
-        scale = lerp(0.1f, 1.0f, scale * scale);
-        sample *= scale;
-        ssaoKernel.push_back(sample);
-    }
-
-    const size_t BUFFER_SIZE = sizeof(Vec4) * KERNEL_MEMBERS;
-    m_kernelBuffer.upload_data(memory, ssaoKernel.data(), BUFFER_SIZE);
-
-    /// SSAO NOISE TEXTURE -----------
-    std::vector<Vec3> ssaoNoise;
-    for (unsigned int i = 0; i < 16; i++)
-    {
-        Vec3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0f); // rotate around z-axis (in tangent space)
-        ssaoNoise.push_back(noise);
-    }
-    TextureSettings settings{};
-    settings.anisotropicFilter = false;
-    settings.useMipmaps = false;
-    m_noiseTexture = new Texture(reinterpret_cast<unsigned char *>(ssaoNoise.data()), 4, 4, settings); // Check the unsigned chars
-    Texture::upload_data(device, gpu, memory, gfxQueue, uploadContext, m_noiseTexture);
-
-    m_descriptorManager.set_descriptor_write(m_positionBuffer.sampler, m_positionBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
-    m_descriptorManager.set_descriptor_write(m_normalsBuffer.sampler, m_normalsBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
-    m_descriptorManager.set_descriptor_write(m_depthBuffer.sampler, m_depthBuffer.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptorSet, 2);
-    m_descriptorManager.set_descriptor_write(m_noiseTexture->get_image().sampler, m_noiseTexture->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 3);
-    m_descriptorManager.set_descriptor_write(&m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
-    const size_t CAMERA_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu);
-    m_descriptorManager.set_descriptor_write(&m_cameraBuffer, CAMERA_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 5);
 }
-void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
+void SSAOBlurPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
 
     VkCommandBuffer cmd = frame.commandBuffer;
@@ -218,7 +157,7 @@ void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    ShaderPass *shaderPass = m_shaderPasses["ssao"];
+    ShaderPass *shaderPass = m_shaderPasses["ssaoBlur"];
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
@@ -227,21 +166,13 @@ void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
     end(cmd);
 }
 
-void SSAOPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void SSAOBlurPass::cleanup(VkDevice &device, VmaAllocator &memory)
 {
     RenderPass::cleanup(device, memory);
     m_descriptorManager.cleanup();
-    m_kernelBuffer.cleanup(memory);
-    m_cameraBuffer.cleanup(memory);
-    m_noiseTexture->get_image().cleanup(device, memory);
 }
 
-void SSAOPass::update_camera_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, size_t size)
-{
-    m_cameraBuffer.upload_data(memory, &cameraUniforms, size);
-}
-
-void SSAOPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void SSAOBlurPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
 {
     RenderPass::update(device,memory);
     m_attachments[0].image.create_sampler(
@@ -253,10 +184,9 @@ void SSAOPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
         1.0f,
         false,
         1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
 
-    m_descriptorManager.set_descriptor_write(m_positionBuffer.sampler, m_positionBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
-    m_descriptorManager.set_descriptor_write(m_normalsBuffer.sampler, m_normalsBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
-    m_descriptorManager.set_descriptor_write(m_depthBuffer.sampler, m_depthBuffer.view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptorSet, 2);
+    m_descriptorManager.set_descriptor_write(m_ssao.sampler, m_ssao.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
 }
+
 VULKAN_ENGINE_NAMESPACE_END

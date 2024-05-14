@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef SCENE_H
@@ -24,11 +24,14 @@ private:
     std::vector<Mesh *> m_meshes;
     std::vector<Light *> m_lights;
 
-    // LIGHTING
-    //  For now, just ONE light
-    // Light *m_light{nullptr};
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
     float m_ambientIntensity{0.2f};
+
+    // SSAO
+    bool m_ssao{true};
+    float m_occRadius{0.5};
+    float m_occBias{0.025};
+    float m_ssaoBlurKernel{4};
 
     // FOG
     bool m_fog{true};
@@ -79,23 +82,29 @@ public:
     inline const std::vector<Camera *> get_cameras() const { return m_cameras; }
     inline const std::vector<Light *> get_lights() const { return m_lights; }
 
-    // inline void set_light(Light *l) { m_light = l; }
-    // inline Light *get_light() { return m_light; }
-
     inline void set_ambient_color(Vec3 c) { m_ambientColor = c; }
     inline Vec3 get_ambient_color() const { return m_ambientColor; }
 
     inline void set_ambient_intensity(float i) { m_ambientIntensity = i; }
     inline float get_ambient_intensity() const { return m_ambientIntensity; }
 
-    inline void set_fog_active(bool op) { m_fog = op; }
-    inline bool is_fog_active() const { return m_fog; }
+    inline void enable_fog(bool op) { m_fog = op; }
+    inline bool is_fog_enabled() const { return m_fog; }
 
     inline void set_fog_color(Vec3 c) { m_fogColor = c; }
     inline Vec3 get_fog_color() const { return m_fogColor; }
 
     inline void set_fog_intensity(float i) { m_fogIntensity = i; }
     inline float get_fog_intensity() const { return m_fogIntensity; }
+
+    inline void enable_ssao(bool op) { m_ssao = op; }
+    inline bool is_ssao_enabled() const { return m_ssao; }
+
+    inline void set_ssao_radius(float i) { m_occRadius = i; }
+    inline float get_ssao_radius() const { return m_occRadius; }
+
+    inline void set_ssao_bias(float i) { m_occBias = i; }
+    inline float get_ssao_bias() { return m_occBias; }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

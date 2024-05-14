@@ -1,29 +1,23 @@
-#ifndef SSAO_PASS_H
-#define SSAO_PASS_H
+#ifndef SSAO_BLUR_PASS_H
+#define SSAO_BLUR_PASS_H
 #include <random>
 
 #include <engine/core/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-class SSAOPass : public RenderPass
+class SSAOBlurPass : public RenderPass
 {
     Mesh *m_vignette;
-
 
     DescriptorManager m_descriptorManager{};
 
     DescriptorSet m_descriptorSet{};
-    Buffer m_kernelBuffer{};
-    Buffer m_cameraBuffer{};
-    Texture *m_noiseTexture{nullptr};
 
-    Image m_positionBuffer;
-    Image m_normalsBuffer;
-    Image m_depthBuffer;
+    Image m_ssao;
 
 public:
-    SSAOPass(VkExtent2D extent,
+    SSAOBlurPass(VkExtent2D extent,
              Mesh *vignette) : RenderPass(extent, 1),
                                m_vignette(vignette) {}
 
@@ -43,17 +37,15 @@ public:
 
     void cleanup(VkDevice &device, VmaAllocator &memory);
 
-    inline void set_geometry_buffer(Image position, Image normals, Image depth)
+    inline void set_ssao_buffer(Image ssao)
     {
-        m_positionBuffer = position;
-        m_normalsBuffer = normals;
-        m_depthBuffer = depth;
+       m_ssao = ssao;
     }
-    void update_camera_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, size_t size);
 
-    void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
+      void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
 };
 
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif
+

@@ -14,13 +14,15 @@ layout(location = 0) out vec3 v_pos;
 layout(location = 1) out vec3 v_normal;
 layout(location = 2) out vec2 v_uv;
 layout(location = 3) out vec3 v_modelPos;
-layout(location = 4) out mat3 v_TBN;
+layout(location = 4) out vec2 v_screenExtent;
+layout(location = 5) out mat3 v_TBN;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
     mat4 view;
     mat4 proj;
     mat4 viewProj;
+    vec2 screenExtent;
 } camera;
 
 struct LightUniform{
@@ -40,7 +42,9 @@ struct LightUniform{
 
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 fogColor;
-    float fogExponent;
+
+    bool enableSSAO;
+
     float fogMinDistance;
     float fogMaxDistance;
     float fogIntensity;
@@ -88,7 +92,7 @@ void main() {
 
     gl_Position = camera.viewProj * object.model * vec4(pos, 1.0);
 
-    v_uv = vec2(uv.x * material.tileUV.x, uv.y * material.tileUV.y);
+    v_uv = vec2(uv.x * material.tileUV.x, (1-uv.y) * material.tileUV.y);
 
     mat4 mv = camera.view * object.model;
     v_pos = (mv * vec4(pos, 1.0)).xyz;
@@ -103,6 +107,8 @@ void main() {
     }
 
     v_modelPos = (object.model * vec4(pos, 1.0)).xyz;
+
+    v_screenExtent = camera.screenExtent;
 }
 
 #shader fragment
@@ -115,7 +121,8 @@ layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
 layout(location = 2) in vec2 v_uv;
 layout(location = 3) in vec3 v_modelPos;
-layout(location = 4) in mat3 v_TBN;
+layout(location = 4) in vec2 v_screenExtent;
+layout(location = 5) in mat3 v_TBN;
 
 //Output
 layout(location = 0) out vec4 outColor;
@@ -137,7 +144,9 @@ struct LightUniform{
 
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 fogColor;
-    float fogExponent;
+
+    bool enableSSAO;
+
     float fogMinDistance;
     float fogMaxDistance;
     float fogIntensity;
@@ -386,7 +395,10 @@ void main() {
     }
 
     //Ambient component
-    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * g_ao;
+    float occ = scene.enableSSAO ? texture(ssaoMap, gl_FragCoord.xy+0.5).r : 1.0;
+    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * occ;
+
+
     color += ambient;
 
 	//Tone Up
@@ -402,5 +414,6 @@ void main() {
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
 
+    // outColor.rgb = texture(ssaoMap,gl_FragCoord.xy).rgb;
 
 }

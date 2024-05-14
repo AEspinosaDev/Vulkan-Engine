@@ -48,6 +48,24 @@ void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 		m_window->set_resized(false);
 		update_renderpasses();
 		scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
+
+		for (Mesh *m : scene->get_meshes())
+		{
+			if (m) // If mesh exists
+			{
+				for (size_t i = 0; i < m->get_num_geometries(); i++)
+				{
+					Geometry *g = m->get_geometry(i);
+					Material *mat = m->get_material(g->get_material_ID());
+					if (!mat)
+						return;
+					// Update SSAO descriptor in materials
+					m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
+														 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
+														 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 6);
+				}
+			}
+		}
 	}
 	else if (renderResult != VK_SUCCESS)
 	{
@@ -69,6 +87,7 @@ void Renderer::render(Scene *const scene)
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		update_renderpasses();
+
 		return;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -149,10 +168,12 @@ void Renderer::on_awake()
 								  { vignette->get_geometry()->cleanup(m_memory); });
 
 	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), vignette);
+	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(m_window->get_extent(), vignette);
 
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(geometryPass);
 	m_renderPipeline.push_renderpass(ssaoPass);
+	m_renderPipeline.push_renderpass(ssaoBlurPass);
 	m_renderPipeline.push_renderpass(forwardPass);
 }
 

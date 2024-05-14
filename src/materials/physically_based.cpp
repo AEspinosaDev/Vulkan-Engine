@@ -34,7 +34,7 @@ MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const
     uniforms.dataSlot2 = {m_albedoWeight, m_metalness, m_metalnessWeight, m_roughness};
     uniforms.dataSlot3 = {m_roughnessWeight, m_occlusion, m_occlusionWeight, m_hasAlbedoTexture};
     uniforms.dataSlot4 = {m_hasNormalTexture, m_hasRoughnessTexture, m_hasMetallicTexture, m_hasAOTexture};
-    uniforms.dataSlot5 = {m_hasMaskTexture, m_maskType, m_tileUV.x, -m_tileUV.y};
+    uniforms.dataSlot5 = {m_hasMaskTexture, m_maskType, m_tileUV.x, m_tileUV.y};
 
     return uniforms;
 }

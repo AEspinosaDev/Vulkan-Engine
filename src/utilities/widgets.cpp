@@ -166,10 +166,10 @@ void SceneExplorerWidget::render()
     ImGui::Spacing();
     ImGui::SeparatorText("Fog");
     ImGui::Spacing();
-    bool useFog = m_scene->is_fog_active();
+    bool useFog = m_scene->is_fog_enabled();
     if (ImGui::Checkbox("Use Exponential Fog", &useFog))
     {
-        m_scene->set_fog_active(useFog);
+        m_scene->enable_fog(useFog);
     }
     if (useFog)
     {
@@ -183,6 +183,15 @@ void SceneExplorerWidget::render()
         {
             m_scene->set_fog_intensity(fogDensity);
         }
+    }
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::SeparatorText("SSAO");
+    ImGui::Spacing();
+    bool enableSSAO = m_scene->is_ssao_enabled();
+    if (ImGui::Checkbox("Enable SSAO", &enableSSAO))
+    {
+        m_scene->enable_ssao(enableSSAO);
     }
     ImGui::Separator();
 }
@@ -226,7 +235,7 @@ void ObjectExplorerWidget::render()
                          (m_object->get_rotation().z * 180) / PI};
     if (ImGui::DragFloat3("Rotation", rotation, 0.1f))
     {
-        m_object->set_rotation(Vec3(rotation[0], rotation[1], rotation[2] ));
+        m_object->set_rotation(Vec3(rotation[0], rotation[1], rotation[2]));
     };
     float scale[3] = {m_object->get_scale().x,
                       m_object->get_scale().y,
@@ -556,7 +565,6 @@ void ObjectExplorerWidget::render()
             if (ImGui::DragFloat("Shadow Bias", &bias, 0.0001f, 0.0f, 1.0f))
                 light->set_shadow_bias(bias);
 
-           
             int kernel = light->get_shadow_pcf_kernel();
             if (ImGui::DragInt("PC Filter Kernel", &kernel, 2, 3, 15))
                 light->set_shadow_pcf_kernel(kernel);

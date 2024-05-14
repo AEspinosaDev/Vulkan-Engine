@@ -39,6 +39,7 @@
 #include <engine/renderpasses/shadow_pass.h>
 #include <engine/renderpasses/geometry_pass.h>
 #include <engine/renderpasses/ssao_pass.h>
+#include <engine/renderpasses/ssao_blur_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -114,8 +115,8 @@ protected:
 		SHADOW = 0,
 		GEOMETRY = 1,
 		SSAO = 2,
-		// SSAO_BLUR = 3,
-		FORWARD = 3
+		SSAO_BLUR = 3,
+		FORWARD = 4
 	};
 
 	DescriptorManager m_descriptorMng{};

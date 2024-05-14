@@ -149,13 +149,20 @@ void Renderer::update_renderpasses()
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	// Renderpass framebuffer updating
+	size_t i = 0;
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		if (pass->is_resizeable())
 		{
 			pass->set_extent(m_window->get_extent());
-			pass->update(m_device, m_memory, 1, static_cast<uint32_t>(m_settings.bufferingType) + 1, &m_swapchain);
+			pass->update(m_device, m_memory, &m_swapchain);
 		}
+
+		if (i == GEOMETRY)
+			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_geometry_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image, pass->get_attachments()[2].image);
+		if (i == SSAO)
+			static_cast<SSAOBlurPass *>(m_renderPipeline.renderpasses[SSAO_BLUR])->set_ssao_buffer(pass->get_attachments()[0].image);
+		i++;
 	};
 }
 

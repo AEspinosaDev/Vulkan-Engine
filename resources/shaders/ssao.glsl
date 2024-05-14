@@ -22,7 +22,7 @@ layout(set = 0, binding = 1) uniform sampler2D normalBuffer;
 layout(set = 0, binding = 2) uniform sampler2D depthBuffer;
 layout(set = 0, binding = 3) uniform sampler2D noise;
 layout(set = 0, binding = 4) uniform SampleKernel {
-    vec3 samples[64];
+    vec4 samples[64];
 } kernel;
 layout(set = 0, binding = 5) uniform CameraUniforms {
     mat4 view;
@@ -55,7 +55,7 @@ void main()
     for(int i = 0; i < kernelSize; ++i)
     {
         // get sample position
-        vec3 samplePos = TBN * kernel.samples[i]; // from tangent to view-space
+        vec3 samplePos = TBN * kernel.samples[i].xyz; // from tangent to view-space
         samplePos = position + samplePos * radius; 
         
         // project sample position (to sample texture) (to get position on screen/texture)
@@ -75,6 +75,6 @@ void main()
     occlusion = 1.0 - (occlusion / kernelSize);
 
    outOcclusion = vec4(vec3(occlusion),1.0);
-//    outOcclusion = vec4(1.0f,0.0f,0.0f,1.0f);
+    // outOcclusion = vec4(0.0f,1.0f,0.0f,1.0f);
 }
 

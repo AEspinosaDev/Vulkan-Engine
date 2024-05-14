@@ -18,6 +18,7 @@ struct CameraUniforms
     Mat4 view;
     Mat4 proj;
     Mat4 viewProj;
+    Vec2 screenExtent;
 };
 
 struct LightUniforms
@@ -31,7 +32,7 @@ struct LightUniforms
 
 struct SceneUniforms
 {
-    Vec4 fogColor;     // w is for exponent
+    Vec4 fogColorAndSSAO;     // w is for enabling SSAO
     Vec4 fogParams;    // x for near, y for far, z for intensity, w enable.
     Vec4 ambientColor; // w intensity
     LightUniforms lightUniforms[VK_MAX_LIGHTS];

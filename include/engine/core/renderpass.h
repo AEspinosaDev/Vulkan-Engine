@@ -159,7 +159,8 @@ public:
      * Recreates the renderpass with new parameters. Useful for example, when resizing the screen. It automatically manages framebuffer cleanup and regeneration
      *
      */
-    virtual void update(VkDevice &device, VmaAllocator &memory, uint32_t layers = 1, uint32_t count = 1, Swapchain *swp = nullptr);
+    virtual void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
+    
     /**
      * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a sepparate function for felxibilty matters
      */

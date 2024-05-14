@@ -20,7 +20,7 @@ layout(location = 1) out vec3 v_normal;
 void main() {
 
     v_pos = (camera.view * object.model * vec4(pos,1.0)).rgb;
-    v_normal = normalize(mat3(transpose(inverse( camera.view * object.model))) * normal); //view also !!!!!!
+    v_normal = normalize(mat3(transpose(inverse( camera.view * object.model))) * normal);
     gl_Position = camera.proj * vec4(v_pos,1.0);
 }
 

@@ -59,6 +59,8 @@ void Renderer::upload_object_data(Scene *const scene)
 							setup_material(Material::DEBUG_MATERIAL);
 						setup_material(mat);
 
+						
+
 						// ObjectUniforms materialData;
 						MaterialUniforms materialData = mat->get_uniforms();
 						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
@@ -79,13 +81,14 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.view = camera->get_view();
 	camData.proj = camera->get_projection();
 	camData.viewProj = camera->get_projection() * camera->get_view();
+	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 0);
 	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_camera_uniforms(m_memory, camData, sizeof(CameraUniforms));
 
 	SceneUniforms sceneParams;
-	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_active()};
-	sceneParams.fogColor = Vec4(scene->get_fog_color(), 1.0f);
+	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
+	sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), scene->is_ssao_enabled());
 	sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 
 	std::vector<Light *> lights = scene->get_lights();
@@ -179,8 +182,10 @@ void Renderer::init_resources()
 	{
 		pass->init_resources(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext);
 
-		if (i == 1)
+		if (i == GEOMETRY)
 			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_geometry_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image, pass->get_attachments()[2].image);
+		if (i == SSAO)
+			static_cast<SSAOBlurPass *>(m_renderPipeline.renderpasses[SSAO_BLUR])->set_ssao_buffer(pass->get_attachments()[0].image);
 
 		i++;
 	}
