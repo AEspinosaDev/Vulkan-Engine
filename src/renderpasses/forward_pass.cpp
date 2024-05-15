@@ -6,54 +6,61 @@ void ForwardPass::init(VkDevice &device)
 {
     bool multisampled = m_samples > VK_SAMPLE_COUNT_1_BIT;
 
-    std::array<VkAttachmentDescription, 3> attachmentsInfo = {};
+    std::vector<VkAttachmentDescription> attachmentsInfo;
 
     // Color attachment
-    attachmentsInfo[0].format = static_cast<VkFormat>(m_colorFormat);
-    attachmentsInfo[0].samples = m_samples;
-    attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachmentsInfo[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = static_cast<VkFormat>(m_colorFormat);
+    colorAttachment.samples = m_samples;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachmentsInfo.push_back(colorAttachment);
 
-    m_attachments.push_back(
-        Attachment(static_cast<VkFormat>(m_colorFormat),
-                   VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                   VK_IMAGE_ASPECT_COLOR_BIT,
-                   VK_IMAGE_VIEW_TYPE_2D,
-                   m_samples));
+    Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
+                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, m_samples);
+    _colorAttachment.isPresentImage = multisampled ? false : true;
+    m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    // Resolve attachment
-    attachmentsInfo[1].format = static_cast<VkFormat>(m_colorFormat);
-    attachmentsInfo[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentsInfo[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachmentsInfo[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachmentsInfo[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentsInfo[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachmentsInfo[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[1].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    // // Resolve attachment
+    if (multisampled)
+    {
+        VkAttachmentDescription resolveAttachment{};
+        resolveAttachment.format = static_cast<VkFormat>(m_colorFormat);
+        resolveAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachmentsInfo.push_back(resolveAttachment);
 
-    Attachment resolveAttachment(static_cast<VkFormat>(m_colorFormat),
-                                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_IMAGE_ASPECT_COLOR_BIT);
-    resolveAttachment.isPresentImage = true;
-    m_attachments.push_back(resolveAttachment);
-
+        Attachment _resolveAttachment(static_cast<VkFormat>(m_colorFormat),
+                                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                      VK_IMAGE_ASPECT_COLOR_BIT);
+        _resolveAttachment.isPresentImage = true;
+        m_attachments.push_back(_resolveAttachment);
+    }
     VkAttachmentReference resolveRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // Depth attachment
-    attachmentsInfo[2].format = static_cast<VkFormat>(m_depthFormat);
-    attachmentsInfo[2].samples = m_samples;
-    attachmentsInfo[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachmentsInfo[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachmentsInfo[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentsInfo[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachmentsInfo[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    VkAttachmentDescription depthAttachment{};
+    depthAttachment.format = static_cast<VkFormat>(m_depthFormat);
+    depthAttachment.samples = m_samples;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachmentsInfo.push_back(depthAttachment);
 
     m_attachments.push_back(
         Attachment(static_cast<VkFormat>(m_depthFormat),
@@ -62,7 +69,7 @@ void ForwardPass::init(VkDevice &device)
                    VK_IMAGE_VIEW_TYPE_2D,
                    m_samples));
 
-    VkAttachmentReference depthRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference depthRef = init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
@@ -70,7 +77,7 @@ void ForwardPass::init(VkDevice &device)
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorRef;
     subpass.pDepthStencilAttachment = &depthRef;
-    subpass.pResolveAttachments = &resolveRef;
+    subpass.pResolveAttachments = multisampled ? &resolveRef : nullptr;
 
     // Depdencies
     std::array<VkSubpassDependency, 2> dependencies = {};
@@ -139,7 +146,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
     m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
     m_shaderPasses["unlit"]->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, false},
@@ -151,7 +158,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
     m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
     m_shaderPasses["phong"]->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, true},
@@ -163,7 +170,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
     m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::TEXTURE_LAYOUT, true}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
     m_shaderPasses["physical"]->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, true},
@@ -194,9 +201,6 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
     scissor.offset = {0, 0};
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-    // vkCmdSetDepthTestEnable(cmd, true);
-    // vkCmdSetDepthWriteEnable(cmd, true);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -238,7 +242,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
                         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1, &frame.objectDescriptor.descriptorSet, 2, objectOffsets);
 
                         // TEXTURE LAYOUT BINDING
-                        if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::TEXTURE_LAYOUT])
+                        if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
                             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
 
                         if (g->is_buffer_loaded())
@@ -250,7 +254,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
         }
     }
 
-    //Draw gui contents
+    // Draw gui contents
     if (m_gui)
         m_gui->upload_draw_data(cmd);
 

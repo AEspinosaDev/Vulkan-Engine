@@ -110,7 +110,7 @@ void RenderPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
     if (!m_initiatized)
         return;
 
-    clean_framebuffer(device, memory, false);
+    clean_framebuffer(device, memory, true);
     create_framebuffer(device, memory, swp);
 }
 

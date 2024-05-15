@@ -105,7 +105,7 @@ void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
     ssaoPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, false},
-         {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
     ssaoPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, false},

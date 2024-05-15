@@ -48,24 +48,6 @@ void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 		m_window->set_resized(false);
 		update_renderpasses();
 		scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
-
-		for (Mesh *m : scene->get_meshes())
-		{
-			if (m) // If mesh exists
-			{
-				for (size_t i = 0; i < m->get_num_geometries(); i++)
-				{
-					Geometry *g = m->get_geometry(i);
-					Material *mat = m->get_material(g->get_material_ID());
-					if (!mat)
-						return;
-					// Update SSAO descriptor in materials
-					m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
-														 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
-														 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 6);
-				}
-			}
-		}
 	}
 	else if (renderResult != VK_SUCCESS)
 	{
@@ -146,6 +128,10 @@ void Renderer::render(Scene *const scene)
 }
 void Renderer::on_awake()
 {
+	m_vignette = Mesh::create_quad();
+	m_deletionQueue.push_function([=]()
+								  { m_vignette->get_geometry()->cleanup(m_memory); });
+
 	m_frames.resize(MAX_FRAMES_IN_FLIGHT);
 
 	// Creating default renderpasses
@@ -163,18 +149,23 @@ void Renderer::on_awake()
 
 												  m_settings.depthFormat);
 
-	Mesh *vignette = Mesh::create_quad();
-	m_deletionQueue.push_function([=]()
-								  { vignette->get_geometry()->cleanup(m_memory); });
+	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), m_vignette);
+	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(m_window->get_extent(), m_vignette);
 
-	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), vignette);
-	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(m_window->get_extent(), vignette);
+	CompositionPass *compPass = new CompositionPass(m_window->get_extent(), (uint32_t)m_settings.bufferingType + 1, m_settings.colorFormat, m_vignette);
 
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(geometryPass);
 	m_renderPipeline.push_renderpass(ssaoPass);
 	m_renderPipeline.push_renderpass(ssaoBlurPass);
+	m_renderPipeline.push_renderpass(compPass);
 	m_renderPipeline.push_renderpass(forwardPass);
+
+	if (m_settings.renderingType == RendererType::FORWARD)
+		compPass->set_active(false);
+	else
+		forwardPass->set_active(false);
+
 }
 
 void Renderer::on_init()

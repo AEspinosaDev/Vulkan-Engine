@@ -19,12 +19,11 @@ layout(location = 0) in  vec2 v_uv;
 
 layout(set = 0, binding = 0) uniform sampler2D positionBuffer;
 layout(set = 0, binding = 1) uniform sampler2D normalBuffer;
-layout(set = 0, binding = 2) uniform sampler2D depthBuffer;
-layout(set = 0, binding = 3) uniform sampler2D noise;
-layout(set = 0, binding = 4) uniform SampleKernel {
+layout(set = 0, binding = 2) uniform sampler2D noise;
+layout(set = 0, binding = 3) uniform SampleKernel {
     vec4 samples[64];
 } kernel;
-layout(set = 0, binding = 5) uniform CameraUniforms {
+layout(set = 0, binding = 4) uniform CameraUniforms {
     mat4 view;
     mat4 proj;
     mat4 viewProj;

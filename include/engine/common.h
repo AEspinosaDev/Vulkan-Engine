@@ -157,7 +157,8 @@ typedef enum DescriptorLayoutType
 {
 	GLOBAL_LAYOUT = 0,
 	OBJECT_LAYOUT = 1,
-	TEXTURE_LAYOUT = 2
+	OBJECT_TEXTURE_LAYOUT = 2,
+	G_BUFFER_LAYOUT = 3
 } DescriptorLayoutType;
 
 typedef enum TextureFilterType
@@ -265,7 +266,6 @@ typedef enum RendererType
 {
 	FORWARD = 0,
 	DEFERRED = 1,
-	FORWARD_PLUS = 2
 } RendererType;
 
 // Ahead declaration of some key classes

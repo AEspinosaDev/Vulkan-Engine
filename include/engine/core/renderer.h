@@ -40,6 +40,7 @@
 #include <engine/renderpasses/geometry_pass.h>
 #include <engine/renderpasses/ssao_pass.h>
 #include <engine/renderpasses/ssao_blur_pass.h>
+#include <engine/renderpasses/composition_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -116,12 +117,15 @@ protected:
 		GEOMETRY = 1,
 		SSAO = 2,
 		SSAO_BLUR = 3,
-		FORWARD = 4
+		COMPOSITION = 4,
+		FORWARD = 5
 	};
 
 	DescriptorManager m_descriptorMng{};
 
 	utils::DeletionQueue m_deletionQueue;
+
+	Mesh *m_vignette{nullptr};
 
 	const int MAX_FRAMES_IN_FLIGHT{2};
 
@@ -203,6 +207,12 @@ public:
 	inline void set_hardware_depth_bias(bool op) { m_settings.enableHardwareDepthBias = op; };
 
 	inline RenderPipeline get_render_pipeline() const { return m_renderPipeline; }
+
+	inline void set_rendering_method(RendererType type)
+	{
+		m_settings.renderingType = type;
+		
+	}
 
 #pragma endregion
 #pragma region Core Functions

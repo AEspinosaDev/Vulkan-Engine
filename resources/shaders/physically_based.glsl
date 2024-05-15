@@ -159,6 +159,9 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     int numLights;
 } scene;
 
+layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
+layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
+
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
     vec4 otherParams;
@@ -190,15 +193,12 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec2 tileUV;
 } material;
 
-layout(set = 2, binding = 0) uniform sampler2DArray shadowMap;
 
-layout(set = 2, binding = 1) uniform sampler2D albedoTex;
-layout(set = 2, binding = 2) uniform sampler2D normalTex;
-layout(set = 2, binding = 3) uniform sampler2D maskRoughTex;
-layout(set = 2, binding = 4) uniform sampler2D metalTex;
-layout(set = 2, binding = 5) uniform sampler2D occlusionTex;
-
-layout(set = 2, binding = 6) uniform sampler2D ssaoMap;
+layout(set = 2, binding = 0) uniform sampler2D albedoTex;
+layout(set = 2, binding = 1) uniform sampler2D normalTex;
+layout(set = 2, binding = 2) uniform sampler2D maskRoughTex;
+layout(set = 2, binding = 3) uniform sampler2D metalTex;
+layout(set = 2, binding = 4) uniform sampler2D occlusionTex;
 
 
 //Surface global properties

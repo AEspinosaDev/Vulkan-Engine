@@ -4,6 +4,22 @@ void RendererSettingsWidget::render()
 {
 
     ImGui::SeparatorText("Global settings");
+
+    const char *renderTypes[] = {"FORWARD", "DEFERRED"};
+    static int type_current = static_cast<int>(m_renderer->get_settings().renderingType);
+    if (ImGui::Combo("Rendering Method", &type_current, renderTypes, IM_ARRAYSIZE(renderTypes)))
+    {
+        switch (type_current)
+        {
+        case 0:
+            m_renderer->set_rendering_method(RendererType::FORWARD);
+            break;
+        case 1:
+            m_renderer->set_rendering_method(RendererType::DEFERRED);
+            break;
+        }
+    }
+
     const char *syncs[] = {"NONE", "MAILBOX", "VSYNC"};
     static int sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
     if (ImGui::Combo("Screen Sync", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
@@ -27,8 +43,8 @@ void RendererSettingsWidget::render()
     {
         m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
     }
-   
-    bool hwBias =  m_renderer->get_settings().enableHardwareDepthBias;
+
+    bool hwBias = m_renderer->get_settings().enableHardwareDepthBias;
     if (ImGui::Checkbox("Hardware Depth Bias", &hwBias))
     {
         m_renderer->set_hardware_depth_bias(hwBias);

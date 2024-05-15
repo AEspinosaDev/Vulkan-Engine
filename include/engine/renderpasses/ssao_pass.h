@@ -20,7 +20,6 @@ class SSAOPass : public RenderPass
 
     Image m_positionBuffer;
     Image m_normalsBuffer;
-    Image m_depthBuffer;
 
 public:
     SSAOPass(VkExtent2D extent,
@@ -43,12 +42,8 @@ public:
 
     void cleanup(VkDevice &device, VmaAllocator &memory);
 
-    inline void set_geometry_buffer(Image position, Image normals, Image depth)
-    {
-        m_positionBuffer = position;
-        m_normalsBuffer = normals;
-        m_depthBuffer = depth;
-    }
+     void set_g_buffer(Image position, Image normals);
+    
     void update_camera_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, size_t size);
 
     void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);

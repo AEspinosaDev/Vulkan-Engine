@@ -5,7 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 void GeometryPass::init(VkDevice &device)
 {
 
-    std::array<VkAttachmentDescription, 3> attachmentsInfo = {};
+    std::array<VkAttachmentDescription, 5> attachmentsInfo = {};
 
     // Position attachment
     attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -43,15 +43,51 @@ void GeometryPass::init(VkDevice &device)
 
     VkAttachmentReference normalRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    // Depth attachment
-    attachmentsInfo[2].format = static_cast<VkFormat>(m_depthFormat);
+    // Albedo attachment
+    attachmentsInfo[2].format = VK_FORMAT_R8G8B8A8_UNORM;
     attachmentsInfo[2].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentsInfo[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachmentsInfo[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachmentsInfo[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attachmentsInfo[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    m_attachments.push_back(
+        Attachment(VK_FORMAT_R8G8B8A8_UNORM,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                   VK_IMAGE_ASPECT_COLOR_BIT,
+                   VK_IMAGE_VIEW_TYPE_2D));
+
+    VkAttachmentReference albedoRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // Material attachment
+    attachmentsInfo[3].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachmentsInfo[3].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentsInfo[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachmentsInfo[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachmentsInfo[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachmentsInfo[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachmentsInfo[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachmentsInfo[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    m_attachments.push_back(
+        Attachment(VK_FORMAT_R8G8B8A8_UNORM,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                   VK_IMAGE_ASPECT_COLOR_BIT,
+                   VK_IMAGE_VIEW_TYPE_2D));
+
+    VkAttachmentReference materialRef = init::attachment_reference(3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // Depth attachment
+    attachmentsInfo[4].format = static_cast<VkFormat>(m_depthFormat);
+    attachmentsInfo[4].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentsInfo[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachmentsInfo[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachmentsInfo[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachmentsInfo[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachmentsInfo[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachmentsInfo[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
     m_attachments.push_back(
         Attachment(static_cast<VkFormat>(m_depthFormat),
@@ -59,13 +95,13 @@ void GeometryPass::init(VkDevice &device)
                    VK_IMAGE_ASPECT_DEPTH_BIT,
                    VK_IMAGE_VIEW_TYPE_2D));
 
-    VkAttachmentReference depthRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference depthRef = init::attachment_reference(4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 2;
-    std::array<VkAttachmentReference, 2> colorRefs = {posRef, normalRef};
+    subpass.colorAttachmentCount = 4;
+    std::array<VkAttachmentReference, 4> colorRefs = {posRef, normalRef,albedoRef,materialRef};
     subpass.pColorAttachments = colorRefs.data();
     subpass.pDepthStencilAttachment = &depthRef;
 
@@ -127,9 +163,9 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
 
     builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
-    std::array<VkPipelineColorBlendAttachmentState, 2> colorBlendingAttchments = {init::color_blend_attachment_state(), init::color_blend_attachment_state()};
+    std::array<VkPipelineColorBlendAttachmentState, 4> colorBlendingAttchments = {init::color_blend_attachment_state(), init::color_blend_attachment_state()};
     builder.colorBlending = init::color_blend_create_info();
-    builder.colorBlending.attachmentCount = 2;
+    builder.colorBlending.attachmentCount = 4;
     builder.colorBlending.pAttachments = colorBlendingAttchments.data();
 
     // Setup shaderpasses
@@ -138,11 +174,11 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
     geomPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
     geomPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, true},
-         {VertexAttributeType::UV, false},
+         {VertexAttributeType::UV, true},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
     geomPass->settings.blending = true;
@@ -160,40 +196,12 @@ void GeometryPass::init_resources(VkDevice &device,
                                   VkQueue &gfxQueue,
                                   utils::UploadContext &uploadContext)
 {
-    m_attachments[0].image.create_sampler(
-        device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-    m_attachments[1].image.create_sampler(
-        device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-
-    m_attachments[2].image.create_sampler(
-        device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+    create_g_buffer_samplers(device);
 
     set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 0);
     set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 1);
+    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 2);
+    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 3);
 }
 void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
@@ -247,6 +255,11 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
 void GeometryPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
 {
     RenderPass::update(device, memory);
+    create_g_buffer_samplers(device);
+}
+
+void GeometryPass::create_g_buffer_samplers(VkDevice &device)
+{
     m_attachments[0].image.create_sampler(
         device,
         VK_FILTER_LINEAR,
@@ -278,6 +291,18 @@ void GeometryPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp
         false,
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-}
 
+    m_attachments[3].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+
+
+}
 VULKAN_ENGINE_NAMESPACE_END

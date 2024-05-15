@@ -97,7 +97,7 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
     depthPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::TEXTURE_LAYOUT, false}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
     depthPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, false},

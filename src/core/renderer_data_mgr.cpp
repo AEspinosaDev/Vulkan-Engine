@@ -59,8 +59,6 @@ void Renderer::upload_object_data(Scene *const scene)
 							setup_material(Material::DEBUG_MATERIAL);
 						setup_material(mat);
 
-						
-
 						// ObjectUniforms materialData;
 						MaterialUniforms materialData = mat->get_uniforms();
 						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
@@ -119,18 +117,7 @@ void Renderer::upload_global_data(Scene *const scene)
 void Renderer::setup_material(Material *const mat)
 {
 	if (!mat->m_textureDescriptor.allocated)
-	{
-		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::TEXTURE_LAYOUT, &mat->m_textureDescriptor);
-
-		// Set Shadow Map write
-		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.sampler,
-											 m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.view,
-											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 0);
-		// Set SSAO
-		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO]->get_attachments().front().image.sampler,
-											 m_renderPipeline.renderpasses[SSAO]->get_attachments().front().image.view,
-											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, 6);
-	}
+		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, &mat->m_textureDescriptor);
 
 	auto textures = mat->get_textures();
 	for (auto pair : textures)
@@ -149,7 +136,7 @@ void Renderer::setup_material(Material *const mat)
 			// Set texture write
 			if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
 			{
-				m_descriptorMng.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
+				m_descriptorMng.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
 				mat->set_texture_binding_state(pair.first, true);
 				texture->m_isDirty = false;
 			}
@@ -158,7 +145,7 @@ void Renderer::setup_material(Material *const mat)
 		{
 			// SET DUMMY TEXTURE
 			if (!mat->get_texture_binding_state()[pair.first])
-				m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first + 1);
+				m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
 			mat->set_texture_binding_state(pair.first, true);
 		}
 	}
@@ -168,6 +155,8 @@ void Renderer::setup_material(Material *const mat)
 
 void Renderer::init_resources()
 {
+	// Setup vignette vertex buffers
+	Geometry::upload_buffers(m_device, m_memory, m_graphicsQueue, m_uploadContext, m_vignette->get_geometry());
 
 	// Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
@@ -183,11 +172,24 @@ void Renderer::init_resources()
 		pass->init_resources(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext);
 
 		if (i == GEOMETRY)
-			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_geometry_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image, pass->get_attachments()[2].image);
+			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_g_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image);
 		if (i == SSAO)
 			static_cast<SSAOBlurPass *>(m_renderPipeline.renderpasses[SSAO_BLUR])->set_ssao_buffer(pass->get_attachments()[0].image);
 
 		i++;
+	}
+	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image,m_descriptorMng);
+
+	// Set global textures descriptor writes
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.view,
+											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 2);
+
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
+											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
 	}
 }
 
