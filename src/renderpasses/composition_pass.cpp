@@ -20,7 +20,7 @@ void CompositionPass::init(VkDevice &device)
     Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
                                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                 VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D);
-    _colorAttachment.isPresentImage =  true;
+    _colorAttachment.isPresentImage = true;
     m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -102,6 +102,12 @@ void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &desc
     // Allocate to global manager the gBuffer descritpro
     descriptorManager.allocate_descriptor_set(DescriptorLayoutType::G_BUFFER_LAYOUT, &m_GBufferDescriptor);
 }
+void CompositionPass::init_resources(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext)
+{
+    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4), gpu);
+    m_uniformBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+}
+
 void CompositionPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
@@ -147,5 +153,21 @@ void CompositionPass::set_g_buffer(Image position, Image normals, Image albedo, 
     descriptorManager.set_descriptor_write(m_Gbuffer[1].sampler, m_Gbuffer[1].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 1);
     descriptorManager.set_descriptor_write(m_Gbuffer[2].sampler, m_Gbuffer[2].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 2);
     descriptorManager.set_descriptor_write(m_Gbuffer[3].sampler, m_Gbuffer[3].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 3);
+    descriptorManager.set_descriptor_write(&m_uniformBuffer, sizeof(Vec4), 0, &m_GBufferDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
+}
+void CompositionPass::update_aux_uniforms(VmaAllocator &memory)
+{
+    struct AuxUniforms{
+        Vec4 data;
+    };
+    AuxUniforms aux;
+    aux.data = {m_outputType, 0.0f, 0.0f, 0.0f};
+    m_uniformBuffer.upload_data(memory, &aux.data, sizeof(Vec4));
+}
+
+void CompositionPass::cleanup(VkDevice &device, VmaAllocator &memory)
+{
+    RenderPass::cleanup(device, memory);
+    m_uniformBuffer.cleanup(memory);
 }
 VULKAN_ENGINE_NAMESPACE_END

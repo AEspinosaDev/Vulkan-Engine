@@ -23,6 +23,7 @@ struct MaterialSettings
     CullingMode culling{_BACK};
     bool depthTest{true};
     bool depthWrite{true};
+    bool alphaTest{false};
 };
 
 class Material
@@ -62,6 +63,7 @@ public:
     virtual inline void set_culling_type(CullingMode t) { m_settings.culling = t; }
     virtual inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
     virtual inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
+    virtual inline void enable_alpha_test(bool op) { m_settings.alphaTest = op; }
 
     virtual inline DescriptorSet& get_texture_descriptor()  { return m_textureDescriptor; }
 };

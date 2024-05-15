@@ -19,6 +19,35 @@ void RendererSettingsWidget::render()
             break;
         }
     }
+    if (type_current == 1)
+    {
+        const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO" , "MATERIAL", "AO"};
+        static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
+        if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
+        {
+            switch (otype_current)
+            {
+            case 0:
+                m_renderer->set_deferred_output_type(0);
+                break;
+            case 1:
+                m_renderer->set_deferred_output_type(1);
+                break;
+            case 2:
+                m_renderer->set_deferred_output_type(2);
+                break;
+            case 3:
+                m_renderer->set_deferred_output_type(3);
+                break;
+            case 4:
+                m_renderer->set_deferred_output_type(4);
+                break;
+            case 5:
+                m_renderer->set_deferred_output_type(5);
+                break;
+            }
+        }
+    }
 
     const char *syncs[] = {"NONE", "MAILBOX", "VSYNC"};
     static int sync_current = static_cast<int>(m_renderer->get_settings().screenSync);

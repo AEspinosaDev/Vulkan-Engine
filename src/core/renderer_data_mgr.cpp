@@ -83,6 +83,7 @@ void Renderer::upload_global_data(Scene *const scene)
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 0);
 	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_aux_uniforms(m_memory, camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_gpu));
+	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_aux_uniforms(m_memory);
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};

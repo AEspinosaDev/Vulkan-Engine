@@ -52,6 +52,7 @@ struct MaterialUniforms
     Vec4 dataSlot3;
     Vec4 dataSlot4;
     Vec4 dataSlot5;
+    Vec4 dataSlot6;
 };
 
 VULKAN_ENGINE_NAMESPACE_END

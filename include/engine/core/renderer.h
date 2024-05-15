@@ -211,7 +211,15 @@ public:
 	inline void set_rendering_method(RendererType type)
 	{
 		m_settings.renderingType = type;
-		
+	}
+	inline void set_deferred_output_type(int op)
+	{
+		if (m_initialized)
+			static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_output_type(op);
+	}
+	inline int get_deferred_output_type() const
+	{
+		return static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->get_output_type();
 	}
 
 #pragma endregion

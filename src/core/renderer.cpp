@@ -40,7 +40,7 @@ void Renderer::on_before_render(Scene *const scene)
 
 	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
-	// static_cast<GeometryPass *>(m_renderPipeline.renderpasses[GEOMETRY])->set_g_buffer_clear_color(Vec4(1.0));
+	 //static_cast<GeometryPass *>(m_renderPipeline.renderpasses[GEOMETRY])->set_g_buffer_clear_color(m_settings.clearColor);
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)

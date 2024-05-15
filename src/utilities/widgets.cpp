@@ -240,9 +240,9 @@ void ObjectExplorerWidget::render()
     {
         m_object->set_position(Vec3(position[0], position[1], position[2]));
     };
-    float rotation[3] = {(m_object->get_rotation().x) ,
-                         (m_object->get_rotation().y) ,
-                         (m_object->get_rotation().z) };
+    float rotation[3] = {(m_object->get_rotation().x),
+                         (m_object->get_rotation().y),
+                         (m_object->get_rotation().z)};
     if (ImGui::DragFloat3("Rotation", rotation, 0.1f))
     {
         m_object->set_rotation(Vec3(rotation[0], rotation[1], rotation[2]));
@@ -372,6 +372,11 @@ void ObjectExplorerWidget::render()
                         break;
                     }
                 };
+            }
+            bool alphatest = model->get_material(i)->get_parameters().alphaTest;
+            if (ImGui::Checkbox("Alpha Test", &alphatest))
+            {
+                model->get_material(i)->enable_alpha_test(alphatest);
             }
             ImGui::Text("BLENDING AND OPACITY UNSUPORTED FOR NOW");
             const char *blending[] = {"NORMAL", "ADDITIVE", "CUSTOM"};

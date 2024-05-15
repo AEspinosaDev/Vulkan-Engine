@@ -17,8 +17,15 @@ layout(set = 1, binding = 0) uniform ObjectUniforms {
 } object;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
-    vec3 albedo;
+     vec3 albedo;
     float opacity;
+
+    vec2 tileUV;
+
+    bool alphaTest;
+
+    float unused;
+
     float albedoWeight;
 
     float metalness;
@@ -38,8 +45,6 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
     bool hasMaskTexture;
     int maskType;
-
-    vec2 tileUV;
 } material;
 
 layout(location = 0) out vec3 v_pos;
@@ -75,8 +80,15 @@ layout(location = 2) in vec2 v_uv;
 layout(location = 3) in mat3 v_TBN;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
-    vec3 albedo;
+     vec3 albedo;
     float opacity;
+
+    vec2 tileUV;
+
+    bool alphaTest;
+
+    float unused;
+
     float albedoWeight;
 
     float metalness;
@@ -96,8 +108,6 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
     bool hasMaskTexture;
     int maskType;
-
-    vec2 tileUV;
 } material;
 
 
@@ -121,11 +131,13 @@ layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outAlbedo;
 layout(location = 3) out vec4 outMaterial;
 
+const float EPSILON = 0.1;
+
 
 void setupSurfaceProperties(){
   //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
-    g_opacity = material.opacity;
+    g_opacity =  material.hasAlbdoTexture ?  texture(albedoTex, v_uv).a :material.opacity;
     g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : normalize( v_normal  * 0.5f + 0.5f);
 
     if(material.hasMaskTexture) {
@@ -158,4 +170,7 @@ void main() {
     outNormal = vec4( g_normal , 1.0f );
     outAlbedo = vec4(g_albedo,g_opacity);
     outMaterial = vec4(g_material, 1.0); //w material id
+
+     if(material.alphaTest)
+        if(g_opacity<1-EPSILON)discard;
 }

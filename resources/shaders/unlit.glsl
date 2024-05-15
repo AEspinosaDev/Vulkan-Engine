@@ -52,11 +52,14 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
 layout(set = 1, binding = 1) uniform MaterialUniforms {
      vec4 color;
     vec2 tile;
+    bool alphaTest;
     float hasColorTexture;
     float hasOpacityTexture;
 } material;
 
 layout(location = 0) out vec4 outColor;
+
+const float EPSILON = 0.1;
 
 float computeFog() {
     float z = (2.0 * scene.fogParams.x) / (scene.fogParams.y + scene.fogParams.x - gl_FragCoord.z * (scene.fogParams.y - scene.fogParams.x));
@@ -77,4 +80,7 @@ void main() {
 
      float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+
+    if(material.alphaTest)
+        if(material.color.a<1-EPSILON)discard;
 }

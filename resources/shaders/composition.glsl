@@ -70,6 +70,9 @@ layout(set = 3, binding = 0) uniform sampler2D positionBuffer;
 layout(set = 3, binding = 1) uniform sampler2D normalBuffer;
 layout(set = 3, binding = 2) uniform sampler2D albedoBuffer;
 layout(set = 3, binding = 3) uniform sampler2D materialBuffer;
+layout(set = 3, binding = 4) uniform AuxUniforms {
+    vec4 outputType;
+} aux;
 
 
 layout(location = 0) out vec4 outColor;
@@ -246,7 +249,7 @@ void main()
     g_normal = normalize(texture(normalBuffer,v_uv).rgb * 2.0 - 1.0);
     g_albedo =  texture(albedoBuffer,v_uv).rgb;
     g_material = texture(materialBuffer,v_uv);
-    g_opacity = 1.0;
+    // g_opacity = 1.0;
     g_ao =  texture(ssaoMap,v_uv).r;
 
 
@@ -288,6 +291,25 @@ void main()
 
     if(g_depth >= 1.0) discard; // Leave for background
 
-//  outColor = vec4(texture(ssaoMap,v_uv).rgb,1.0);
+
+    //DIFFERENT G BUFFER OUTPUTS FOR DEBUGGING PURPOSES
+    switch(int(aux.outputType.x)){
+            case 1:
+                 outColor = vec4(texture(positionBuffer,v_uv).rgb,1.0);
+                break;
+            case 2:
+                 outColor = vec4(texture(normalBuffer,v_uv).rgb,1.0);
+                break;
+            case 3:
+                 outColor = vec4(texture(albedoBuffer,v_uv).rgb,1.0);
+                break;
+            case 4:
+                 outColor = vec4(texture(materialBuffer,v_uv).rgb,1.0);
+                break;
+            case 5:
+                 outColor = vec4(texture(ssaoMap,v_uv).rgb,1.0);
+                break;
+    }
+
 }
 
