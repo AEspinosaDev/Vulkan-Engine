@@ -74,8 +74,8 @@ void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
     const size_t KERNEL_MEMBERS = 64;
     const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4) * KERNEL_MEMBERS, gpu);
     m_kernelBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
-    const size_t CAMERA_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu);
-    m_cameraBuffer.init(memory, CAMERA_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)CAMERA_SIZE);
+    const size_t AUX_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), gpu);
+    m_auxBuffer.init(memory, AUX_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)AUX_SIZE);
 
     // Init and configure local descriptors
     m_descriptorManager.init(device);
@@ -85,8 +85,8 @@ void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
     VkDescriptorSetLayoutBinding normalTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding noiseTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
     VkDescriptorSetLayoutBinding kernelBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
-    VkDescriptorSetLayoutBinding cameraBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    VkDescriptorSetLayoutBinding bindings[] = {positionTextureBinding, normalTextureBinding, noiseTextureBinding, kernelBufferBinding, cameraBufferBinding};
+    VkDescriptorSetLayoutBinding auxBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    VkDescriptorSetLayoutBinding bindings[] = {positionTextureBinding, normalTextureBinding, noiseTextureBinding, kernelBufferBinding, auxBufferBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 5);
 
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
@@ -196,8 +196,8 @@ void SSAOPass::init_resources(VkDevice &device,
 
     m_descriptorManager.set_descriptor_write(m_noiseTexture->get_image().sampler, m_noiseTexture->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 2);
     m_descriptorManager.set_descriptor_write(&m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3);
-    const size_t CAMERA_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu);
-    m_descriptorManager.set_descriptor_write(&m_cameraBuffer, CAMERA_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
+    const size_t AUX_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), gpu);
+    m_descriptorManager.set_descriptor_write(&m_auxBuffer, AUX_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
 }
 void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
@@ -227,7 +227,7 @@ void SSAOPass::cleanup(VkDevice &device, VmaAllocator &memory)
     RenderPass::cleanup(device, memory);
     m_descriptorManager.cleanup();
     m_kernelBuffer.cleanup(memory);
-    m_cameraBuffer.cleanup(memory);
+    m_auxBuffer.cleanup(memory);
     m_noiseTexture->get_image().cleanup(device, memory);
 }
 
@@ -240,9 +240,18 @@ void SSAOPass::set_g_buffer(Image position, Image normals)
     m_descriptorManager.set_descriptor_write(m_positionBuffer.sampler, m_positionBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
     m_descriptorManager.set_descriptor_write(m_normalsBuffer.sampler, m_normalsBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
 }
-void SSAOPass::update_camera_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, size_t size)
+void SSAOPass::update_aux_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size)
 {
-    m_cameraBuffer.upload_data(memory, &cameraUniforms, size);
+    struct AuxData{
+        CameraUniforms cam;
+        Vec2 ssaoParams;
+    };
+
+    AuxData data;
+    data.cam = cameraUniforms;
+    data.ssaoParams = ssaoParams; 
+
+    m_auxBuffer.upload_data(memory, &data, size);
 }
 
 void SSAOPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)

@@ -395,8 +395,8 @@ void main() {
     }
 
     //Ambient component
-    float occ = scene.enableSSAO ? texture(ssaoMap, gl_FragCoord.xy+0.5).r : 1.0;
-    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * occ;
+    float occ = scene.enableSSAO ? texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r : 1.0;
+    vec3 ambient = (scene.ambientIntensity * 0.1 * scene.ambientColor) * g_albedo * occ;
 
 
     color += ambient;
@@ -413,7 +413,5 @@ void main() {
 
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
-
-    // outColor.rgb = texture(ssaoMap,gl_FragCoord.xy).rgb;
 
 }

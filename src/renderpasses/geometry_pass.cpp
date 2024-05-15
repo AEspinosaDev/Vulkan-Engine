@@ -8,7 +8,7 @@ void GeometryPass::init(VkDevice &device)
     std::array<VkAttachmentDescription, 5> attachmentsInfo = {};
 
     // Position attachment
-    attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachmentsInfo[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -18,7 +18,7 @@ void GeometryPass::init(VkDevice &device)
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_attachments.push_back(
-        Attachment(VK_FORMAT_R8G8B8A8_UNORM,
+        Attachment(VK_FORMAT_R32G32B32A32_SFLOAT,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT,
                    VK_IMAGE_VIEW_TYPE_2D));
@@ -101,7 +101,7 @@ void GeometryPass::init(VkDevice &device)
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 4;
-    std::array<VkAttachmentReference, 4> colorRefs = {posRef, normalRef,albedoRef,materialRef};
+    std::array<VkAttachmentReference, 4> colorRefs = {posRef, normalRef, albedoRef, materialRef};
     subpass.pColorAttachments = colorRefs.data();
     subpass.pDepthStencilAttachment = &depthRef;
 
@@ -163,7 +163,12 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
 
     builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
-    std::array<VkPipelineColorBlendAttachmentState, 4> colorBlendingAttchments = {init::color_blend_attachment_state(), init::color_blend_attachment_state()};
+    std::array<VkPipelineColorBlendAttachmentState, 4> colorBlendingAttchments = {
+        init::color_blend_attachment_state(),
+        init::color_blend_attachment_state(),
+        init::color_blend_attachment_state(),
+        init::color_blend_attachment_state()};
+
     builder.colorBlending = init::color_blend_create_info();
     builder.colorBlending.attachmentCount = 4;
     builder.colorBlending.pAttachments = colorBlendingAttchments.data();
@@ -174,7 +179,7 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
     geomPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
     geomPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, true},
@@ -197,11 +202,6 @@ void GeometryPass::init_resources(VkDevice &device,
                                   utils::UploadContext &uploadContext)
 {
     create_g_buffer_samplers(device);
-
-    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 0);
-    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 1);
-    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 2);
-    set_attachment_clear_value({0.0, 0.0, 0.0, 1.0}, 3);
 }
 void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
@@ -241,8 +241,18 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
                                             &frame.objectDescriptor.descriptorSet, 2, objectOffsets);
 
+                    // TEXTURE LAYOUT BINDING
+                    Geometry *g = m->get_geometry(i);
+                    Material *mat = m->get_material(g->get_material_ID());
+
+                    // // Setup per object render state
+                    // vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
+                    // vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
+                    // vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
+                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
+
                     if (m->get_geometry(i)->is_buffer_loaded())
-                        Geometry::draw(cmd, m->get_geometry(i));
+                        Geometry::draw(cmd, g);
                 }
             }
             mesh_idx++;
@@ -255,7 +265,9 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
 void GeometryPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
 {
     RenderPass::update(device, memory);
+
     create_g_buffer_samplers(device);
+    set_g_buffer_clear_color(Vec4(0.0));
 }
 
 void GeometryPass::create_g_buffer_samplers(VkDevice &device)
@@ -302,7 +314,13 @@ void GeometryPass::create_g_buffer_samplers(VkDevice &device)
         false,
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
+}
 
-
+void GeometryPass::set_g_buffer_clear_color(Vec4 color)
+{
+    set_attachment_clear_value({color.r, color.g, color.b, color.a}, 0);
+    set_attachment_clear_value({color.r, color.g, color.b, color.a}, 1);
+    set_attachment_clear_value({color.r, color.g, color.b, color.a}, 2);
+    set_attachment_clear_value({color.r, color.g, color.b, color.a}, 3);
 }
 VULKAN_ENGINE_NAMESPACE_END

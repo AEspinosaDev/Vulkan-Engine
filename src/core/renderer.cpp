@@ -38,7 +38,8 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses.back()->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
+	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
+	static_cast<GeometryPass*>(m_renderPipeline.renderpasses[GEOMETRY])->set_g_buffer_clear_color(m_settings.clearColor);
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -165,7 +166,6 @@ void Renderer::on_awake()
 		compPass->set_active(false);
 	else
 		forwardPass->set_active(false);
-
 }
 
 void Renderer::on_init()
@@ -252,7 +252,14 @@ void Renderer::init_gui()
 {
 	if (m_gui)
 	{
-		m_gui->init(m_instance, m_device, m_gpu, m_graphicsQueue, m_renderPipeline.renderpasses.back()->get_obj(), m_swapchain.get_image_format(), (VkSampleCountFlagBits)m_settings.AAtype, m_window->get_window_obj());
+		m_gui->init(m_instance,
+					m_device,
+					m_gpu,
+					m_graphicsQueue,
+					m_renderPipeline.renderpasses[m_settings.renderingType == RendererType::FORWARD ? DefaultRenderPasses::FORWARD : COMPOSITION]->get_obj(),
+					m_swapchain.get_image_format(),
+					(VkSampleCountFlagBits)m_settings.AAtype,
+					m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_device); });
 	}

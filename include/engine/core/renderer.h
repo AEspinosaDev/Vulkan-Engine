@@ -49,7 +49,7 @@ Renderer Global Settings Data
 */
 struct RendererSettings
 {
-	RendererType renderingType{FORWARD};
+	RendererType renderingType{DEFERRED};
 
 	AntialiasingType AAtype{MSAA_x4};
 	BufferingType bufferingType{_DOUBLE};

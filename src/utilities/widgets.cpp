@@ -189,9 +189,19 @@ void SceneExplorerWidget::render()
     ImGui::SeparatorText("SSAO");
     ImGui::Spacing();
     bool enableSSAO = m_scene->is_ssao_enabled();
-    if (ImGui::Checkbox("Enable SSAO", &enableSSAO))
+    if (ImGui::Checkbox("Enable", &enableSSAO))
     {
         m_scene->enable_ssao(enableSSAO);
+    }
+    float ssaoRad = m_scene->get_ssao_radius();
+    if (ImGui::DragFloat("Radius", &ssaoRad, .1f, 0.0f, 5.0f))
+    {
+        m_scene->set_ssao_radius(ssaoRad);
+    }
+    float ssaoBias = m_scene->get_ssao_bias();
+    if (ImGui::DragFloat("Bias", &ssaoBias, .01f, 0.0f, 5.0f))
+    {
+        m_scene->set_ssao_bias(ssaoBias);
     }
     ImGui::Separator();
 }

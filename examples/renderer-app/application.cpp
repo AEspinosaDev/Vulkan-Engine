@@ -16,7 +16,7 @@ void VulkanRenderer::init()
                                          std::placeholders::_4));
 
     RendererSettings settings{};
-    settings.AAtype = AntialiasingType::MSAA_x8;
+    settings.AAtype = AntialiasingType::_NONE;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
     // settings.shadowResolution = ShadowResolution::ULTRA;
@@ -121,7 +121,7 @@ void VulkanRenderer::setup()
     m_lightDummy->set_material(lightMat);
     m_lightDummy->set_scale(0.5f);
     m_lightDummy->set_name("Light Gizmo");
-    m_scene->add(m_lightDummy);
+    // m_scene->add(m_lightDummy);
 
     Mesh *kabutoMesh = new Mesh();
     kabutoMesh->load_file(MESH_PATH + "kabuto.obj");

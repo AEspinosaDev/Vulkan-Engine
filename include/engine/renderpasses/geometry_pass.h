@@ -28,6 +28,8 @@ public:
     void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
 
     void create_g_buffer_samplers(VkDevice &device);
+
+    void set_g_buffer_clear_color(Vec4 color);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

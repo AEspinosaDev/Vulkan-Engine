@@ -23,18 +23,20 @@ layout(set = 0, binding = 2) uniform sampler2D noise;
 layout(set = 0, binding = 3) uniform SampleKernel {
     vec4 samples[64];
 } kernel;
-layout(set = 0, binding = 4) uniform CameraUniforms {
+layout(set = 0, binding = 4) uniform AuxUniforms {
     mat4 view;
     mat4 proj;
     mat4 viewProj;
-} camera;
+    vec2 screenExtent;
+    vec2 ssaoParams; //x radius and y bias
+} aux;
 
 layout(location = 0) out vec4 outOcclusion;
 
 // parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
-int kernelSize = 64;
-float radius = 0.5;
-float bias = 0.025;
+const int KERNEL_SIZE = 64;
+float radius = aux.ssaoParams.x;
+float bias = aux.ssaoParams.y;
 
 // tile noise texture over screen based on screen dimensions divided by noise size
 const vec2 noiseScale = vec2(800.0/4.0, 600.0/4.0); 
@@ -43,7 +45,7 @@ const vec2 noiseScale = vec2(800.0/4.0, 600.0/4.0);
 void main()
 {
     vec3 position = vec3(texture(positionBuffer, v_uv).rgb);
-    vec3 normal =  normalize(texture(normalBuffer, v_uv).rgb);
+    vec3 normal =  normalize(texture(normalBuffer,v_uv).rgb * 2.0 - 1.0);
     vec3 randomVec = normalize(texture(noise, v_uv * noiseScale).xyz);
 
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
@@ -51,7 +53,7 @@ void main()
     mat3 TBN = mat3(tangent, bitangent, normal);
 
     float occlusion = 0.0;
-    for(int i = 0; i < kernelSize; ++i)
+    for(int i = 0; i < KERNEL_SIZE; ++i)
     {
         // get sample position
         vec3 samplePos = TBN * kernel.samples[i].xyz; // from tangent to view-space
@@ -59,7 +61,7 @@ void main()
         
         // project sample position (to sample texture) (to get position on screen/texture)
         vec4 offset = vec4(samplePos, 1.0);
-        offset = camera.proj * offset; // from view to clip-space
+        offset = aux.proj * offset; // from view to clip-space
         offset.xyz /= offset.w; // perspective divide
         offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
         
@@ -71,7 +73,7 @@ void main()
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(position.z - sampleDepth));
         occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;           
     }
-    occlusion = 1.0 - (occlusion / kernelSize);
+    occlusion = 1.0 - (occlusion / KERNEL_SIZE);
 
    outOcclusion = vec4(vec3(occlusion),1.0);
     // outOcclusion = vec4(0.0f,1.0f,0.0f,1.0f);

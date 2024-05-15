@@ -10,12 +10,12 @@ class SSAOPass : public RenderPass
 {
     Mesh *m_vignette;
 
-
     DescriptorManager m_descriptorManager{};
 
     DescriptorSet m_descriptorSet{};
     Buffer m_kernelBuffer{};
-    Buffer m_cameraBuffer{};
+    Buffer m_auxBuffer{};
+
     Texture *m_noiseTexture{nullptr};
 
     Image m_positionBuffer;
@@ -42,9 +42,9 @@ public:
 
     void cleanup(VkDevice &device, VmaAllocator &memory);
 
-     void set_g_buffer(Image position, Image normals);
-    
-    void update_camera_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, size_t size);
+    void set_g_buffer(Image position, Image normals);
+
+    void update_aux_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size);
 
     void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
 };

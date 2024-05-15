@@ -82,7 +82,7 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 0);
-	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_camera_uniforms(m_memory, camData, sizeof(CameraUniforms));
+	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_aux_uniforms(m_memory, camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_gpu));
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
@@ -178,7 +178,7 @@ void Renderer::init_resources()
 
 		i++;
 	}
-	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image,m_descriptorMng);
+	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image, m_descriptorMng);
 
 	// Set global textures descriptor writes
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
