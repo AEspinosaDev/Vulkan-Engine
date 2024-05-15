@@ -173,6 +173,10 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
     builder.colorBlending.attachmentCount = 4;
     builder.colorBlending.pAttachments = colorBlendingAttchments.data();
 
+    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
+
     // Setup shaderpasses
 
     ShaderPass *geomPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/deferred.glsl");
@@ -184,7 +188,7 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, true},
          {VertexAttributeType::UV, true},
-         {VertexAttributeType::TANGENT, false},
+         {VertexAttributeType::TANGENT, true},
          {VertexAttributeType::COLOR, false}};
     geomPass->settings.blending = true;
 
@@ -225,7 +229,10 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
     {
         if (m)
         {
-            if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
+            if (m->is_active() &&                                                                     // Check if is active
+                m->get_num_geometries() > 0 &&                                                        // Check if has geometry
+                m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
+
             {
                 uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
                 uint32_t globalOffset = 0;
@@ -246,9 +253,9 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
                     Material *mat = m->get_material(g->get_material_ID());
 
                     // // Setup per object render state
-                    // vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
-                    // vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
-                    // vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
+                    vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
+                    vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
+                    vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
 
                     if (m->get_geometry(i)->is_buffer_loaded())

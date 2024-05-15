@@ -4,6 +4,7 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
+layout(location = 3) in vec3 tangent;
 
 layout(set = 0, binding = 0) uniform CameraUniforms {
     mat4 view;
@@ -44,15 +45,25 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 layout(location = 0) out vec3 v_pos;
 layout(location = 1) out vec3 v_normal;
 layout(location = 2) out vec2 v_uv;
+layout(location = 3) out mat3 v_TBN;
 
 void main() {
 
-    mat4 mv = camera.view * object.model;
-    v_pos = ( mv* vec4(pos,1.0)).rgb;
-    v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
-    gl_Position = camera.proj * vec4(v_pos,1.0);
+    gl_Position = camera.viewProj * object.model * vec4(pos, 1.0);
 
     v_uv = vec2(uv.x * material.tileUV.x, (1-uv.y) * material.tileUV.y);
+
+    mat4 mv = camera.view * object.model;
+    v_pos = (mv * vec4(pos, 1.0)).xyz;
+
+    v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
+
+    if(material.hasNormalTexture) {
+        vec3 T = -normalize(vec3(mv * vec4(tangent, 0.0)));
+        vec3 N = normalize(vec3(mv * vec4(normal, 0.0)));
+        vec3 B = cross(N, T);
+        v_TBN = mat3(T, B, N);
+    }
 }
 
 #shader fragment
@@ -61,6 +72,7 @@ void main() {
 layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
 layout(location = 2) in vec2 v_uv;
+layout(location = 3) in mat3 v_TBN;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec3 albedo;
@@ -114,7 +126,7 @@ void setupSurfaceProperties(){
   //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
     g_opacity = material.opacity;
-    // g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
+    g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : normalize( v_normal  * 0.5f + 0.5f);
 
     if(material.hasMaskTexture) {
         // vec4 mask = pow(texture(maskRoughTex, v_uv).rgba, vec4(2.2)); //Correction linearize color
@@ -143,9 +155,7 @@ void main() {
     setupSurfaceProperties();
 
     outPos = vec4(v_pos,gl_FragCoord.z);
-    // outNormal = vec4(v_normal,1.0);
-    outNormal = vec4( normalize( v_normal  * 0.5f + 0.5f), 1.0f );
-
-    outAlbedo = vec4(g_albedo,1.0);
+    outNormal = vec4( g_normal , 1.0f );
+    outAlbedo = vec4(g_albedo,g_opacity);
     outMaterial = vec4(g_material, 1.0); //w material id
 }

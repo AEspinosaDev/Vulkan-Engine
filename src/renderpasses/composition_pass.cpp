@@ -17,10 +17,11 @@ void CompositionPass::init(VkDevice &device)
     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    m_attachments.push_back(
-        Attachment(static_cast<VkFormat>(m_colorFormat),
-                   VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                   VK_IMAGE_ASPECT_COLOR_BIT));
+    Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
+                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D);
+    _colorAttachment.isPresentImage =  true;
+    m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 

@@ -19,6 +19,7 @@ void VulkanRenderer::init()
     settings.AAtype = AntialiasingType::_NONE;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
+    settings.renderingType = RendererType::FORWARD;
     // settings.shadowResolution = ShadowResolution::ULTRA;
 
     m_renderer = new Renderer(m_window, settings);
@@ -44,9 +45,9 @@ void VulkanRenderer::run()
 
 void VulkanRenderer::setup()
 {
-    const std::string MESH_PATH(EXAMPLES_RESOURCES_PATH"meshes/");
-    const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH"textures/");
-    const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH"meshes/");
+    const std::string MESH_PATH(EXAMPLES_RESOURCES_PATH "meshes/");
+    const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH "textures/");
+    const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH "meshes/");
 
     camera = new Camera();
     camera->set_position(Vec3(0.0f, 0.0f, -5.0f));
@@ -58,10 +59,18 @@ void VulkanRenderer::setup()
 
     m_scene->add(new PointLight());
     m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
+    PointLight* light = new PointLight();
+    light->set_area_of_effect(18);
+    m_scene->add(light);
+    m_scene->get_lights()[1]->set_position({3.0f, 6.5f, 10.0f});
+    m_scene->get_lights()[1]->set_shadow_target({0.0f, 0.0f, 10.0f});
+    m_scene->get_lights()[1]->set_shadow_fov(160.0f);
+    m_scene->get_lights()[1]->set_color({1, 0.5, 0.2});
     m_scene->add(new PointLight());
-    m_scene->get_lights()[1]->set_position({3.0f, 3.0f, 10.0f});
-    m_scene->get_lights()[1]->set_shadow_target({3.0f, 0.0f, 10.0f});
-    
+    m_scene->get_lights()[2]->set_position({-5.3f, 2.7f, 5.6f});
+    m_scene->get_lights()[2]->set_shadow_target({-3.6f, 0.0f, 2.3f});
+    m_scene->get_lights()[2]->set_shadow_fov(100.0f);
+    m_scene->get_lights()[2]->set_color({0, 0, 0.25});
 
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();
@@ -73,7 +82,9 @@ void VulkanRenderer::setup()
     toriiM->load_image(TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
     toriiMat->set_normal_texture(toriiN);
-    toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
+    toriiMat->set_metalness(0.5);
+    toriiMat->set_roughness(0.5);
+    // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMesh->set_material(toriiMat);
     toriiMesh->load_file(MESH_PATH + "torii.obj", true);
     toriiMesh->set_name("Torii");
@@ -136,6 +147,50 @@ void VulkanRenderer::setup()
     kabutoMesh->set_material(kabutoMat);
     kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
+
+    Mesh *templeMesh = new Mesh();
+
+    templeMesh->load_file(MESH_PATH + "temple.obj");
+    templeMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
+    auto templeMat = new PhysicallyBasedMaterial();
+    Texture *templeText = new Texture();
+    templeText->load_image(TEXTURE_PATH + "temple_diffuse.png");
+    Texture *templeRText = new Texture();
+    templeRText->load_image(TEXTURE_PATH + "temple_rough.png");
+    Texture *templeMText = new Texture();
+    templeMText->load_image(TEXTURE_PATH + "temple_metal.png");
+    templeMat->set_albedo_texture(templeText);
+    templeMat->set_metallic_texture(templeMText);
+    templeMat->set_roughness_texture(templeRText);
+    templeMat->set_albedo({0.0, 1.0, 0.0, 1.0});
+    templeMat->set_metalness(0.8f);
+    templeMat->set_roughness(0.4f);
+    templeMesh->set_material(templeMat);
+    templeMesh->set_name("Temple");
+    templeMesh->set_position({7.2, -2.87, 14.1});
+    templeMesh->set_rotation({0.0, 230.0f, 0.0f});
+    m_scene->add(templeMesh);
+
+    Mesh *templeMesh2 = new Mesh();
+
+    templeMesh2->load_file(MESH_PATH + "shrine.obj");
+    templeMesh2->set_rotation(glm::vec3(0.0, 180, 0.0));
+    auto templeMat2 = new PhysicallyBasedMaterial();
+    Texture *templeText2 = new Texture();
+    templeText2->load_image(TEXTURE_PATH + "shrine_diffuse.png");
+    Texture *templeRText2 = new Texture();
+    templeRText->load_image(TEXTURE_PATH + "shrine_rough.png");
+    Texture *templeMText2 = new Texture();
+    templeMText2->load_image(TEXTURE_PATH + "shrine_metal.png");
+    templeMat2->set_albedo_texture(templeText2);
+    templeMat2->set_metallic_texture(templeMText2);
+    templeMat2->set_roughness_texture(templeRText2);
+    templeMesh2->set_material(templeMat2);
+    templeMesh2->set_name("Shrine");
+    templeMesh2->set_position({0, -2.77, 14.1});
+    templeMesh2->set_rotation({0.0, 160.0f, 0.0f});
+    templeMesh2->set_scale(1.25);
+    m_scene->add(templeMesh2);
 
     m_controller = new Controller(camera);
 }

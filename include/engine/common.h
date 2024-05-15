@@ -126,7 +126,8 @@ typedef enum AntialiasingType
 	MSAA_x4 = VK_SAMPLE_COUNT_4_BIT,
 	MSAA_x8 = VK_SAMPLE_COUNT_8_BIT,
 	MSAA_x16 = VK_SAMPLE_COUNT_16_BIT,
-	MSAA_x32 = VK_SAMPLE_COUNT_32_BIT
+	MSAA_x32 = VK_SAMPLE_COUNT_32_BIT,
+	FXAA = VK_SAMPLE_COUNT_1_BIT
 } AntialiasingType;
 
 typedef enum ShadowResolution

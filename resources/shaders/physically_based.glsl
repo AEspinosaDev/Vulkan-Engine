@@ -349,7 +349,7 @@ vec3 computeLighting(LightUniform light) {
 void setupSurfaceProperties(){
   //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
-    g_opacity = material.opacity;
+    g_opacity =  texture(albedoTex, v_uv).a;
     g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
 
     if(material.hasMaskTexture) {
@@ -396,7 +396,7 @@ void main() {
 
     //Ambient component
     float occ = scene.enableSSAO ? texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r : 1.0;
-    vec3 ambient = (scene.ambientIntensity * 0.1 * scene.ambientColor) * g_albedo * occ;
+    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * occ;
 
 
     color += ambient;
@@ -413,5 +413,7 @@ void main() {
 
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+
+    if(g_opacity<0.98)discard;
 
 }

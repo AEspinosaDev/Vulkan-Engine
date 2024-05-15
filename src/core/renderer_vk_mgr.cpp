@@ -58,7 +58,7 @@ void Renderer::init_control_objects()
 void Renderer::init_descriptors()
 {
 	m_descriptorMng.init(m_device);
-	m_descriptorMng.create_pool(10, 10, 10, 20, 10);
+	m_descriptorMng.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
 
 	// GLOBAL SET
 	VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 0);
