@@ -20,16 +20,54 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Renderer::init_renderpasses()
 {
+
+	m_vignette = Mesh::create_quad();
+	m_deletionQueue.push_function([=]()
+								  { m_vignette->get_geometry()->cleanup(m_memory); });
+
+	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+	const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
+
+	// Creating default renderpasses
+	ForwardPass *forwardPass = new ForwardPass(m_window->get_extent(),
+											   (uint32_t)m_settings.bufferingType + 1,
+											   m_settings.colorFormat,
+											   m_settings.depthFormat,
+											   m_settings.AAtype);
+
+	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
+
+	GeometryPass *geometryPass = new GeometryPass(m_window->get_extent(), totalImagesInFlight, m_settings.depthFormat);
+
+	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), totalImagesInFlight, m_vignette);
+
+	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(m_window->get_extent(), totalImagesInFlight, m_vignette);
+
+	CompositionPass *compPass = new CompositionPass(m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette, m_settings.AAtype == AntialiasingType::FXAA);
+
+	FXAAPass *fxaaPass = new FXAAPass(m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette);
+
+	m_renderPipeline.push_renderpass(shadowPass);
+	m_renderPipeline.push_renderpass(geometryPass);
+	m_renderPipeline.push_renderpass(ssaoPass);
+	m_renderPipeline.push_renderpass(ssaoBlurPass);
+	m_renderPipeline.push_renderpass(compPass);
+	m_renderPipeline.push_renderpass(forwardPass);
+	m_renderPipeline.push_renderpass(fxaaPass);
+
+	if (m_settings.renderingType == RendererType::TFORWARD)
+		compPass->set_active(false);
+	else
+		forwardPass->set_active(false);
+
+	if (m_settings.AAtype != AntialiasingType::FXAA)
+		fxaaPass->set_active(false);
+
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		pass->init(m_device);
 
-		if (pass->is_default()) // Check if its default in order to get swapchain image views
-			pass->create_framebuffer(m_device, m_memory, &m_swapchain);
-		else
-		{
-			pass->create_framebuffer(m_device, m_memory);
-		}
+		pass->create_framebuffer(m_device, m_memory, &m_swapchain);
 	};
 
 	m_deletionQueue.push_function([=]()
@@ -176,8 +214,10 @@ void Renderer::update_renderpasses()
 
 	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image, m_descriptorMng);
 
-	static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image);
+	if (m_settings.AAtype == AntialiasingType::FXAA)
+		static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_settings.renderingType == RendererType::TDEFERRED ? m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image : m_renderPipeline.renderpasses[FORWARD]->get_attachments()[0].image);
 
+	
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 
@@ -185,9 +225,6 @@ void Renderer::update_renderpasses()
 											 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
 											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
 	}
-
-	// m_renderPipeline.renderpasses[GEOMETRY]->set_active(m_settings.renderingType == RendererType::FORWARD ? false : true);
-	// m_renderPipeline.renderpasses[FORWARD]->set_active(m_settings.renderingType == RendererType::FORWARD ? true : false);
 }
 
 VULKAN_ENGINE_NAMESPACE_END

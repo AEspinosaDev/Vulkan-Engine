@@ -12,10 +12,10 @@ void RendererSettingsWidget::render()
         switch (type_current)
         {
         case 0:
-            m_renderer->set_rendering_method(RendererType::FORWARD);
+            m_renderer->set_rendering_method(RendererType::TFORWARD);
             break;
         case 1:
-            m_renderer->set_rendering_method(RendererType::DEFERRED);
+            m_renderer->set_rendering_method(RendererType::TDEFERRED);
             break;
         }
     }

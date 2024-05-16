@@ -6,16 +6,18 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef FXAA_PASS_H
-#define FXAA_PASS_H
+#ifndef GUI_PASS_H
+#define GUI_PASS_H
 #include <engine/core/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-class FXAAPass : public RenderPass
+class GUIPass : public RenderPass
 {
     ColorFormatType m_colorFormat;
     Mesh *m_vignette;
+
+    GUIOverlay *m_gui;
 
     DescriptorManager m_descriptorManager{};
     DescriptorSet m_descriptorSet;
@@ -23,10 +25,10 @@ class FXAAPass : public RenderPass
     Image m_outputBuffer;
 
 public:
-    FXAAPass(VkExtent2D extent,
-             uint32_t framebufferCount,
-             ColorFormatType colorFormat, Mesh *vignette) : RenderPass(extent, framebufferCount, 1, true),
-                                                            m_colorFormat(colorFormat), m_vignette(vignette) {}
+    GUIPass(VkExtent2D extent,
+            uint32_t framebufferCount,
+            ColorFormatType colorFormat, Mesh *vignette) : RenderPass(extent, framebufferCount, 1, true),
+                                                           m_colorFormat(colorFormat), m_vignette(vignette) {}
 
     void init(VkDevice &device);
 
@@ -40,6 +42,7 @@ public:
 
     void cleanup(VkDevice &device, VmaAllocator &memory);
 
+    inline void set_gui(GUIOverlay *gui) { m_gui = gui; }
 };
 VULKAN_ENGINE_NAMESPACE_END
 

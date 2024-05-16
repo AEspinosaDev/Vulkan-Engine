@@ -42,6 +42,7 @@
 #include <engine/renderpasses/ssao_blur_pass.h>
 #include <engine/renderpasses/composition_pass.h>
 #include <engine/renderpasses/fxaa_pass.h>
+#include <engine/renderpasses/gui_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -50,7 +51,7 @@ Renderer Global Settings Data
 */
 struct RendererSettings
 {
-	RendererType renderingType{DEFERRED};
+	RendererType renderingType{TDEFERRED};
 
 	AntialiasingType AAtype{MSAA_x4};
 	BufferingType bufferingType{_DOUBLE};
@@ -120,7 +121,7 @@ protected:
 		SSAO_BLUR = 3,
 		COMPOSITION = 4,
 		FORWARD = 5,
-		FXAA = 6
+		FXAA = 6,
 	};
 
 	DescriptorManager m_descriptorMng{};
@@ -199,7 +200,7 @@ public:
 	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
-		static_cast<ForwardPass *>(m_renderPipeline.renderpasses[FXAA])->set_gui(gui);
+		// static_cast<GUIPass *>(m_renderPipeline.renderpasses[GUI])->set_gui(gui);
 	}
 
 	inline GUIOverlay *get_gui_overlay()

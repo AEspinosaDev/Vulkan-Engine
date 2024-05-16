@@ -211,7 +211,8 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
 {
     VkCommandBuffer cmd = frame.commandBuffer;
 
-    begin(cmd);
+    begin(cmd, presentImageIndex);
+
 
     VkViewport viewport = init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);

@@ -30,7 +30,8 @@ class SSAOPass : public RenderPass
 
 public:
     SSAOPass(VkExtent2D extent,
-             Mesh *vignette) : RenderPass(extent, 1),
+             uint32_t framebufferCount,
+             Mesh *vignette) : RenderPass(extent, framebufferCount),
                                m_vignette(vignette) {}
 
     void init(VkDevice &device);

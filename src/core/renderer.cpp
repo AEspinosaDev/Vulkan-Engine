@@ -12,7 +12,6 @@ void Renderer::run(Scene *const scene)
 	{
 		// I-O
 		Window::poll_events();
-
 		render(scene);
 	}
 	shutdown();
@@ -130,48 +129,7 @@ void Renderer::render(Scene *const scene)
 }
 void Renderer::on_awake()
 {
-	m_vignette = Mesh::create_quad();
-	m_deletionQueue.push_function([=]()
-								  { m_vignette->get_geometry()->cleanup(m_memory); });
-
 	m_frames.resize(MAX_FRAMES_IN_FLIGHT);
-
-	// Creating default renderpasses
-	ForwardPass *forwardPass = new ForwardPass(m_window->get_extent(),
-											   (uint32_t)m_settings.bufferingType + 1,
-											   m_settings.colorFormat,
-											   m_settings.depthFormat,
-											   (VkSampleCountFlagBits)m_settings.AAtype);
-
-	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
-	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, VK_MAX_LIGHTS, m_settings.depthFormat);
-
-	GeometryPass *geometryPass = new GeometryPass(m_window->get_extent(),
-												  (uint32_t)m_settings.bufferingType + 1,
-
-												  m_settings.depthFormat);
-
-	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), m_vignette);
-	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(m_window->get_extent(), m_vignette);
-
-	CompositionPass *compPass = new CompositionPass(m_window->get_extent(), (uint32_t)m_settings.bufferingType + 1, m_settings.colorFormat, m_vignette);
-
-	FXAAPass *fxaaPass = new FXAAPass(m_window->get_extent(), (uint32_t)m_settings.bufferingType + 1, m_settings.colorFormat, m_vignette);
-
-	m_renderPipeline.push_renderpass(shadowPass);
-	m_renderPipeline.push_renderpass(geometryPass);
-	m_renderPipeline.push_renderpass(ssaoPass);
-	m_renderPipeline.push_renderpass(ssaoBlurPass);
-	m_renderPipeline.push_renderpass(compPass);
-	m_renderPipeline.push_renderpass(forwardPass);
-	m_renderPipeline.push_renderpass(fxaaPass);
-
-	if (m_settings.renderingType == RendererType::FORWARD)
-		compPass->set_active(false);
-	else
-		forwardPass->set_active(false);
-
-	// fxaaPass->set_active(false);
 }
 
 void Renderer::on_init()
@@ -189,7 +147,6 @@ void Renderer::on_init()
 		m_window->init();
 
 	create_surface(m_instance, m_window);
-	// m_window->create_surface(m_instance);
 
 	// Get gpu
 	m_gpu = booter.pick_graphics_card_device(m_instance, m_window->get_surface());
@@ -262,7 +219,7 @@ void Renderer::init_gui()
 					m_device,
 					m_gpu,
 					m_graphicsQueue,
-					m_renderPipeline.renderpasses[m_settings.renderingType == RendererType::FORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::FXAA]->get_obj(),
+					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? ( m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION):DefaultRenderPasses::FXAA]->get_obj(),
 					m_swapchain.get_image_format(),
 					(VkSampleCountFlagBits)m_settings.AAtype,
 					m_window->get_window_obj());

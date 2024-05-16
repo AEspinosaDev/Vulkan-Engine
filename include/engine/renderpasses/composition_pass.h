@@ -18,7 +18,8 @@ class CompositionPass : public RenderPass
     ColorFormatType m_colorFormat;
 
     Mesh *m_vignette;
-    GUIOverlay *m_gui;
+
+    bool m_fxaa;
 
     DescriptorSet m_GBufferDescriptor{};
 
@@ -30,8 +31,8 @@ class CompositionPass : public RenderPass
 public:
     CompositionPass(VkExtent2D extent,
                     uint32_t framebufferCount,
-                    ColorFormatType colorFormat, Mesh *vignette) : RenderPass(extent, framebufferCount, 1, false),
-                                                                   m_colorFormat(colorFormat), m_vignette(vignette) {}
+                    ColorFormatType colorFormat, Mesh *vignette, bool fxaa) : RenderPass(extent, framebufferCount, 1, fxaa ? false : true),
+                                                                   m_colorFormat(colorFormat), m_vignette(vignette), m_fxaa(fxaa) {}
 
     void init(VkDevice &device);
 
@@ -44,8 +45,6 @@ public:
                         utils::UploadContext &uploadContext);
 
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
-
-    inline void set_gui(GUIOverlay *gui) { m_gui = gui; }
 
     inline void set_output_type(int op) { m_outputType = op; }
     inline int get_output_type() const { return m_outputType; }

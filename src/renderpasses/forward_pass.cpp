@@ -4,26 +4,29 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void ForwardPass::init(VkDevice &device)
 {
-    bool multisampled = m_samples > VK_SAMPLE_COUNT_1_BIT;
+    VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
+    bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
+    bool fxaa = m_aa == AntialiasingType::FXAA;
+    if(fxaa) samples = VK_SAMPLE_COUNT_1_BIT;
 
     std::vector<VkAttachmentDescription> attachmentsInfo;
 
     // Color attachment
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = static_cast<VkFormat>(m_colorFormat);
-    colorAttachment.samples = m_samples;
+    colorAttachment.samples = samples;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    colorAttachment.finalLayout = !fxaa ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     attachmentsInfo.push_back(colorAttachment);
 
     Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
-                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, m_samples);
-    _colorAttachment.isPresentImage = multisampled ? false : true;
+                                fxaa ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, samples);
+    _colorAttachment.isPresentImage = !fxaa ? (multisampled ? false : true) : false ;
     m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -53,7 +56,7 @@ void ForwardPass::init(VkDevice &device)
     // Depth attachment
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = static_cast<VkFormat>(m_depthFormat);
-    depthAttachment.samples = m_samples;
+    depthAttachment.samples = samples;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -67,7 +70,7 @@ void ForwardPass::init(VkDevice &device)
                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                    VK_IMAGE_ASPECT_DEPTH_BIT,
                    VK_IMAGE_VIEW_TYPE_2D,
-                   m_samples));
+                   samples));
 
     VkAttachmentReference depthRef = init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
@@ -135,7 +138,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
 
     builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
 
-    builder.multisampling = init::multisampling_state_create_info(m_samples);
+    builder.multisampling = init::multisampling_state_create_info(m_aa == AntialiasingType::FXAA ? VK_SAMPLE_COUNT_1_BIT : static_cast<VkSampleCountFlagBits>(m_aa));
 
     builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
     builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
@@ -187,6 +190,19 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
         builder.build_pipeline_layout(device, descriptorManager, *pass);
         builder.build_pipeline(device, m_obj, *pass);
     }
+}
+void ForwardPass::init_resources(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext)
+{
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 }
 void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
@@ -255,10 +271,25 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
     }
 
     // Draw gui contents
-    if (m_gui)
-        m_gui->upload_draw_data(cmd);
+    if ( m_isDefault)
+         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     end(cmd);
+}
+
+void ForwardPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+{
+    RenderPass::update(device, memory, swp);
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 }
 
 VULKAN_ENGINE_NAMESPACE_END

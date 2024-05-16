@@ -19,7 +19,7 @@ class GeometryPass : public RenderPass
 public:
     GeometryPass(VkExtent2D extent,
                  uint32_t framebufferCount,
-                 DepthFormatType depthFormat) : RenderPass(extent, 1, 1),
+                 DepthFormatType depthFormat) : RenderPass(extent, framebufferCount, 1),
                                                 m_depthFormat(depthFormat) {}
     void init(VkDevice &device);
 

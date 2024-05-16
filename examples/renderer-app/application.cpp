@@ -16,11 +16,10 @@ void VulkanRenderer::init()
                                          std::placeholders::_4));
 
     RendererSettings settings{};
-    settings.AAtype = AntialiasingType::_NONE;
+    settings.AAtype = AntialiasingType::FXAA;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
-    settings.renderingType = RendererType::DEFERRED;
-    // settings.shadowResolution = ShadowResolution::ULTRA;
+    settings.renderingType = RendererType::TDEFERRED;
 
     m_renderer = new Renderer(m_window, settings);
 

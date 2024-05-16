@@ -156,6 +156,7 @@ void Renderer::setup_material(Material *const mat)
 
 void Renderer::init_resources()
 {
+
 	// Setup vignette vertex buffers
 	Geometry::upload_buffers(m_device, m_memory, m_graphicsQueue, m_uploadContext, m_vignette->get_geometry());
 
@@ -180,8 +181,9 @@ void Renderer::init_resources()
 		i++;
 	}
 	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image, m_descriptorMng);
-	
-	static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image);
+
+	if (m_settings.AAtype == AntialiasingType::FXAA)
+		static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_settings.renderingType == RendererType::TDEFERRED ? m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image : m_renderPipeline.renderpasses[FORWARD]->get_attachments()[0].image);
 
 	// Set global textures descriptor writes
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)

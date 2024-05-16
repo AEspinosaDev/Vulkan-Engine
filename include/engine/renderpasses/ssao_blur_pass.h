@@ -25,8 +25,9 @@ class SSAOBlurPass : public RenderPass
 
 public:
     SSAOBlurPass(VkExtent2D extent,
-             Mesh *vignette) : RenderPass(extent, 1),
-                               m_vignette(vignette) {}
+                 uint32_t framebufferCount,
+                 Mesh *vignette) : RenderPass(extent, framebufferCount),
+                                   m_vignette(vignette) {}
 
     void init(VkDevice &device);
 
@@ -46,13 +47,12 @@ public:
 
     inline void set_ssao_buffer(Image ssao)
     {
-       m_ssao = ssao;
+        m_ssao = ssao;
     }
 
-      void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
+    void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
 };
 
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif
-

@@ -68,7 +68,7 @@ void SSAOBlurPass::init(VkDevice &device)
 
 void SSAOBlurPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
 {
-   
+
     // Init and configure local descriptors
     m_descriptorManager.init(device);
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
@@ -123,10 +123,10 @@ void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
     m_shaderPasses["ssaoBlur"] = ssaoPass;
 }
 void SSAOBlurPass::init_resources(VkDevice &device,
-                              VkPhysicalDevice &gpu,
-                              VmaAllocator &memory,
-                              VkQueue &gfxQueue,
-                              utils::UploadContext &uploadContext)
+                                  VkPhysicalDevice &gpu,
+                                  VmaAllocator &memory,
+                                  VkQueue &gfxQueue,
+                                  utils::UploadContext &uploadContext)
 {
 
     m_attachments[0].image.create_sampler(
@@ -141,14 +141,13 @@ void SSAOBlurPass::init_resources(VkDevice &device,
         VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
     m_descriptorManager.set_descriptor_write(m_ssao.sampler, m_ssao.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
-
 }
 void SSAOBlurPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
 
     VkCommandBuffer cmd = frame.commandBuffer;
 
-    begin(cmd);
+    begin(cmd, presentImageIndex);
 
     VkViewport viewport = init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);
@@ -174,7 +173,7 @@ void SSAOBlurPass::cleanup(VkDevice &device, VmaAllocator &memory)
 
 void SSAOBlurPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
 {
-    RenderPass::update(device,memory);
+    RenderPass::update(device, memory);
     m_attachments[0].image.create_sampler(
         device,
         VK_FILTER_LINEAR,

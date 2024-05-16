@@ -1,8 +1,8 @@
-#include <engine/renderpasses/fxaa_pass.h>
+#include <engine/renderpasses/gui_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void FXAAPass::init(VkDevice &device)
+void GUIPass::init(VkDevice &device)
 {
 
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
@@ -57,7 +57,7 @@ void FXAAPass::init(VkDevice &device)
 
     m_initiatized = true;
 }
-void FXAAPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
+void GUIPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
 {
 
     // Init and configure local descriptors
@@ -70,7 +70,7 @@ void FXAAPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
 
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
 }
-void FXAAPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void GUIPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
     PipelineBuilder builder;
 
@@ -92,26 +92,26 @@ void FXAAPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
 
     builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
-    ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/fxaa.glsl");
-    fxaaPass->settings.descriptorSetLayoutIDs =
+    ShaderPass *rttPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/rtt.glsl");
+    rttPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
-    fxaaPass->settings.attributes =
+    rttPass->settings.attributes =
         {{VertexAttributeType::POSITION, true},
          {VertexAttributeType::NORMAL, false},
          {VertexAttributeType::UV, true},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
 
-    ShaderPass::build_shader_stages(device, *fxaaPass);
+    ShaderPass::build_shader_stages(device, *rttPass);
 
-    builder.build_pipeline_layout(device, m_descriptorManager, *fxaaPass);
-    builder.build_pipeline(device, m_obj, *fxaaPass);
+    builder.build_pipeline_layout(device, m_descriptorManager, *rttPass);
+    builder.build_pipeline(device, m_obj, *rttPass);
 
-    m_shaderPasses["fxaa"] = fxaaPass;
+    m_shaderPasses["rtt"] = rttPass;
 }
 
 
-void FXAAPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
+void GUIPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = frame.commandBuffer;
 
@@ -124,20 +124,20 @@ void FXAAPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    ShaderPass *shaderPass = m_shaderPasses["fxaa"];
+    ShaderPass *shaderPass = m_shaderPasses["rtt"];
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
     Geometry::draw(cmd, m_vignette->get_geometry());
 
-    // // Draw gui contents
-    if ( m_isDefault)
-         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    // Draw gui contents
+    if (m_gui)
+        m_gui->upload_draw_data(cmd);
 
     end(cmd);
 }
 
-void FXAAPass::set_output_buffer(Image output)
+void GUIPass::set_output_buffer(Image output)
 {
     m_outputBuffer = output;
 
@@ -145,7 +145,7 @@ void FXAAPass::set_output_buffer(Image output)
 }
 
 
-void FXAAPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void GUIPass::cleanup(VkDevice &device, VmaAllocator &memory)
 {
     RenderPass::cleanup(device, memory);
     m_descriptorManager.cleanup();

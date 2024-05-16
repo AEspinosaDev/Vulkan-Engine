@@ -204,7 +204,7 @@ void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
 
     VkCommandBuffer cmd = frame.commandBuffer;
 
-    begin(cmd);
+    begin(cmd, presentImageIndex);
 
     VkViewport viewport = init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);
@@ -242,14 +242,15 @@ void SSAOPass::set_g_buffer(Image position, Image normals)
 }
 void SSAOPass::update_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size)
 {
-    struct AuxData{
+    struct AuxData
+    {
         CameraUniforms cam;
         Vec2 ssaoParams;
     };
 
     AuxData data;
     data.cam = cameraUniforms;
-    data.ssaoParams = ssaoParams; 
+    data.ssaoParams = ssaoParams;
 
     m_auxBuffer.upload_data(memory, &data, size);
 }
