@@ -240,7 +240,7 @@ void SSAOPass::set_g_buffer(Image position, Image normals)
     m_descriptorManager.set_descriptor_write(m_positionBuffer.sampler, m_positionBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
     m_descriptorManager.set_descriptor_write(m_normalsBuffer.sampler, m_normalsBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
 }
-void SSAOPass::update_aux_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size)
+void SSAOPass::update_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size)
 {
     struct AuxData{
         CameraUniforms cam;

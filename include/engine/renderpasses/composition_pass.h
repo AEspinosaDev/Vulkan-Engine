@@ -1,3 +1,11 @@
+/*
+    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+
+    MIT License
+
+    Copyright (c) 2023 Antonio Espinosa Garcia
+
+*/
 #ifndef COMPOSITION_PASS_H
 #define COMPOSITION_PASS_H
 #include <engine/core/renderpass.h>
@@ -22,7 +30,7 @@ class CompositionPass : public RenderPass
 public:
     CompositionPass(VkExtent2D extent,
                     uint32_t framebufferCount,
-                    ColorFormatType colorFormat, Mesh *vignette) : RenderPass(extent, framebufferCount, 1, true),
+                    ColorFormatType colorFormat, Mesh *vignette) : RenderPass(extent, framebufferCount, 1, false),
                                                                    m_colorFormat(colorFormat), m_vignette(vignette) {}
 
     void init(VkDevice &device);
@@ -44,9 +52,11 @@ public:
     
     void set_g_buffer(Image position, Image normals, Image albedo, Image material, DescriptorManager &descriptorManager);
 
-    void update_aux_uniforms(VmaAllocator &memory);
+    void update_uniforms(VmaAllocator &memory);
 
     void cleanup(VkDevice &device, VmaAllocator &memory);
+
+     void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

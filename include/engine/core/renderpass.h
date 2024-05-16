@@ -56,7 +56,7 @@ struct Attachment
 };
 
 /*
-Core base class needed for rendering.
+Core abstract class needed for rendering.
 It controls the flow of the render state, what information and how it is being rendered.
 It also gives access to the framebuffers containing the rendered data.
 It can be inherited for full user control over the render pipeline.

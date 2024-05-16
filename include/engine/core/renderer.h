@@ -41,6 +41,7 @@
 #include <engine/renderpasses/ssao_pass.h>
 #include <engine/renderpasses/ssao_blur_pass.h>
 #include <engine/renderpasses/composition_pass.h>
+#include <engine/renderpasses/fxaa_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -118,7 +119,8 @@ protected:
 		SSAO = 2,
 		SSAO_BLUR = 3,
 		COMPOSITION = 4,
-		FORWARD = 5
+		FORWARD = 5,
+		FXAA = 6
 	};
 
 	DescriptorManager m_descriptorMng{};
@@ -197,7 +199,7 @@ public:
 	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
-		static_cast<ForwardPass *>(m_renderPipeline.renderpasses[FORWARD])->set_gui(gui);
+		static_cast<ForwardPass *>(m_renderPipeline.renderpasses[FXAA])->set_gui(gui);
 	}
 
 	inline GUIOverlay *get_gui_overlay()

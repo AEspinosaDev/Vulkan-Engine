@@ -1,3 +1,11 @@
+/*
+    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+
+    MIT License
+
+    Copyright (c) 2023 Antonio Espinosa Garcia
+
+*/
 #ifndef GEOMETRY_PASS_H
 #define GEOMETRY_PASS_H
 #include <engine/core/renderpass.h>

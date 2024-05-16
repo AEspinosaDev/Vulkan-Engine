@@ -1,6 +1,13 @@
+/*
+    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+
+    MIT License
+
+    Copyright (c) 2023 Antonio Espinosa Garcia
+
+*/
 #ifndef SSAO_BLUR_PASS_H
 #define SSAO_BLUR_PASS_H
-#include <random>
 
 #include <engine/core/renderpass.h>
 

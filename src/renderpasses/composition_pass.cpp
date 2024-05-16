@@ -15,12 +15,14 @@ void CompositionPass::init(VkDevice &device)
     attachmentsInfo[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    // attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
-                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                // VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ,
+                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                 VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D);
-    _colorAttachment.isPresentImage = true;
+    // _colorAttachment.isPresentImage = true;
     m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -106,6 +108,17 @@ void CompositionPass::init_resources(VkDevice &device, VkPhysicalDevice &gpu, Vm
 {
     const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4), gpu);
     m_uniformBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 }
 
 void CompositionPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
@@ -134,8 +147,8 @@ void CompositionPass::render(Frame &frame, uint32_t frameIndex, Scene *const sce
     Geometry::draw(cmd, m_vignette->get_geometry());
 
     // Draw gui contents
-    if (m_gui)
-        m_gui->upload_draw_data(cmd);
+    // if (m_gui)
+    //     m_gui->upload_draw_data(cmd);
 
     end(cmd);
 }
@@ -155,9 +168,10 @@ void CompositionPass::set_g_buffer(Image position, Image normals, Image albedo, 
     descriptorManager.set_descriptor_write(m_Gbuffer[3].sampler, m_Gbuffer[3].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 3);
     descriptorManager.set_descriptor_write(&m_uniformBuffer, sizeof(Vec4), 0, &m_GBufferDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
 }
-void CompositionPass::update_aux_uniforms(VmaAllocator &memory)
+void CompositionPass::update_uniforms(VmaAllocator &memory)
 {
-    struct AuxUniforms{
+    struct AuxUniforms
+    {
         Vec4 data;
     };
     AuxUniforms aux;
@@ -169,5 +183,20 @@ void CompositionPass::cleanup(VkDevice &device, VmaAllocator &memory)
 {
     RenderPass::cleanup(device, memory);
     m_uniformBuffer.cleanup(memory);
+}
+
+void CompositionPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+{
+    RenderPass::update(device, memory, swp);
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 }
 VULKAN_ENGINE_NAMESPACE_END

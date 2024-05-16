@@ -40,7 +40,7 @@ void Renderer::on_before_render(Scene *const scene)
 
 	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
-	 //static_cast<GeometryPass *>(m_renderPipeline.renderpasses[GEOMETRY])->set_g_buffer_clear_color(m_settings.clearColor);
+	// static_cast<GeometryPass *>(m_renderPipeline.renderpasses[GEOMETRY])->set_g_buffer_clear_color(m_settings.clearColor);
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -156,17 +156,22 @@ void Renderer::on_awake()
 
 	CompositionPass *compPass = new CompositionPass(m_window->get_extent(), (uint32_t)m_settings.bufferingType + 1, m_settings.colorFormat, m_vignette);
 
+	FXAAPass *fxaaPass = new FXAAPass(m_window->get_extent(), (uint32_t)m_settings.bufferingType + 1, m_settings.colorFormat, m_vignette);
+
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(geometryPass);
 	m_renderPipeline.push_renderpass(ssaoPass);
 	m_renderPipeline.push_renderpass(ssaoBlurPass);
 	m_renderPipeline.push_renderpass(compPass);
 	m_renderPipeline.push_renderpass(forwardPass);
+	m_renderPipeline.push_renderpass(fxaaPass);
 
 	if (m_settings.renderingType == RendererType::FORWARD)
 		compPass->set_active(false);
 	else
 		forwardPass->set_active(false);
+
+	// fxaaPass->set_active(false);
 }
 
 void Renderer::on_init()
@@ -257,7 +262,7 @@ void Renderer::init_gui()
 					m_device,
 					m_gpu,
 					m_graphicsQueue,
-					m_renderPipeline.renderpasses[m_settings.renderingType == RendererType::FORWARD ? DefaultRenderPasses::FORWARD : COMPOSITION]->get_obj(),
+					m_renderPipeline.renderpasses[m_settings.renderingType == RendererType::FORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::FXAA]->get_obj(),
 					m_swapchain.get_image_format(),
 					(VkSampleCountFlagBits)m_settings.AAtype,
 					m_window->get_window_obj());
