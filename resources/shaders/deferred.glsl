@@ -138,7 +138,7 @@ void setupSurfaceProperties(){
   //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
     g_opacity =  material.hasAlbdoTexture ?  texture(albedoTex, v_uv).a :material.opacity;
-    g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : normalize( v_normal  * 0.5f + 0.5f);
+    g_normal = material.hasNormalTexture ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize( v_normal );
 
     if(material.hasMaskTexture) {
         // vec4 mask = pow(texture(maskRoughTex, v_uv).rgba, vec4(2.2)); //Correction linearize color

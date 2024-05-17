@@ -80,6 +80,20 @@ void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &desc
 
     builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    builder.colorBlending = init::color_blend_create_info();
+    builder.colorBlending.attachmentCount = 1;
+    builder.colorBlending.pAttachments = &colorBlendAttachment;
+
     ShaderPass *compPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/composition.glsl");
     compPass->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
@@ -92,6 +106,7 @@ void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &desc
          {VertexAttributeType::UV, true},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
+    compPass->settings.blending = true;
 
     ShaderPass::build_shader_stages(device, *compPass);
 
@@ -146,8 +161,8 @@ void CompositionPass::render(Frame &frame, uint32_t frameIndex, Scene *const sce
     Geometry::draw(cmd, m_vignette->get_geometry());
 
     // Draw gui contents
-     if ( m_isDefault)
-         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    if (m_isDefault && Frame::guiEnabled)
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     end(cmd);
 }

@@ -131,7 +131,7 @@ void FXAAPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
     Geometry::draw(cmd, m_vignette->get_geometry());
 
     // // Draw gui contents
-    if ( m_isDefault)
+    if (m_isDefault && Frame::guiEnabled)
          ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     end(cmd);

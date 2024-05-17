@@ -34,6 +34,7 @@ int main()
 		RendererSettings settings{};
 		settings.AAtype = AntialiasingType::MSAA_x4;
 		settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
+		settings.renderingType = TFORWARD;
 
 		Renderer* renderer = new Renderer(window, settings);
 

@@ -2,6 +2,8 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+bool Frame::guiEnabled = false;
+
 void Frame::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
 {
     // create a command pool for commands submitted to the graphics queue.

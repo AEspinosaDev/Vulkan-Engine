@@ -105,7 +105,7 @@ void VulkanRenderer::setup()
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f, 1.0});
     terrainMat->set_albedo_texture(floorText);
-    // mat->set_normal_texture(floorNormalText);
+    // terrainMat->set_normal_texture(floorNormalText);
     terrainMat->set_roughness_texture(floorRoughText);
     terrainMat->set_tile({25.0f, 25.0f});
     terrainMesh->set_material(terrainMat);

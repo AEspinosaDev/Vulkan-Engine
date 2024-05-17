@@ -210,7 +210,6 @@ void main()
 
     // SUBPIXEL ANTIALIASING --------------------------------------------
 
-    // Full weighted average of the luma over the 3x3 neighborhood.
     float lumaAverage = (1.0/12.0) * (2.0 * (lumaDownUp + lumaLeftRight) + lumaLeftCorners + lumaRightCorners);
     // Ratio of the delta between the global average and the center luma, over the luma range in the 3x3 neighborhood.
     float subPixelOffset1 = clamp(abs(lumaAverage - lumaCenter)/lumaRange,0.0,1.0);
@@ -218,7 +217,6 @@ void main()
     // Compute a sub-pixel offset based on this delta.
     float subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * SUBPIXEL_QUALITY;
 
-    // Pick the biggest of the two offsets.
     finalOffset = max(finalOffset,subPixelOffsetFinal);
 
 

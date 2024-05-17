@@ -37,6 +37,8 @@ struct Frame
 
     void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface);
     void cleanup(VkDevice &device);
+
+    static bool guiEnabled;
 };
 
 VULKAN_ENGINE_NAMESPACE_END

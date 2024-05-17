@@ -31,7 +31,7 @@ layout(set = 0, binding = 4) uniform AuxUniforms {
     vec2 ssaoParams; //x radius and y bias
 } aux;
 
-layout(location = 0) out vec4 outOcclusion;
+layout(location = 0) out float outOcclusion;
 
 // parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
 const int KERNEL_SIZE = 64;
@@ -75,7 +75,7 @@ void main()
     }
     occlusion = 1.0 - (occlusion / KERNEL_SIZE);
 
-   outOcclusion = vec4(vec3(occlusion),1.0);
+   outOcclusion = occlusion;
     // outOcclusion = vec4(0.0f,1.0f,0.0f,1.0f);
 }
 

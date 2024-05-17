@@ -6,7 +6,7 @@ void SSAOPass::init(VkDevice &device)
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
-    attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachmentsInfo[0].format = VK_FORMAT_R8_UNORM;
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -16,7 +16,7 @@ void SSAOPass::init(VkDevice &device)
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     m_attachments.push_back(
-        Attachment(VK_FORMAT_R8G8B8A8_UNORM,
+        Attachment(VK_FORMAT_R8_UNORM,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT,
                    VK_IMAGE_VIEW_TYPE_2D));

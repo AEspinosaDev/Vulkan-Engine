@@ -19,7 +19,7 @@ layout(location = 0) in  vec2 v_uv;
 
 layout(set = 0, binding = 0) uniform sampler2D ssaoBuffer;
 
-layout(location = 0) out vec4 outOcclusion;
+layout(location = 0) out float outOcclusion;
 
 void main()
 {
@@ -34,6 +34,6 @@ void main()
         }
     }
     float occlusion = result / (4.0f*4.0f);
-     outOcclusion = vec4(vec3(occlusion),1.0);
+     outOcclusion = occlusion;
 }
 

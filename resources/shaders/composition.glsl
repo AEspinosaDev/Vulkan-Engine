@@ -246,7 +246,7 @@ void main()
 
     g_pos = texture(positionBuffer,v_uv).rgb;
     g_depth = texture(positionBuffer,v_uv).w;
-    g_normal = normalize(texture(normalBuffer,v_uv).rgb * 2.0 - 1.0);
+    g_normal = normalize(texture(normalBuffer,v_uv).rgb);
     g_albedo =  texture(albedoBuffer,v_uv).rgb;
     g_material = texture(materialBuffer,v_uv);
     // g_opacity = 1.0;
@@ -284,30 +284,28 @@ void main()
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
-    outColor = vec4(color, 1.0);
+    float outOpacity = texture(normalBuffer,v_uv).w == 0.0 ? 0.0 : 1.0;
+    outColor = vec4(color, outOpacity);
 
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
 
-    if(g_depth >= 1.0) discard; // Leave for background
-
-
     //DIFFERENT G BUFFER OUTPUTS FOR DEBUGGING PURPOSES
     switch(int(aux.outputType.x)){
             case 1:
-                 outColor = vec4(texture(positionBuffer,v_uv).rgb,1.0);
+                 outColor = vec4(texture(positionBuffer,v_uv).rgb,outOpacity);
                 break;
             case 2:
-                 outColor = vec4(texture(normalBuffer,v_uv).rgb,1.0);
+                 outColor = vec4(texture(normalBuffer,v_uv).rgb,outOpacity);
                 break;
             case 3:
-                 outColor = vec4(texture(albedoBuffer,v_uv).rgb,1.0);
+                 outColor = vec4(texture(albedoBuffer,v_uv).rgb,outOpacity);
                 break;
             case 4:
-                 outColor = vec4(texture(materialBuffer,v_uv).rgb,1.0);
+                 outColor = vec4(texture(materialBuffer,v_uv).rgb,outOpacity);
                 break;
             case 5:
-                 outColor = vec4(texture(ssaoMap,v_uv).rgb,1.0);
+                 outColor = vec4(texture(ssaoMap,v_uv).rrr,outOpacity);
                 break;
     }
 

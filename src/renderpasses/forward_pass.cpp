@@ -271,7 +271,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
     }
 
     // Draw gui contents
-    if ( m_isDefault)
+    if ( m_isDefault && Frame::guiEnabled)
          ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     end(cmd);
