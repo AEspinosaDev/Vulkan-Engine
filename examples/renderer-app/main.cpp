@@ -1,13 +1,13 @@
 #include <iostream>
 #include "application.h"
 
-int main()
+int main(int argc, char* argv[])
 {
 
     VulkanRenderer app;
     try
     {
-        app.run();
+        app.run(argc,argv);
     }
     catch (const std::exception &e)
     {

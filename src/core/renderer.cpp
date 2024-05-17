@@ -3,8 +3,6 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-
-
 void Renderer::run(Scene *const scene)
 {
 	if (!m_initialized)
@@ -30,7 +28,7 @@ void Renderer::on_before_render(Scene *const scene)
 	if (!m_initialized)
 		init();
 
-	if (m_settings.enableUI && m_gui)
+	if (Frame::guiEnabled && m_gui)
 	{
 		m_gui->render();
 	}
@@ -46,7 +44,7 @@ void Renderer::on_before_render(Scene *const scene)
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 {
-	if (renderResult == VK_ERROR_OUT_OF_DATE_KHR || renderResult == VK_SUBOPTIMAL_KHR || m_window->is_resized() || m_updateFramebuffers)
+	if (renderResult == VK_ERROR_OUT_OF_DATE_KHR || renderResult == VK_SUBOPTIMAL_KHR || m_window->is_resized())
 	{
 		m_window->set_resized(false);
 		update_renderpasses();
@@ -56,6 +54,10 @@ void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 	{
 		throw VKException("failed to present swap chain image!");
 	}
+
+	// if(m_updateContext){
+	// 	update_context();
+	// }
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -75,6 +77,7 @@ void Renderer::render(Scene *const scene)
 
 		return;
 	}
+
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		throw VKException("failed to acquire swap chain image!");
@@ -82,6 +85,7 @@ void Renderer::render(Scene *const scene)
 
 	VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
 	VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, 0));
+
 
 	VkCommandBufferBeginInfo beginInfo = init::command_buffer_begin_info();
 
@@ -132,6 +136,7 @@ void Renderer::render(Scene *const scene)
 void Renderer::on_awake()
 {
 	m_frames.resize(MAX_FRAMES_IN_FLIGHT);
+	m_vignette = Mesh::create_quad();
 }
 
 void Renderer::on_init()
@@ -164,11 +169,11 @@ void Renderer::on_init()
 	// Setup VMA
 	m_memory = booter.setup_memory(m_instance, m_device, m_gpu);
 
+	init_control_objects();
+
 	// Create swapchain
 	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
 					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
-
-	init_control_objects();
 
 	init_renderpasses();
 
@@ -189,6 +194,9 @@ void Renderer::on_shutdown()
 	if (m_initialized)
 	{
 		m_deletionQueue.flush();
+
+		m_vignette->get_geometry()->cleanup(m_memory);
+		Texture::DEBUG_TEXTURE->m_image.cleanup(m_device, m_memory);
 
 		// Destroy passes framebuffers and resources
 		for (RenderPass *pass : m_renderPipeline.renderpasses)
@@ -223,7 +231,7 @@ void Renderer::init_gui()
 					m_device,
 					m_gpu,
 					m_graphicsQueue,
-					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? ( m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION):DefaultRenderPasses::FXAA]->get_obj(),
+					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? (m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION) : DefaultRenderPasses::FXAA]->get_obj(),
 					m_swapchain.get_image_format(),
 					(VkSampleCountFlagBits)m_settings.AAtype,
 					m_window->get_window_obj());

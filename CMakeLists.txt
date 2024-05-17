@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(VulkanEngine)
 
+
 # Place inside source dir
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
@@ -14,6 +15,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # using GCC
     message("Using GCC")
 endif()
+
 
 # Set the platform (e.g., x64)
 set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed

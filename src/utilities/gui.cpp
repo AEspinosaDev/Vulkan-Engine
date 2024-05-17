@@ -6,8 +6,8 @@ bool GUIOverlay::m_initialized = false;
 void GUIOverlay::init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass renderPass,
                       VkFormat format, VkSampleCountFlagBits samples, GLFWwindow *window)
 {
-    if (GUIOverlay::m_initialized)
-        return;
+    // if (GUIOverlay::m_initialized)
+    //     return;
 
     // 1: create descriptor pool for IMGUI
     VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},

@@ -165,9 +165,13 @@ void Renderer::init_resources()
 	Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 	Texture::upload_data(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext, Texture::DEBUG_TEXTURE);
-	m_deletionQueue.push_function([=]()
-								  { Texture::DEBUG_TEXTURE->m_image.cleanup(m_device, m_memory); });
 
+	set_renderpass_resources();
+
+}
+
+void Renderer::set_renderpass_resources()
+{
 	size_t i = 0;
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
@@ -197,5 +201,4 @@ void Renderer::init_resources()
 											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
 	}
 }
-
 VULKAN_ENGINE_NAMESPACE_END

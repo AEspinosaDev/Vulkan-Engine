@@ -5,7 +5,8 @@ mkdir build
 cd build
 
 cmake ..
-cmake --build .
+cmake --build . --config Release
+
 
 echo.
 echo Press any key to close this window...

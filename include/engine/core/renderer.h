@@ -140,7 +140,8 @@ protected:
 
 	bool m_initialized{false};
 	uint32_t m_currentFrame{0};
-	bool m_updateFramebuffers{false};
+	// bool m_updateFramebuffers{false};
+	bool m_updateContext{false};
 
 	GUIOverlay *m_gui{nullptr};
 
@@ -165,7 +166,7 @@ public:
 		m_settings.AAtype = msaa;
 		if (m_initialized)
 		{
-			m_updateFramebuffers = true;
+			m_updateContext = true;
 		}
 	}
 	inline void set_shadow_quality(ShadowResolution quality)
@@ -173,26 +174,26 @@ public:
 		m_settings.shadowResolution = quality;
 		if (m_initialized)
 		{
-			m_updateFramebuffers = true;
+			m_updateContext = true;
 		}
 	}
 	inline void set_color_format(ColorFormatType color)
 	{
 		m_settings.colorFormat = color;
 		if (m_initialized)
-			m_updateFramebuffers = true;
+			m_updateContext = true;
 	}
 	inline void set_depth_format(DepthFormatType d)
 	{
 		m_settings.depthFormat = d;
 		if (m_initialized)
-			m_updateFramebuffers = true;
+			m_updateContext = true;
 	}
 	inline void set_sync_type(SyncType sync)
 	{
 		m_settings.screenSync = sync;
 		if (m_initialized)
-			m_updateFramebuffers = true;
+			m_updateContext = true;
 	}
 
 	inline void enable_gui_overlay(bool op) { m_settings.enableUI; }
@@ -214,6 +215,8 @@ public:
 	inline void set_rendering_method(RendererType type)
 	{
 		m_settings.renderingType = type;
+		if (m_initialized)
+			m_updateContext = true;
 	}
 	inline void set_deferred_output_type(int op)
 	{
@@ -306,10 +309,18 @@ protected:
 	*/
 	virtual void init_resources();
 
+	
+	virtual void set_renderpass_resources();
+
 	/*
-	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing or reconfiguring context
+	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing context
 	*/
 	virtual void update_renderpasses();
+
+	/*
+	Reconfigure entire vulkan rendering context
+	*/
+	virtual void update_context();
 
 #pragma endregion
 /*

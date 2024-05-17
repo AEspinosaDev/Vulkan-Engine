@@ -52,9 +52,9 @@ class VulkanRenderer
 
 public:
     void
-    init();
+    init(RendererSettings settings);
 
-    void run();
+    void run(int argc, char* argv[]);
 
 private:
     void setup();

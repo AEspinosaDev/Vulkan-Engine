@@ -21,10 +21,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 void Renderer::init_renderpasses()
 {
 
-	m_vignette = Mesh::create_quad();
-	m_deletionQueue.push_function([=]()
-								  { m_vignette->get_geometry()->cleanup(m_memory); });
-
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
@@ -217,7 +213,6 @@ void Renderer::update_renderpasses()
 	if (m_settings.AAtype == AntialiasingType::FXAA)
 		static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_settings.renderingType == RendererType::TDEFERRED ? m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image : m_renderPipeline.renderpasses[FORWARD]->get_attachments()[0].image);
 
-	
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 
@@ -227,4 +222,46 @@ void Renderer::update_renderpasses()
 	}
 }
 
+void Renderer::update_context()
+{
+
+	if (!m_initialized)
+		return;
+
+	VK_CHECK(vkDeviceWaitIdle(m_device));
+
+	// Cleanup
+	m_deletionQueue.flush();
+
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
+	{
+		pass->clean_framebuffer(m_device, m_memory);
+	}
+	m_swapchain.cleanup(m_device, m_memory);
+
+	m_renderPipeline.renderpasses.clear();
+
+	init_control_objects();
+
+	// Recreation
+	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+
+	init_renderpasses();
+
+	init_descriptors();
+
+	init_pipelines();
+
+	init_resources();
+
+	// if (m_settings.enableUI)
+	// 	init_gui();
+
+	Frame::guiEnabled = false;
+
+	set_renderpass_resources();
+
+	m_updateContext = false;
+}
 VULKAN_ENGINE_NAMESPACE_END

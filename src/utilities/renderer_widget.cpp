@@ -21,7 +21,7 @@ void RendererSettingsWidget::render()
     }
     if (type_current == 1)
     {
-        const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO" , "MATERIAL", "AO"};
+        const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO", "MATERIAL", "AO"};
         static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
         if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
         {
@@ -82,19 +82,38 @@ void RendererSettingsWidget::render()
     ImGui::BulletText("Gamma Correction Enabled");
     ImGui::BulletText("Device Dependable Anisotropic Filter Enabled");
 
-    const char *items[] = {"NONE", "MSAAx4", "MSAAx8"};
-    static int item_current = 2;
+    const char *items[] = {"NONE", "MSAAx4", "MSAAx8", "FXAA"};
+    static int item_currentr = (int)m_renderer->get_settings().AAtype;
+    static int item_current;
+    switch (item_current)
+        {
+        case 0:
+           item_current=3;
+            break;
+        case 1:
+           item_current=0;
+            break;
+        case 4:
+           item_current=1;
+            break;
+        case 8:
+           item_current=2;
+            break;
+        }
     if (ImGui::Combo("Antialiasing", &item_current, items, IM_ARRAYSIZE(items)))
     {
         switch (item_current)
         {
         case 0:
-            m_renderer->set_antialiasing(_NONE);
+            m_renderer->set_antialiasing(FXAA);
             break;
         case 1:
+            m_renderer->set_antialiasing(_NONE);
+            break;
+        case 4:
             m_renderer->set_antialiasing(MSAA_x4);
             break;
-        case 2:
+        case 8:
             m_renderer->set_antialiasing(MSAA_x8);
             break;
         }

@@ -1,7 +1,7 @@
 #include "application.h"
 #include <filesystem>
 
-void VulkanRenderer::init()
+void VulkanRenderer::init(RendererSettings settings)
 {
     m_window = new Window("VK Engine", 1280, 1024);
 
@@ -15,12 +15,6 @@ void VulkanRenderer::init()
                                          std::placeholders::_2, std::placeholders::_3,
                                          std::placeholders::_4));
 
-    RendererSettings settings{};
-    settings.AAtype = AntialiasingType::FXAA;
-    settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
-    settings.enableUI = true;
-    settings.renderingType = RendererType::TDEFERRED;
-
     m_renderer = new Renderer(m_window, settings);
 
     setup();
@@ -28,9 +22,75 @@ void VulkanRenderer::init()
     setup_gui();
 }
 
-void VulkanRenderer::run()
+void VulkanRenderer::run(int argc, char *argv[])
 {
-    init();
+
+    RendererSettings settings{};
+    settings.AAtype = AntialiasingType::MSAA_x8;
+    settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
+    settings.enableUI = true;
+    settings.renderingType = RendererType::TFORWARD;
+
+    if (argc == 1)
+        std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::string token(argv[i]);
+        if (token == "-type")
+        {
+            if (i + 1 >= argc)
+            {
+                std::cerr << "\"--type\" argument expects a rendering type keyword:" << std::endl;
+                std::cerr << "[forward]" << std::endl;
+                std::cerr << "[deferred]" << std::endl;
+                return;
+            }
+            std::string type(argv[i + 1]);
+
+            if (type == "forward")
+            {
+                settings.renderingType = RendererType::TFORWARD;
+                i++;
+                continue;
+            }
+            if (type == "deferred")
+            {
+                settings.renderingType = RendererType::TDEFERRED;
+                i++;
+                continue;
+            }
+
+            std::cerr << "\"--type\" invalid argument:" << std::endl;
+            std::cerr << "[forward]" << std::endl;
+            std::cerr << "[deferred]" << std::endl;
+            return;
+        }
+        else if (token == "-aa")
+        {
+            if (i + 1 >= argc)
+            {
+                std::cerr << "\"--aa\" argument expects an antialiasing type keyword:" << std::endl;
+                std::cerr << "[none]" << std::endl;
+                std::cerr << "[msaa4]" << std::endl;
+                std::cerr << "[msaa8]" << std::endl;
+                std::cerr << "[fxaa]" << std::endl;
+                return;
+            }
+            std::string aaType(argv[i + 1]);
+            if (aaType == "none")
+                settings.AAtype = AntialiasingType::_NONE;
+            if (aaType == "msaa4")
+                settings.AAtype = AntialiasingType::MSAA_x4;
+            if (aaType == "msaa8")
+                settings.AAtype = AntialiasingType::MSAA_x8;
+            if (aaType == "fxaa")
+                settings.AAtype = AntialiasingType::FXAA;
+        }
+        continue;
+    }
+
+    init(settings);
     while (!m_window->get_window_should_close())
     {
 
@@ -58,7 +118,7 @@ void VulkanRenderer::setup()
 
     m_scene->add(new PointLight());
     m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
-    PointLight* light = new PointLight();
+    PointLight *light = new PointLight();
     light->set_area_of_effect(18);
     m_scene->add(light);
     m_scene->get_lights()[1]->set_position({3.0f, 6.5f, 10.0f});
