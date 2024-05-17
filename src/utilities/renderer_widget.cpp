@@ -3,145 +3,168 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 void RendererSettingsWidget::render()
 {
 
-    ImGui::SeparatorText("Global settings");
+	ImGui::SeparatorText("Global settings");
 
-    const char *renderTypes[] = {"FORWARD", "DEFERRED"};
-    static int type_current = static_cast<int>(m_renderer->get_settings().renderingType);
-    if (ImGui::Combo("Rendering Method", &type_current, renderTypes, IM_ARRAYSIZE(renderTypes)))
-    {
-        switch (type_current)
-        {
-        case 0:
-            m_renderer->set_rendering_method(RendererType::TFORWARD);
-            break;
-        case 1:
-            m_renderer->set_rendering_method(RendererType::TDEFERRED);
-            break;
-        }
-    }
-    if (type_current == 1)
-    {
-        const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO", "MATERIAL", "AO"};
-        static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
-        if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
-        {
-            switch (otype_current)
-            {
-            case 0:
-                m_renderer->set_deferred_output_type(0);
-                break;
-            case 1:
-                m_renderer->set_deferred_output_type(1);
-                break;
-            case 2:
-                m_renderer->set_deferred_output_type(2);
-                break;
-            case 3:
-                m_renderer->set_deferred_output_type(3);
-                break;
-            case 4:
-                m_renderer->set_deferred_output_type(4);
-                break;
-            case 5:
-                m_renderer->set_deferred_output_type(5);
-                break;
-            }
-        }
-    }
+	const char* renderTypes[] = { "FORWARD", "DEFERRED" };
+	static int type_current = static_cast<int>(m_renderer->get_settings().renderingType);
+	if (ImGui::Combo("Rendering Method", &type_current, renderTypes, IM_ARRAYSIZE(renderTypes)))
+	{
+		switch (type_current)
+		{
+		case 0:
+			m_renderer->set_rendering_method(RendererType::TFORWARD);
+			break;
+		case 1:
+			m_renderer->set_rendering_method(RendererType::TDEFERRED);
+			break;
+		}
+	}
 
-    const char *syncs[] = {"NONE", "MAILBOX", "VSYNC"};
-    static int sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
-    if (ImGui::Combo("Screen Sync", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
-    {
-        switch (sync_current)
-        {
-        case 0:
-            m_renderer->set_sync_type(SyncType::NONE);
-            break;
-        case 1:
-            m_renderer->set_sync_type(SyncType::MAILBOX_SYNC);
-            break;
-        case 2:
-            m_renderer->set_sync_type(SyncType::V_SYNC);
-            break;
-        }
-    }
+	if (type_current == 1)
+	{
+		const char* outputTypes[] = { "LIGHTING", "POSITION", "NORMALS", "ALBEDO", "MATERIAL", "AO" };
+		static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
+		if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
+		{
+			switch (otype_current)
+			{
+			case 0:
+				m_renderer->set_deferred_output_type(0);
+				break;
+			case 1:
+				m_renderer->set_deferred_output_type(1);
+				break;
+			case 2:
+				m_renderer->set_deferred_output_type(2);
+				break;
+			case 3:
+				m_renderer->set_deferred_output_type(3);
+				break;
+			case 4:
+				m_renderer->set_deferred_output_type(4);
+				break;
+			case 5:
+				m_renderer->set_deferred_output_type(5);
+				break;
+			}
+		}
+	}
 
-    glm::vec3 clearColor = m_renderer->get_settings().clearColor;
-    if (ImGui::ColorEdit3("Clear Color", (float *)&clearColor))
-    {
-        m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
-    }
+	const char* items[] = { "NONE", "MSAAx4", "MSAAx8", "FXAA" };
+	AntialiasingType item_currentr = m_renderer->get_settings().AAtype;
+	int item_current;
+	switch (item_currentr)
+	{
+	case AntialiasingType::_NONE:
+		item_current = 0;
+		break;
+	case AntialiasingType::MSAA_x4:
+		item_current = 1;
+		break;
+	case AntialiasingType::MSAA_x8:
+		item_current = 2;
+		break;
+	case AntialiasingType::FXAA:
+		item_current = 3;
+		break;
+	}
+	if (ImGui::Combo("Antialiasing", &item_current, items, IM_ARRAYSIZE(items)))
+	{
+		/*switch (item_current)
+		{
+		case 0:
+			m_renderer->set_antialiasing(FXAA);
+			break;
+		case 1:
+			m_renderer->set_antialiasing(_NONE);
+			break;
+		case 4:
+			m_renderer->set_antialiasing(MSAA_x4);
+			break;
+		case 8:
+			m_renderer->set_antialiasing(MSAA_x8);
+			break;
+		}*/
+	}
 
-    bool hwBias = m_renderer->get_settings().enableHardwareDepthBias;
-    if (ImGui::Checkbox("Hardware Depth Bias", &hwBias))
-    {
-        m_renderer->set_hardware_depth_bias(hwBias);
-    };
 
-    ImGui::BulletText("Gamma Correction Enabled");
-    ImGui::BulletText("Device Dependable Anisotropic Filter Enabled");
+	const char* syncs[] = { "NONE", "MAILBOX", "VSYNC" };
+	static int sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
+	if (ImGui::Combo("Screen Sync", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
+	{
+		switch (sync_current)
+		{
+		case 0:
+			m_renderer->set_sync_type(SyncType::NONE);
+			break;
+		case 1:
+			m_renderer->set_sync_type(SyncType::MAILBOX_SYNC);
+			break;
+		case 2:
+			m_renderer->set_sync_type(SyncType::V_SYNC);
+			break;
+		}
+	}
 
-    const char *items[] = {"NONE", "MSAAx4", "MSAAx8", "FXAA"};
-    static int item_currentr = (int)m_renderer->get_settings().AAtype;
-    static int item_current;
-    switch (item_current)
-        {
-        case 0:
-           item_current=3;
-            break;
-        case 1:
-           item_current=0;
-            break;
-        case 4:
-           item_current=1;
-            break;
-        case 8:
-           item_current=2;
-            break;
-        }
-    if (ImGui::Combo("Antialiasing", &item_current, items, IM_ARRAYSIZE(items)))
-    {
-        switch (item_current)
-        {
-        case 0:
-            m_renderer->set_antialiasing(FXAA);
-            break;
-        case 1:
-            m_renderer->set_antialiasing(_NONE);
-            break;
-        case 4:
-            m_renderer->set_antialiasing(MSAA_x4);
-            break;
-        case 8:
-            m_renderer->set_antialiasing(MSAA_x8);
-            break;
-        }
-    }
+	glm::vec3 clearColor = m_renderer->get_settings().clearColor;
+	if (ImGui::ColorEdit3("Clear Color", (float*)&clearColor))
+	{
+		m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
+	}
 
-    const char *res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
+	/* bool hwBias = m_renderer->get_settings().enableHardwareDepthBias;
+	 if (ImGui::Checkbox("Hardware Depth Bias", &hwBias))
+	 {
+		 m_renderer->set_hardware_depth_bias(hwBias);
+	 };*/
 
-    static int res_current = 1;
-    if (ImGui::Combo("Shadows Quality", &res_current, res, IM_ARRAYSIZE(res)))
-    {
-        // switch (res_current)
-        // {
-        // case 0:
-        //     m_renderer->m_settings.shadowResolution = ShadowResolution::VERY_LOW;
-        //     break;
-        // case 1:
-        //     m_renderer->m_settings.shadowResolution = ShadowResolution::LOW;
-        //     break;
-        // case 2:
-        //     m_renderer->m_settings.shadowResolution = ShadowResolution::MEDIUM;
-        //     break;
-        // case 3:
-        //     m_renderer->m_settings.shadowResolution = ShadowResolution::HIGH;
-        //     break;
-        // case 4:
-        //     m_renderer->m_settings.shadowResolution = ShadowResolution::ULTRA;
-        //     break;
-        // }
-    }
+	ImGui::BulletText("Gamma Correction Enabled");
+	ImGui::BulletText("Device Dependable Anisotropic Filter Enabled");
+
+
+	const char* res[] = { "VERY LOW", "LOW", "MID", "HIGH", "ULTRA" };
+
+	ShadowResolution res_currentr = m_renderer->get_settings().shadowResolution;
+	int res_current;
+	switch (res_currentr)
+	{
+	case ShadowResolution::VERY_LOW:
+		res_current = 0;
+		break;
+	case ShadowResolution::LOW:
+		res_current = 1;
+		break;
+	case ShadowResolution::MEDIUM:
+		res_current = 2;
+		break;
+	case ShadowResolution::HIGH:
+		res_current = 3;
+		break;
+	case ShadowResolution::ULTRA:
+		res_current = 4;
+		break;
+	}
+
+	if (ImGui::Combo("Shadows Quality", &res_current, res, IM_ARRAYSIZE(res)))
+	{
+		switch (res_current)
+		{
+		case 0:
+			m_renderer->set_shadow_quality(ShadowResolution::VERY_LOW);
+			break;
+		case 1:
+			m_renderer->set_shadow_quality(ShadowResolution::LOW);
+			break;
+		case 2:
+			m_renderer->set_shadow_quality(ShadowResolution::MEDIUM);
+			break;
+		case 3:
+			m_renderer->set_shadow_quality(ShadowResolution::HIGH);
+			break;
+		case 4:
+			m_renderer->set_shadow_quality(ShadowResolution::ULTRA);
+			break;
+		}
+	}
 }
 VULKAN_ENGINE_NAMESPACE_END

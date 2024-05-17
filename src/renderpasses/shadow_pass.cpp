@@ -192,4 +192,19 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
     end(cmd);
 }
 
+void ShadowPass::update(VkDevice& device, VmaAllocator& memory, Swapchain* swp)
+{
+    RenderPass::update(device, memory);
+    m_attachments[0].image.create_sampler(
+        device,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+        0.0f,
+        1.0f,
+        false,
+        1.0f,
+        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+}
+
 VULKAN_ENGINE_NAMESPACE_END

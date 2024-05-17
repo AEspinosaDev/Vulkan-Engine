@@ -41,7 +41,7 @@ void VulkanRenderer::run(int argc, char *argv[])
         {
             if (i + 1 >= argc)
             {
-                std::cerr << "\"--type\" argument expects a rendering type keyword:" << std::endl;
+                std::cerr << "\"-type\" argument expects a rendering type keyword:" << std::endl;
                 std::cerr << "[forward]" << std::endl;
                 std::cerr << "[deferred]" << std::endl;
                 return;
@@ -70,7 +70,7 @@ void VulkanRenderer::run(int argc, char *argv[])
         {
             if (i + 1 >= argc)
             {
-                std::cerr << "\"--aa\" argument expects an antialiasing type keyword:" << std::endl;
+                std::cerr << "\"-aa\" argument expects an antialiasing type keyword:" << std::endl;
                 std::cerr << "[none]" << std::endl;
                 std::cerr << "[msaa4]" << std::endl;
                 std::cerr << "[msaa8]" << std::endl;
@@ -86,6 +86,26 @@ void VulkanRenderer::run(int argc, char *argv[])
                 settings.AAtype = AntialiasingType::MSAA_x8;
             if (aaType == "fxaa")
                 settings.AAtype = AntialiasingType::FXAA;
+
+            i++;
+            continue;
+        }
+        else if (token == "-gui")
+        {
+            if (i + 1 >= argc)
+            {
+                std::cerr << "\"-gui\" argument expects an enabling gui type keyword:" << std::endl;
+                std::cerr << "[false]" << std::endl;
+                std::cerr << "[true]" << std::endl;
+                return;
+            }
+            std::string enableGui(argv[i + 1]);
+            if (enableGui == "true")
+                settings.enableUI = true;
+            if (enableGui == "false")
+                settings.enableUI = false;
+            i++;
+            continue;
         }
         continue;
     }

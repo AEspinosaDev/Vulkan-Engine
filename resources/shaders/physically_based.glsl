@@ -35,7 +35,7 @@ struct LightUniform{
     mat4 viewProj;
 
     float shadowBias;
-    bool apiBiasEnabled;
+    float kernelRadius;
     bool angleDependantBias;
     float pcfKernel;
 };
@@ -143,7 +143,7 @@ struct LightUniform{
     mat4 viewProj;
 
     float shadowBias;
-    bool apiBiasEnabled;
+    float kernelRadius;
     bool angleDependantBias;
     float pcfKernel;
 };
@@ -251,7 +251,7 @@ float computeAttenuation(LightUniform light) {
     return pow(10 / max(d, 0.0001), 2) * window;
 }
 
-float filterPCF(int lightId ,int kernelSize, vec3 coords, float bias) {
+float filterPCF(int lightId ,int kernelSize, float extentMultiplier, vec3 coords, float bias) {
 
     int edge = kernelSize / 2;
     vec3 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -262,7 +262,7 @@ float filterPCF(int lightId ,int kernelSize, vec3 coords, float bias) {
 
     for(int x = -edge; x <= edge; ++x) {
         for(int y = -edge; y <= edge; ++y) {
-            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy,lightId)).r;
+            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy * extentMultiplier,lightId)).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
@@ -282,7 +282,7 @@ float computeShadow(LightUniform light, int lightId) {
         return 0.0;
 
     
-    return filterPCF(lightId,int(light.pcfKernel), projCoords, light.shadowBias);
+    return filterPCF(lightId,int(light.pcfKernel), light.kernelRadius, projCoords, light.shadowBias);
 
 }
 

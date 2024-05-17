@@ -37,11 +37,27 @@ if "%aaType%"=="none" (
 :aaTypeSet
 echo Antialiasing type set to %aaType%.
 
+:: Ask for the gui
+:enableGui
+echo Enable GUI (true/false):
+set /p enableGui=
+if "%enableGui%"=="true" (
+    goto enableGuiSet
+) else if "%enableGui%"=="false" (
+    goto enableGuiSet
+) else (
+    echo Invalid argument. Please enter either "true" or "false".
+    goto enableGui
+)
+
+:enableGuiSet
+echo GUI type set to %enableGui%.
+
 :: Add a delay of 5 seconds (5000 milliseconds)
 echo Launching the application...
 timeout /t 2 /nobreak > nul
 
 :: Call the executable with the collected arguments
-.\build\examples\Release\RendererApp.exe -type %renderType% -aa %aaType%
+.\build\examples\Release\RendererApp.exe -type %renderType% -aa %aaType% -gui %enableGui%
 
 endlocal

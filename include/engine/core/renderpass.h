@@ -102,7 +102,6 @@ public:
     inline VkExtent2D get_extent() const { return m_extent; }
     inline void set_extent(VkExtent2D extent)
     {
-        if (m_isResizeable)
             m_extent = extent;
     }
     inline std::vector<VkFramebuffer> const get_framebuffers() const { return m_framebuffers; }

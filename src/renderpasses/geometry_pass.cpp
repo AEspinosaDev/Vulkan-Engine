@@ -209,6 +209,8 @@ void GeometryPass::init_resources(VkDevice &device,
 }
 void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
+    set_g_buffer_clear_color(Vec4(0.0));
+
     VkCommandBuffer cmd = frame.commandBuffer;
 
     begin(cmd, presentImageIndex);

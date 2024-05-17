@@ -581,8 +581,12 @@ void ObjectExplorerWidget::render()
                 light->set_shadow_bias(bias);
 
             int kernel = light->get_shadow_pcf_kernel();
-            if (ImGui::DragInt("PC Filter Kernel", &kernel, 2, 3, 15))
+            if (ImGui::DragInt("PCF Size", &kernel, 2, 3, 15))
                 light->set_shadow_pcf_kernel(kernel);
+
+            float kernelRad = light->get_shadow_kernel_radius();
+            if (ImGui::DragFloat("PCF Magnifier", &kernelRad, 0.1f, 1.0f, 100.0f))
+                light->set_shadow_kernel_radius(kernelRad);
         }
     }
     if (m_object->get_type() == ObjectType::CAMERA)

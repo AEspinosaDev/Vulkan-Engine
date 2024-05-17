@@ -33,6 +33,8 @@ public:
                         utils::UploadContext &uploadContext);
 
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+
+    void update(VkDevice& device, VmaAllocator& memory, Swapchain* swp = nullptr);
 };
 
 VULKAN_ENGINE_NAMESPACE_END

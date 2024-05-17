@@ -33,6 +33,7 @@ protected:
 
         float bias{0.005f};
         bool angleDependableBias{false};
+        float kernelRadius{ 1.0 };
         // bool enableVulkanBias{false};
         int pcfKernel{7};
 
@@ -80,6 +81,9 @@ public:
 
     virtual inline bool get_angle_dependant_bias() const { return m_shadow.angleDependableBias; }
     virtual inline void set_angle_dependant_bias(bool o) { m_shadow.angleDependableBias = o; }
+
+    virtual inline float get_shadow_kernel_radius() const { return m_shadow.kernelRadius; }
+    virtual inline void set_shadow_kernel_radius(float o) { m_shadow.kernelRadius = o; }
 
     // Read only
     virtual const Texture *const get_shadow_map() const { return m_shadow.map; }
