@@ -42,7 +42,6 @@
 #include <engine/renderpasses/ssao_blur_pass.h>
 #include <engine/renderpasses/composition_pass.h>
 #include <engine/renderpasses/fxaa_pass.h>
-#include <engine/renderpasses/gui_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
