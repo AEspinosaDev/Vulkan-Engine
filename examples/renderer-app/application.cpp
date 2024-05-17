@@ -30,6 +30,7 @@ void VulkanRenderer::run(int argc, char *argv[])
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
     settings.renderingType = RendererType::TFORWARD;
+    settings.shadowResolution = ShadowResolution::MEDIUM;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
@@ -138,18 +139,27 @@ void VulkanRenderer::setup()
 
     m_scene->add(new PointLight());
     m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
+    m_scene->get_lights()[0]->set_shadow_fov(115.0f);
     PointLight *light = new PointLight();
     light->set_area_of_effect(18);
     m_scene->add(light);
     m_scene->get_lights()[1]->set_position({3.0f, 6.5f, 10.0f});
     m_scene->get_lights()[1]->set_shadow_target({0.0f, 0.0f, 10.0f});
     m_scene->get_lights()[1]->set_shadow_fov(160.0f);
-    m_scene->get_lights()[1]->set_color({1, 0.5, 0.2});
+    m_scene->get_lights()[1]->set_color({0, 0.11, 0.55});
+    m_scene->get_lights()[1]->set_intensity(0.255);
     m_scene->add(new PointLight());
-    m_scene->get_lights()[2]->set_position({-5.3f, 2.7f, 5.6f});
-    m_scene->get_lights()[2]->set_shadow_target({-3.6f, 0.0f, 2.3f});
-    m_scene->get_lights()[2]->set_shadow_fov(100.0f);
-    m_scene->get_lights()[2]->set_color({0, 0, 0.25});
+    m_scene->get_lights()[2]->set_position({1.9f, 1.5f, 9.5f});
+    m_scene->get_lights()[2]->set_shadow_target({1.1f, 0.0f, 9.5f});
+    m_scene->get_lights()[2]->set_shadow_fov(110.0f);
+    m_scene->get_lights()[2]->set_color({0.25, 0.13, 0});
+    m_scene->get_lights()[2]->set_intensity(0.060);
+    PointLight *light2 = new PointLight();
+    light2->set_area_of_effect(0.440);
+    m_scene->add(light2);
+    m_scene->get_lights()[3]->set_position({2.5f, -1.6f, 9.4f});
+    m_scene->get_lights()[3]->set_color({0.25, 0.13, 0});
+    m_scene->get_lights()[3]->set_cast_shadows(false);
 
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();
@@ -193,7 +203,7 @@ void VulkanRenderer::setup()
     m_scene->add(terrainMesh);
 
     Mesh *boxMesh = new Mesh();
-    boxMesh->set_position({-3, -2.5, 5.0});
+    boxMesh->set_position({-3, -2.3, 3.f});
     boxMesh->set_rotation({0.0, 20.0f, 0.0f});
     boxMesh->load_file(ENGINE_MESH_PATH + "cube.obj");
     Texture *woodText = new Texture();
@@ -202,6 +212,7 @@ void VulkanRenderer::setup()
     boxMat->set_albedo_texture(woodText);
     boxMesh->set_material(boxMat);
     boxMesh->set_name("Box");
+    boxMesh->set_scale(0.75);
     m_scene->add(boxMesh);
 
     auto lightMat = new UnlitMaterial();
@@ -270,6 +281,51 @@ void VulkanRenderer::setup()
     templeMesh2->set_rotation({0.0, 160.0f, 0.0f});
     templeMesh2->set_scale(1.25);
     m_scene->add(templeMesh2);
+
+    Mesh *lanternMesh = new Mesh();
+    lanternMesh->load_file(MESH_PATH + "lantern.obj", false);
+    auto lanternMat = new PhysicallyBasedMaterial();
+    Texture *lanternT = new Texture();
+    lanternT->load_image(TEXTURE_PATH + "lantern_diffuse.png");
+    lanternMat->set_albedo_texture(lanternT);
+    lanternMesh->set_material(lanternMat);
+    lanternMesh->set_name("Lantern");
+    lanternMesh->set_position({2.5, -1.67, 2.8});
+    lanternMesh->set_rotation({0.0, 23.0f, 0.0f});
+    lanternMesh->set_scale(1.25);
+    lanternMat->set_roughness(0.8f);
+    m_scene->add(lanternMesh);
+
+    Mesh *lanternMesh2 = lanternMesh->clone();
+    lanternMesh->set_position({-1.4, -2.47, 4.4});
+    lanternMesh->set_rotation({0.0, 10.0f, 0.0f});
+    m_scene->add(lanternMesh2);
+
+    Mesh *lanternMesh3 = lanternMesh->clone();
+    lanternMesh->set_position({1.4, -1.57, -0.8});
+    lanternMesh->set_rotation({0.0, 9.0f, 0.0f});
+    m_scene->add(lanternMesh3);
+
+    Mesh *lanternMesh4 = lanternMesh->clone();
+    lanternMesh->set_position({-2.4, -2.17, 1.0});
+    lanternMesh->set_rotation({0.0, 14.0f, 0.0f});
+    m_scene->add(lanternMesh4);
+
+    Mesh *stoneMesh = new Mesh();
+    stoneMesh->load_file(MESH_PATH + "stone_lantern.obj", false);
+    auto stoneMat = new PhysicallyBasedMaterial();
+    Texture *stonelanternT = new Texture();
+    stonelanternT->load_image(TEXTURE_PATH + "stone_diffuse.png");
+    stoneMat->set_albedo_texture(stonelanternT);
+    stoneMesh->set_material(stoneMat);
+    stoneMesh->set_name("Stone Lantern");
+    stoneMesh->set_position({2.5, -2.67, 9.5});
+    stoneMesh->set_rotation({0.0, 107.0f, 0.0f});
+    stoneMesh->set_scale(1.5);
+    stoneMat->set_roughness(0.9f);
+    m_scene->add(stoneMesh);
+
+    m_scene->set_ambient_color({0.2,0.25,0.61});
 
     m_controller = new Controller(camera);
 }

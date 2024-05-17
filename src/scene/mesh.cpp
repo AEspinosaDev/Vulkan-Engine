@@ -93,6 +93,10 @@ Mesh *Mesh::clone() const
     {
         mesh->set_geometry(g);
     }
+    mesh->setup_volume();
+    mesh->set_name(m_name+std::string(" clone"));
+    mesh->set_transform(m_transform);
+    m_instanceCount++;
     return mesh;
 }
 Mesh *Mesh::create_quad()

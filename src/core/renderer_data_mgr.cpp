@@ -55,9 +55,10 @@ void Renderer::upload_object_data(Scene *const scene)
 
 						// Object material setup
 						Material *mat = m->get_material(g->get_material_ID());
-						if (!mat)
+						if (mat)
+							setup_material(mat);
+						else
 							setup_material(Material::DEBUG_MATERIAL);
-						setup_material(mat);
 
 						// ObjectUniforms materialData;
 						MaterialUniforms materialData = mat->get_uniforms();
@@ -167,7 +168,6 @@ void Renderer::init_resources()
 	Texture::upload_data(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext, Texture::DEBUG_TEXTURE);
 
 	set_renderpass_resources();
-
 }
 
 void Renderer::set_renderpass_resources()
