@@ -32,6 +32,7 @@ The main feautures of the library are:
 - Dynamic renderer states for some graphic features.
 - Multipass (depth pass for shadows, SSAO and post-processing).
 - Vulkan object and functionality abstraction.
+- Frustrum culling.
 - Simple to use user interface (Unfinished).
 - Easy to distribute source code.
 
