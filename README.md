@@ -24,12 +24,13 @@ It consists of two parts:
 
 The main feautures of the library are:
 
+- Forward and Deferred pipelines support.
 - PBR, Phong and other types of materials abstractions.
 - Scene and scene objects abstractions.
 - Texture loading with mipmapping.
 - On the fly shader compiling.
 - Dynamic renderer states for some graphic features.
-- Multipass (depth pass for shadows and SSAO).
+- Multipass (depth pass for shadows, SSAO and post-processing).
 - Vulkan object and functionality abstraction.
 - Simple to use user interface (Unfinished).
 - Easy to distribute source code.
@@ -55,20 +56,72 @@ The prequisites for using this code are:
    cd build
    cmake ..
    ```
-The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, as well as importing them from the internet if they are not available, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in Visual Studio Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio.
+
+The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in Visual Studio Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio.
 
 Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run. The CMake configuration is set for a 64-bit architecture, but it can be changed. CMake also takes care of automatically configuring the paths for resource files.
 
-The project compiles dependencies, the 3D library, and the demonstration applications directory, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
+The project compiles dependencies, the 3D library, and the example applications directory, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
 
 3. Building of the demos directory is optional, and can be turned off in CMake:
 ```bash
-cmake -DBUILD_DEMOS=OFF /path/to/source
+cmake -DBUILD_EXAMPLES=OFF /path/to/source
 ```
+4. Alternatively, you can click on the build.bat file to automatically build (in release mode) the entire project.
 
 ## Project Integration 🗄️
 
-Working on it ....
+Integration of Vulkan-Engine into your own personal project is quite easy. If working with CMake, Vulkan-Engine should be inserted inside the dependencies folder of your project root directory.
+
+On your main project CMakeLists.txt, write:
+
+```cmake
+
+cmake_minimum_required(VERSION 3.16)
+
+project(JohnDoe VERSION 1.0.0)
+
+# Add Vulkan-Engine subdirectory ! Set if you want to build the examples directory ...
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory(dependencies/Vulkan-Engine)
+
+#Setup project own source code (User-Defined)
+file(GLOB APP_SOURCES "src/*.cpp")
+file(GLOB APP_HEADERS "include/*.h")
+add_executable(JohnDoe ${APP_SOURCES} ${APP_HEADERS})
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+
+# Link project against VulkanEngine
+target_link_libraries(JohnDoe PRIVATE VulkanEngine)
+
+....
+
+```
+
+Your project structure should be somewhat like this one:
+
+```
+project_root/
+│
+├── resources/
+│   ├── shaders
+│   ├── textures
+│   └── meshes
+│
+├── dependencies/
+│   ├── Vulkan-Engine
+│   └── another-dependency
+│
+├── src/
+│   ├── main.cpp
+│   └── compilation_file1.cpp
+│
+├── include/
+│   ├── header1.h
+│   └── header2.h
+│
+└── CMakeLists.txt
+````
 
 ## Project Usage ✨
 
