@@ -20,7 +20,7 @@ It consists of two parts:
 
 - The library itself, a place where you can find a lot of abstracted functionality.
 
-- A demos directory that links against the library where you can find useful examples.
+- An examples directory that links against the library where you can find useful examples.
 
 The main feautures of the library are:
 
