@@ -62,6 +62,7 @@ protected:
 
     bool m_collapsable{true};
     bool m_collapsed{false};
+    bool m_menuBar{false};
 
     bool m_open{true};
     bool m_closable{false};
@@ -80,9 +81,9 @@ protected:
     virtual void render(ImVec2 extent);
 
 public:
-    Panel(const char *title, float posX, float posY, float extentX, float extentY, PanelWidgetFlags flags = PanelWidgetFlags::None, bool collapsed = false, bool closable = false)
+    Panel(const char *title, float posX, float posY, float extentX, float extentY, PanelWidgetFlags flags = PanelWidgetFlags::None, bool collapsed = false, bool closable = false, bool menu = false)
         : Widget(ImVec2(posX, posY), ImVec2(extentX, extentY)), m_title(title),
-          m_minExtent(ImVec2(extentX * 0.5f, extentY * 0.5f)), m_flags(flags), m_collapsed(collapsed), m_closable(closable) {}
+          m_minExtent(ImVec2(extentX * 0.5f, extentY * 0.5f)), m_flags(flags), m_collapsed(collapsed), m_closable(closable),m_menuBar(menu) {}
 
     ~Panel()
     {

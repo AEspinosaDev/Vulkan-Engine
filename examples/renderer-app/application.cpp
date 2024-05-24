@@ -31,7 +31,6 @@ void VulkanRenderer::run(int argc, char *argv[])
     settings.enableUI = true;
     settings.renderingType = RendererType::TFORWARD;
     settings.shadowResolution = ShadowResolution::MEDIUM;
-    // settings.bufferingType = BufferingType::_UNIQUE;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;

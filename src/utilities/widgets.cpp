@@ -17,7 +17,7 @@ void Panel::render(ImVec2 extent)
 
     if (m_open)
     {
-        if (ImGui::Begin(m_title, m_closable ? &m_open : NULL, m_collapsable ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+        if (ImGui::Begin(m_title, m_closable ? &m_open : NULL, m_collapsable ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
         {
             //     ImGui::SetWindowPos({m_position.x * m_parentOverlay->get_extent().x, m_position.y * m_parentOverlay->get_extent().y});
             // if (m_resized)
@@ -55,7 +55,63 @@ void TextLine::render()
 }
 void SceneExplorerWidget::render()
 {
+
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("+"))
+        {
+            if (ImGui::MenuItem("Plane"))
+            {
+                Mesh *plane = Mesh::create_quad();
+                auto mat = new PhysicallyBasedMaterial();
+                plane->set_material(mat);
+                plane->set_name("Plane");
+                m_scene->add(plane);
+            }
+            if (ImGui::MenuItem("Cube"))
+            {
+                Mesh *cube = new Mesh();
+                cube->load_file(ENGINE_RESOURCES_PATH "meshes/cube.obj", false);
+                auto mat = new PhysicallyBasedMaterial();
+                cube->set_material(mat);
+                cube->set_name("Box");
+                m_scene->add(cube);
+            }
+            if (ImGui::MenuItem("Sphere"))
+            {
+                Mesh *sph = new Mesh();
+                sph->load_file(ENGINE_RESOURCES_PATH "meshes/sphere.obj", false);
+                auto mat = new PhysicallyBasedMaterial();
+                sph->set_material(mat);
+                sph->set_name("Sphere");
+                m_scene->add(sph);
+            }
+
+            if (ImGui::MenuItem("Directional Light"))
+            {
+                DirectionalLight* light = new DirectionalLight(Vec3(0.0, -5.0, 5.0));
+                light->set_cast_shadows(false);
+                m_scene->add(light);
+            }
+            if (ImGui::MenuItem("Point Light"))
+            {
+                PointLight* light = new PointLight();
+                light->set_cast_shadows(false);
+                m_scene->add(light);
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Import from Disk"))
+            {
+               
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+    }
     ImGui::Spacing();
+
     ImGui::SeparatorText("SCENE EXPLORER");
 
     static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;

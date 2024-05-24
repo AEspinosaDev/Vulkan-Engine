@@ -35,14 +35,16 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value({m_settings.clearColor.r,
-																							 m_settings.clearColor.g,
-																							 m_settings.clearColor.b,
-																							 m_settings.clearColor.a});
-	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value({m_settings.clearColor.r,
-																								 m_settings.clearColor.g,
-																								 m_settings.clearColor.b,
-																								 m_settings.clearColor.a});
+	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value(
+		{m_settings.clearColor.r,
+		 m_settings.clearColor.g,
+		 m_settings.clearColor.b,
+		 m_settings.clearColor.a});
+	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value(
+		{m_settings.clearColor.r,
+		 m_settings.clearColor.g,
+		 m_settings.clearColor.b,
+		 m_settings.clearColor.a});
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)

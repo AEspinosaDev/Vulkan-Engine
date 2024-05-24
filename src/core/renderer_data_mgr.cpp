@@ -35,7 +35,6 @@ void Renderer::upload_object_data(Scene *const scene)
 		// Calculate distance
 		if (!blendMeshes.empty())
 		{
-			// VK_CHECK(vkDeviceWaitIdle(m_device));
 
 			std::map<float, Mesh *> sorted;
 			for (unsigned int i = 0; i < blendMeshes.size(); i++)
