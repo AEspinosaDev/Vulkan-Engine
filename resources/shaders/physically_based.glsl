@@ -181,7 +181,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
     bool alphaTest;
 
-    float unused;
+    bool blending;
 
     float albedoWeight;
 
@@ -202,6 +202,8 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
     bool hasMaskTexture;
     int maskType;
+
+    float opacityWeight;
 } material;
 
 
@@ -361,7 +363,7 @@ vec3 computeLighting(LightUniform light) {
 void setupSurfaceProperties(){
   //Setting input surface properties
     g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
-    g_opacity =  material.hasAlbdoTexture ?  texture(albedoTex, v_uv).a :material.opacity;
+    g_opacity =  material.hasAlbdoTexture ?  mix(material.opacity, texture(albedoTex, v_uv).a, material.opacityWeight) :material.opacity;
     g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
 
     if(material.hasMaskTexture) {
@@ -421,7 +423,7 @@ void main() {
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
-    outColor = vec4(color, 1.0);
+    outColor = vec4(color, material.blending ? g_opacity: 1.0);
 
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));

@@ -129,7 +129,7 @@ protected:
 
 	Mesh* m_vignette{ nullptr };
 
-	const int MAX_FRAMES_IN_FLIGHT{ 2 };
+	int MAX_FRAMES_IN_FLIGHT;
 
 #ifdef NDEBUG
 	const bool m_enableValidationLayers{ false };

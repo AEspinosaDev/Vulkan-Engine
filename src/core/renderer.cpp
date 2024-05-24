@@ -3,7 +3,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Renderer::run(Scene* const scene)
+void Renderer::run(Scene *const scene)
 {
 	if (!m_initialized)
 		init();
@@ -23,10 +23,8 @@ void Renderer::shutdown()
 	on_shutdown();
 }
 
-void Renderer::on_before_render(Scene* const scene)
+void Renderer::on_before_render(Scene *const scene)
 {
-	if (!m_initialized)
-		init();
 
 	if (Frame::guiEnabled && m_gui)
 	{
@@ -37,20 +35,17 @@ void Renderer::on_before_render(Scene* const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value({
-		m_settings.clearColor.r,
-		m_settings.clearColor.g,
-		m_settings.clearColor.b,
-		m_settings.clearColor.a });
-	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value({
-		m_settings.clearColor.r,
-		m_settings.clearColor.g,
-		m_settings.clearColor.b,
-		m_settings.clearColor.a });
-
+	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value({m_settings.clearColor.r,
+																							 m_settings.clearColor.g,
+																							 m_settings.clearColor.b,
+																							 m_settings.clearColor.a});
+	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value({m_settings.clearColor.r,
+																								 m_settings.clearColor.g,
+																								 m_settings.clearColor.b,
+																								 m_settings.clearColor.a});
 }
 
-void Renderer::on_after_render(VkResult& renderResult, Scene* const scene)
+void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 {
 	if (renderResult == VK_ERROR_OUT_OF_DATE_KHR || renderResult == VK_SUBOPTIMAL_KHR || m_window->is_resized() || m_updateFramebuffers)
 	{
@@ -68,10 +63,10 @@ void Renderer::on_after_render(VkResult& renderResult, Scene* const scene)
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::render(Scene* const scene)
+void Renderer::render(Scene *const scene)
 {
-
-	on_before_render(scene);
+	if (!m_initialized)
+		init();
 
 	VK_CHECK(vkWaitForFences(m_device, 1, &m_frames[m_currentFrame].renderFence, VK_TRUE, UINT64_MAX));
 	uint32_t imageIndex;
@@ -83,15 +78,15 @@ void Renderer::render(Scene* const scene)
 
 		return;
 	}
-
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		throw VKException("failed to acquire swap chain image!");
 	}
 
+	on_before_render(scene);
+
 	VK_CHECK(vkResetFences(m_device, 1, &m_frames[m_currentFrame].renderFence));
 	VK_CHECK(vkResetCommandBuffer(m_frames[m_currentFrame].commandBuffer, 0));
-
 
 	VkCommandBufferBeginInfo beginInfo = init::command_buffer_begin_info();
 
@@ -99,7 +94,7 @@ void Renderer::render(Scene* const scene)
 	{
 		throw VKException("failed to begin recording command buffer!");
 	}
-	for (RenderPass* pass : m_renderPipeline.renderpasses)
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
 		if (pass->is_active())
 			pass->render(m_frames[m_currentFrame], m_currentFrame, scene, imageIndex);
@@ -111,13 +106,13 @@ void Renderer::render(Scene* const scene)
 
 	VkSubmitInfo submitInfo = init::submit_info(&m_frames[m_currentFrame].commandBuffer);
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = { m_frames[m_currentFrame].presentSemaphore };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkSemaphore waitSemaphores[] = {m_frames[m_currentFrame].presentSemaphore};
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	VkSemaphore signalSemaphores[] = { m_frames[m_currentFrame].renderSemaphore };
+	VkSemaphore signalSemaphores[] = {m_frames[m_currentFrame].renderSemaphore};
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -130,7 +125,7 @@ void Renderer::render(Scene* const scene)
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
-	VkSwapchainKHR swapChains[] = { m_swapchain.get_swapchain_obj() };
+	VkSwapchainKHR swapChains[] = {m_swapchain.get_swapchain_obj()};
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
@@ -141,6 +136,7 @@ void Renderer::render(Scene* const scene)
 }
 void Renderer::on_awake()
 {
+	MAX_FRAMES_IN_FLIGHT = static_cast<int>(m_settings.bufferingType);
 	m_frames.resize(MAX_FRAMES_IN_FLIGHT);
 	m_vignette = Mesh::create_quad();
 }
@@ -179,7 +175,7 @@ void Renderer::on_init()
 
 	// Create swapchain
 	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-		static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	init_renderpasses();
 
@@ -205,7 +201,7 @@ void Renderer::on_shutdown()
 		Texture::DEBUG_TEXTURE->m_image.cleanup(m_device, m_memory);
 
 		// Destroy passes framebuffers and resources
-		for (RenderPass* pass : m_renderPipeline.renderpasses)
+		for (RenderPass *pass : m_renderPipeline.renderpasses)
 		{
 			pass->clean_framebuffer(m_device, m_memory);
 		}
@@ -234,15 +230,15 @@ void Renderer::init_gui()
 	if (m_gui)
 	{
 		m_gui->init(m_instance,
-			m_device,
-			m_gpu,
-			m_graphicsQueue,
-			m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? (m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION) : DefaultRenderPasses::FXAA]->get_obj(),
-			m_swapchain.get_image_format(),
-			(VkSampleCountFlagBits)m_settings.AAtype,
-			m_window->get_window_obj());
+					m_device,
+					m_gpu,
+					m_graphicsQueue,
+					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? (m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION) : DefaultRenderPasses::FXAA]->get_obj(),
+					m_swapchain.get_image_format(),
+					(VkSampleCountFlagBits)m_settings.AAtype,
+					m_window->get_window_obj());
 		m_deletionQueue.push_function([=]()
-			{ m_gui->cleanup(m_device); });
+									  { m_gui->cleanup(m_device); });
 	}
 }
 VULKAN_ENGINE_NAMESPACE_END

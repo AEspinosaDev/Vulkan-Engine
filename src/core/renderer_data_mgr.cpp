@@ -23,6 +23,34 @@ void Renderer::upload_object_data(Scene *const scene)
 
 	if (scene->get_active_camera() && scene->get_active_camera()->is_active())
 	{
+		std::vector<Mesh *> meshes;
+		std::vector<Mesh *> blendMeshes;
+
+		for (Mesh *m : scene->get_meshes())
+		{
+			if (m->get_material())
+				m->get_material()->get_parameters().blending ? blendMeshes.push_back(m) : meshes.push_back(m);
+		}
+
+		// Calculate distance
+		if (!blendMeshes.empty())
+		{
+			// VK_CHECK(vkDeviceWaitIdle(m_device));
+
+			std::map<float, Mesh *> sorted;
+			for (unsigned int i = 0; i < blendMeshes.size(); i++)
+			{
+				float distance = glm::distance(scene->get_active_camera()->get_position(), blendMeshes[i]->get_position());
+				sorted[distance] = blendMeshes[i];
+			}
+
+			// SECOND = TRANSPARENT OBJECTS SORTED FROM NEAR TO FAR
+			for (std::map<float, Mesh *>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+			{
+				meshes.push_back(it->second);
+			}
+			scene->set_meshes(meshes);
+		}
 
 		unsigned int mesh_idx = 0;
 		for (Mesh *m : scene->get_meshes())

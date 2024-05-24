@@ -26,7 +26,7 @@ void Renderer::init_renderpasses()
 
 	// Creating default renderpasses
 	ForwardPass* forwardPass = new ForwardPass(m_window->get_extent(),
-		(uint32_t)m_settings.bufferingType + 1,
+		totalImagesInFlight,
 		m_settings.colorFormat,
 		m_settings.depthFormat,
 		m_settings.AAtype);

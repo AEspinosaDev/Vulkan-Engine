@@ -79,6 +79,7 @@ public:
 
     inline Camera *const get_active_camera() const { return m_activeCamera; }
     inline const std::vector<Mesh *> get_meshes() const { return m_meshes; }
+    inline void set_meshes(std::vector<Mesh *> meshes) { m_meshes = meshes; }
     inline const std::vector<Camera *> get_cameras() const { return m_cameras; }
     inline const std::vector<Light *> get_lights() const { return m_lights; }
 

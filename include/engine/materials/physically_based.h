@@ -21,8 +21,9 @@ class PhysicallyBasedMaterial : public Material
 protected:
     Vec2 m_tileUV{1.0f, 1.0f};
 
-    Vec4 m_albedo;         // w for opacity
+    Vec4 m_albedo{0.5,0.5,0.5,1.0};         // w for opacity
     float m_albedoWeight{1.0f}; // Weight between parameter and albedo texture
+    float m_opacityWeight{0.0f};
 
     float m_metalness{0.5f};
     float m_metalnessWeight{1.0f}; // Weight between parameter and metallness texture
@@ -88,10 +89,10 @@ public:
         m_isDirty = true;
     }
 
-    inline Vec4 get_albedo() const { return m_albedo; }
-    inline void set_albedo(Vec4 c)
+    inline Vec3 get_albedo() const { return Vec3(m_albedo); }
+    inline void set_albedo(Vec3 c)
     {
-        m_albedo = c;
+        m_albedo = Vec4(c,m_albedo.w);
         m_isDirty = true;
     }
 
@@ -103,6 +104,22 @@ public:
         m_albedoWeight = w;
         m_isDirty = true;
     }
+
+    inline float get_opacity() const { return m_albedo.a; }
+    inline void set_opacity(float op)
+    {
+        m_albedo.a = op;
+        m_isDirty = true;
+    }
+    // Weight between parameter and op texture
+    virtual inline float get_opacity_weight() const { return m_opacityWeight; }
+    // Weight between parameter and op texture
+    virtual inline void set_opacity_weight(float w)
+    {
+        m_opacityWeight = w;
+        m_isDirty = true;
+    }
+
 
     inline float get_metalness() const { return m_metalness; }
     inline void set_metalness(float m)

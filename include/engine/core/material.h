@@ -18,7 +18,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 struct MaterialSettings
 {
-    bool blending{true};
+    bool blending{false};
     bool faceCulling{false};
     CullingMode culling{_BACK};
     bool depthTest{true};
@@ -64,6 +64,7 @@ public:
     virtual inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
     virtual inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
     virtual inline void enable_alpha_test(bool op) { m_settings.alphaTest = op; }
+    virtual inline void enable_blending(bool op) { m_settings.blending = op; }
 
     virtual inline DescriptorSet& get_texture_descriptor()  { return m_textureDescriptor; }
 };

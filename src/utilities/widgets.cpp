@@ -378,24 +378,29 @@ void ObjectExplorerWidget::render()
             {
                 model->get_material(i)->enable_alpha_test(alphatest);
             }
-            ImGui::Text("BLENDING AND OPACITY UNSUPORTED FOR NOW");
-            const char *blending[] = {"NORMAL", "ADDITIVE", "CUSTOM"};
-            static int currentBlending = model->get_material(i)->get_parameters().blending;
-            if (ImGui::Combo("Blending function", &currentBlending, blending, IM_ARRAYSIZE(blending)))
+            bool blending = model->get_material(i)->get_parameters().blending;
+            if (ImGui::Checkbox("Blending", &blending))
             {
-                switch (currentBlending)
-                {
-                case 0:
-                    // model->getMaterialReference(i)->setBlending(BlendingType::NORMAL);
-                    break;
-                case 1:
-                    // model->getMaterialReference(i)->setBlending(BlendingType::ADDITIVE);
-                    break;
-                case 2:
-                    // model->getMaterialReference(i)->setBlending(BlendingType::CUSTOM);
-                    break;
-                }
-            };
+                model->get_material(i)->enable_blending(blending);
+            }
+            // ImGui::Text("BLENDING AND OPACITY UNSUPORTED FOR NOW");
+            // const char *blendingType[] = {"NORMAL", "ADDITIVE", "CUSTOM"};
+            // static int currentBlending = model->get_material(i)->get_parameters().blending;
+            // if (ImGui::Combo("Blending function", &currentBlending, blending, IM_ARRAYSIZE(blending)))
+            // {
+            //     switch (currentBlending)
+            //     {
+            //     case 0:
+            //         // model->getMaterialReference(i)->setBlending(BlendingType::NORMAL);
+            //         break;
+            //     case 1:
+            //         // model->getMaterialReference(i)->setBlending(BlendingType::ADDITIVE);
+            //         break;
+            //     case 2:
+            //         // model->getMaterialReference(i)->setBlending(BlendingType::CUSTOM);
+            //         break;
+            //     }
+            // };
             ImGui::Separator();
             if (model->get_material(i)->get_shaderpass_ID() == "physical")
             {
@@ -413,6 +418,22 @@ void ObjectExplorerWidget::render()
                         mat->set_albedo_weight(albedoWeight);
                     }
                 }
+                float opacity = mat->get_opacity();
+                if (ImGui::DragFloat("Opacity", &opacity, 0.05f, 0.0f, 1.0f))
+                {
+                    mat->set_opacity(opacity);
+                }
+                if (mat->get_albedo_texture())
+                {
+                    float weight = mat->get_opacity_weight();
+                    if (ImGui::DragFloat("Op. Text Weight", &weight, 0.05f, 0.0f, 1.0f))
+                    {
+                        mat->set_opacity_weight(weight);
+                    }
+                }
+                ImGui::Spacing();
+                ImGui::Spacing();
+
                 float metallic = mat->get_metalness();
                 float roughness = mat->get_roughness();
                 float ao = mat->get_occlusion();

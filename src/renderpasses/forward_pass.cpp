@@ -7,7 +7,8 @@ void ForwardPass::init(VkDevice &device)
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
     bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
     bool fxaa = m_aa == AntialiasingType::FXAA;
-    if(fxaa) samples = VK_SAMPLE_COUNT_1_BIT;
+    if (fxaa)
+        samples = VK_SAMPLE_COUNT_1_BIT;
 
     std::vector<VkAttachmentDescription> attachmentsInfo;
 
@@ -26,7 +27,7 @@ void ForwardPass::init(VkDevice &device)
     Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
                                 fxaa ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                 VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, samples);
-    _colorAttachment.isPresentImage = !fxaa ? (multisampled ? false : true) : false ;
+    _colorAttachment.isPresentImage = !fxaa ? (multisampled ? false : true) : false;
     m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -144,6 +145,20 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
     builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
     builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
 
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    builder.colorBlending = init::color_blend_create_info();
+    builder.colorBlending.attachmentCount = 1;
+    builder.colorBlending.pAttachments = &colorBlendAttachment;
+
     // Setup shaderpasses
     m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/unlit.glsl");
     m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs =
@@ -156,6 +171,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
          {VertexAttributeType::UV, false},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["unlit"]->settings.blending = true;
 
     m_shaderPasses["phong"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/phong.glsl");
     m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs =
@@ -168,6 +184,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
          {VertexAttributeType::UV, true},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["phong"]->settings.blending = true;
 
     m_shaderPasses["physical"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/physically_based.glsl");
     m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs =
@@ -180,6 +197,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
          {VertexAttributeType::UV, true},
          {VertexAttributeType::TANGENT, true},
          {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["physical"]->settings.blending = true;
 
     for (auto pair : m_shaderPasses)
     {
@@ -243,6 +261,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
                         vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
                         vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
                         vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
+                       
 
                         ShaderPass *shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
@@ -271,8 +290,8 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
     }
 
     // Draw gui contents
-    if ( m_isDefault && Frame::guiEnabled)
-         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    if (m_isDefault && Frame::guiEnabled)
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     end(cmd);
 }

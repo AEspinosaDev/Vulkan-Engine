@@ -31,6 +31,7 @@ void VulkanRenderer::run(int argc, char *argv[])
     settings.enableUI = true;
     settings.renderingType = RendererType::TFORWARD;
     settings.shadowResolution = ShadowResolution::MEDIUM;
+    // settings.bufferingType = BufferingType::_UNIQUE;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
@@ -193,7 +194,7 @@ void VulkanRenderer::setup()
     Texture *floorRoughText = new Texture();
     floorRoughText->load_image(TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
-    terrainMat->set_albedo({0.43f, 0.28f, 0.23f, 1.0});
+    terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
     // terrainMat->set_normal_texture(floorNormalText);
     terrainMat->set_roughness_texture(floorRoughText);
@@ -231,7 +232,7 @@ void VulkanRenderer::setup()
     Texture *kabutoText = new Texture();
     kabutoText->load_image(TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
-    kabutoMat->set_albedo({0.0, 1.0, 0.0, 1.0});
+    kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
     kabutoMat->set_roughness(0.4f);
     kabutoMesh->set_material(kabutoMat);
@@ -252,7 +253,7 @@ void VulkanRenderer::setup()
     templeMat->set_albedo_texture(templeText);
     templeMat->set_metallic_texture(templeMText);
     templeMat->set_roughness_texture(templeRText);
-    templeMat->set_albedo({0.0, 1.0, 0.0, 1.0});
+    templeMat->set_albedo({0.0, 1.0, 0.0});
     templeMat->set_metalness(0.8f);
     templeMat->set_roughness(0.4f);
     templeMesh->set_material(templeMat);
