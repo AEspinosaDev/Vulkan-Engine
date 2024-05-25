@@ -37,12 +37,15 @@ struct SceneUniforms
     Vec4 ambientColor; // w intensity
     LightUniforms lightUniforms[VK_MAX_LIGHTS];
     int numLights;
+    int SSAOtype;
+    int emphasizeAO;
 };
 
 struct ObjectUniforms
 {
     Mat4 model;
-    Vec4 otherParams; // x is affected by fog, y is receive shadows, z cast shadows
+    Vec4 otherParams1; // x is affected by fog, y is receive shadows, z cast shadows
+    Vec4 otherParams2; // x is selected
 };
 
 struct MaterialUniforms

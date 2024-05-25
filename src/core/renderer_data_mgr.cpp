@@ -66,7 +66,8 @@ void Renderer::upload_object_data(Scene *const scene)
 					// ObjectUniforms objectData;
 					ObjectUniforms objectData;
 					objectData.model = m->get_model_matrix();
-					objectData.otherParams = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
+					objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
+					objectData.otherParams2 = {m->is_selected(), 0.0, 0.0, 0.0};
 					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
 					for (size_t i = 0; i < m->get_num_geometries(); i++)
@@ -116,6 +117,8 @@ void Renderer::upload_global_data(Scene *const scene)
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
 	sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), scene->is_ssao_enabled());
+	sceneParams.SSAOtype = static_cast<int>(m_settings.occlusionType);
+	sceneParams.emphasizeAO = false;
 	sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 
 	std::vector<Light *> lights = scene->get_lights();
@@ -137,7 +140,7 @@ void Renderer::upload_global_data(Scene *const scene)
 		if (lightIdx >= VK_MAX_LIGHTS)
 			break;
 	}
-	sceneParams.numLights = (int)lights.size();
+	sceneParams.numLights = static_cast<int>(lights.size());
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
 															 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
@@ -223,9 +226,14 @@ void Renderer::set_renderpass_resources()
 											 m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.view,
 											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 2);
 
-		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
-											 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
-											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
+		if (m_settings.occlusionType == AmbientOcclusionType::SSAO)
+			m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
+												 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
+												 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
+		else
+			m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments().front().image.sampler,
+												 m_renderPipeline.renderpasses[GEOMETRY]->get_attachments().front().image.view,
+												 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
 	}
 }
 VULKAN_ENGINE_NAMESPACE_END

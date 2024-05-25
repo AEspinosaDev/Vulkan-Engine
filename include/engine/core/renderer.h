@@ -50,37 +50,39 @@ Renderer Global Settings Data
 */
 struct RendererSettings
 {
-	RendererType renderingType{ TDEFERRED };
+	RendererType renderingType{TDEFERRED};
 
-	AntialiasingType AAtype{ MSAA_x4 };
-	BufferingType bufferingType{ _DOUBLE };
-	SyncType screenSync{ MAILBOX_SYNC };
-	ColorFormatType colorFormat{ SBGRA_8 };
-	DepthFormatType depthFormat{ D32F };
+	AntialiasingType AAtype{MSAA_x4};
+	BufferingType bufferingType{_DOUBLE};
+	SyncType screenSync{MAILBOX_SYNC};
+	ColorFormatType colorFormat{SBGRA_8};
+	DepthFormatType depthFormat{D32F};
 
-	ShadowResolution shadowResolution{ LOW };
+	ShadowResolution shadowResolution{LOW};
 
-	Vec4 clearColor{ Vec4{0.0, 0.0, 0.0, 1.0} };
+	AmbientOcclusionType occlusionType{SSAO};
 
-	bool autoClearColor{ true };
-	bool autoClearDepth{ true };
-	bool autoClearStencil{ true };
+	Vec4 clearColor{Vec4{0.0, 0.0, 0.0, 1.0}};
 
-	bool enableUI{ false };
+	bool autoClearColor{true};
+	bool autoClearDepth{true};
+	bool autoClearStencil{true};
 
-	bool enableHardwareDepthBias{ false };
-	float hardwareDepthBias{ 0.0005f };
+	bool enableUI{false};
 
-	bool gammaCorrection{ true };
+	bool enableHardwareDepthBias{false};
+	float hardwareDepthBias{0.0005f};
+
+	bool gammaCorrection{true};
 };
 /*
 Structure that contains a list of renderpasses. These renderpasses will render in the order they where added.
 */
 struct RenderPipeline
 {
-	std::vector<RenderPass*> renderpasses;
+	std::vector<RenderPass *> renderpasses;
 
-	void push_renderpass(RenderPass* pass)
+	void push_renderpass(RenderPass *pass)
 	{
 		renderpasses.push_back(pass);
 	};
@@ -97,14 +99,14 @@ protected:
 
 	utils::UploadContext m_uploadContext{};
 
-	Window* m_window;
+	Window *m_window;
 	Swapchain m_swapchain;
 
-	VkInstance m_instance{ VK_NULL_HANDLE };
-	VkPhysicalDevice m_gpu{ VK_NULL_HANDLE };
-	VkDevice m_device{ VK_NULL_HANDLE };
-	VmaAllocator m_memory{ VK_NULL_HANDLE };
-	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
+	VkInstance m_instance{VK_NULL_HANDLE};
+	VkPhysicalDevice m_gpu{VK_NULL_HANDLE};
+	VkDevice m_device{VK_NULL_HANDLE};
+	VmaAllocator m_memory{VK_NULL_HANDLE};
+	VkDebugUtilsMessengerEXT m_debugMessenger{VK_NULL_HANDLE};
 
 	VkQueue m_graphicsQueue{};
 	VkQueue m_presentQueue{};
@@ -127,32 +129,32 @@ protected:
 
 	utils::DeletionQueue m_deletionQueue;
 
-	Mesh* m_vignette{ nullptr };
+	Mesh *m_vignette{nullptr};
 
 	int MAX_FRAMES_IN_FLIGHT;
 
 #ifdef NDEBUG
-	const bool m_enableValidationLayers{ false };
+	const bool m_enableValidationLayers{false};
 #else
-	const bool m_enableValidationLayers{ true };
+	const bool m_enableValidationLayers{true};
 #endif
 
-	uint32_t m_currentFrame{ 0 };
-	bool m_initialized{ false };
-	bool m_updateShadowQuality{ false };
-	bool m_updateContext{ false };
-	bool m_updateFramebuffers{ false };
+	uint32_t m_currentFrame{0};
+	bool m_initialized{false};
+	bool m_updateShadowQuality{false};
+	bool m_updateContext{false};
+	bool m_updateFramebuffers{false};
 
-	GUIOverlay* m_gui{ nullptr };
+	GUIOverlay *m_gui{nullptr};
 
 #pragma endregion
 public:
-	Renderer(Window* window) : m_window(window) { on_awake(); }
-	Renderer(Window* window, RendererSettings settings) : m_window(window), m_settings(settings) { on_awake(); }
+	Renderer(Window *window) : m_window(window) { on_awake(); }
+	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { on_awake(); }
 
 #pragma region Getters & Setters
 
-	inline Window* const get_window() const { return m_window; }
+	inline Window *const get_window() const { return m_window; }
 
 	inline RendererSettings get_settings() { return m_settings; }
 	inline void set_settings(RendererSettings settings) { m_settings = settings; }
@@ -196,13 +198,13 @@ public:
 
 	inline void enable_gui_overlay(bool op) { m_settings.enableUI; }
 
-	inline void set_gui_overlay(GUIOverlay* gui)
+	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
 		// static_cast<GUIPass *>(m_renderPipeline.renderpasses[GUI])->set_gui(gui);
 	}
 
-	inline GUIOverlay* get_gui_overlay()
+	inline GUIOverlay *get_gui_overlay()
 	{
 		return m_gui;
 	}
@@ -219,11 +221,18 @@ public:
 	inline void set_deferred_output_type(int op)
 	{
 		if (m_initialized)
-			static_cast<CompositionPass*>(m_renderPipeline.renderpasses[COMPOSITION])->set_output_type(op);
+			static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_output_type(op);
 	}
 	inline int get_deferred_output_type() const
 	{
-		return static_cast<CompositionPass*>(m_renderPipeline.renderpasses[COMPOSITION])->get_output_type();
+		return static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->get_output_type();
+	}
+	inline AmbientOcclusionType get_ssao_type() const { return m_settings.occlusionType; }
+	inline void set_ssao_type(AmbientOcclusionType ao)
+	{
+		m_settings.occlusionType = ao;
+		if (m_initialized)
+			m_updateFramebuffers = true;
 	}
 
 #pragma endregion
@@ -240,11 +249,11 @@ public:
 	/**
 	 * Standalone pre-implemented render loop for the renderer.
 	 */
-	virtual void run(Scene* const scene);
+	virtual void run(Scene *const scene);
 	/**
 	 * Renders a given scene.
 	 */
-	virtual void render(Scene* const scene);
+	virtual void render(Scene *const scene);
 	/**
 	 * Shut the renderer down.
 	 */
@@ -262,11 +271,11 @@ protected:
 	/*
 	What to do just before rendering
 	*/
-	virtual void on_before_render(Scene* const scene);
+	virtual void on_before_render(Scene *const scene);
 	/*
 	What to do just before rendering
 	*/
-	virtual void on_after_render(VkResult& renderResult, Scene* const scene);
+	virtual void on_after_render(VkResult &renderResult, Scene *const scene);
 	/*
 	What to do when shutting down the renderer
 	*/
@@ -307,7 +316,6 @@ protected:
 	*/
 	virtual void init_resources();
 
-
 	virtual void set_renderpass_resources();
 
 	/*
@@ -334,16 +342,16 @@ protected:
 	/*
 	Object descriptor layouts uniforms buffer upload to GPU
 	*/
-	virtual void upload_object_data(Scene* const scene);
+	virtual void upload_object_data(Scene *const scene);
 	/*
 	Global descriptor layouts uniforms buffer upload to GPU
 	*/
-	virtual void upload_global_data(Scene* const scene);
+	virtual void upload_global_data(Scene *const scene);
 
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
-	virtual void setup_material(Material* const mat);
+	virtual void setup_material(Material *const mat);
 #pragma region GUI
 	/*
 	Initialize gui layout in case ther's one enabled

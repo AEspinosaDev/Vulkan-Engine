@@ -1,7 +1,7 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
@@ -115,8 +115,10 @@ public:
 	{
 		m_material.push_back(m);
 	}
+
 	inline size_t get_num_geometries() const { return m_geometry.size(); }
 	inline size_t get_num_materials() const { return m_material.size(); }
+
 
 	inline void set_cast_shadows(bool op) { m_castShadows = op; }
 	inline bool get_cast_shadows() const { return m_castShadows; }
@@ -151,9 +153,7 @@ public:
 
 	Mesh *clone() const;
 
-	static Mesh * create_quad();
-
-
+	static Mesh *create_quad();
 };
 
 VULKAN_ENGINE_NAMESPACE_END

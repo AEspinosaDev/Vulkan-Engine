@@ -45,6 +45,15 @@ void Renderer::on_before_render(Scene *const scene)
 		 m_settings.clearColor.g,
 		 m_settings.clearColor.b,
 		 m_settings.clearColor.a});
+
+	// This next code should go in a better place...
+	bool enableClassicSSAO = scene->is_ssao_enabled() && m_settings.occlusionType == AmbientOcclusionType::SSAO;
+	m_renderPipeline.renderpasses[DefaultRenderPasses::SSAO]->set_active(enableClassicSSAO);
+	m_renderPipeline.renderpasses[DefaultRenderPasses::SSAO_BLUR]->set_active(enableClassicSSAO);
+	if (m_settings.renderingType == RendererType::TFORWARD && !scene->is_ssao_enabled())
+		m_renderPipeline.renderpasses[DefaultRenderPasses::GEOMETRY]->set_active(false);
+	else
+		m_renderPipeline.renderpasses[DefaultRenderPasses::GEOMETRY]->set_active(true);
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)

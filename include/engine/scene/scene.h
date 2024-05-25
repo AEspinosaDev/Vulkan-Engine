@@ -31,7 +31,6 @@ private:
     bool m_ssao{true};
     float m_occRadius{0.5};
     float m_occBias{0.025};
-    float m_ssaoBlurKernel{4};
 
     // FOG
     bool m_fog{true};
@@ -106,6 +105,7 @@ public:
 
     inline void set_ssao_bias(float i) { m_occBias = i; }
     inline float get_ssao_bias() { return m_occBias; }
+
 };
 
 VULKAN_ENGINE_NAMESPACE_END

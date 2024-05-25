@@ -15,7 +15,8 @@ layout(location = 1) out vec3 v_normal;
 layout(location = 2) out vec2 v_uv;
 layout(location = 3) out vec3 v_modelPos;
 layout(location = 4) out vec2 v_screenExtent;
-layout(location = 5) out mat3 v_TBN;
+layout(location = 5) out int v_selected;
+layout(location = 6) out mat3 v_TBN;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -55,11 +56,13 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
     LightUniform lights[MAX_LIGHTS];
     int numLights;
+    int SSAOType;
 } scene;
 
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
     vec4 otherParams;
+    int selected;
 } object;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -115,6 +118,8 @@ void main() {
     v_modelPos = (object.model * vec4(pos, 1.0)).xyz;
 
     v_screenExtent = camera.screenExtent;
+
+    v_selected = object.selected;
 }
 
 #shader fragment
@@ -128,7 +133,8 @@ layout(location = 1) in vec3 v_normal;
 layout(location = 2) in vec2 v_uv;
 layout(location = 3) in vec3 v_modelPos;
 layout(location = 4) in vec2 v_screenExtent;
-layout(location = 5) in mat3 v_TBN;
+layout(location = 5) in  flat int  v_selected;
+layout(location = 6) in mat3 v_TBN;
 
 //Output
 layout(location = 0) out vec4 outColor;
@@ -163,6 +169,8 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
     LightUniform lights[MAX_LIGHTS];
     int numLights;
+    int SSAOType;
+    bool emphasizeAO;
 } scene;
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
@@ -388,6 +396,56 @@ void setupSurfaceProperties(){
     }
 }
 
+float linearizeDepth(float depth, float near, float far) {
+    float z = depth * 2.0 - 1.0; 
+    float linearZ = (2.0 * near * far) / (far + near - z * (far - near));
+    return (linearZ - near) / (far - near);
+}
+
+float UnsharpSSAO(){
+
+    const float kernelDimension = 15.0;
+    const ivec2 screenSize = textureSize(ssaoMap,0);
+
+    float occlusion = 0.0;
+
+    int i = int(gl_FragCoord.x);
+    int j = int(gl_FragCoord.y);
+
+    int maxX = i + int(floor(kernelDimension*0.5));
+    int maxY = j + int(floor(kernelDimension*0.5));
+
+    float sampX;
+    float sampY;
+
+    float neighborCount = 0;
+
+    for (int x = i - int(floor(kernelDimension*0.5)); x < maxX; x++) {
+    for (int y = j - int(floor(kernelDimension*0.5)); y < maxY; y++) {
+    
+    sampX = float(x) / screenSize.x;
+    sampY = float(y) / screenSize.y;
+
+    if (sampX >= 0.0 && sampX <= 1.0 && sampY >= 0.0 && sampY <= 1.0 &&
+    
+    abs( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a,0.1,100.0) -
+     linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a, 0.1,100.0)) < 0.02) {
+    occlusion +=   linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a,0.1,100.0);
+    neighborCount++;
+    }
+    }
+    }
+
+    occlusion = occlusion / neighborCount;
+     
+     
+    occlusion = 20 * ( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a, 0.1,100.0) - max(0.0, occlusion));
+
+
+  return occlusion;
+
+}
+
 void main() {
 
     setupSurfaceProperties();
@@ -409,15 +467,30 @@ void main() {
     }
 
     //Ambient component
-    float occ = scene.enableSSAO ? texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r : 1.0;
-    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * occ;
+    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo;
 
+     //Ambient occlusion
+    float occ = 1.0;
+    if(scene.enableSSAO){
+        if (scene.SSAOType == 0) {
+            occ = texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r;
+        }
+        if (scene.SSAOType == 1){
+            occ = UnsharpSSAO();
+        }    
+    }
 
-    color += ambient;
+    if(!scene.emphasizeAO){
+        color += ambient*occ;
+    }else{
+        color*=occ;
+    }
+
 
 	//Tone Up
     color = color / (color + vec3(1.0));
 
+    
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
         float f = computeFog();
         color = f * color + (1 - f) * scene.fogColor.rgb;
@@ -425,8 +498,13 @@ void main() {
 
     outColor = vec4(color, material.blending ? g_opacity: 1.0);
 
+
     float gamma = 2.2;
     outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+
+    if(v_selected == 1){
+        outColor.rgb *= vec3(0.9,0.5,0.0);
+    }
 
     if(material.alphaTest)
         if(g_opacity<1-EPSILON)discard;

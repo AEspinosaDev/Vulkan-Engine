@@ -89,20 +89,19 @@ void SceneExplorerWidget::render()
 
             if (ImGui::MenuItem("Directional Light"))
             {
-                DirectionalLight* light = new DirectionalLight(Vec3(0.0, -5.0, 5.0));
+                DirectionalLight *light = new DirectionalLight(Vec3(0.0, -5.0, 5.0));
                 light->set_cast_shadows(false);
                 m_scene->add(light);
             }
             if (ImGui::MenuItem("Point Light"))
             {
-                PointLight* light = new PointLight();
+                PointLight *light = new PointLight();
                 light->set_cast_shadows(false);
                 m_scene->add(light);
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Import from Disk"))
             {
-               
             }
 
             ImGui::EndMenu();
@@ -188,9 +187,10 @@ void SceneExplorerWidget::render()
                 // node->selected = ImGui::IsItemClicked();
                 if (ImGui::IsItemClicked())
                 {
-                    // if (m_selectedObject)
-                    //     UIManager::m_SelectedObject->selected = false;
+                    if (m_selectedObject)
+                        m_selectedObject->set_selected(false);
                     m_selectedObject = obj;
+                    obj->set_selected(true);
                 }
             };
 
@@ -242,13 +242,14 @@ void SceneExplorerWidget::render()
     }
     ImGui::Separator();
     ImGui::Spacing();
-    ImGui::SeparatorText("SSAO");
+    ImGui::SeparatorText("Ambient Occlusion");
     ImGui::Spacing();
     bool enableSSAO = m_scene->is_ssao_enabled();
     if (ImGui::Checkbox("Enable", &enableSSAO))
     {
         m_scene->enable_ssao(enableSSAO);
     }
+
     float ssaoRad = m_scene->get_ssao_radius();
     if (ImGui::DragFloat("Radius", &ssaoRad, .1f, 0.0f, 5.0f))
     {
@@ -259,6 +260,7 @@ void SceneExplorerWidget::render()
     {
         m_scene->set_ssao_bias(ssaoBias);
     }
+
     ImGui::Separator();
 }
 void Profiler::render()
@@ -674,6 +676,7 @@ void ObjectExplorerWidget::render()
         float _far = cam->get_far();
         float _near = cam->get_near();
         float fov = cam->get_field_of_view();
+        bool culling = cam->get_frustrum_culling();
 
         if (ImGui::DragFloat("Near", &_near, 0.05f, 0.0f, 10.0))
             cam->set_near(_near);
@@ -681,6 +684,8 @@ void ObjectExplorerWidget::render()
             cam->set_far(_far);
         if (ImGui::DragFloat("Field of view", &fov, 0.1f, 0.0f, 160.0f))
             cam->set_field_of_view(fov);
+        if (ImGui::Checkbox("Frustum Culling", &culling))
+            cam->enable_frustrum_culling(culling);
     }
 }
 void GlobalSettingsWidget::render()

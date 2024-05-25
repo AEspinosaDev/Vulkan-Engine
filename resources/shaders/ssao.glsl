@@ -39,7 +39,7 @@ float radius = aux.ssaoParams.x;
 float bias = aux.ssaoParams.y;
 
 // tile noise texture over screen based on screen dimensions divided by noise size
-const vec2 noiseScale = vec2(800.0/4.0, 600.0/4.0); 
+ vec2 noiseScale = vec2(aux.screenExtent.x/4.0, aux.screenExtent.y/4.0); 
 
 
 void main()

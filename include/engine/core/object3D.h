@@ -59,6 +59,7 @@ protected:
 	Object3D* m_parent;
 
 	bool enabled;
+	bool m_isSelected{false};
 	bool isDirty{ true };
 
 public:
@@ -207,6 +208,10 @@ public:
 		if (isDirty)
 			isDirty = false;
 	};
+
+	
+	inline bool is_selected() const { return m_isSelected; }
+	inline void set_selected(bool op) { m_isSelected = op; }
 
 	virtual Object3D* get_parent() const { return m_parent; }
 };

@@ -269,6 +269,12 @@ typedef enum RendererType
 	TDEFERRED = 1,
 } RendererType;
 
+typedef enum AmbientOcclusionType{
+	SSAO = 0,
+	USSAO = 1,
+	DSSAO = 2
+} AmbientOcclusionType;
+
 // Ahead declaration of some key classes
 class Renderer;
 

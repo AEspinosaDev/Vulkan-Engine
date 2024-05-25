@@ -244,9 +244,9 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
         {
             if (m)
             {
-                if (m->is_active() &&                                                                     // Check if is active
-                    m->get_num_geometries() > 0 &&                                                        // Check if has geometry
-                    m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
+                if (m->is_active() &&                                                                                                                                   // Check if is active
+                    m->get_num_geometries() > 0 &&                                                                                                                      // Check if has geometry
+                    (scene->get_active_camera()->get_frustrum_culling() ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()) : true)) // Check if is inside frustrum
                 {
                     // Offset calculation
                     uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
@@ -261,7 +261,6 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
                         vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
                         vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
                         vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
-                       
 
                         ShaderPass *shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 

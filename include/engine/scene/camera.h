@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef CAMERA_H
@@ -64,10 +64,10 @@ private:
     float m_zoom;
     float m_aspect;
 
-    bool perspective;
+    bool m_perspective{true};
+    bool m_frustrumCulling{true};
 
     static int m_instanceCount;
-
 
 public:
     Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
@@ -116,7 +116,7 @@ public:
 
     void set_frustum();
 
-    inline Frustum get_frustrum() 
+    inline Frustum get_frustrum()
     {
         if (isDirty)
         {
@@ -124,6 +124,9 @@ public:
         }
         return m_frustrum;
     }
+
+    inline void enable_frustrum_culling(bool op) { m_frustrumCulling = op; }
+    inline bool get_frustrum_culling() const { return m_frustrumCulling; }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

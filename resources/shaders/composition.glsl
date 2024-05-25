@@ -61,6 +61,8 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     float ambientIntensity;
     LightUniform lights[MAX_LIGHTS];
     int numLights;
+    int SSAOType;
+    bool emphasizeAO;
 } scene;
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
@@ -240,6 +242,55 @@ vec3 phong(LightUniform light) {
 
 }
 
+float linearizeDepth(float depth, float near, float far) {
+    float z = depth * 2.0 - 1.0; 
+    float linearZ = (2.0 * near * far) / (far + near - z * (far - near));
+    return (linearZ - near) / (far - near);
+}
+
+float UnsharpSSAO(){
+
+    const float kernelDimension = 15.0;
+    const ivec2 screenSize = textureSize(ssaoMap,0);
+
+    float occlusion = 0.0;
+
+    int i = int(gl_FragCoord.x);
+    int j = int(gl_FragCoord.y);
+
+    int maxX = i + int(floor(kernelDimension*0.5));
+    int maxY = j + int(floor(kernelDimension*0.5));
+
+    float sampX;
+    float sampY;
+
+    float neighborCount = 0;
+
+    for (int x = i - int(floor(kernelDimension*0.5)); x < maxX; x++) {
+    for (int y = j - int(floor(kernelDimension*0.5)); y < maxY; y++) {
+    
+    sampX = float(x) / screenSize.x;
+    sampY = float(y) / screenSize.y;
+
+    if (sampX >= 0.0 && sampX <= 1.0 && sampY >= 0.0 && sampY <= 1.0 &&
+    
+    abs( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a,0.1,100.0) -
+     linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a, 0.1,100.0)) < 0.02) {
+    occlusion +=   linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a,0.1,100.0);
+    neighborCount++;
+    }
+    }
+    }
+
+    occlusion = occlusion / neighborCount;
+     
+    occlusion = 20 * ( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a, 0.1,100.0) - max(0.0, occlusion));
+
+
+  return occlusion;
+
+}
+
 
 void main()
 {
@@ -250,7 +301,7 @@ void main()
     g_albedo =  texture(albedoBuffer,v_uv).rgb;
     g_material = texture(materialBuffer,v_uv);
     // g_opacity = 1.0;
-    g_ao =  texture(ssaoMap,v_uv).r;
+   
 
 
    //Compute all lights
@@ -268,13 +319,26 @@ void main()
         color += lighting;
         }
     }
-
+  
     //Ambient component
-    float occ = scene.enableSSAO ? g_ao : 1.0;
-    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo * occ ;
+    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo;
 
+     //Ambient occlusion
+    float occ = 1.0;
+    if(scene.enableSSAO){
+        if (scene.SSAOType == 0) {
+            occ = texture(ssaoMap,v_uv).r;
+        }
+        if (scene.SSAOType == 1){
+            occ = UnsharpSSAO();
+        }    
+    }
 
-    color += ambient;
+    if(!scene.emphasizeAO){
+        color += ambient*occ;
+    }else{
+        color*=occ;
+    }
 
 	//Tone Up
     color = color / (color + vec3(1.0));
@@ -305,7 +369,7 @@ void main()
                  outColor = vec4(texture(materialBuffer,v_uv).rgb,outOpacity);
                 break;
             case 5:
-                 outColor = vec4(texture(ssaoMap,v_uv).rrr,outOpacity);
+                 outColor = vec4(vec3(occ),outOpacity);
                 break;
     }
 

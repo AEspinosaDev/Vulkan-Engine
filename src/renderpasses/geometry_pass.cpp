@@ -215,7 +215,6 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
 
     begin(cmd, presentImageIndex);
 
-
     VkViewport viewport = init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);
     VkRect2D scissor{};
@@ -232,9 +231,9 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
     {
         if (m)
         {
-            if (m->is_active() &&                                                                     // Check if is active
-                m->get_num_geometries() > 0 &&                                                        // Check if has geometry
-                m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
+            if (m->is_active() &&                                                                                                                                   // Check if is active
+                m->get_num_geometries() > 0 &&                                                                                                                      // Check if has geometry
+                (scene->get_active_camera()->get_frustrum_culling() ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()) : true)) // Check if is inside frustrum
 
             {
                 uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
