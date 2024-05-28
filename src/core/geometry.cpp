@@ -117,6 +117,6 @@ void GeometryStats::compute_statistics(Geometry *g)
       minCoords.z = v.pos.z;
   }
 
-  center = (maxCoords - minCoords) * 0.5f;
+  center = (maxCoords + minCoords) * 0.5f;
 }
 VULKAN_ENGINE_NAMESPACE_END

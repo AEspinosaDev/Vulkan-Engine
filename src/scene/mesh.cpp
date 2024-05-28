@@ -29,8 +29,8 @@ void Sphere::setup(Mesh *const mesh)
             minCoords.z = stats.minCoords.z;
     }
 
-    center = (maxCoords - minCoords) * 0.5f;
-    radius = math::length(center);
+    center = (maxCoords + minCoords) * 0.5f;
+    radius = math::length( (maxCoords - minCoords) * 0.5f);
 
     this->mesh = mesh;
 }
