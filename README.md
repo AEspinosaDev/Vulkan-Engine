@@ -33,7 +33,7 @@ The main feautures of the library are:
 - Multipass (depth pass for shadows, SSAO and post-processing).
 - Vulkan object and functionality abstraction.
 - Frustrum culling.
-- Simple to use user interface (Unfinished).
+- Simple to use user interface.
 - Easy to distribute source code.
 
 This project is a work in progress. It has a long way until becoming a decent library, there are no fancy features for now, but all the basics are here. Eventually, with time, I will be adding more advanced functionality.
@@ -48,7 +48,7 @@ The prequisites for using this code are:
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/AEspinosaDev/Vulkan-Engine.git
+   git clone --recursive https://github.com/AEspinosaDev/Vulkan-Engine.git
    cd Vulkan-Engine
    ```
 2. Build with CMake:
