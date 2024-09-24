@@ -70,6 +70,8 @@ struct RendererSettings
 
 	bool enableUI{false};
 
+	bool enableRT{true}; //Ray tracing
+
 	bool enableHardwareDepthBias{false};
 	float hardwareDepthBias{0.0005f};
 

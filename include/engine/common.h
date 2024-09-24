@@ -1,7 +1,7 @@
 /*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+	This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+	MIT License
 
 	Copyright (c) 2023 Antonio Espinosa Garcia
 
@@ -70,10 +70,12 @@
 #define JPG "jpg"
 
 /// Simple exception class, which stores a human-readable error description
-class VKException : public std::runtime_error {
+class VKException : public std::runtime_error
+{
 public:
-    template <typename... Args> VKException(const char *fmt, const Args &... args) 
-     : std::runtime_error(fmt) { }
+	template <typename... Args>
+	VKException(const char *fmt, const Args &...args)
+		: std::runtime_error(fmt) {}
 };
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -183,8 +185,8 @@ typedef enum ColorFormatType
 } ColorFormatType;
 typedef enum DepthFormatType
 {
-	D16F=VK_FORMAT_D16_UNORM,
-	D32F=VK_FORMAT_D32_SFLOAT
+	D16F = VK_FORMAT_D16_UNORM,
+	D32F = VK_FORMAT_D32_SFLOAT
 } DepthFormatType;
 typedef enum TextureAdressModeType
 {
@@ -199,25 +201,25 @@ typedef enum PanelWidgetFlags
 {
 
 	None = ImGuiWindowFlags_None,
-	NoTitleBar = ImGuiWindowFlags_NoTitleBar,								
-	NoResize = ImGuiWindowFlags_NoResize,									
-	NoMove = ImGuiWindowFlags_NoMove,										
-	NoScrollbar = ImGuiWindowFlags_NoScrollbar,								
-	NoScrollWithMouse = ImGuiWindowFlags_NoScrollWithMouse,					
-	NoCollapse = ImGuiWindowFlags_NoCollapse,								
-	AlwaysAutoResize = ImGuiWindowFlags_AlwaysAutoResize,					
-	NoBackground = ImGuiWindowFlags_NoBackground,							
-	NoSavedSettings = ImGuiWindowFlags_NoSavedSettings,						
-	NoMouseInputs = ImGuiWindowFlags_NoMouseInputs,							
-	MenuBar = ImGuiWindowFlags_MenuBar,										
-	HorizontalScrollbar = ImGuiWindowFlags_HorizontalScrollbar,				
-	NoFocusOnAppearing = ImGuiWindowFlags_NoFocusOnAppearing,				
-	NoBringToFrontOnFocus = ImGuiWindowFlags_NoBringToFrontOnFocus,			
-	AlwaysVerticalScrollbar = ImGuiWindowFlags_AlwaysVerticalScrollbar,		
-	AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar, 
-	NoNavInputs = ImGuiWindowFlags_NoNavInputs,								
-	NoNavFocus = ImGuiWindowFlags_NoNavFocus,								
-	UnsavedDocument = ImGuiWindowFlags_UnsavedDocument,					
+	NoTitleBar = ImGuiWindowFlags_NoTitleBar,
+	NoResize = ImGuiWindowFlags_NoResize,
+	NoMove = ImGuiWindowFlags_NoMove,
+	NoScrollbar = ImGuiWindowFlags_NoScrollbar,
+	NoScrollWithMouse = ImGuiWindowFlags_NoScrollWithMouse,
+	NoCollapse = ImGuiWindowFlags_NoCollapse,
+	AlwaysAutoResize = ImGuiWindowFlags_AlwaysAutoResize,
+	NoBackground = ImGuiWindowFlags_NoBackground,
+	NoSavedSettings = ImGuiWindowFlags_NoSavedSettings,
+	NoMouseInputs = ImGuiWindowFlags_NoMouseInputs,
+	MenuBar = ImGuiWindowFlags_MenuBar,
+	HorizontalScrollbar = ImGuiWindowFlags_HorizontalScrollbar,
+	NoFocusOnAppearing = ImGuiWindowFlags_NoFocusOnAppearing,
+	NoBringToFrontOnFocus = ImGuiWindowFlags_NoBringToFrontOnFocus,
+	AlwaysVerticalScrollbar = ImGuiWindowFlags_AlwaysVerticalScrollbar,
+	AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar,
+	NoNavInputs = ImGuiWindowFlags_NoNavInputs,
+	NoNavFocus = ImGuiWindowFlags_NoNavFocus,
+	UnsavedDocument = ImGuiWindowFlags_UnsavedDocument,
 	NoNav = ImGuiWindowFlags_NoNav,
 	NoDecoration = ImGuiWindowFlags_NoDecoration,
 	NoInputs = ImGuiWindowFlags_NoInputs,
@@ -269,11 +271,27 @@ typedef enum RendererType
 	TDEFERRED = 1,
 } RendererType;
 
-typedef enum AmbientOcclusionType{
+typedef enum AmbientOcclusionType
+{
 	SSAO = 0,
 	USSAO = 1,
 	DSSAO = 2
 } AmbientOcclusionType;
+
+/*
+Vulkan API extension data
+*/
+struct Extension
+{
+	const char *name{nullptr}; //Necesary
+	bool optional{false};
+	uint32_t version{0};
+
+	Extension(const char *name, bool isOptional = false, void *pointerFeatureStruct = nullptr, uint32_t checkVersion = 0)
+		: name(name), optional(isOptional), version(checkVersion)
+	{
+	}
+};
 
 // Ahead declaration of some key classes
 class Renderer;

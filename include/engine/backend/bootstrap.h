@@ -35,8 +35,12 @@ namespace boot
 
 	class VulkanBooter
 	{
+
 	public:
-		VulkanBooter(bool validate) : m_validation(validate) {}
+		VulkanBooter(bool validate)
+			: m_validation(validate)
+		{
+		}
 
 		VkInstance boot_vulkan();
 
@@ -63,8 +67,12 @@ namespace boot
 
 		const std::vector<const char *> m_validationLayers = {
 			"VK_LAYER_KHRONOS_validation"};
-		std::vector<const char *> m_deviceExtensions = {
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+														"VK_EXT_extended_dynamic_state",
+														VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+														VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+														VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+														VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
 
 		VkInstance create_instance();
 		std::vector<const char *> get_required_extensions();

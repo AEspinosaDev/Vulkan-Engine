@@ -49,7 +49,7 @@ struct AABB : public Volume
 };
 
 /*
-Class used to represent a 3D model.
+Class used to represent a 3D model instance.
 */
 class Mesh : public Object3D
 {

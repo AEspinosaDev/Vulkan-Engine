@@ -133,23 +133,57 @@ VkDevice boot::VulkanBooter::create_logical_device(
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
+	std::vector<const char *> enabledExtensions;
+
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
+	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+
+	enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 	if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
 	{
-		m_deviceExtensions.push_back("VK_EXT_extended_dynamic_state");
+		enabledExtensions.push_back("VK_EXT_extended_dynamic_state");
 
-		// Request extended features
-		physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-
-		// Add extension-specific structures here
 		VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
 		extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
-		extendedDynamicStateFeatures.pNext = physicalDeviceFeatures2.pNext; // Chain with existing features
+		extendedDynamicStateFeatures.pNext = physicalDeviceFeatures2.pNext;
 
 		physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
+	}
 
-		vkGetPhysicalDeviceFeatures2(gpu, &physicalDeviceFeatures2);
+	// Check RTX extensions
+	if (utils::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+		utils::is_device_extension_supported(gpu, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+		utils::is_device_extension_supported(gpu, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) &&
+		utils::is_device_extension_supported(gpu, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+		utils::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME))
+	{
+
+		enabledExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		enabledExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		enabledExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+		enabledExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		enabledExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
+		rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+		rayTracingPipelineFeatures.pNext = nullptr;
+
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
+		accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+		accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
+
+		VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {};
+		bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+		bufferDeviceAddressFeatures.pNext = &accelerationStructureFeatures;
+
+		VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
+		descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+		descriptorIndexingFeatures.pNext = &bufferDeviceAddressFeatures;
+
+		// Finally, attach the descriptorIndexingFeatures to the physicalDeviceFeatures2
+		descriptorIndexingFeatures.pNext = physicalDeviceFeatures2.pNext;
+		physicalDeviceFeatures2.pNext = &descriptorIndexingFeatures;
 	}
 
 	physicalDeviceFeatures2.features = features;
@@ -162,8 +196,8 @@ VkDevice boot::VulkanBooter::create_logical_device(
 
 	// createInfo.pEnabledFeatures = &deviceFeatures;
 
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
-	createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
+	createInfo.ppEnabledExtensionNames = enabledExtensions.data();
 
 	if (m_validation)
 	{
@@ -181,6 +215,7 @@ VkDevice boot::VulkanBooter::create_logical_device(
 	}
 	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+
 	return device;
 }
 
