@@ -58,6 +58,6 @@ echo Launching the application...
 timeout /t 2 /nobreak > nul
 
 :: Call the executable with the collected arguments
-.\build\examples\Release\RendererApp.exe -type %renderType% -aa %aaType% -gui %enableGui%
+..\build\examples\Release\RendererApp.exe -type %renderType% -aa %aaType% -gui %enableGui%
 
 endlocal

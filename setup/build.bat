@@ -1,6 +1,7 @@
 @echo off
 echo Compiling the project...
 
+cd ..
 mkdir build
 cd build
 
