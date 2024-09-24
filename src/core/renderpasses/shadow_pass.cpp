@@ -1,4 +1,4 @@
-#include <engine/renderpasses/shadow_pass.h>
+#include <engine/core/renderpasses/shadow_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

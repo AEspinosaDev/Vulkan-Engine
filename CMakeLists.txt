@@ -1,7 +1,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(VulkanEngine)
+project(VkFW)
 
 
 # Place inside source dir
@@ -52,29 +52,29 @@ add_subdirectory(thirdparty/tinyply)
 # Setup
 file(GLOB LIB_SOURCES 
     "src/core/*.cpp" 
+    "src/core/scene/*.cpp"
+    "src/core/materials/*.cpp" 
+    "src/core/renderpasses/*.cpp" 
     "src/utilities/*.cpp" 
-    "src/scene/*.cpp"
-    "src/materials/*.cpp" 
-    "src/backend/*.cpp"
-    "src/renderpasses/*.cpp" )
+    "src/backend/*.cpp")
     
 file(GLOB LIB_HEADERS 
-    "include/engine/*.h"
-    "include/engine/core/*.h" 
-    "include/engine/utilities/*.h" 
-    "include/engine/scene/*.h" 
-    "include/engine/materials/*.h" 
-    "include/engine/backend/*.h"
-    "include/engine/renderpasses/*.h")
+    "include/VkFW/*.h"
+    "include/VkFW/core/*.h" 
+    "include/VkFW/core/scene/*.h" 
+    "include/VkFW/core/materials/*.h" 
+    "include/VkFW/core/renderpasses/*.h"
+    "include/VkFW/utilities/*.h" 
+    "include/VkFW/backend/*.h")
 
-add_library(VulkanEngine STATIC ${LIB_SOURCES} ${LIB_HEADERS})
+add_library(VkFW STATIC ${LIB_SOURCES} ${LIB_HEADERS})
 
 # Configure vulkan path
 link_directories(${VULKAN_SDK_ROOT})
 # Include directories
-target_include_directories(VulkanEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+target_include_directories(VkFW PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 # Link libraries
-target_link_libraries(VulkanEngine PUBLIC 
+target_link_libraries(VkFW PUBLIC 
 
     Vulkan::Vulkan 
     shaderc_shared.lib 
@@ -91,36 +91,35 @@ set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply PROPERTY FO
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     file(GLOB scene_objects_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/scene/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/core/scene/*.h
     )
     file(GLOB materials_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/materials/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/core/materials/*.h
     )
     file(GLOB utilities_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/utilities/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/utilities/*.h
     )
     file(GLOB core_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/core/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/core/*.h
     )
     file(GLOB backend_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/backend/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/backend/*.h
     )
     file(GLOB rpass_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/engine/renderpasses/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/core/renderpasses/*.h
     )
     source_group("Header Files\\Utilities" FILES ${utilities_h})
-    source_group("Header Files\\Scene Objects" FILES ${scene_objects_h})
-    source_group("Header Files\\Materials" FILES ${materials_h})
     source_group("Header Files\\Core" FILES ${core_h})
+    source_group("Header Files\\Core\\Scene Objects" FILES ${scene_objects_h})
+    source_group("Header Files\\Core\\Materials" FILES ${materials_h})
+    source_group("Header Files\\Core\\RenderPasses" FILES ${rpass_h})
     source_group("Header Files\\Backend" FILES ${backend_h})
-    source_group("Header Files\\RenderPasses" FILES ${rpass_h})
-    
     
     file(GLOB scene_objects_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/scene/*.cpp
     )
     file(GLOB materials_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/materials/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/materials/*.cpp
     )
     file(GLOB utilities_cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/*.cpp
@@ -132,15 +131,15 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/*.cpp
     )
     file(GLOB rpass_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderpasses/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/renderpasses/*.cpp
     )
     
     source_group("Source Files\\Utilities" FILES ${utilities_cpp})
-    source_group("Source Files\\Scene Objects" FILES ${scene_objects_cpp})
-    source_group("Source Files\\Materials" FILES ${materials_cpp})
     source_group("Source Files\\Core" FILES ${core_cpp})
+    source_group("Source Files\\Core\\Scene Objects" FILES ${scene_objects_cpp})
+    source_group("Source Files\\Core\\Materials" FILES ${materials_cpp})
+    source_group("Source Files\\Core\\RenderPasses" FILES ${rpass_cpp})
     source_group("Source Files\\Backend" FILES ${backend_cpp})
-    source_group("Source Files\\RenderPasses" FILES ${rpass_cpp})
 
 endif()
 
@@ -150,5 +149,5 @@ if(BUILD_EXAMPLES)
     add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
 endif()
 
-target_compile_definitions(VulkanEngine PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+target_compile_definitions(VkFW PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 

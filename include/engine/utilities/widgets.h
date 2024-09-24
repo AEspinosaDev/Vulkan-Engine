@@ -11,8 +11,8 @@
 
 #include <functional>
 #include <engine/common.h>
-#include <engine/scene/scene.h>
-#include <engine/materials/physically_based.h>
+#include <engine/core/scene/scene.h>
+#include <engine/core/materials/physically_based.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

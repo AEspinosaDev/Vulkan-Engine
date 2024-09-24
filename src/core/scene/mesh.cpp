@@ -1,4 +1,4 @@
-#include <engine/scene/mesh.h>
+#include <engine/core/scene/mesh.h>
 #include <engine/utilities/loaders.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

@@ -35,13 +35,13 @@
 #include <engine/core/texture.h>
 #include <engine/core/renderpass.h>
 
-#include <engine/renderpasses/forward_pass.h>
-#include <engine/renderpasses/shadow_pass.h>
-#include <engine/renderpasses/geometry_pass.h>
-#include <engine/renderpasses/ssao_pass.h>
-#include <engine/renderpasses/ssao_blur_pass.h>
-#include <engine/renderpasses/composition_pass.h>
-#include <engine/renderpasses/fxaa_pass.h>
+#include <engine/core/renderpasses/forward_pass.h>
+#include <engine/core/renderpasses/shadow_pass.h>
+#include <engine/core/renderpasses/geometry_pass.h>
+#include <engine/core/renderpasses/ssao_pass.h>
+#include <engine/core/renderpasses/ssao_blur_pass.h>
+#include <engine/core/renderpasses/composition_pass.h>
+#include <engine/core/renderpasses/fxaa_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

@@ -14,7 +14,7 @@
 #include <chrono>
 #include <tiny_obj_loader.h>
 #include <tinyply.h>
-#include <engine/scene/mesh.h>
+#include <engine/core/scene/mesh.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 // Meshes

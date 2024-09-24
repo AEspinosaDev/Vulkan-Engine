@@ -1,4 +1,4 @@
-#include <engine/scene/camera.h>
+#include <engine/core/scene/camera.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 int Camera::m_instanceCount = 0;

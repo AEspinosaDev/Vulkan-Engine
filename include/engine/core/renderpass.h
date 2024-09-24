@@ -17,7 +17,7 @@
 #include <engine/backend/frame.h>
 #include <engine/backend/descriptors.h>
 
-#include <engine/scene/scene.h>
+#include <engine/core/scene/scene.h>
 
 #include <engine/utilities/gui.h>
 

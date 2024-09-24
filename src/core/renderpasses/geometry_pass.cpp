@@ -1,4 +1,4 @@
-#include <engine/renderpasses/geometry_pass.h>
+#include <engine/core/renderpasses/geometry_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

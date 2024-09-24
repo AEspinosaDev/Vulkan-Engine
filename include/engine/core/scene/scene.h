@@ -9,9 +9,9 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <engine/scene/mesh.h>
-#include <engine/scene/camera.h>
-#include <engine/scene/light.h>
+#include <engine/core/scene/mesh.h>
+#include <engine/core/scene/camera.h>
+#include <engine/core/scene/light.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

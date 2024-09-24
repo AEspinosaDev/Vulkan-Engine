@@ -14,8 +14,7 @@
 
 */
 #include <iostream>
-#include <engine/core/renderer.h>
-#include <engine/core/texture.h>
+#include <engine/core.h>
 
 USING_VULKAN_ENGINE_NAMESPACE
 

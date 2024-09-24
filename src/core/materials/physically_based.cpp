@@ -1,4 +1,4 @@
-#include "engine/materials/physically_based.h"
+#include "engine/core/materials/physically_based.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const

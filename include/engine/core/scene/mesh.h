@@ -12,7 +12,7 @@
 #include <engine/core/object3D.h>
 #include <engine/core/geometry.h>
 #include <engine/core/material.h>
-#include <engine/scene/camera.h>
+#include <engine/core/scene/camera.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

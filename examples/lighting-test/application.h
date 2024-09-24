@@ -10,7 +10,7 @@
 #include <engine/utilities/gui.h>
 #include <engine/utilities/renderer_widget.h>
 
-#include <engine/materials/physically_based.h>
+#include <engine/core/materials/physically_based.h>
 
 /**
  * Example app
