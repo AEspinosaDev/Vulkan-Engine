@@ -18,6 +18,7 @@ struct CameraUniforms
     Mat4 view;
     Mat4 proj;
     Mat4 viewProj;
+    Vec4 position;
     Vec2 screenExtent;
 };
 

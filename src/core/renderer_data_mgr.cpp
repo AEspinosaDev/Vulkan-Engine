@@ -108,6 +108,7 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.view = camera->get_view();
 	camData.proj = camera->get_projection();
 	camData.viewProj = camera->get_projection() * camera->get_view();
+	camData.position = Vec4(camera->get_position(), 0.0f);
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 0);
