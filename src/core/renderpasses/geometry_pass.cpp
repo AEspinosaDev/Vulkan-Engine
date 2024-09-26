@@ -143,39 +143,12 @@ void GeometryPass::init(VkDevice &device)
 }
 void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
-    PipelineBuilder builder;
-
-    // Default geometry assembly values
-    builder.vertexInputInfo = init::vertex_input_state_create_info();
-    builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    auto bindingDescription = Vertex::getBindingDescription();
-    builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    // Viewport
-    builder.viewport = init::viewport(m_extent);
-    builder.scissor.offset = {0, 0};
-    builder.scissor.extent = m_extent;
-
-    builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-    builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
-
-    builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
-
-    std::array<VkPipelineColorBlendAttachmentState, 4> colorBlendingAttchments = {
-        init::color_blend_attachment_state(),
-        init::color_blend_attachment_state(),
-        init::color_blend_attachment_state(),
-        init::color_blend_attachment_state()};
-
-    builder.colorBlending = init::color_blend_create_info();
-    builder.colorBlending.attachmentCount = 4;
-    builder.colorBlending.pAttachments = colorBlendingAttchments.data();
-
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
+    std::vector<VkDynamicState> dynamicStates = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+        VK_DYNAMIC_STATE_CULL_MODE};
 
     // Setup shaderpasses
 
@@ -191,11 +164,17 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
          {VertexAttributeType::TANGENT, true},
          {VertexAttributeType::COLOR, false}};
     geomPass->settings.blending = true;
+    geomPass->settings.blendAttachments = {
+        init::color_blend_attachment_state(true),
+        init::color_blend_attachment_state(true),
+        init::color_blend_attachment_state(true),
+        init::color_blend_attachment_state(true)};
+
+    geomPass->settings.dynamicStates = dynamicStates;
 
     ShaderPass::build_shader_stages(device, *geomPass);
 
-    builder.build_pipeline_layout(device, descriptorManager, *geomPass);
-    builder.build_pipeline(device, m_obj, *geomPass);
+    ShaderPass::build(device, m_obj, descriptorManager, m_extent, *geomPass);
 
     m_shaderPasses["geometry"] = geomPass;
 }

@@ -69,28 +69,6 @@ void ShadowPass::init(VkDevice &device)
 }
 void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
-    PipelineBuilder builder;
-
-    // Default geometry assembly values
-    builder.vertexInputInfo = init::vertex_input_state_create_info();
-    builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    auto bindingDescription = Vertex::getBindingDescription();
-    builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    // Viewport
-    builder.viewport = init::viewport(m_extent);
-    builder.scissor.offset = {0, 0};
-    builder.scissor.extent = m_extent;
-
-    builder.rasterizer.depthBiasEnable = VK_TRUE;
-    builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-    builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
-
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
-    builder.colorBlending.attachmentCount = 0;
 
     // DEPTH PASS
     ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows.glsl");
@@ -104,15 +82,17 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
          {VertexAttributeType::UV, false},
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
-
-    //  builder.dynamicState = VK_TRUE;
-
-    builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
+    depthPass->settings.dynamicStates = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_DEPTH_BIAS,
+        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
+    depthPass->settings.blending = false;
+    depthPass->settings.blendAttachments = {};
 
     ShaderPass::build_shader_stages(device, *depthPass);
 
-    builder.build_pipeline_layout(device, descriptorManager, *depthPass);
-    builder.build_pipeline(device, m_obj, *depthPass);
+    ShaderPass::build(device, m_obj, descriptorManager, m_extent, *depthPass);
 
     m_shaderPasses["shadow"] = depthPass;
 }
@@ -192,7 +172,7 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
     end(cmd);
 }
 
-void ShadowPass::update(VkDevice& device, VmaAllocator& memory, Swapchain* swp)
+void ShadowPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
 {
     RenderPass::update(device, memory);
     m_attachments[0].image.create_sampler(

@@ -60,39 +60,6 @@ void CompositionPass::init(VkDevice &device)
 }
 void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
-    PipelineBuilder builder;
-
-    // Default geometry assembly values
-    builder.vertexInputInfo = init::vertex_input_state_create_info();
-    builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    auto bindingDescription = Vertex::getBindingDescription();
-    builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    // Viewport
-    builder.viewport = init::viewport(m_extent);
-    builder.scissor.offset = {0, 0};
-    builder.scissor.extent = m_extent;
-
-    builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-    // builder.depthStencil =VK_NULL_HANDLE;
-
-    builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
-
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    builder.colorBlending = init::color_blend_create_info();
-    builder.colorBlending.attachmentCount = 1;
-    builder.colorBlending.pAttachments = &colorBlendAttachment;
 
     ShaderPass *compPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/composition.glsl");
     compPass->settings.descriptorSetLayoutIDs =
@@ -110,8 +77,7 @@ void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &desc
 
     ShaderPass::build_shader_stages(device, *compPass);
 
-    builder.build_pipeline_layout(device, descriptorManager, *compPass);
-    builder.build_pipeline(device, m_obj, *compPass);
+    ShaderPass::build(device, m_obj, descriptorManager, m_extent, *compPass);
 
     m_shaderPasses["composition"] = compPass;
 

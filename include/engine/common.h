@@ -283,7 +283,7 @@ Vulkan API extension data
 */
 struct Extension
 {
-	const char *name{nullptr}; //Necesary
+	const char *name{nullptr}; // Necesary
 	bool optional{false};
 	uint32_t version{0};
 
@@ -292,6 +292,7 @@ struct Extension
 	{
 	}
 };
+
 
 // Ahead declaration of some key classes
 class Renderer;

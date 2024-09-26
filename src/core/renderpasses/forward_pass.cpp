@@ -121,43 +121,15 @@ void ForwardPass::init(VkDevice &device)
 }
 void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
-    PipelineBuilder builder;
 
-    // Default geometry assembly values
-    builder.vertexInputInfo = init::vertex_input_state_create_info();
-    builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    auto bindingDescription = Vertex::getBindingDescription();
-    builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    std::vector<VkDynamicState> dynamicStates = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+        VK_DYNAMIC_STATE_CULL_MODE};
 
-    // Viewport
-    builder.viewport = init::viewport(m_extent);
-    builder.scissor.offset = {0, 0};
-    builder.scissor.extent = m_extent;
-
-    builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-    builder.depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
-
-    builder.multisampling = init::multisampling_state_create_info(m_aa == AntialiasingType::FXAA ? VK_SAMPLE_COUNT_1_BIT : static_cast<VkSampleCountFlagBits>(m_aa));
-
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
-    builder.dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE);
-
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    builder.colorBlending = init::color_blend_create_info();
-    builder.colorBlending.attachmentCount = 1;
-    builder.colorBlending.pAttachments = &colorBlendAttachment;
+    VkSampleCountFlagBits samples = m_aa == AntialiasingType::FXAA ? VK_SAMPLE_COUNT_1_BIT : static_cast<VkSampleCountFlagBits>(m_aa);
 
     // Setup shaderpasses
     m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/unlit.glsl");
@@ -172,6 +144,8 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
     m_shaderPasses["unlit"]->settings.blending = true;
+    m_shaderPasses["unlit"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["unlit"]->settings.samples = samples;
 
     m_shaderPasses["phong"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/phong.glsl");
     m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs =
@@ -185,6 +159,8 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
     m_shaderPasses["phong"]->settings.blending = true;
+    m_shaderPasses["phong"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["phong"]->settings.samples = samples;
 
     m_shaderPasses["physical"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/physically_based.glsl");
     m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs =
@@ -198,6 +174,8 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
          {VertexAttributeType::TANGENT, true},
          {VertexAttributeType::COLOR, false}};
     m_shaderPasses["physical"]->settings.blending = true;
+    m_shaderPasses["physical"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["physical"]->settings.samples = samples;
 
     for (auto pair : m_shaderPasses)
     {
@@ -205,8 +183,7 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
 
         ShaderPass::build_shader_stages(device, *pass);
 
-        builder.build_pipeline_layout(device, descriptorManager, *pass);
-        builder.build_pipeline(device, m_obj, *pass);
+        ShaderPass::build(device, m_obj, descriptorManager, m_extent, *pass);
     }
 }
 void ForwardPass::init_resources(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext)

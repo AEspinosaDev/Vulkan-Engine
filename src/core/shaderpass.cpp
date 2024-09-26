@@ -1,31 +1,6 @@
-#include <engine/backend/pipeline.h>
+#include <engine/core/shaderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-
-void PipelineBuilder::init(VkExtent2D &extent)
-{
-
-	// Default geometry assembly values
-	vertexInputInfo = init::vertex_input_state_create_info();
-	inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-	auto bindingDescription = Vertex::getBindingDescription();
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-	// Viewport
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)extent.width;
-	viewport.height = (float)extent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	scissor.offset = {0, 0};
-	scissor.extent = extent;
-
-	rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-	depthStencil = init::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS);
-}
 
 void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)
 {
@@ -45,58 +20,64 @@ void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager 
 		throw new VKException("failed to create pipeline layout!");
 	}
 
-	pipelineLayout = pass.pipelineLayout;
 }
-
-void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, ShaderPass &shaderPass)
+void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent, ShaderPass & shaderPass)
 {
-	// Viewport setup (JUST ONE FOR NOW)
-	VkPipelineViewportStateCreateInfo viewportState = {};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.pNext = nullptr;
+	// Vertex and geometry
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo = init::vertex_input_state_create_info();
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = init::input_assembly_create_info(shaderPass.settings.topology);
 
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = &viewport;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = &scissor;
+	auto bindingDescription = Vertex::getBindingDescription();
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 
-	// Attribute setup
 	auto attributeDescriptions = Vertex::getAttributeDescriptions(
 		shaderPass.settings.attributes[VertexAttributeType::NORMAL],
 		shaderPass.settings.attributes[VertexAttributeType::TANGENT],
 		shaderPass.settings.attributes[VertexAttributeType::UV],
 		shaderPass.settings.attributes[VertexAttributeType::COLOR]);
-		
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-	// Raster setup
-	rasterizer.polygonMode = shaderPass.settings.poligonMode;
-	rasterizer.cullMode = shaderPass.settings.cullMode;
-	rasterizer.frontFace = shaderPass.settings.drawOrder;
+	// Viewport
+	VkViewport viewport = init::viewport(extent);
+	VkRect2D scissor;
+	 scissor.offset = {0, 0};
+	scissor.extent = extent;
+	// Viewport setup (JUST ONE FOR NOW)
+	VkPipelineViewportStateCreateInfo viewportState = {};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.pNext = nullptr;
+	viewportState.viewportCount = 1;
+	viewportState.pViewports = &viewport;
+	viewportState.scissorCount = 1;
+	viewportState.pScissors = &scissor;
 
-	// Depth setup
-	depthStencil.depthTestEnable = shaderPass.settings.depthTest ? VK_TRUE : VK_FALSE;
-	depthStencil.depthWriteEnable = shaderPass.settings.depthWrite ? VK_TRUE : VK_FALSE;
-	depthStencil.depthCompareOp = shaderPass.settings.depthTest ? shaderPass.settings.depthOp : VK_COMPARE_OP_ALWAYS;
+	// Rasterizer
+	VkPipelineRasterizationStateCreateInfo rasterizer = init::rasterization_state_create_info(
+		shaderPass.settings.poligonMode,
+		shaderPass.settings.cullMode,
+		shaderPass.settings.drawOrder);
 
-	// Blending SETUP TO DO
-	if (!shaderPass.settings.blending)
-	{
-		colorBlendAttachment = init::color_blend_attachment_state();
-		colorBlending = init::color_blend_create_info();
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &colorBlendAttachment;
-	}
-	else
-	{
-		// TO DO: BLENDING
-	}
+	// Depth Setup
+	VkPipelineDepthStencilStateCreateInfo depthStencil = init::depth_stencil_create_info(
+		shaderPass.settings.depthTest ? VK_TRUE : VK_FALSE,
+		shaderPass.settings.depthWrite ? VK_TRUE : VK_FALSE,
+		shaderPass.settings.depthTest ? shaderPass.settings.depthOp : VK_COMPARE_OP_ALWAYS);
 
+	// Multisampling
+	VkPipelineMultisampleStateCreateInfo multisampling = init::multisampling_state_create_info(shaderPass.settings.samples);
+
+	// Blending
+	VkPipelineColorBlendStateCreateInfo colorBlending = init::color_blend_create_info();
+	colorBlending.attachmentCount = static_cast<uint32_t>(shaderPass.settings.blendAttachments.size());
+	colorBlending.pAttachments = shaderPass.settings.blendAttachments.data();
+
+	// Dynamic states
 	VkPipelineDynamicStateCreateInfo dynamicState{};
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(shaderPass.settings.dynamicStates.size());
+	dynamicState.pDynamicStates = shaderPass.settings.dynamicStates.data();
 
 	// build the actual pipeline
 	// we now use all of the info structs we have been writing into into this one to create the pipeline
@@ -121,7 +102,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
 	pipelineInfo.pDynamicState = &dynamicState;
 
 	pipelineInfo.pDepthStencilState = &depthStencil;
-	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.layout = shaderPass.pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -241,6 +222,11 @@ void ShaderPass::build_shader_stages(VkDevice &device, ShaderPass &pass)
 	}
 }
 
+void ShaderPass::build(VkDevice &device, VkRenderPass renderPass, DescriptorManager &descriptorManager, VkExtent2D &extent, ShaderPass &shaderPass)
+{
+	PipelineBuilder::build_pipeline_layout(device, descriptorManager, shaderPass);
+	PipelineBuilder::build_pipeline(device, renderPass, extent, shaderPass);
+}
 void ShaderPass::cleanup(VkDevice &device)
 {
 	for (auto &stage : stages)

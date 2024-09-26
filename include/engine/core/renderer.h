@@ -24,7 +24,6 @@
 #include <engine/backend/bootstrap.h>
 #include <engine/backend/initializers.h>
 #include <engine/backend/swapchain.h>
-#include <engine/backend/pipeline.h>
 #include <engine/backend/frame.h>
 #include <engine/backend/image.h>
 #include <engine/backend/uniforms.h>
@@ -33,6 +32,7 @@
 #include <engine/core/window.h>
 #include <engine/core/material.h>
 #include <engine/core/texture.h>
+#include <engine/core/shaderpass.h>
 #include <engine/core/renderpass.h>
 
 #include <engine/core/renderpasses/forward_pass.h>

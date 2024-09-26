@@ -205,12 +205,17 @@ VkPipelineColorBlendStateCreateInfo init::color_blend_create_info()
 
 	return colorBlending;
 }
-VkPipelineColorBlendAttachmentState init::color_blend_attachment_state()
+VkPipelineColorBlendAttachmentState init::color_blend_attachment_state(bool enabled)
 {
-	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-										  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendAttachment.blendEnable = VK_FALSE;
+	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachment.blendEnable = enabled ? VK_TRUE : VK_FALSE;
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 	return colorBlendAttachment;
 }
 VkPipelineLayoutCreateInfo init::pipeline_layout_create_info()
@@ -369,5 +374,6 @@ VkViewport init::viewport(VkExtent2D extent, float minDepth, float maxDepth, flo
 	viewport.maxDepth = maxDepth;
 	return viewport;
 }
+
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -72,25 +72,6 @@ void FXAAPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
 }
 void FXAAPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
-    PipelineBuilder builder;
-
-    // Default geometry assembly values
-    builder.vertexInputInfo = init::vertex_input_state_create_info();
-    builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    auto bindingDescription = Vertex::getBindingDescription();
-    builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    // Viewport
-    builder.viewport = init::viewport(m_extent);
-    builder.scissor.offset = {0, 0};
-    builder.scissor.extent = m_extent;
-
-    builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-    // builder.depthStencil =VK_NULL_HANDLE;
-
-    builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
 
     ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/fxaa.glsl");
     fxaaPass->settings.descriptorSetLayoutIDs =
@@ -104,12 +85,10 @@ void FXAAPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
 
     ShaderPass::build_shader_stages(device, *fxaaPass);
 
-    builder.build_pipeline_layout(device, m_descriptorManager, *fxaaPass);
-    builder.build_pipeline(device, m_obj, *fxaaPass);
+    ShaderPass::build(device, m_obj, m_descriptorManager, m_extent, *fxaaPass);
 
     m_shaderPasses["fxaa"] = fxaaPass;
 }
-
 
 void FXAAPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
@@ -132,7 +111,7 @@ void FXAAPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
 
     // // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
-         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
     end(cmd);
 }
@@ -144,12 +123,10 @@ void FXAAPass::set_output_buffer(Image output)
     m_descriptorManager.set_descriptor_write(m_outputBuffer.sampler, m_outputBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
 }
 
-
 void FXAAPass::cleanup(VkDevice &device, VmaAllocator &memory)
 {
     RenderPass::cleanup(device, memory);
     m_descriptorManager.cleanup();
 }
-
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -14,7 +14,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-/// Epic's Fitted Marschner Workflow
+/// Epic's Fitted Marschner Workflow. Only works with geometry defined as lines.
 class HairMaterial : public Material
 {
 protected:

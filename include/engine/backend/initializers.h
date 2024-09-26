@@ -49,7 +49,7 @@ namespace init
 
 	VkPipelineColorBlendStateCreateInfo color_blend_create_info();
 
-	VkPipelineColorBlendAttachmentState color_blend_attachment_state();
+	VkPipelineColorBlendAttachmentState color_blend_attachment_state(bool enabled);
 
 	VkPipelineLayoutCreateInfo pipeline_layout_create_info();
 
@@ -73,6 +73,7 @@ namespace init
 
 	VkViewport viewport(VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1.0f,
 						float x = 0.0f, float y = 0.0f);
+
 
 }
 

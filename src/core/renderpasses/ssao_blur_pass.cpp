@@ -81,24 +81,6 @@ void SSAOBlurPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, V
 
 void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
 {
-    PipelineBuilder builder;
-
-    // Default geometry assembly values
-    builder.vertexInputInfo = init::vertex_input_state_create_info();
-    builder.inputAssembly = init::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    auto bindingDescription = Vertex::getBindingDescription();
-    builder.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    builder.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    // Viewport
-    builder.viewport = init::viewport(m_extent);
-    builder.scissor.offset = {0, 0};
-    builder.scissor.extent = m_extent;
-
-    builder.rasterizer.depthBiasEnable = VK_TRUE;
-    builder.rasterizer = init::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-
-    builder.depthStencil = init::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS);
 
     // DEPTH PASS
     ShaderPass *ssaoPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/ssao_blur.glsl");
@@ -113,12 +95,9 @@ void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
 
-    builder.multisampling = init::multisampling_state_create_info(VK_SAMPLE_COUNT_1_BIT);
-
     ShaderPass::build_shader_stages(device, *ssaoPass);
 
-    builder.build_pipeline_layout(device, m_descriptorManager, *ssaoPass);
-    builder.build_pipeline(device, m_obj, *ssaoPass);
+    ShaderPass::build(device, m_obj, m_descriptorManager, m_extent, *ssaoPass);
 
     m_shaderPasses["ssaoBlur"] = ssaoPass;
 }
