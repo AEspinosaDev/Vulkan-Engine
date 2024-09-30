@@ -177,12 +177,12 @@ VULKAN_ENGINE_NAMESPACE_END;
 namespace std
 {
     template <>
-    struct hash<vke::Vertex>
+    struct hash<VkFW::Vertex>
     {
-        size_t operator()(vke::Vertex const &vertex) const
+        size_t operator()(VkFW::Vertex const &vertex) const
         {
             size_t seed = 0;
-            vke::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
+            VkFW::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
             return seed;
         }
     };

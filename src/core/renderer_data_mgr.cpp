@@ -68,7 +68,7 @@ void Renderer::upload_object_data(Scene *const scene)
 					objectData.model = m->get_model_matrix();
 					objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
 					objectData.otherParams2 = {m->is_selected(), 0.0, 0.0, 0.0};
-					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+					m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_context.memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
 					for (size_t i = 0; i < m->get_num_geometries(); i++)
 					{
@@ -76,9 +76,9 @@ void Renderer::upload_object_data(Scene *const scene)
 						Geometry *g = m->get_geometry(i);
 						if (!g->is_buffer_loaded())
 						{
-							Geometry::upload_buffers(m_device, m_memory, m_graphicsQueue, m_uploadContext, g);
+							Geometry::upload_buffers(m_context.device, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, g);
 							m_deletionQueue.push_function([=]()
-														  { g->cleanup(m_memory); });
+														  { g->cleanup(m_context.memory); });
 						}
 
 						// Object material setup
@@ -90,7 +90,7 @@ void Renderer::upload_object_data(Scene *const scene)
 
 						// ObjectUniforms materialData;
 						MaterialUniforms materialData = mat->get_uniforms();
-						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
+						m_frames[m_currentFrame].objectUniformBuffer.upload_data(m_context.memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu));
 					}
 				}
 			}
@@ -111,9 +111,9 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.position = Vec4(camera->get_position(), 0.0f);
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
-	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &camData, sizeof(CameraUniforms), 0);
-	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(m_memory, camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_gpu));
-	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms(m_memory);
+	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
+	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(m_context.memory, camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
+	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms(m_context.memory);
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
@@ -143,8 +143,8 @@ void Renderer::upload_global_data(Scene *const scene)
 	}
 	sceneParams.numLights = static_cast<int>(lights.size());
 
-	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_memory, &sceneParams, sizeof(SceneUniforms),
-															 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu));
+	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_context.memory, &sceneParams, sizeof(SceneUniforms),
+															 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu));
 }
 
 void Renderer::setup_material(Material *const mat)
@@ -161,9 +161,9 @@ void Renderer::setup_material(Material *const mat)
 			// SET ACTUAL TEXTURE
 			if (!texture->is_buffer_loaded())
 			{
-				Texture::upload_data(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext, texture);
+				Texture::upload_data(m_context.device, m_context.gpu, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, texture);
 				m_deletionQueue.push_function([=]()
-											  { texture->m_image.cleanup(m_device, m_memory); });
+											  { texture->m_image.cleanup(m_context.device, m_context.memory); });
 			}
 
 			// Set texture write
@@ -190,13 +190,13 @@ void Renderer::init_resources()
 {
 
 	// Setup vignette vertex buffers
-	Geometry::upload_buffers(m_device, m_memory, m_graphicsQueue, m_uploadContext, m_vignette->get_geometry());
+	Geometry::upload_buffers(m_context.device, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, m_vignette->get_geometry());
 
 	// Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
 	Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
-	Texture::upload_data(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext, Texture::DEBUG_TEXTURE);
+	Texture::upload_data(m_context.device, m_context.gpu, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, Texture::DEBUG_TEXTURE);
 
 	set_renderpass_resources();
 }
@@ -206,7 +206,7 @@ void Renderer::set_renderpass_resources()
 	size_t i = 0;
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->init_resources(m_device, m_gpu, m_memory, m_graphicsQueue, m_uploadContext);
+		pass->init_resources(m_context.device, m_context.gpu, m_context.memory, m_context.graphicsQueue, m_context.uploadContext);
 
 		if (i == GEOMETRY)
 			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_g_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image);

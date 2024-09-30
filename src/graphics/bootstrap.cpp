@@ -3,7 +3,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-VkInstance boot::VulkanBooter::create_instance()
+VkInstance boot::VKBooter::create_instance()
 {
 	if (m_validation && !utils::check_validation_layer_suport(m_validationLayers))
 	{
@@ -51,7 +51,7 @@ VkInstance boot::VulkanBooter::create_instance()
 	return instance;
 }
 
-std::vector<const char *> boot::VulkanBooter::get_required_extensions()
+std::vector<const char *> boot::VKBooter::get_required_extensions()
 {
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions;
@@ -73,7 +73,7 @@ std::vector<const char *> boot::VulkanBooter::get_required_extensions()
 	return extensions;
 }
 
-VkPhysicalDevice boot::VulkanBooter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface)
+VkPhysicalDevice boot::VKBooter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface)
 {
 	VkPhysicalDevice gpu = VK_NULL_HANDLE;
 
@@ -110,7 +110,7 @@ VkPhysicalDevice boot::VulkanBooter::pick_graphics_card_device(VkInstance instan
 
 	return gpu;
 }
-VkDevice boot::VulkanBooter::create_logical_device(
+VkDevice boot::VKBooter::create_logical_device(
 	VkQueue &graphicsQueue,
 	VkQueue &presentQueue,
 	VkPhysicalDevice gpu,
@@ -219,7 +219,7 @@ VkDevice boot::VulkanBooter::create_logical_device(
 	return device;
 }
 
-int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface)
+int boot::VKBooter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 
@@ -262,7 +262,7 @@ int boot::VulkanBooter::rate_device_suitability(VkPhysicalDevice device, VkSurfa
 	return score;
 }
 
-bool boot::VulkanBooter::check_device_extension_support(VkPhysicalDevice device)
+bool boot::VKBooter::check_device_extension_support(VkPhysicalDevice device)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -338,13 +338,13 @@ boot::SwapChainSupportDetails boot::query_swapchain_support(VkPhysicalDevice dev
 	return details;
 }
 
-VkInstance boot::VulkanBooter::boot_vulkan()
+VkInstance boot::VKBooter::boot_vulkan()
 {
 	VkInstance instance = create_instance();
 	return instance;
 }
 
-VkDebugUtilsMessengerEXT boot::VulkanBooter::create_debug_messenger(VkInstance instance)
+VkDebugUtilsMessengerEXT boot::VKBooter::create_debug_messenger(VkInstance instance)
 {
 	if (!m_validation)
 		return VK_NULL_HANDLE;
@@ -359,7 +359,7 @@ VkDebugUtilsMessengerEXT boot::VulkanBooter::create_debug_messenger(VkInstance i
 	}
 	return debugMessenger;
 }
-VmaAllocator boot::VulkanBooter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu)
+VmaAllocator boot::VKBooter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu)
 {
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.physicalDevice = gpu;

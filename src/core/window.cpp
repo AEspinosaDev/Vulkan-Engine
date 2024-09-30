@@ -10,33 +10,33 @@ void Window::init()
 
     glfwWindowHint(GLFW_RESIZABLE, m_resizeable);
 
-    m_GLFWwindow = glfwCreateWindow(m_extent.width, m_extent.height, m_title.c_str(), nullptr, nullptr);
+    m_handle = glfwCreateWindow(m_extent.width, m_extent.height, m_title.c_str(), nullptr, nullptr);
 
-    if (!m_GLFWwindow)
+    if (!m_handle)
     {
         glfwTerminate();
         ERR_LOG("Failed to create GLFW window");
     }
 
-    glfwSetWindowPos(m_GLFWwindow, (int)m_screenPos.x, (int)m_screenPos.y);
+    glfwSetWindowPos(m_handle, (int)m_screenPos.x, (int)m_screenPos.y);
 
-    glfwSetWindowUserPointer(m_GLFWwindow, this);
+    glfwSetWindowUserPointer(m_handle, this);
 
-    glfwSetKeyCallback(m_GLFWwindow, [](GLFWwindow *w, int key, int scancode, int action, int mods)
+    glfwSetKeyCallback(m_handle, [](GLFWwindow *w, int key, int scancode, int action, int mods)
                        {
             Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(w));
             if (instance->m_keyCallback) {
                 instance->m_keyCallback(key, scancode, action, mods);
             } });
 
-    glfwSetFramebufferSizeCallback(m_GLFWwindow, [](GLFWwindow *w, int width, int height)
+    glfwSetFramebufferSizeCallback(m_handle, [](GLFWwindow *w, int width, int height)
                                    {
             Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(w));
             if (instance->m_windowSizeCallback) {
                 instance->m_windowSizeCallback(width, height);
             } });
 
-    glfwSetCursorPosCallback(m_GLFWwindow, [](GLFWwindow *w, double x, double y)
+    glfwSetCursorPosCallback(m_handle, [](GLFWwindow *w, double x, double y)
                              {
             Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(w));
             if (instance->m_mouseCallBack) {
@@ -44,11 +44,6 @@ void Window::init()
             } });
 
     m_initialized = true;
-}
-
-void create_surface(VkInstance &instance, Window *window)
-{
-    VK_CHECK(glfwCreateWindowSurface(instance, window->m_GLFWwindow, nullptr, &window->m_surface));
 }
 
 

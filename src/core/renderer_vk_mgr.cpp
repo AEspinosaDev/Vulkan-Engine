@@ -61,16 +61,16 @@ void Renderer::init_renderpasses()
 
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->init(m_device);
+		pass->init(m_context.device);
 
-		pass->create_framebuffer(m_device, m_memory, &m_swapchain);
+		pass->create_framebuffer(m_context.device, m_context.memory, &m_context.swapchain);
 	};
 
 	m_deletionQueue.push_function([=]()
 								  {
 			for (RenderPass* pass : m_renderPipeline.renderpasses)
 			{
-				pass->cleanup(m_device, m_memory);
+				pass->cleanup(m_context.device, m_context.memory);
 			} });
 }
 
@@ -78,22 +78,22 @@ void Renderer::init_control_objects()
 {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		m_frames[i].init(m_device, m_gpu, m_window->get_surface());
+		m_frames[i].init(m_context.device, m_context.gpu, m_context.surface);
 		m_deletionQueue.push_function([=]()
-									  { m_frames[i].cleanup(m_device); });
+									  { m_frames[i].cleanup(m_context.device); });
 	}
 
-	m_uploadContext.init(m_device, m_gpu, m_window->get_surface());
+	// m_uploadContext.init(m_context.device, m_context.gpu, m_context.surface);
 
 	m_deletionQueue.push_function([=]()
-								  { m_uploadContext.cleanup(m_device); });
+								  { m_context.uploadContext.cleanup(m_context.device); });
 }
 
 void Renderer::init_descriptors()
 {
 	// Global descriptor manager setup
 
-	m_descriptorMng.init(m_device);
+	m_descriptorMng.init(m_context.device);
 	m_descriptorMng.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
 
 	// GLOBAL SET
@@ -131,31 +131,31 @@ void Renderer::init_descriptors()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		// Global Descriptor
-		const size_t globalStrideSize = (utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_gpu));
-		m_frames[i].globalUniformBuffer.init(m_memory, globalStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
+		const size_t globalStrideSize = (utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_context.gpu));
+		m_frames[i].globalUniformBuffer.init(m_context.memory, globalStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
 
 		m_deletionQueue.push_function([=]()
-									  { m_frames[i].globalUniformBuffer.cleanup(m_memory); });
+									  { m_frames[i].globalUniformBuffer.cleanup(m_context.memory); });
 
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_frames[i].globalDescriptor);
 
 		m_descriptorMng.set_descriptor_write(&m_frames[i].globalUniformBuffer, sizeof(CameraUniforms), 0,
 											 &m_frames[i].globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
-		m_descriptorMng.set_descriptor_write(&m_frames[i].globalUniformBuffer, sizeof(SceneUniforms), utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_gpu),
+		m_descriptorMng.set_descriptor_write(&m_frames[i].globalUniformBuffer, sizeof(SceneUniforms), utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu),
 											 &m_frames[i].globalDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
 		// Object Descriptor
-		const size_t objectStrideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_gpu) + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu));
-		m_frames[i].objectUniformBuffer.init(m_memory, VK_MAX_OBJECTS * objectStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
+		const size_t objectStrideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu));
+		m_frames[i].objectUniformBuffer.init(m_context.memory, VK_MAX_OBJECTS * objectStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
 		m_deletionQueue.push_function([=]()
-									  { m_frames[i].objectUniformBuffer.cleanup(m_memory); });
+									  { m_frames[i].objectUniformBuffer.cleanup(m_context.memory); });
 
 		m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_frames[i].objectDescriptor);
 
 		m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(ObjectUniforms), 0, &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
 
-		m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(MaterialUniforms), utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_gpu), &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+		m_descriptorMng.set_descriptor_write(&m_frames[i].objectUniformBuffer, sizeof(MaterialUniforms), utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu), &m_frames[i].objectDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 	}
 
 	m_deletionQueue.push_function([=]()
@@ -163,7 +163,7 @@ void Renderer::init_descriptors()
 
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->create_descriptors(m_device, m_gpu, m_memory, MAX_FRAMES_IN_FLIGHT);
+		pass->create_descriptors(m_context.device, m_context.gpu, m_context.memory, MAX_FRAMES_IN_FLIGHT);
 	}
 }
 
@@ -171,7 +171,7 @@ void Renderer::init_pipelines()
 {
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->create_pipelines(m_device, m_descriptorMng);
+		pass->create_pipelines(m_context.device, m_descriptorMng);
 	}
 }
 
@@ -179,19 +179,21 @@ void Renderer::update_renderpasses()
 {
 	// GLFW update framebuffer
 	int width = 0, height = 0;
-	glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
+	glfwGetFramebufferSize(m_window->get_handle(), &width, &height);
 	while (width == 0 || height == 0)
 	{
-		glfwGetFramebufferSize(m_window->get_window_obj(), &width, &height);
+		glfwGetFramebufferSize(m_window->get_handle(), &width, &height);
 		glfwWaitEvents();
 	}
 
-	VK_CHECK(vkDeviceWaitIdle(m_device));
+	VK_CHECK(vkDeviceWaitIdle(m_context.device));
 
-	// Swapchain recreation
-	m_swapchain.cleanup(m_device, m_memory);
-	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+	m_context.recreate_swapchain(
+		m_window->get_handle(),
+		m_window->get_extent(),
+		static_cast<uint32_t>(m_settings.bufferingType),
+		static_cast<VkFormat>(m_settings.colorFormat),
+		static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
 	// Renderpass framebuffer updating
 	size_t i = 0;
@@ -200,7 +202,7 @@ void Renderer::update_renderpasses()
 		if (pass->is_resizeable())
 		{
 			pass->set_extent(m_window->get_extent());
-			pass->update(m_device, m_memory, &m_swapchain);
+			pass->update(m_context.device, m_context.memory, &m_context.swapchain);
 		}
 
 		if (i == GEOMETRY)
@@ -233,12 +235,12 @@ void Renderer::update_renderpasses()
 void Renderer::update_shadow_quality()
 
 {
-	VK_CHECK(vkDeviceWaitIdle(m_device));
+	m_context.wait_for_device();
 
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
 	m_renderPipeline.renderpasses[SHADOW]->set_extent({SHADOW_RES, SHADOW_RES});
-	m_renderPipeline.renderpasses[SHADOW]->update(m_device, m_memory);
+	m_renderPipeline.renderpasses[SHADOW]->update(m_context.device, m_context.memory);
 
 	m_updateShadowQuality = false;
 
@@ -251,46 +253,4 @@ void Renderer::update_shadow_quality()
 	}
 }
 
-void Renderer::update_context()
-{
-
-	if (!m_initialized)
-		return;
-
-	VK_CHECK(vkDeviceWaitIdle(m_device));
-
-	// Cleanup
-	m_deletionQueue.flush();
-
-	for (RenderPass *pass : m_renderPipeline.renderpasses)
-	{
-		pass->clean_framebuffer(m_device, m_memory);
-	}
-	m_swapchain.cleanup(m_device, m_memory);
-
-	m_renderPipeline.renderpasses.clear();
-
-	init_control_objects();
-
-	// Recreation
-	m_swapchain.create(m_gpu, m_device, m_window->get_surface(), m_window->get_window_obj(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-					   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
-
-	init_renderpasses();
-
-	init_descriptors();
-
-	init_pipelines();
-
-	init_resources();
-
-	// if (m_settings.enableUI)
-	// 	init_gui();
-
-	Frame::guiEnabled = false;
-
-	set_renderpass_resources();
-
-	m_updateContext = false;
-}
 VULKAN_ENGINE_NAMESPACE_END

@@ -33,11 +33,11 @@ namespace boot
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	class VulkanBooter
+	class VKBooter
 	{
 
 	public:
-		VulkanBooter(bool validate)
+		VKBooter(bool validate)
 			: m_validation(validate)
 		{
 		}

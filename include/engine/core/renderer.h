@@ -30,6 +30,7 @@
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/shaderpass.h>
 #include <engine/graphics/renderpass.h>
+#include <engine/graphics/context.h>
 
 #include <engine/graphics/renderpasses/forward_pass.h>
 #include <engine/graphics/renderpasses/shadow_pass.h>
@@ -100,19 +101,9 @@ class Renderer
 protected:
 	RendererSettings m_settings{};
 
-	utils::UploadContext m_uploadContext{};
+	Context m_context{};
 
 	Window *m_window;
-	Swapchain m_swapchain;
-
-	VkInstance m_instance{VK_NULL_HANDLE};
-	VkPhysicalDevice m_gpu{VK_NULL_HANDLE};
-	VkDevice m_device{VK_NULL_HANDLE};
-	VmaAllocator m_memory{VK_NULL_HANDLE};
-	VkDebugUtilsMessengerEXT m_debugMessenger{VK_NULL_HANDLE};
-
-	VkQueue m_graphicsQueue{};
-	VkQueue m_presentQueue{};
 
 	std::vector<Frame> m_frames;
 
@@ -135,12 +126,6 @@ protected:
 	Mesh *m_vignette{nullptr};
 
 	int MAX_FRAMES_IN_FLIGHT;
-
-#ifdef NDEBUG
-	const bool m_enableValidationLayers{false};
-#else
-	const bool m_enableValidationLayers{true};
-#endif
 
 	uint32_t m_currentFrame{0};
 	bool m_initialized{false};
@@ -204,7 +189,6 @@ public:
 	inline void set_gui_overlay(GUIOverlay *gui)
 	{
 		m_gui = gui;
-		// static_cast<GUIPass *>(m_renderPipeline.renderpasses[GUI])->set_gui(gui);
 	}
 
 	inline GUIOverlay *get_gui_overlay()
@@ -328,10 +312,7 @@ protected:
 
 	virtual void update_shadow_quality();
 
-	/*
-	Reconfigure entire vulkan rendering context
-	*/
-	virtual void update_context();
+
 
 #pragma endregion
 	/*

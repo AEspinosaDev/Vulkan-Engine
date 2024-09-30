@@ -1,6 +1,6 @@
 #include <engine/utilities/loaders.h>
 
-void vke::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool importMaterials, bool calculateTangents, bool overrideGeometry)
+void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool importMaterials, bool calculateTangents, bool overrideGeometry)
 {
     // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
 
@@ -146,7 +146,7 @@ void vke::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool i
     mesh->setup_volume();
     return;
 }
-void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
+void VkFW::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
 {
     if (!indices.empty())
         for (size_t i = 0; i < indices.size(); i += 3)
@@ -175,7 +175,7 @@ void vke::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, co
             vertices[i + 2].tangent += tangent;
         }
 }
-void vke::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool preload, bool verbose, bool calculateTangents, bool overrideGeometry)
+void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool preload, bool verbose, bool calculateTangents, bool overrideGeometry)
 {
 
     std::unique_ptr<std::istream> file_stream;
@@ -402,7 +402,7 @@ void vke::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool p
         std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
     }
 }
-void vke::loaders::load_3D_file(Mesh *const mesh, const std::string fileName, bool asynCall, bool overrideGeometry)
+void VkFW::loaders::load_3D_file(Mesh *const mesh, const std::string fileName, bool asynCall, bool overrideGeometry)
 {
     size_t dotPosition = fileName.find_last_of(".");
 

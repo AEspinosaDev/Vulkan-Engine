@@ -54,10 +54,10 @@
 
 // Namespace define
 #define VULKAN_ENGINE_NAMESPACE_BEGIN \
-	namespace vke                     \
+	namespace VkFW                     \
 	{
 #define VULKAN_ENGINE_NAMESPACE_END }
-#define USING_VULKAN_ENGINE_NAMESPACE using namespace vke;
+#define USING_VULKAN_ENGINE_NAMESPACE using namespace VkFW;
 
 #define VK_MAX_OBJECTS 100
 #define VK_MAX_LIGHTS 50

@@ -65,16 +65,16 @@ private:
     void keyboard_callback(int key, int scancode, int action, int mods)
     {
 
-        if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        if (glfwGetKey(m_window->get_handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             m_window->set_window_should_close(true);
         }
 
-        if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_F11) == GLFW_PRESS)
+        if (glfwGetKey(m_window->get_handle(), GLFW_KEY_F11) == GLFW_PRESS)
         {
             m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
         }
-        if (glfwGetKey(m_window->get_window_obj(), GLFW_KEY_L) == GLFW_PRESS)
+        if (glfwGetKey(m_window->get_handle(), GLFW_KEY_L) == GLFW_PRESS)
         {
             animateLight = animateLight ? false : true;
         }
@@ -85,7 +85,7 @@ private:
         if (m_interface.overlay->wants_to_handle_input())
             return;
 
-        m_controller->handle_mouse(m_window->get_window_obj(), (float)xpos, (float)ypos);
+        m_controller->handle_mouse(m_window->get_handle(), (float)xpos, (float)ypos);
     }
 
     void window_resize_callback(int width, int height)

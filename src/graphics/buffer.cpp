@@ -1,6 +1,8 @@
 #include <engine/graphics/buffer.h>
 
-void vke::Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)
+VULKAN_ENGINE_NAMESPACE_BEGIN
+
+void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)
 {
     void *data;
     vmaMapMemory(memory, allocation, &data);
@@ -8,7 +10,7 @@ void vke::Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size
     vmaUnmapMemory(memory, allocation);
 }
 
-void vke::Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size, size_t offset)
+void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size, size_t offset)
 {
     char *data;
     vmaMapMemory(memory, allocation, (void **)&data);
@@ -17,7 +19,7 @@ void vke::Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size
     vmaUnmapMemory(memory, allocation);
 }
 
-void vke::Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
+void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
 {
 
     VkBufferCreateInfo bufferInfo = {};
@@ -38,7 +40,7 @@ void vke::Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlag
     strideSize = istrideSize;
 }
 
-void vke::Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
+void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
 {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -59,8 +61,10 @@ void vke::Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlag
     partitionsSizes = stridePartitionsSizes;
 }
 
-void vke::Buffer::cleanup(VmaAllocator &memory)
+void Buffer::cleanup(VmaAllocator &memory)
 {
     vmaDestroyBuffer(memory, buffer,
                      allocation);
 }
+
+VULKAN_ENGINE_NAMESPACE_END

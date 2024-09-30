@@ -378,7 +378,7 @@ void VulkanRenderer::setup_gui()
 void VulkanRenderer::update()
 {
     if (!m_interface.overlay->wants_to_handle_input())
-        m_controller->handle_keyboard(m_window->get_window_obj(), 0, 0, m_time.delta);
+        m_controller->handle_keyboard(m_window->get_handle(), 0, 0, m_time.delta);
 
     // Rotate the vector around the ZX plane
     auto light = m_scene->get_lights()[0];

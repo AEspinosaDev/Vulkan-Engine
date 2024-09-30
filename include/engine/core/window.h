@@ -22,11 +22,9 @@ class Window
 private:
 	std::string m_title{};
 
-	GLFWwindow *m_GLFWwindow{nullptr};
+	GLFWwindow *m_handle{nullptr};
 
 	VkExtent2D m_extent;
-	VkSurfaceKHR m_surface;
-	Swapchain m_swapchain;
 
 	bool m_initialized{false};
 	bool m_resized{false};
@@ -41,18 +39,14 @@ private:
 	std::function<void(int, int, int, int)> m_keyCallback;
 	std::function<void(int, int)> m_windowSizeCallback;
 	std::function<void(double, double)> m_mouseCallBack;
-
-
-	// friends :) 
-	friend void create_surface(VkInstance &instance, Window* window);
 	
 
 public:
-	Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_extent(VkExtent2D{w, h}), m_windowedExtent({w, h}), m_surface(VkSurfaceKHR{}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
+	Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false) : m_title(t), m_extent(VkExtent2D{w, h}), m_windowedExtent({w, h}), m_resizeable{resizable}, m_fullscreen{fullscreen} {}
 
 	void init();
 
-	inline void destroy() { glfwDestroyWindow(m_GLFWwindow); }
+	inline void destroy() { glfwDestroyWindow(m_handle); }
 
 	inline void set_size(int w, int h)
 	{
@@ -88,12 +82,12 @@ public:
 		m_fullscreen = t;
 		if (!m_fullscreen)
 		{
-			glfwSetWindowMonitor(m_GLFWwindow, NULL, m_screenPos.x, m_screenPos.y, m_windowedExtent.width, m_windowedExtent.height, GLFW_DONT_CARE);
+			glfwSetWindowMonitor(m_handle, NULL, m_screenPos.x, m_screenPos.y, m_windowedExtent.width, m_windowedExtent.height, GLFW_DONT_CARE);
 		}
 		else
 		{
 			const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-			glfwSetWindowMonitor(m_GLFWwindow, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+			glfwSetWindowMonitor(m_handle, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
 			m_extent.width = mode->width;
 			m_extent.height = mode->height;
 		}
@@ -109,22 +103,20 @@ public:
 		if (!m_initialized)
 			return;
 		m_screenPos = p;
-		glfwSetWindowPos(m_GLFWwindow, p.x, p.y);
+		glfwSetWindowPos(m_handle, p.x, p.y);
 	}
-	inline GLFWwindow *const get_window_obj() const { return m_GLFWwindow; }
+	inline GLFWwindow *const get_handle() const { return m_handle; }
 
-		inline VkSurfaceKHR get_surface() const { return m_surface; }
+	inline int get_window_should_close() const { return glfwWindowShouldClose(m_handle); }
 
-	inline int get_window_should_close() const { return glfwWindowShouldClose(m_GLFWwindow); }
-
-	inline void set_window_should_close(bool op) { glfwSetWindowShouldClose(m_GLFWwindow, op); }
+	inline void set_window_should_close(bool op) { glfwSetWindowShouldClose(m_handle, op); }
 
 	inline void set_title(const char *title)
 	{
 		if (!m_initialized)
 			return;
 		m_title = title;
-		glfwSetWindowTitle(m_GLFWwindow, title);
+		glfwSetWindowTitle(m_handle, title);
 	}
 	inline std::string get_title() { return m_title; }
 
