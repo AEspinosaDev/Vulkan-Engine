@@ -15,7 +15,6 @@
 #include <engine/core/material.h>
 #include <engine/core/object3D.h>
 #include <engine/core/renderer.h>
-#include <engine/core/renderpass.h>
 #include <engine/core/texture.h>
 #include <engine/core/window.h>
 
@@ -28,10 +27,3 @@
 #include <engine/core/scene/mesh.h>
 #include <engine/core/scene/scene.h>
 
-#include <engine/core/renderpasses/composition_pass.h>
-#include <engine/core/renderpasses/forward_pass.h>
-#include <engine/core/renderpasses/fxaa_pass.h>
-#include <engine/core/renderpasses/geometry_pass.h>
-#include <engine/core/renderpasses/shadow_pass.h>
-#include <engine/core/renderpasses/ssao_pass.h>
-#include <engine/core/renderpasses/ssao_blur_pass.h>

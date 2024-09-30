@@ -9,7 +9,7 @@
 #ifndef PBR_H
 #define PBR_H
 
-#include <engine/backend/descriptors.h>
+#include <engine/graphics/descriptors.h>
 #include <engine/core/material.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

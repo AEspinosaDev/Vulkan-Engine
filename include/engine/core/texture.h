@@ -11,8 +11,8 @@
 
 #include <stb_image.h>
 #include <thread>
-#include <engine/backend/image.h>
-#include <engine/backend/descriptors.h>
+#include <engine/graphics/image.h>
+#include <engine/graphics/descriptors.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

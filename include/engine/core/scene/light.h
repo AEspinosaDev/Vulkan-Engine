@@ -9,8 +9,8 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include <engine/backend/uniforms.h>
-#include <engine/backend/descriptors.h>
+#include <engine/graphics/uniforms.h>
+#include <engine/graphics/descriptors.h>
 #include <engine/core/object3D.h>
 #include <engine/core/texture.h>
 

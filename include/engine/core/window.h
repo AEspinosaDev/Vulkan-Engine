@@ -10,8 +10,8 @@
 #define WINDOW_H
 
 #include <engine/common.h>
-#include <engine/backend/utils.h>
-#include <engine/backend/swapchain.h>
+#include <engine/graphics/utils.h>
+#include <engine/graphics/swapchain.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 /**

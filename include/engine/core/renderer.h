@@ -20,28 +20,29 @@
 
 #include <engine/common.h>
 
-#include <engine/backend/utils.h>
-#include <engine/backend/bootstrap.h>
-#include <engine/backend/initializers.h>
-#include <engine/backend/swapchain.h>
-#include <engine/backend/frame.h>
-#include <engine/backend/image.h>
-#include <engine/backend/uniforms.h>
-#include <engine/backend/descriptors.h>
+#include <engine/graphics/utils.h>
+#include <engine/graphics/bootstrap.h>
+#include <engine/graphics/initializers.h>
+#include <engine/graphics/swapchain.h>
+#include <engine/graphics/frame.h>
+#include <engine/graphics/image.h>
+#include <engine/graphics/uniforms.h>
+#include <engine/graphics/descriptors.h>
+#include <engine/graphics/shaderpass.h>
+#include <engine/graphics/renderpass.h>
+
+#include <engine/graphics/renderpasses/forward_pass.h>
+#include <engine/graphics/renderpasses/shadow_pass.h>
+#include <engine/graphics/renderpasses/geometry_pass.h>
+#include <engine/graphics/renderpasses/ssao_pass.h>
+#include <engine/graphics/renderpasses/ssao_blur_pass.h>
+#include <engine/graphics/renderpasses/composition_pass.h>
+#include <engine/graphics/renderpasses/fxaa_pass.h>
 
 #include <engine/core/window.h>
 #include <engine/core/material.h>
 #include <engine/core/texture.h>
-#include <engine/core/shaderpass.h>
-#include <engine/core/renderpass.h>
 
-#include <engine/core/renderpasses/forward_pass.h>
-#include <engine/core/renderpasses/shadow_pass.h>
-#include <engine/core/renderpasses/geometry_pass.h>
-#include <engine/core/renderpasses/ssao_pass.h>
-#include <engine/core/renderpasses/ssao_blur_pass.h>
-#include <engine/core/renderpasses/composition_pass.h>
-#include <engine/core/renderpasses/fxaa_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

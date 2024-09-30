@@ -13,8 +13,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 #include <engine/common.h>
-#include <engine/backend/buffer.h>
-#include <engine/backend/utils.h>
+#include <engine/graphics/buffer.h>
+#include <engine/graphics/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

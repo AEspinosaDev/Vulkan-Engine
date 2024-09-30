@@ -11,8 +11,8 @@
 
 #include <unordered_map>
 #include <engine/core/texture.h>
-#include <engine/core/shaderpass.h>
-#include <engine/backend/uniforms.h>
+#include <engine/graphics/shaderpass.h>
+#include <engine/graphics/uniforms.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

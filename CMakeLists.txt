@@ -54,18 +54,18 @@ file(GLOB LIB_SOURCES
     "src/core/*.cpp" 
     "src/core/scene/*.cpp"
     "src/core/materials/*.cpp" 
-    "src/core/renderpasses/*.cpp" 
     "src/utilities/*.cpp" 
-    "src/backend/*.cpp")
+    "src/graphics/*.cpp"
+    "src/graphics/renderpasses/*.cpp")
     
 file(GLOB LIB_HEADERS 
     "include/VkFW/*.h"
     "include/VkFW/core/*.h" 
     "include/VkFW/core/scene/*.h" 
     "include/VkFW/core/materials/*.h" 
-    "include/VkFW/core/renderpasses/*.h"
     "include/VkFW/utilities/*.h" 
-    "include/VkFW/backend/*.h")
+    "include/VkFW/graphics/*.h"
+    "include/VkFW/graphics/renderpasses/*.h")
 
 add_library(VkFW STATIC ${LIB_SOURCES} ${LIB_HEADERS})
 
@@ -103,17 +103,17 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/core/*.h
     )
     file(GLOB backend_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/backend/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/graphics/*.h
     )
     file(GLOB rpass_h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/core/renderpasses/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/VkFW/graphics/renderpasses/*.h
     )
     source_group("Header Files\\Utilities" FILES ${utilities_h})
     source_group("Header Files\\Core" FILES ${core_h})
     source_group("Header Files\\Core\\Scene Objects" FILES ${scene_objects_h})
     source_group("Header Files\\Core\\Materials" FILES ${materials_h})
-    source_group("Header Files\\Core\\RenderPasses" FILES ${rpass_h})
-    source_group("Header Files\\Backend" FILES ${backend_h})
+    source_group("Header Files\\Graphics" FILES ${backend_h})
+    source_group("Header Files\\Graphics\\RenderPasses" FILES ${rpass_h})
     
     file(GLOB scene_objects_cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core/scene/*.cpp
@@ -128,18 +128,18 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp
     )
     file(GLOB backend_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/*.cpp
     )
     file(GLOB rpass_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/renderpasses/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/renderpasses/*.cpp
     )
     
     source_group("Source Files\\Utilities" FILES ${utilities_cpp})
     source_group("Source Files\\Core" FILES ${core_cpp})
     source_group("Source Files\\Core\\Scene Objects" FILES ${scene_objects_cpp})
     source_group("Source Files\\Core\\Materials" FILES ${materials_cpp})
-    source_group("Source Files\\Core\\RenderPasses" FILES ${rpass_cpp})
-    source_group("Source Files\\Backend" FILES ${backend_cpp})
+    source_group("Source Files\\Graphics" FILES ${backend_cpp})
+    source_group("Source Files\\Graphics\\RenderPasses" FILES ${rpass_cpp})
 
 endif()
 

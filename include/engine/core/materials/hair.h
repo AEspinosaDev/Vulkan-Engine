@@ -9,7 +9,7 @@
 #ifndef HAIR_H
 #define HAIR_H
 
-#include <engine/backend/descriptors.h>
+#include <engine/graphics/descriptors.h>
 #include <engine/core/material.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
