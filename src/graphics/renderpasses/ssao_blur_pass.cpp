@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void SSAOBlurPass::init(VkDevice &device)
+void SSAOBlurPass::init()
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
@@ -58,7 +58,7 @@ void SSAOBlurPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = 2;
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
@@ -66,11 +66,11 @@ void SSAOBlurPass::init(VkDevice &device)
     m_initiatized = true;
 }
 
-void SSAOBlurPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
+void SSAOBlurPass::create_descriptors( uint32_t framesPerFlight)
 {
 
     // Init and configure local descriptors
-    m_descriptorManager.init(device);
+    m_descriptorManager.init(m_context->device);
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
     VkDescriptorSetLayoutBinding ssaoTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
@@ -79,7 +79,7 @@ void SSAOBlurPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, V
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
 }
 
-void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void SSAOBlurPass::create_pipelines(DescriptorManager &descriptorManager)
 {
 
     // DEPTH PASS
@@ -95,21 +95,17 @@ void SSAOBlurPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
 
-    ShaderPass::build_shader_stages(device, *ssaoPass);
+    ShaderPass::build_shader_stages(m_context->device, *ssaoPass);
 
-    ShaderPass::build(device, m_obj, m_descriptorManager, m_extent, *ssaoPass);
+    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *ssaoPass);
 
     m_shaderPasses["ssaoBlur"] = ssaoPass;
 }
-void SSAOBlurPass::init_resources(VkDevice &device,
-                                  VkPhysicalDevice &gpu,
-                                  VmaAllocator &memory,
-                                  VkQueue &gfxQueue,
-                                  utils::UploadContext &uploadContext)
+void SSAOBlurPass::init_resources()
 {
 
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -139,22 +135,25 @@ void SSAOBlurPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
-    Geometry::draw(cmd, m_vignette->get_geometry());
+    
+    Geometry *g = m_vignette->get_geometry();
+    
+    draw(cmd, g);
 
     end(cmd);
 }
 
-void SSAOBlurPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void SSAOBlurPass::cleanup()
 {
-    RenderPass::cleanup(device, memory);
+    RenderPass::cleanup();
     m_descriptorManager.cleanup();
 }
 
-void SSAOBlurPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void SSAOBlurPass::update()
 {
-    RenderPass::update(device, memory);
+    RenderPass::update();
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,

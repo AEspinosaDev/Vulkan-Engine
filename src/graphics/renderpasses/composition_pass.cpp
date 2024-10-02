@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void CompositionPass::init(VkDevice &device)
+void CompositionPass::init()
 {
 
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
@@ -51,14 +51,14 @@ void CompositionPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
 
     m_initiatized = true;
 }
-void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void CompositionPass::create_pipelines( DescriptorManager &descriptorManager)
 {
 
     ShaderPass *compPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/composition.glsl");
@@ -75,22 +75,22 @@ void CompositionPass::create_pipelines(VkDevice &device, DescriptorManager &desc
          {VertexAttributeType::COLOR, false}};
     compPass->settings.blending = true;
 
-    ShaderPass::build_shader_stages(device, *compPass);
+    ShaderPass::build_shader_stages(m_context->device, *compPass);
 
-    ShaderPass::build(device, m_obj, descriptorManager, m_extent, *compPass);
+    ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *compPass);
 
     m_shaderPasses["composition"] = compPass;
 
     // Allocate to global manager the gBuffer descritpro
     descriptorManager.allocate_descriptor_set(DescriptorLayoutType::G_BUFFER_LAYOUT, &m_GBufferDescriptor);
 }
-void CompositionPass::init_resources(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext)
+void CompositionPass::init_resources()
 {
-    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4), gpu);
-    m_uniformBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4), m_context->gpu);
+    m_uniformBuffer.init(m_context->memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
 
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -124,7 +124,9 @@ void CompositionPass::render(Frame &frame, uint32_t frameIndex, Scene *const sce
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
     // G BUFFER LAYOUT
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 3, 1, &m_GBufferDescriptor.descriptorSet, 0, VK_NULL_HANDLE);
-    Geometry::draw(cmd, m_vignette->get_geometry());
+
+    Geometry *g = m_vignette->get_geometry();
+    draw(cmd, g);
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
@@ -148,7 +150,7 @@ void CompositionPass::set_g_buffer(Image position, Image normals, Image albedo, 
     descriptorManager.set_descriptor_write(m_Gbuffer[3].sampler, m_Gbuffer[3].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 3);
     descriptorManager.set_descriptor_write(&m_uniformBuffer, sizeof(Vec4), 0, &m_GBufferDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
 }
-void CompositionPass::update_uniforms(VmaAllocator &memory)
+void CompositionPass::update_uniforms()
 {
     struct AuxUniforms
     {
@@ -156,20 +158,20 @@ void CompositionPass::update_uniforms(VmaAllocator &memory)
     };
     AuxUniforms aux;
     aux.data = {m_outputType, 0.0f, 0.0f, 0.0f};
-    m_uniformBuffer.upload_data(memory, &aux.data, sizeof(Vec4));
+    m_uniformBuffer.upload_data(m_context->memory, &aux.data, sizeof(Vec4));
 }
 
-void CompositionPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void CompositionPass::cleanup()
 {
-    RenderPass::cleanup(device, memory);
-    m_uniformBuffer.cleanup(memory);
+    RenderPass::cleanup();
+    m_uniformBuffer.cleanup(m_context->memory);
 }
 
-void CompositionPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void CompositionPass::update()
 {
-    RenderPass::update(device, memory, swp);
+    RenderPass::update();
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,

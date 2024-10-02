@@ -71,7 +71,7 @@ int main()
 			Window::poll_events();
 			renderer->render(scene);
 		}
-		renderer->shutdown();
+		renderer->shutdown(scene);
 	}
 	catch (const std::exception& e)
 	{

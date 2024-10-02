@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void ShadowPass::init(VkDevice &device)
+void ShadowPass::init()
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
@@ -58,7 +58,7 @@ void ShadowPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = 2;
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
@@ -67,7 +67,7 @@ void ShadowPass::init(VkDevice &device)
 
     m_initiatized = true;
 }
-void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void ShadowPass::create_pipelines(DescriptorManager &descriptorManager)
 {
 
     // DEPTH PASS
@@ -90,21 +90,17 @@ void ShadowPass::create_pipelines(VkDevice &device, DescriptorManager &descripto
     depthPass->settings.blending = false;
     depthPass->settings.blendAttachments = {};
 
-    ShaderPass::build_shader_stages(device, *depthPass);
+    ShaderPass::build_shader_stages(m_context->device, *depthPass);
 
-    ShaderPass::build(device, m_obj, descriptorManager, m_extent, *depthPass);
+    ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *depthPass);
 
     m_shaderPasses["shadow"] = depthPass;
 }
-void ShadowPass::init_resources(VkDevice &device,
-                                VkPhysicalDevice &gpu,
-                                VmaAllocator &memory,
-                                VkQueue &gfxQueue,
-                                utils::UploadContext &uploadContext)
+void ShadowPass::init_resources()
 {
     // Create sampler for shadow image
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -161,8 +157,8 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
                                             &frame.objectDescriptor.descriptorSet, 2, objectOffsets);
 
-                    if (m->get_geometry(i)->is_buffer_loaded())
-                        Geometry::draw(cmd, m->get_geometry(i));
+                    Geometry *g = m->get_geometry(i);
+                   draw(cmd, g);
                 }
             }
             mesh_idx++;
@@ -172,11 +168,11 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
     end(cmd);
 }
 
-void ShadowPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void ShadowPass::update()
 {
-    RenderPass::update(device, memory);
+    RenderPass::update();
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,

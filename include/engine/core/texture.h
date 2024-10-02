@@ -32,10 +32,6 @@ struct TextureSettings
 class Texture
 {
     unsigned char *m_tmpCache;
-
-    int m_width;
-    int m_height;
-    int m_depth;
     int m_channels;
 
     Image m_image;
@@ -51,22 +47,24 @@ class Texture
 public:
     static Texture *DEBUG_TEXTURE;
 
-    Texture() : m_tmpCache(nullptr), m_depth(1) {}
-    Texture(TextureSettings settings) : m_settings(settings), m_tmpCache(nullptr), m_depth(1) {}
-    Texture(unsigned char *data, int w, int h, TextureSettings settings = {}) : m_settings(settings), m_width(w), m_height(h), m_tmpCache(data), m_depth(1) {}
+    Texture() : m_tmpCache(nullptr) { m_image.extent = {0, 0, 1}; }
+    Texture(TextureSettings settings) : m_settings(settings), m_tmpCache(nullptr) { m_image.extent = {0, 0, 1}; }
+    Texture(unsigned char *data, Extent3D size, TextureSettings settings = {}) : m_settings(settings), m_tmpCache(data)
+    {
+        m_image.extent = size;
+    }
 
-    inline bool is_data_loaded() const { return m_loaded; }
+    inline bool data_loaded() const { return m_loaded; }
     inline bool is_buffer_loaded() const { return m_buffer_loaded; }
     inline bool is_dirty() const { return m_isDirty; }
 
     inline TextureSettings get_settings() const { return m_settings; }
     inline void set_settings(TextureSettings settings) { m_settings = settings; }
 
-    inline int get_width() const { return m_width; }
-    inline int get_height() const { return m_height; }
-    inline int get_depth() const { return m_depth; }
+    inline Extent3D get_size() const { return m_image.extent; }
     inline int get_num_channels() const { return m_channels; }
     inline Image get_image() const { return m_image; }
+    inline void set_image(Image img) { m_image = img; }
 
     inline void set_use_mipmaps(bool op) { m_settings.useMipmaps = op; }
     inline void set_anysotropic_filtering(bool op) { m_settings.anisotropicFilter = op; }
@@ -75,9 +73,6 @@ public:
     inline void set_adress_mode(TextureAdressModeType am) { m_settings.adressMode = am; }
 
     void load_image(std::string fileName, bool asyncCall = true);
-
-    // Utility function that creates and sends the texture data to the GPU
-    static void upload_data(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext, Texture *const t);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

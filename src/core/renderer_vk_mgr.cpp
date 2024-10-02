@@ -25,23 +25,24 @@ void Renderer::init_renderpasses()
 	const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
 	// Creating default renderpasses
-	ForwardPass *forwardPass = new ForwardPass(m_window->get_extent(),
+	ForwardPass *forwardPass = new ForwardPass(&m_context,
+											   m_window->get_extent(),
 											   totalImagesInFlight,
 											   m_settings.colorFormat,
 											   m_settings.depthFormat,
 											   m_settings.AAtype);
 
-	ShadowPass *shadowPass = new ShadowPass({SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
+	ShadowPass *shadowPass = new ShadowPass(&m_context, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
 
-	GeometryPass *geometryPass = new GeometryPass(m_window->get_extent(), totalImagesInFlight, m_settings.depthFormat);
+	GeometryPass *geometryPass = new GeometryPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.depthFormat);
 
-	SSAOPass *ssaoPass = new SSAOPass(m_window->get_extent(), totalImagesInFlight, m_vignette);
+	SSAOPass *ssaoPass = new SSAOPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_vignette);
 
-	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(m_window->get_extent(), totalImagesInFlight, m_vignette);
+	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_vignette);
 
-	CompositionPass *compPass = new CompositionPass(m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette, m_settings.AAtype == AntialiasingType::FXAA);
+	CompositionPass *compPass = new CompositionPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette, m_settings.AAtype == AntialiasingType::FXAA);
 
-	FXAAPass *fxaaPass = new FXAAPass(m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette);
+	FXAAPass *fxaaPass = new FXAAPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette);
 
 	m_renderPipeline.push_renderpass(shadowPass);
 	m_renderPipeline.push_renderpass(geometryPass);
@@ -61,16 +62,16 @@ void Renderer::init_renderpasses()
 
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->init(m_context.device);
+		pass->init();
 
-		pass->create_framebuffer(m_context.device, m_context.memory, &m_context.swapchain);
+		pass->create_framebuffer();
 	};
 
 	m_deletionQueue.push_function([=]()
 								  {
 			for (RenderPass* pass : m_renderPipeline.renderpasses)
 			{
-				pass->cleanup(m_context.device, m_context.memory);
+				pass->cleanup();
 			} });
 }
 
@@ -82,8 +83,6 @@ void Renderer::init_control_objects()
 		m_deletionQueue.push_function([=]()
 									  { m_frames[i].cleanup(m_context.device); });
 	}
-
-	// m_uploadContext.init(m_context.device, m_context.gpu, m_context.surface);
 
 	m_deletionQueue.push_function([=]()
 								  { m_context.uploadContext.cleanup(m_context.device); });
@@ -163,7 +162,7 @@ void Renderer::init_descriptors()
 
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->create_descriptors(m_context.device, m_context.gpu, m_context.memory, MAX_FRAMES_IN_FLIGHT);
+		pass->create_descriptors(MAX_FRAMES_IN_FLIGHT);
 	}
 }
 
@@ -171,7 +170,7 @@ void Renderer::init_pipelines()
 {
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->create_pipelines(m_context.device, m_descriptorMng);
+		pass->create_pipelines(m_descriptorMng);
 	}
 }
 
@@ -199,10 +198,10 @@ void Renderer::update_renderpasses()
 	size_t i = 0;
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		if (pass->is_resizeable())
+		if (pass->resizeable())
 		{
 			pass->set_extent(m_window->get_extent());
-			pass->update(m_context.device, m_context.memory, &m_context.swapchain);
+			pass->update();
 		}
 
 		if (i == GEOMETRY)
@@ -240,7 +239,7 @@ void Renderer::update_shadow_quality()
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
 	m_renderPipeline.renderpasses[SHADOW]->set_extent({SHADOW_RES, SHADOW_RES});
-	m_renderPipeline.renderpasses[SHADOW]->update(m_context.device, m_context.memory);
+	m_renderPipeline.renderpasses[SHADOW]->update();
 
 	m_updateShadowQuality = false;
 

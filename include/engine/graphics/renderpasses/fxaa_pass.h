@@ -23,22 +23,22 @@ class FXAAPass : public RenderPass
     Image m_outputBuffer;
 
 public:
-    FXAAPass(VkExtent2D extent,
+    FXAAPass(Context* ctx, VkExtent2D extent,
              uint32_t framebufferCount,
-             ColorFormatType colorFormat, Mesh *vignette) : RenderPass(extent, framebufferCount, 1, true),
+             ColorFormatType colorFormat, Mesh *vignette) : RenderPass(ctx, extent, framebufferCount, 1, true),
                                                             m_colorFormat(colorFormat), m_vignette(vignette) {}
 
-    void init(VkDevice &device);
+    void init();
 
-    void create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight);
+    void create_descriptors(uint32_t framesPerFlight);
 
-    void create_pipelines(VkDevice &device, DescriptorManager &descriptorManager);
+    void create_pipelines(DescriptorManager &descriptorManager);
 
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
     void set_output_buffer(Image output);
 
-    void cleanup(VkDevice &device, VmaAllocator &memory);
+    void cleanup();
 
 };
 VULKAN_ENGINE_NAMESPACE_END

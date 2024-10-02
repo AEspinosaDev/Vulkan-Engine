@@ -44,7 +44,6 @@
 #include <engine/core/material.h>
 #include <engine/core/texture.h>
 
-
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 /*
@@ -72,7 +71,7 @@ struct RendererSettings
 
 	bool enableUI{false};
 
-	bool enableRT{true}; //Ray tracing
+	bool enableRT{true}; // Ray tracing
 
 	bool enableHardwareDepthBias{false};
 	float hardwareDepthBias{0.0005f};
@@ -244,7 +243,7 @@ public:
 	/**
 	 * Shut the renderer down.
 	 */
-	void shutdown();
+	void shutdown(Scene *const scene);
 
 protected:
 	/*
@@ -266,7 +265,7 @@ protected:
 	/*
 	What to do when shutting down the renderer
 	*/
-	virtual void on_shutdown();
+	virtual void on_shutdown(Scene *const scene);
 
 #pragma endregion
 	/*
@@ -312,8 +311,6 @@ protected:
 
 	virtual void update_shadow_quality();
 
-
-
 #pragma endregion
 	/*
 		////////////////////////////////////////////////////////////////////////////////////
@@ -336,6 +333,17 @@ protected:
 	Initialize and setup textures and uniforms in given material
 	*/
 	virtual void setup_material(Material *const mat);
+
+	/*
+	Upload geometry vertex buffers to the GPU
+	*/
+	virtual void upload_geometry_data(Geometry *const g);
+
+	/*
+	Upload texture vertex buffers to the GPU
+	*/
+	virtual void upload_texture_data(Texture *const t);
+	
 #pragma region GUI
 	/*
 	Initialize gui layout in case ther's one enabled

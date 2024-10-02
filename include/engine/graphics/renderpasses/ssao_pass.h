@@ -29,32 +29,28 @@ class SSAOPass : public RenderPass
     Image m_normalsBuffer;
 
 public:
-    SSAOPass(VkExtent2D extent,
+    SSAOPass(Context *ctx, VkExtent2D extent,
              uint32_t framebufferCount,
-             Mesh *vignette) : RenderPass(extent, framebufferCount),
+             Mesh *vignette) : RenderPass(ctx, extent, framebufferCount),
                                m_vignette(vignette) {}
 
-    void init(VkDevice &device);
+    void init();
 
-    void create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight);
+    void create_descriptors(uint32_t framesPerFlight);
 
-    void create_pipelines(VkDevice &device, DescriptorManager &descriptorManager);
+    void create_pipelines(DescriptorManager &descriptorManager);
 
-    void init_resources(VkDevice &device,
-                        VkPhysicalDevice &gpu,
-                        VmaAllocator &memory,
-                        VkQueue &gfxQueue,
-                        utils::UploadContext &uploadContext);
+    void init_resources();
 
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void cleanup(VkDevice &device, VmaAllocator &memory);
+    void cleanup();
 
     void set_g_buffer(Image position, Image normals);
 
-    void update_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size);
+    void update_uniforms(CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size);
 
-    void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
+    void update();
 };
 
 VULKAN_ENGINE_NAMESPACE_END

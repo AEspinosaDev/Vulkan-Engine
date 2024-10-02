@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void SSAOPass::init(VkDevice &device)
+void SSAOPass::init()
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
@@ -58,7 +58,7 @@ void SSAOPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = 2;
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
@@ -66,19 +66,19 @@ void SSAOPass::init(VkDevice &device)
     m_initiatized = true;
 }
 
-void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
+void SSAOPass::create_descriptors(uint32_t framesPerFlight)
 {
 
     // Init kernel buffer
 
     const size_t KERNEL_MEMBERS = 64;
-    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4) * KERNEL_MEMBERS, gpu);
-    m_kernelBuffer.init(memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
-    const size_t AUX_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), gpu);
-    m_auxBuffer.init(memory, AUX_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)AUX_SIZE);
+    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4) * KERNEL_MEMBERS, m_context->gpu);
+    m_kernelBuffer.init(m_context->memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+    const size_t AUX_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context->gpu);
+    m_auxBuffer.init(m_context->memory, AUX_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)AUX_SIZE);
 
     // Init and configure local descriptors
-    m_descriptorManager.init(device);
+    m_descriptorManager.init(m_context->device);
     m_descriptorManager.create_pool(3, 1, 1, 5, 1);
 
     VkDescriptorSetLayoutBinding positionTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
@@ -92,7 +92,7 @@ void SSAOPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
 }
 
-void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void SSAOPass::create_pipelines(DescriptorManager &descriptorManager)
 {
 
     // DEPTH PASS
@@ -108,21 +108,17 @@ void SSAOPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
 
-    ShaderPass::build_shader_stages(device, *ssaoPass);
+    ShaderPass::build_shader_stages(m_context->device, *ssaoPass);
 
-    ShaderPass::build(device, m_obj, m_descriptorManager, m_extent, *ssaoPass);
+    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *ssaoPass);
 
     m_shaderPasses["ssao"] = ssaoPass;
 }
-void SSAOPass::init_resources(VkDevice &device,
-                              VkPhysicalDevice &gpu,
-                              VmaAllocator &memory,
-                              VkQueue &gfxQueue,
-                              utils::UploadContext &uploadContext)
+void SSAOPass::init_resources()
 {
 
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -158,7 +154,7 @@ void SSAOPass::init_resources(VkDevice &device,
     }
 
     const size_t BUFFER_SIZE = sizeof(Vec4) * KERNEL_MEMBERS;
-    m_kernelBuffer.upload_data(memory, ssaoKernel.data(), BUFFER_SIZE);
+    m_kernelBuffer.upload_data(m_context->memory, ssaoKernel.data(), BUFFER_SIZE);
 
     /// SSAO NOISE TEXTURE -----------
     std::vector<Vec3> ssaoNoise;
@@ -170,12 +166,15 @@ void SSAOPass::init_resources(VkDevice &device,
     TextureSettings settings{};
     settings.anisotropicFilter = false;
     settings.useMipmaps = false;
-    m_noiseTexture = new Texture(reinterpret_cast<unsigned char *>(ssaoNoise.data()), 4, 4, settings); // Check the unsigned chars
-    Texture::upload_data(device, gpu, memory, gfxQueue, uploadContext, m_noiseTexture);
+    m_noiseTexture = new Texture(reinterpret_cast<unsigned char *>(ssaoNoise.data()), {4, 4, 1}, settings); // Check the unsigned chars
+
+    Image img = m_noiseTexture->get_image();
+    m_context->upload_texture_image(img, static_cast<const void *>(ssaoNoise.data()), (VkFormat)settings.format, (VkFilter)settings.filter, (VkSamplerAddressMode)settings.adressMode, false, false);
+    m_noiseTexture->set_image(img);
 
     m_descriptorManager.set_descriptor_write(m_noiseTexture->get_image().sampler, m_noiseTexture->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 2);
     m_descriptorManager.set_descriptor_write(&m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3);
-    const size_t AUX_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), gpu);
+    const size_t AUX_SIZE = utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context->gpu);
     m_descriptorManager.set_descriptor_write(&m_auxBuffer, AUX_SIZE, 0, &m_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
 }
 void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
@@ -196,18 +195,20 @@ void SSAOPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
-    Geometry::draw(cmd, m_vignette->get_geometry());
+
+    Geometry *g = m_vignette->get_geometry();
+    draw(cmd, g);
 
     end(cmd);
 }
 
-void SSAOPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void SSAOPass::cleanup()
 {
-    RenderPass::cleanup(device, memory);
+    RenderPass::cleanup();
     m_descriptorManager.cleanup();
-    m_kernelBuffer.cleanup(memory);
-    m_auxBuffer.cleanup(memory);
-    m_noiseTexture->get_image().cleanup(device, memory);
+    m_kernelBuffer.cleanup(m_context->memory);
+    m_auxBuffer.cleanup(m_context->memory);
+    m_noiseTexture->get_image().cleanup(m_context->device, m_context->memory);
 }
 
 void SSAOPass::set_g_buffer(Image position, Image normals)
@@ -219,7 +220,7 @@ void SSAOPass::set_g_buffer(Image position, Image normals)
     m_descriptorManager.set_descriptor_write(m_positionBuffer.sampler, m_positionBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
     m_descriptorManager.set_descriptor_write(m_normalsBuffer.sampler, m_normalsBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 1);
 }
-void SSAOPass::update_uniforms(VmaAllocator &memory, CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size)
+void SSAOPass::update_uniforms(CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size)
 {
     struct AuxData
     {
@@ -231,14 +232,14 @@ void SSAOPass::update_uniforms(VmaAllocator &memory, CameraUniforms &cameraUnifo
     data.cam = cameraUniforms;
     data.ssaoParams = ssaoParams;
 
-    m_auxBuffer.upload_data(memory, &data, size);
+    m_auxBuffer.upload_data(m_context->memory, &data, size);
 }
 
-void SSAOPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void SSAOPass::update()
 {
-    RenderPass::update(device, memory);
+    RenderPass::update();
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,

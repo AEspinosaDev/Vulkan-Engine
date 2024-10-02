@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void RenderPass::begin(VkCommandBuffer &cmd, uint32_t framebufferId, VkSubpassContents subpassContents)
 {
-    VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_obj, m_extent, m_framebuffers[framebufferId]);
+    VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_handle, m_extent, m_framebuffers[framebufferId]);
 
     std::vector<VkClearValue> clearValues;
     clearValues.reserve(m_attachments.size());
@@ -23,19 +23,31 @@ void RenderPass::end(VkCommandBuffer &cmd)
 {
     vkCmdEndRenderPass(cmd);
 }
-void RenderPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void RenderPass::draw(VkCommandBuffer &cmd, Geometry *g)
+{
+    if (g->get_render_data().loaded)
+    {
+        Context::draw_geometry(cmd,
+                               g->get_render_data().vbo,
+                               g->get_render_data().ibo,
+                               g->get_vertex_data().size(),
+                               g->get_vertex_index().size(),
+                               g->indexed());
+    }
+}
+void RenderPass::cleanup()
 {
     if (!m_initiatized)
         return;
-    vkDestroyRenderPass(device, m_obj, nullptr);
+    vkDestroyRenderPass(m_context->device, m_handle, nullptr);
     for (auto pair : m_shaderPasses)
     {
         ShaderPass *pass = pair.second;
-        pass->cleanup(device);
+        pass->cleanup(m_context->device);
     }
 }
 
-void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void RenderPass::create_framebuffer()
 {
     if (!m_initiatized)
         return;
@@ -54,7 +66,7 @@ void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, Swap
         // Create image and image view for framebuffer
         if (!m_attachments[i].isPresentImage) // If its not default renderpass
         {
-            m_attachments[i].image.init(memory,
+            m_attachments[i].image.init(m_context->memory,
                                         m_attachments[i].image.format,
                                         m_attachments[i].viewUsage,
                                         {m_extent.width, m_extent.height, 1},
@@ -62,7 +74,7 @@ void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, Swap
                                         m_attachments[i].samples,
                                         m_framebufferImageDepth);
 
-            m_attachments[i].image.create_view(device,
+            m_attachments[i].image.create_view(m_context->device,
                                                m_attachments[i].viewAspect,
                                                m_attachments[i].viewType);
 
@@ -77,42 +89,40 @@ void RenderPass::create_framebuffer(VkDevice &device, VmaAllocator &memory, Swap
     for (size_t fb = 0; fb < m_framebufferCount; fb++)
     {
         if (m_isDefault) // If its default need swapchain PRESENT images
-            viewAttachments[presentViewIndex] = swp->get_present_images()[fb].view;
+            viewAttachments[presentViewIndex] = m_context->swapchain.get_present_images()[fb].view;
 
-        VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(m_obj, m_extent);
+        VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(m_handle, m_extent);
         fbInfo.pAttachments = viewAttachments.data();
         fbInfo.attachmentCount = (uint32_t)viewAttachments.size();
         fbInfo.layers = m_framebufferImageDepth;
 
-        if (vkCreateFramebuffer(device, &fbInfo, nullptr, &m_framebuffers[fb]) != VK_SUCCESS)
+        if (vkCreateFramebuffer(m_context->device, &fbInfo, nullptr, &m_framebuffers[fb]) != VK_SUCCESS)
         {
             throw VKException("failed to create framebuffer!");
         }
     }
 }
 
-void RenderPass::clean_framebuffer(VkDevice &device, VmaAllocator &memory, bool destroyImageSamplers)
+void RenderPass::clean_framebuffer(bool destroyImageSamplers)
 {
     if (!m_initiatized)
         return;
     for (VkFramebuffer &fb : m_framebuffers)
-        vkDestroyFramebuffer(device, fb, nullptr);
+        vkDestroyFramebuffer(m_context->device, fb, nullptr);
 
     for (size_t i = 0; i < m_attachments.size(); i++)
     {
-        m_attachments[i].image.cleanup(device, memory, destroyImageSamplers);
+        m_attachments[i].image.cleanup(m_context->device, m_context->memory, destroyImageSamplers);
     }
 }
-void RenderPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void RenderPass::update()
 {
-   
 
     if (!m_initiatized)
         return;
 
-    clean_framebuffer(device, memory, true);
-    create_framebuffer(device, memory, swp);
+    clean_framebuffer(true);
+    create_framebuffer();
 }
-
 
 VULKAN_ENGINE_NAMESPACE_END

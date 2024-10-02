@@ -110,6 +110,13 @@ struct GeometryStats
     void compute_statistics(Geometry *g);
 };
 
+struct RenderData
+{
+    bool loaded{false};
+    Buffer vbo{};
+    Buffer ibo{};
+};
+
 /*
 Class that defines the mesh geometry. Can be setup by filling it with a canonical vertex type array.
 */
@@ -117,8 +124,7 @@ class Geometry
 {
 
 private:
-    Buffer *m_vbo;
-    Buffer *m_ibo;
+    RenderData m_renderData{};
 
     std::vector<uint16_t> m_vertexIndex;
     std::vector<Vertex> m_vertexData;
@@ -127,49 +133,27 @@ private:
 
     bool m_loaded{false};
     bool m_indexed{false};
-    bool m_buffers_loaded{false};
 
 public:
-    Geometry() : m_vbo{new Buffer},
-                 m_ibo{new Buffer} {}
+    Geometry() {}
 
     inline size_t get_material_ID() const { return m_materialID; }
     inline void set_material_ID(size_t id) { m_materialID = id; }
 
-    inline bool is_data_loaded() const { return m_loaded; }
-    inline bool is_buffer_loaded() const { return m_buffers_loaded; }
-    inline bool is_indexed() const { return m_indexed; }
+    inline bool data_loaded() const { return m_loaded; }
+    inline bool indexed() const { return m_indexed; }
 
-    inline std::vector<uint16_t> const get_vertex_index() const
-    {
-        return m_vertexIndex;
-    }
-    inline std::vector<Vertex> const get_vertex_data() const
-    {
-        return m_vertexData;
-    }
-    ~Geometry()
-    {
-        delete m_vbo;
-        delete m_ibo;
-    }
+    inline std::vector<uint16_t> const get_vertex_index() const { return m_vertexIndex; }
+    inline std::vector<Vertex> const get_vertex_data() const { return m_vertexData; }
+    inline RenderData get_render_data() const { return m_renderData; }
+    inline void set_render_data(RenderData rd) { m_renderData = rd; }
+
+    ~Geometry() {}
 
     void fill(std::vector<Vertex> vertexInfo);
     void fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
 
-    inline void cleanup(VmaAllocator &memory)
-    {
-        m_vbo->cleanup(memory);
-        if (m_indexed)
-            m_ibo->cleanup(memory);
-    }
-
-    // Utility function for drawing purposes
-    static void draw(VkCommandBuffer &cmd, Geometry *const g);
-
-    // Utility funciton that sends the vertex buffers data to the GPU
-    static void upload_buffers(VkDevice &device, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext, Geometry *const g);
 };
 
 VULKAN_ENGINE_NAMESPACE_END;

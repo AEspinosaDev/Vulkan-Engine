@@ -24,7 +24,7 @@ private:
 
 	GLFWwindow *m_handle{nullptr};
 
-	VkExtent2D m_extent;
+	Extent2D m_extent;
 
 	bool m_initialized{false};
 	bool m_resized{false};
@@ -32,7 +32,7 @@ private:
 	bool m_fullscreen;
 
 	// Windowed
-	VkExtent2D m_windowedExtent;
+	Extent2D m_windowedExtent;
 	math::ivec2 m_screenPos = math::ivec2(45, 45);
 
 	// Callbacks
@@ -57,7 +57,7 @@ public:
 		}
 		m_resized = true;
 	}
-	inline VkExtent2D get_extent() const
+	inline Extent2D get_extent() const
 	{
 		if (!m_fullscreen)
 		{
@@ -67,7 +67,7 @@ public:
 			return m_extent;
 	}
 	
-	inline bool is_initialized() { return m_initialized; }
+	inline bool initialized() { return m_initialized; }
 
 	inline bool is_resized() { return m_resized; }
 

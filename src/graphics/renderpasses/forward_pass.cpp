@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void ForwardPass::init(VkDevice &device)
+void ForwardPass::init()
 {
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
     bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
@@ -112,14 +112,14 @@ void ForwardPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
 
     m_initiatized = true;
 }
-void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void ForwardPass::create_pipelines(DescriptorManager &descriptorManager)
 {
 
     std::vector<VkDynamicState> dynamicStates = {
@@ -181,15 +181,15 @@ void ForwardPass::create_pipelines(VkDevice &device, DescriptorManager &descript
     {
         ShaderPass *pass = pair.second;
 
-        ShaderPass::build_shader_stages(device, *pass);
+        ShaderPass::build_shader_stages(m_context->device, *pass);
 
-        ShaderPass::build(device, m_obj, descriptorManager, m_extent, *pass);
+        ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *pass);
     }
 }
-void ForwardPass::init_resources(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, VkQueue &gfxQueue, utils::UploadContext &uploadContext)
+void ForwardPass::init_resources()
 {
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -256,8 +256,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
                             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
 
-                        if (g->is_buffer_loaded())
-                            Geometry::draw(cmd, g);
+                        draw(cmd, g);
                     }
                 }
             }
@@ -272,11 +271,11 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
     end(cmd);
 }
 
-void ForwardPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void ForwardPass::update()
 {
-    RenderPass::update(device, memory, swp);
+    RenderPass::update();
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,

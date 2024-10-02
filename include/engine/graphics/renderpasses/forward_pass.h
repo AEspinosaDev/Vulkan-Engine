@@ -19,27 +19,24 @@ class ForwardPass : public RenderPass
     AntialiasingType m_aa;
 
 public:
-    ForwardPass(VkExtent2D extent,
+    ForwardPass(Context *ctx,
+                VkExtent2D extent,
                 uint32_t framebufferCount,
                 ColorFormatType colorFormat,
                 DepthFormatType depthFormat,
-                AntialiasingType samples) : RenderPass(extent, framebufferCount, 1, samples == AntialiasingType::FXAA ? false : true),
+                AntialiasingType samples) : RenderPass(ctx, extent, framebufferCount, 1, samples == AntialiasingType::FXAA ? false : true),
                                             m_colorFormat(colorFormat),
                                             m_depthFormat(depthFormat),
                                             m_aa(samples) {}
-    void init(VkDevice &device);
+    void init();
 
-    void create_pipelines(VkDevice &device, DescriptorManager &descriptorManager);
+    void create_pipelines(DescriptorManager &descriptorManager);
 
-    void init_resources(VkDevice &device,
-                        VkPhysicalDevice &gpu,
-                        VmaAllocator &memory,
-                        VkQueue &gfxQueue,
-                        utils::UploadContext &uploadContext);
+    void init_resources();
 
     void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void update(VkDevice &device, VmaAllocator &memory, Swapchain *swp = nullptr);
+    void update();
 };
 VULKAN_ENGINE_NAMESPACE_END
 

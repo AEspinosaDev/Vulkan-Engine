@@ -14,22 +14,20 @@ void Renderer::run(Scene *const scene)
 		Window::poll_events();
 		render(scene);
 	}
-	shutdown();
+	shutdown(scene);
 }
 
-void Renderer::shutdown()
+void Renderer::shutdown(Scene *const scene)
 {
 	m_context.wait_for_device();
-	on_shutdown();
+	on_shutdown(scene);
 }
 
 void Renderer::on_before_render(Scene *const scene)
 {
 
 	if (Frame::guiEnabled && m_gui)
-	{
 		m_gui->render();
-	}
 
 	upload_global_data(scene);
 
@@ -79,7 +77,18 @@ void Renderer::render(Scene *const scene)
 	if (!m_initialized)
 		init();
 
-	uint32_t imageIndex = m_context.aquire_present_image(m_frames[m_currentFrame]);
+	uint32_t imageIndex;
+	VkResult imageResult = m_context.aquire_present_image(m_frames[m_currentFrame], imageIndex);
+
+	if (imageResult == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		update_renderpasses();
+		return;
+	}
+	else if (imageResult != VK_SUCCESS && imageResult != VK_SUBOPTIMAL_KHR)
+	{
+		throw VKException("failed to acquire swap chain image!");
+	}
 
 	on_before_render(scene);
 
@@ -93,7 +102,7 @@ void Renderer::render(Scene *const scene)
 
 	m_context.end_command_buffer(m_frames[m_currentFrame]);
 
-	VkResult renderResult = m_context.present_image(m_frames[m_currentFrame],imageIndex);
+	VkResult renderResult = m_context.present_image(m_frames[m_currentFrame], imageIndex);
 
 	on_after_render(renderResult, scene);
 }
@@ -106,7 +115,7 @@ void Renderer::on_awake()
 
 void Renderer::on_init()
 {
-	if (!m_window->is_initialized())
+	if (!m_window->initialized())
 		m_window->init();
 
 	m_context.init(
@@ -132,18 +141,37 @@ void Renderer::on_init()
 	Frame::guiEnabled = m_settings.enableUI;
 }
 
-void Renderer::on_shutdown()
+void Renderer::on_shutdown(Scene *const scene)
 {
 	if (m_initialized)
 	{
 		m_deletionQueue.flush();
 
-		m_vignette->get_geometry()->cleanup(m_context.memory);
+		m_vignette->get_geometry()->get_render_data().vbo.cleanup(m_context.memory);
+		m_vignette->get_geometry()->get_render_data().ibo.cleanup(m_context.memory);
 		Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
+
+		for (Mesh *m : scene->get_meshes())
+		{
+			for (size_t i = 0; i < m->get_num_geometries(); i++)
+			{
+				Geometry *g = m->get_geometry(i);
+				RenderData rd = g->get_render_data();
+				if (rd.loaded)
+				{
+					rd.vbo.cleanup(m_context.memory);
+					if (g->indexed())
+						rd.ibo.cleanup(m_context.memory);
+
+					rd.loaded = false;
+					g->set_render_data(rd);
+				}
+			}
+		}
 
 		for (RenderPass *pass : m_renderPipeline.renderpasses)
 		{
-			pass->clean_framebuffer(m_context.device, m_context.memory);
+			pass->clean_framebuffer();
 		}
 
 		m_context.cleanup();
@@ -162,7 +190,7 @@ void Renderer::init_gui()
 					m_context.device,
 					m_context.gpu,
 					m_context.graphicsQueue,
-					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? (m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION) : DefaultRenderPasses::FXAA]->get_obj(),
+					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? (m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION) : DefaultRenderPasses::FXAA]->get_handle(),
 					m_context.swapchain.get_image_format(),
 					(VkSampleCountFlagBits)m_settings.AAtype,
 					m_window->get_handle());

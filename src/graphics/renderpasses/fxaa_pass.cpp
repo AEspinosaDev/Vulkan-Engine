@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void FXAAPass::init(VkDevice &device)
+void FXAAPass::init()
 {
 
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
@@ -50,18 +50,18 @@ void FXAAPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
 
     m_initiatized = true;
 }
-void FXAAPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAllocator &memory, uint32_t framesPerFlight)
+void FXAAPass::create_descriptors(uint32_t framesPerFlight)
 {
 
     // Init and configure local descriptors
-    m_descriptorManager.init(device);
+    m_descriptorManager.init(m_context->device);
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
     VkDescriptorSetLayoutBinding outputTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
@@ -70,7 +70,7 @@ void FXAAPass::create_descriptors(VkDevice &device, VkPhysicalDevice &gpu, VmaAl
 
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptorSet);
 }
-void FXAAPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void FXAAPass::create_pipelines(DescriptorManager &descriptorManager)
 {
 
     ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/fxaa.glsl");
@@ -83,9 +83,9 @@ void FXAAPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorM
          {VertexAttributeType::TANGENT, false},
          {VertexAttributeType::COLOR, false}};
 
-    ShaderPass::build_shader_stages(device, *fxaaPass);
+    ShaderPass::build_shader_stages(m_context->device, *fxaaPass);
 
-    ShaderPass::build(device, m_obj, m_descriptorManager, m_extent, *fxaaPass);
+    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *fxaaPass);
 
     m_shaderPasses["fxaa"] = fxaaPass;
 }
@@ -107,7 +107,9 @@ void FXAAPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uin
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptorSet.descriptorSet, 0, VK_NULL_HANDLE);
-    Geometry::draw(cmd, m_vignette->get_geometry());
+    
+    Geometry *g = m_vignette->get_geometry();
+    draw(cmd, g);
 
     // // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
@@ -123,9 +125,9 @@ void FXAAPass::set_output_buffer(Image output)
     m_descriptorManager.set_descriptor_write(m_outputBuffer.sampler, m_outputBuffer.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptorSet, 0);
 }
 
-void FXAAPass::cleanup(VkDevice &device, VmaAllocator &memory)
+void FXAAPass::cleanup()
 {
-    RenderPass::cleanup(device, memory);
+    RenderPass::cleanup();
     m_descriptorManager.cleanup();
 }
 

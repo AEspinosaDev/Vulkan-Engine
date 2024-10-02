@@ -120,7 +120,7 @@ void VulkanRenderer::run(int argc, char *argv[])
 
         tick();
     }
-    m_renderer->shutdown();
+    m_renderer->shutdown(m_scene);
 }
 
 void VulkanRenderer::setup()

@@ -74,12 +74,7 @@ void Renderer::upload_object_data(Scene *const scene)
 					{
 						// Object vertex buffer setup
 						Geometry *g = m->get_geometry(i);
-						if (!g->is_buffer_loaded())
-						{
-							Geometry::upload_buffers(m_context.device, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, g);
-							m_deletionQueue.push_function([=]()
-														  { g->cleanup(m_context.memory); });
-						}
+						upload_geometry_data(g);
 
 						// Object material setup
 						Material *mat = m->get_material(g->get_material_ID());
@@ -112,8 +107,8 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
-	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(m_context.memory, camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
-	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms(m_context.memory);
+	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
+	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
@@ -156,12 +151,15 @@ void Renderer::setup_material(Material *const mat)
 	for (auto pair : textures)
 	{
 		Texture *texture = pair.second;
-		if (texture && texture->is_data_loaded())
+		if (texture && texture->data_loaded())
 		{
 			// SET ACTUAL TEXTURE
 			if (!texture->is_buffer_loaded())
 			{
-				Texture::upload_data(m_context.device, m_context.gpu, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, texture);
+				m_context.upload_texture_image(texture->m_image, static_cast<const void *>(texture->m_tmpCache), (VkFormat)texture->m_settings.format,
+											   (VkFilter)texture->m_settings.filter, (VkSamplerAddressMode)texture->m_settings.adressMode,
+											   texture->m_settings.anisotropicFilter, texture->m_settings.useMipmaps);
+				texture->m_buffer_loaded = true;
 				m_deletionQueue.push_function([=]()
 											  { texture->m_image.cleanup(m_context.device, m_context.memory); });
 			}
@@ -186,18 +184,43 @@ void Renderer::setup_material(Material *const mat)
 	mat->m_isDirty = false;
 }
 
+void Renderer::upload_geometry_data(Geometry *const g)
+{
+	if (!g->get_render_data().loaded)
+	{
+		size_t vboSize = sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size();
+		size_t iboSize = sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size();
+		RenderData rd = g->get_render_data();
+		m_context.upload_geometry(rd.vbo,
+								  vboSize,
+								  g->get_vertex_data().data(),
+								  rd.ibo,
+								  iboSize,
+								  g->get_vertex_index().data(),
+								  g->indexed());
+		rd.loaded = true;
+		g->set_render_data(rd);
+	}
+}
+
+void Renderer::upload_texture_data(Texture *const t)
+{
+}
 void Renderer::init_resources()
 {
 
 	// Setup vignette vertex buffers
-	Geometry::upload_buffers(m_context.device, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, m_vignette->get_geometry());
+	upload_geometry_data(m_vignette->get_geometry());
 
 	// Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
 	Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
 	Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
-	Texture::upload_data(m_context.device, m_context.gpu, m_context.memory, m_context.graphicsQueue, m_context.uploadContext, Texture::DEBUG_TEXTURE);
 
+	m_context.upload_texture_image(Texture::DEBUG_TEXTURE->m_image, static_cast<const void *>(Texture::DEBUG_TEXTURE->m_tmpCache), (VkFormat)Texture::DEBUG_TEXTURE->m_settings.format,
+								   (VkFilter)Texture::DEBUG_TEXTURE->m_settings.filter, (VkSamplerAddressMode)Texture::DEBUG_TEXTURE->m_settings.adressMode,
+								   Texture::DEBUG_TEXTURE->m_settings.anisotropicFilter, false);
+	Texture::DEBUG_TEXTURE->m_buffer_loaded = true;
 	set_renderpass_resources();
 }
 
@@ -206,7 +229,7 @@ void Renderer::set_renderpass_resources()
 	size_t i = 0;
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->init_resources(m_context.device, m_context.gpu, m_context.memory, m_context.graphicsQueue, m_context.uploadContext);
+		pass->init_resources();
 
 		if (i == GEOMETRY)
 			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_g_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image);

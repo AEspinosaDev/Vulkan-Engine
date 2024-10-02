@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void GeometryPass::init(VkDevice &device)
+void GeometryPass::init()
 {
 
     std::array<VkAttachmentDescription, 5> attachmentsInfo = {};
@@ -134,14 +134,14 @@ void GeometryPass::init(VkDevice &device)
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_obj) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
 
     m_initiatized = true;
 }
-void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descriptorManager)
+void GeometryPass::create_pipelines(DescriptorManager &descriptorManager)
 {
     std::vector<VkDynamicState> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
@@ -172,19 +172,15 @@ void GeometryPass::create_pipelines(VkDevice &device, DescriptorManager &descrip
 
     geomPass->settings.dynamicStates = dynamicStates;
 
-    ShaderPass::build_shader_stages(device, *geomPass);
+    ShaderPass::build_shader_stages(m_context->device, *geomPass);
 
-    ShaderPass::build(device, m_obj, descriptorManager, m_extent, *geomPass);
+    ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *geomPass);
 
     m_shaderPasses["geometry"] = geomPass;
 }
-void GeometryPass::init_resources(VkDevice &device,
-                                  VkPhysicalDevice &gpu,
-                                  VmaAllocator &memory,
-                                  VkQueue &gfxQueue,
-                                  utils::UploadContext &uploadContext)
+void GeometryPass::init_resources()
 {
-    create_g_buffer_samplers(device);
+    create_g_buffer_samplers();
 }
 void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
@@ -239,8 +235,7 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
                     vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
 
-                    if (m->get_geometry(i)->is_buffer_loaded())
-                        Geometry::draw(cmd, g);
+                   draw(cmd, g);
                 }
             }
             mesh_idx++;
@@ -250,18 +245,18 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
     end(cmd);
 }
 
-void GeometryPass::update(VkDevice &device, VmaAllocator &memory, Swapchain *swp)
+void GeometryPass::update()
 {
-    RenderPass::update(device, memory);
+    RenderPass::update();
 
-    create_g_buffer_samplers(device);
+    create_g_buffer_samplers();
     set_g_buffer_clear_color(Vec4(0.0));
 }
 
-void GeometryPass::create_g_buffer_samplers(VkDevice &device)
+void GeometryPass::create_g_buffer_samplers()
 {
     m_attachments[0].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -271,7 +266,7 @@ void GeometryPass::create_g_buffer_samplers(VkDevice &device)
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
     m_attachments[1].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -282,7 +277,7 @@ void GeometryPass::create_g_buffer_samplers(VkDevice &device)
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
 
     m_attachments[2].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
@@ -293,7 +288,7 @@ void GeometryPass::create_g_buffer_samplers(VkDevice &device)
         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
 
     m_attachments[3].image.create_sampler(
-        device,
+        m_context->device,
         VK_FILTER_LINEAR,
         VK_SAMPLER_MIPMAP_MODE_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
