@@ -420,8 +420,10 @@ void VkFW::loaders::load_3D_file(Mesh *const mesh, const std::string fileName, b
             }
             else
                 loaders::load_OBJ(mesh, fileName, false, true, overrideGeometry);
+
+            return;
         }
-        else if (fileExtension == PLY)
+        if (fileExtension == PLY)
         {
             if (asynCall)
             {
@@ -430,14 +432,287 @@ void VkFW::loaders::load_3D_file(Mesh *const mesh, const std::string fileName, b
             }
             else
                 loaders::load_PLY(mesh, fileName, true, false, true, overrideGeometry);
+
+            return;
         }
-        else
+        if (fileExtension == HAIR)
         {
-            std::cerr << "Unsupported file format: " << fileExtension << std::endl;
+            if (asynCall)
+            {
+                std::thread loadThread(loaders::load_hair, mesh, fileName.c_str());
+                loadThread.detach();
+            }
+            else
+                loaders::load_hair(mesh, fileName.c_str());
+
+            return;
         }
+
+        std::cerr << "Unsupported file format: " << fileExtension << std::endl;
     }
     else
     {
         std::cerr << "Invalid file name: " << fileName << std::endl;
     }
+}
+void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
+{
+
+#define HAIR_FILE_SEGMENTS_BIT 1
+#define HAIR_FILE_POINTS_BIT 2
+#define HAIR_FILE_THICKNESS_BIT 4
+#define HAIR_FILE_TRANSPARENCY_BIT 8
+#define HAIR_FILE_COLORS_BIT 16
+#define HAIR_FILE_INFO_SIZE 88
+
+    unsigned short *segments;
+    float *points;
+    float *dirs;
+    float *thickness;
+    float *transparency;
+    float *colors;
+
+    struct Header
+    {
+        char signature[4];        //!< This should be "HAIR"
+        unsigned int hair_count;  //!< number of hair strands
+        unsigned int point_count; //!< total number of points of all strands
+        unsigned int arrays;      //!< bit array of data in the file
+
+        unsigned int d_segments; //!< default number of segments of each strand
+        float d_thickness;       //!< default thickness of hair strands
+        float d_transparency;    //!< default transparency of hair strands
+        float d_color[3];        //!< default color of hair strands
+
+        char info[HAIR_FILE_INFO_SIZE]; //!< information about the file
+    };
+
+    Header header;
+
+    header.signature[0] = 'H';
+    header.signature[1] = 'A';
+    header.signature[2] = 'I';
+    header.signature[3] = 'R';
+    header.hair_count = 0;
+    header.point_count = 0;
+    header.arrays = 0; // no arrays
+    header.d_segments = 0;
+    header.d_thickness = 1.0f;
+    header.d_transparency = 0.0f;
+    header.d_color[0] = 1.0f;
+    header.d_color[1] = 1.0f;
+    header.d_color[2] = 1.0f;
+    memset(header.info, '\0', HAIR_FILE_INFO_SIZE);
+
+    FILE *fp;
+    fp = fopen(fileName, "rb");
+    if (fp == nullptr)
+        return;
+
+    // read the header
+    size_t headread = fread(&header, sizeof(Header), 1, fp);
+
+    // Check if header is correctly read
+    if (headread < 1)
+        return;
+
+    // Check if this is a hair file
+    if (strncmp(header.signature, "HAIR", 4) != 0)
+        return;
+
+    // Read segments array
+    if (header.arrays & HAIR_FILE_SEGMENTS_BIT)
+    {
+        segments = new unsigned short[header.hair_count];
+        size_t readcount = fread(segments, sizeof(unsigned short), header.hair_count, fp);
+        if (readcount < header.hair_count)
+        {
+            std::cerr << "Error reading segments" << std::endl;
+            return;
+        }
+    }
+
+    // Read points array
+    if (header.arrays & HAIR_FILE_POINTS_BIT)
+    {
+        points = new float[header.point_count * 3];
+        size_t readcount = fread(points, sizeof(float), header.point_count * 3, fp);
+        if (readcount < header.point_count * 3)
+        {
+            std::cerr << "Error reading points" << std::endl;
+            return;
+        }
+    }
+
+    // Read thickness array
+    if (header.arrays & HAIR_FILE_THICKNESS_BIT)
+    {
+        thickness = new float[header.point_count];
+        size_t readcount = fread(thickness, sizeof(float), header.point_count, fp);
+        if (readcount < header.point_count)
+        {
+            std::cerr << "Error reading thickness" << std::endl;
+            return;
+        }
+    }
+
+    // Read thickness array
+    if (header.arrays & HAIR_FILE_TRANSPARENCY_BIT)
+    {
+        transparency = new float[header.point_count];
+        size_t readcount = fread(transparency, sizeof(float), header.point_count, fp);
+        if (readcount < header.point_count)
+        {
+            std::cerr << "Error reading alpha" << std::endl;
+            return;
+        }
+    }
+
+    // Read colors array
+    if (header.arrays & HAIR_FILE_COLORS_BIT)
+    {
+        colors = new float[header.point_count * 3];
+        size_t readcount = fread(colors, sizeof(float), header.point_count * 3, fp);
+        if (readcount < header.point_count * 3)
+        {
+            std::cerr << "Error reading colors" << std::endl;
+            return;
+        }
+    }
+
+    fclose(fp);
+
+    auto computeDirection = [](float *d, float &d0len, float &d1len, float const *p0, float const *p1, float const *p2)
+    {
+        // line from p0 to p1
+        float d0[3];
+        d0[0] = p1[0] - p0[0];
+        d0[1] = p1[1] - p0[1];
+        d0[2] = p1[2] - p0[2];
+        float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+        d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+
+        // line from p1 to p2
+        float d1[3];
+        d1[0] = p2[0] - p1[0];
+        d1[1] = p2[1] - p1[1];
+        d1[2] = p2[2] - p1[2];
+        float d1lensq = d1[0] * d1[0] + d1[1] * d1[1] + d1[2] * d1[2];
+        d1len = (d1lensq > 0) ? (float)sqrt(d1lensq) : 1.0f;
+
+        // make sure that d0 and d1 has the same length
+        d0[0] *= d1len / d0len;
+        d0[1] *= d1len / d0len;
+        d0[2] *= d1len / d0len;
+
+        // direction at p1
+        d[0] = d0[0] + d1[0];
+        d[1] = d0[1] + d1[1];
+        d[2] = d0[2] + d1[2];
+        float dlensq = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+        float dlen = (dlensq > 0) ? (float)sqrt(dlensq) : 1.0f;
+        d[0] /= dlen;
+        d[1] /= dlen;
+        d[2] /= dlen;
+
+        // return d0len;
+    };
+
+    auto fillDirectionArray = [=](float *dir)
+    {
+        if (dir == nullptr || header.point_count <= 0 || points == nullptr)
+            return;
+
+        int p = 0; // point index
+        for (unsigned int i = 0; i < header.hair_count; i++)
+        {
+            int s = (segments) ? segments[i] : header.d_segments;
+            if (s > 1)
+            {
+                // direction at point1
+                float len0, len1;
+                computeDirection(&dir[(p + 1) * 3], len0, len1, &points[p * 3], &points[(p + 1) * 3], &points[(p + 2) * 3]);
+
+                // direction at point0
+                float d0[3];
+                d0[0] = points[(p + 1) * 3] - dir[(p + 1) * 3] * len0 * 0.3333f - points[p * 3];
+                d0[1] = points[(p + 1) * 3 + 1] - dir[(p + 1) * 3 + 1] * len0 * 0.3333f - points[p * 3 + 1];
+                d0[2] = points[(p + 1) * 3 + 2] - dir[(p + 1) * 3 + 2] * len0 * 0.3333f - points[p * 3 + 2];
+                float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+                float d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+                dir[p * 3] = d0[0] / d0len;
+                dir[p * 3 + 1] = d0[1] / d0len;
+                dir[p * 3 + 2] = d0[2] / d0len;
+
+                // We computed the first 2 points
+                p += 2;
+
+                // Compute the direction for the rest
+                for (int t = 2; t < s; t++, p++)
+                {
+                    computeDirection(&dir[p * 3], len0, len1, &points[(p - 1) * 3], &points[p * 3], &points[(p + 1) * 3]);
+                }
+
+                // direction at the last point
+                d0[0] = -points[(p - 1) * 3] + dir[(p - 1) * 3] * len1 * 0.3333f + points[p * 3];
+                d0[1] = -points[(p - 1) * 3 + 1] + dir[(p - 1) * 3 + 1] * len1 * 0.3333f + points[p * 3 + 1];
+                d0[2] = -points[(p - 1) * 3 + 2] + dir[(p - 1) * 3 + 2] * len1 * 0.3333f + points[p * 3 + 2];
+                d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+                d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+                dir[p * 3] = d0[0] / d0len;
+                dir[p * 3 + 1] = d0[1] / d0len;
+                dir[p * 3 + 2] = d0[2] / d0len;
+                p++;
+            }
+            else if (s > 0)
+            {
+                // if it has a single segment
+                float d0[3];
+                d0[0] = points[(p + 1) * 3] - points[p * 3];
+                d0[1] = points[(p + 1) * 3 + 1] - points[p * 3 + 1];
+                d0[2] = points[(p + 1) * 3 + 2] - points[p * 3 + 2];
+                float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+                float d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+                dir[p * 3] = d0[0] / d0len;
+                dir[p * 3 + 1] = d0[1] / d0len;
+                dir[p * 3 + 2] = d0[2] / d0len;
+                dir[(p + 1) * 3] = dir[p * 3];
+                dir[(p + 1) * 3 + 1] = dir[p * 3 + 1];
+                dir[(p + 1) * 3 + 2] = dir[p * 3 + 2];
+                p += 2;
+            }
+            //*/
+        }
+    };
+
+    dirs = new float[header.point_count * 3];
+    fillDirectionArray(dirs);
+
+    std::vector<Vertex> vertices;
+    vertices.reserve(header.point_count * 3);
+    std::vector<uint16_t> indices;
+
+    size_t index = 0;
+    size_t pointId = 0;
+    for (size_t hair = 0; hair < header.hair_count; hair++)
+    {
+        glm::vec3 color = {((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX};
+        size_t max_segments = segments ? segments[hair] : header.d_segments;
+        for (size_t i = 0; i < max_segments; i++)
+        {
+            vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]}, {0.0f, 0.0f, 0.0f}, {dirs[pointId], dirs[pointId + 1], dirs[pointId + 2]}, {0.0f, 0.0f}, color});
+            indices.push_back(index);
+            indices.push_back(index + 1);
+            index++;
+            pointId += 3;
+        }
+        vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]}, {0.0f, 0.0f, 0.0f}, {dirs[pointId], dirs[pointId + 1], dirs[pointId + 2]}, {0.0f, 0.0f}, color});
+        pointId += 3;
+        index++;
+    }
+
+    Geometry *g = new Geometry();
+    g->fill(vertices, indices);
+    mesh->set_geometry(g);
+    mesh->setup_volume();
 }

@@ -21,6 +21,7 @@
 #include <engine/core/materials/phong.h>
 #include <engine/core/materials/physically_based.h>
 #include <engine/core/materials/unlit.h>
+#include <engine/core/materials/hair.h>
 
 #include <engine/core/scene/camera.h>
 #include <engine/core/scene/light.h>

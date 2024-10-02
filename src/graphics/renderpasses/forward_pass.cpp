@@ -177,6 +177,22 @@ void ForwardPass::create_pipelines(DescriptorManager &descriptorManager)
     m_shaderPasses["physical"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["physical"]->settings.samples = samples;
 
+    m_shaderPasses["hair"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/hair_strand.glsl");
+    m_shaderPasses["hair"]->settings.descriptorSetLayoutIDs =
+        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+         {DescriptorLayoutType::OBJECT_LAYOUT, true},
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["hair"]->settings.attributes =
+        {{VertexAttributeType::POSITION, true},
+         {VertexAttributeType::NORMAL, true},
+         {VertexAttributeType::UV, true},
+         {VertexAttributeType::TANGENT, true},
+         {VertexAttributeType::COLOR, true}};
+    m_shaderPasses["hair"]->settings.blending = true;
+    m_shaderPasses["hair"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["hair"]->settings.samples = samples;
+    m_shaderPasses["hair"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+
     for (auto pair : m_shaderPasses)
     {
         ShaderPass *pass = pair.second;

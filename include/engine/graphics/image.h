@@ -18,9 +18,9 @@ struct Image
     VkImage image;
     VkImageView view;
     VkSampler sampler;
-
     VkExtent3D extent;
     VkFormat format;
+
     uint32_t layers;
     uint32_t mipLevels{1};
 

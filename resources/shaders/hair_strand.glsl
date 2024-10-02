@@ -26,7 +26,7 @@ void main() {
 
     v_tangent = normalize(mat3(transpose(inverse(object.model))) * tangent);
     v_color = color;
-    v_id = gl_VertexID;
+    v_id = gl_VertexIndex;
 
 }
 
@@ -47,7 +47,8 @@ layout(set = 0, binding = 0) uniform CameraUniforms {
     mat4 view;
     mat4 proj;
     mat4 viewProj;
-    vec4 position vec2 screenExtent;
+    vec4 position;
+     vec2 screenExtent;
 } camera;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -129,6 +130,8 @@ void main() {
 #shader fragment
 #version 460 core
 
+#define MAX_LIGHTS 50
+
 //Input
 layout(location = 0) in vec3 g_pos;
 layout(location = 1) in vec3 g_modelPos;
@@ -146,7 +149,8 @@ layout(set = 0, binding = 0) uniform CameraUniforms {
     mat4 view;
     mat4 proj;
     mat4 viewProj;
-    vec4 position vec2 screenExtent;
+    vec4 position;
+     vec2 screenExtent;
 } camera;
 
 struct LightUniform {
@@ -225,7 +229,18 @@ float scatterWeight = 0.0;
 //Constant
 const float PI = 3.14159265359;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
+
+bool isInAreaOfInfluence(LightUniform light){
+    if(light.type == 0){ //Point Light
+        return length(light.position - g_pos) <= light.data.x;
+    }
+    else if(light.type == 2){ //Spot light
+        //TO DO...
+        return true;
+    }
+    return true; //Directional influence is total
+}
 
 vec3 shiftTangent(vec3 T, vec3 N, float shift) {
     vec3 shiftedT = T + shift * N;
@@ -336,7 +351,7 @@ vec3 computeLighting(float beta, float shift, LightUniform light, bool r, bool t
 float filterPCF(int lightID,int kernelSize, vec3 coords, float bias) {
 // int lightId ,int kernelSize, float extentMultiplier, vec3 coords, float bias
     int edge = kernelSize / 2;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec3 texelSize = 1.0 / textureSize(shadowMap, 0);
 
     float currentDepth = coords.z;
 
@@ -344,7 +359,7 @@ float filterPCF(int lightID,int kernelSize, vec3 coords, float bias) {
 
     for(int x = -edge; x <= edge; ++x) {
         for(int y = -edge; y <= edge; ++y) {
-            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize * u_scene.kernelRadius,lightID)).r;
+            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy ,lightID)).r;
 
             // //Scatter weight
             // float currentZ = linearizeDepth(currentDepth, u_scene.frustrumData.z, u_scene.frustrumData.w);
@@ -452,7 +467,7 @@ vec3 computeAmbient(vec3 n) {
 
     // }else{
 
-    ambient = (u_scene.ambientIntensity * u_scene.ambientColor) * material.baseColor;
+    ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
 
     // }
   // ambient = fn;

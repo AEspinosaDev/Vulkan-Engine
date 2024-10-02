@@ -282,8 +282,19 @@ void VulkanRenderer::setup()
     templeMesh2->set_scale(1.25);
     m_scene->add(templeMesh2);
 
+    // Mesh* hair = new Mesh();
+    // hair->load_file(MESH_PATH + "curly.hair", false);
+    // hair->set_material(new HairMaterial());
+    // hair->set_name("hair");
+    // hair->set_scale(0.1f);
+    // m_scene->add(hair);
+
+
+
+
+
     Mesh *lanternMesh = new Mesh();
-    lanternMesh->load_file(MESH_PATH + "lantern.obj", false);
+    lanternMesh->load_file(MESH_PATH + "lantern.obj", true);
     auto lanternMat = new PhysicallyBasedMaterial();
     Texture *lanternT = new Texture();
     lanternT->load_image(TEXTURE_PATH + "lantern_diffuse.png");

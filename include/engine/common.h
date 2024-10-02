@@ -68,6 +68,7 @@
 #define FBX "fbx"
 #define PNG "png"
 #define JPG "jpg"
+#define HAIR "hair"
 
 /// Simple exception class, which stores a human-readable error description
 class VKException : public std::runtime_error
