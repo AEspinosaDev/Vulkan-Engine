@@ -77,7 +77,7 @@ target_include_directories(VkFW PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_link_libraries(VkFW PUBLIC 
 
     Vulkan::Vulkan 
-    shaderc_shared.lib 
+    shaderc_shared
     glm 
     glfw 
     stb_image 

@@ -82,9 +82,19 @@ cmake_minimum_required(VERSION 3.16)
 
 project(JohnDoe VERSION 1.0.0)
 
+# Use C++17 (Otherwise it won't work)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+#check SDK
+find_package(Vulkan REQUIRED)
+get_filename_component(VULKAN_SDK_ROOT ${Vulkan_LIBRARY} DIRECTORY)
+
 # Add Vulkan-Engine subdirectory ! Set if you want to build the examples directory ...
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(dependencies/Vulkan-Engine)
+# Important step, link vulkan sdf directories to project root
+link_directories(${VULKAN_SDK_ROOT})
 
 #Setup project own source code (User-Defined)
 file(GLOB APP_SOURCES "src/*.cpp")
