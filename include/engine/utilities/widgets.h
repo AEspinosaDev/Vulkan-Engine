@@ -13,6 +13,7 @@
 #include <engine/common.h>
 #include <engine/core/scene/scene.h>
 #include <engine/core/materials/physically_based.h>
+#include <engine/core/materials/hair.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

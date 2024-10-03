@@ -595,6 +595,105 @@ void ObjectExplorerWidget::render()
 
                 ImGui::Separator();
             }
+            if (model->get_material(i)->get_shaderpass_ID() == "hair")
+            {
+                HairMaterial *mat = static_cast<HairMaterial *>(model->get_material(i));
+                // ImGui UI code
+                Vec3 baseColor = mat->get_base_color();
+                if (ImGui::ColorEdit3("Base Color (RGBA)", (float *)&baseColor))
+                {
+                    mat->set_base_color(baseColor);
+                }
+
+                float thickness = mat->get_thickness();
+                if (ImGui::DragFloat("Thickness", &thickness, 0.0001f, 0.0f, 1.0f))
+                {
+                    mat->set_thickness(thickness);
+                }
+
+                bool r = mat->get_R();
+                if (ImGui::Checkbox("Reflection (R)", &r))
+                {
+                    mat->set_R(r);
+                }
+                float rPower = mat->get_Rpower();
+                if (ImGui::DragFloat("Reflection Power (R)", &rPower, 0.1f, 0.0f, 10.0f))
+                {
+                    mat->set_Rpower(rPower); // Update reflection power
+                }
+
+                bool tt = mat->get_TT();
+                if (ImGui::Checkbox("Transmitance (TT)", &tt))
+                {
+                    mat->set_TT(tt); // Update transmittance
+                }
+
+                float ttPower = mat->get_TTpower();
+                if (ImGui::DragFloat("Transmitance Power (TT)", &ttPower, 0.1f, 0.0f, 10.0f))
+                {
+                    mat->set_TTpower(ttPower); // Update transmittance power
+                }
+
+                bool trt = mat->get_TRT();
+                if (ImGui::Checkbox("Second Reflection (TRT)", &trt))
+                {
+                    mat->set_TRT(trt); // Update second reflection
+                }
+
+                float trtPower = mat->get_TRTpower();
+                if (ImGui::DragFloat("Second Reflection Power (TRT)", &trtPower, 0.1f, 0.0f, 20.0f))
+                {
+                    mat->set_TRTpower(trtPower); // Update second reflection power
+                }
+
+                float roughness = mat->get_roughness();
+                if (ImGui::DragFloat("Roughness", &roughness, 0.01f, 0.0f, 1.0f))
+                {
+                    mat->set_roughness(roughness); // Update roughness
+                }
+
+                float scatter = mat->get_scatter();
+                if (ImGui::DragFloat("Scatter", &scatter, 1.0f, 0.0f, 1000.0f))
+                {
+                    mat->set_scatter(scatter); // Update scatter
+                }
+
+                float shift = mat->get_shift();
+                if (ImGui::DragFloat("Shift (radians)", &shift, 0.01f, 0.088f, 0.17f))
+                {
+                    mat->set_shift(shift); // Update shift
+                }
+
+                float ior = mat->get_ior();
+                if (ImGui::DragFloat("Index of Refraction (IOR)", &ior, 0.01f, 1.0f, 2.0f))
+                {
+                    mat->set_ior(ior); // Update index of refraction
+                }
+
+                bool glints = mat->get_glints();
+                if (ImGui::Checkbox("Glints", &glints))
+                {
+                    mat->set_glints(glints); // Update glints
+                }
+
+                bool useScatter = mat->get_useScatter();
+                if (ImGui::Checkbox("Use Scatter", &useScatter))
+                {
+                    mat->set_useScatter(useScatter); // Update use scatter
+                }
+
+                bool coloredScatter = mat->get_coloredScatter();
+                if (ImGui::Checkbox("Colored Scatter", &coloredScatter))
+                {
+                    mat->set_coloredScatter(coloredScatter); // Update colored scatter
+                }
+
+                bool occlusion = mat->get_occlusion();
+                if (ImGui::Checkbox("Occlusion", &occlusion))
+                {
+                    mat->set_occlusion(occlusion); // Update occlusion
+                }
+            }
 
             if (model->get_material(i)->get_shaderpass_ID() == "phong")
             {
