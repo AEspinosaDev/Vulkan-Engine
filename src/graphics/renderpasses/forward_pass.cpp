@@ -181,11 +181,11 @@ void ForwardPass::create_pipelines(DescriptorManager &descriptorManager)
     m_shaderPasses["hair"]->settings.descriptorSetLayoutIDs =
         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
     m_shaderPasses["hair"]->settings.attributes =
         {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, true},
-         {VertexAttributeType::UV, true},
+         {VertexAttributeType::NORMAL, false},
+         {VertexAttributeType::UV, false},
          {VertexAttributeType::TANGENT, true},
          {VertexAttributeType::COLOR, true}};
     m_shaderPasses["hair"]->settings.blending = true;

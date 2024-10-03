@@ -177,6 +177,33 @@ void GeometryPass::create_pipelines(DescriptorManager &descriptorManager)
     ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *geomPass);
 
     m_shaderPasses["geometry"] = geomPass;
+
+    ShaderPass *strandPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/strand_deferred.glsl");
+    strandPass->settings.descriptorSetLayoutIDs =
+        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+         {DescriptorLayoutType::OBJECT_LAYOUT, true},
+         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    strandPass->settings.attributes =
+        {{VertexAttributeType::POSITION, true},
+         {VertexAttributeType::NORMAL, false},
+         {VertexAttributeType::UV, false},
+         {VertexAttributeType::TANGENT, true},
+         {VertexAttributeType::COLOR, true}};
+    strandPass->settings.blending = true;
+    strandPass->settings.blendAttachments = {
+        init::color_blend_attachment_state(true),
+        init::color_blend_attachment_state(true),
+        init::color_blend_attachment_state(true),
+        init::color_blend_attachment_state(true)};
+    strandPass->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+
+    strandPass->settings.dynamicStates = dynamicStates;
+
+    ShaderPass::build_shader_stages(m_context->device, *strandPass);
+
+    ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *strandPass);
+
+    m_shaderPasses["hair"] = strandPass;
 }
 void GeometryPass::init_resources()
 {
@@ -197,9 +224,9 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    ShaderPass *shaderPass = m_shaderPasses["geometry"];
+    // ShaderPass *shaderPass = m_shaderPasses["geometry"];
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+    // vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
 
     int mesh_idx = 0;
     for (Mesh *m : scene->get_meshes())
@@ -211,11 +238,16 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
                 (scene->get_active_camera()->get_frustrum_culling() ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()) : true)) // Check if is inside frustrum
 
             {
+
                 uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
                 uint32_t globalOffset = 0;
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
+
+                    ShaderPass *shaderPass = m_shaderPasses[m->get_material(i)->get_shaderpass_ID() == "hair" ? "hair" : "geometry"];
+                    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+
                     // GLOBAL LAYOUT BINDING
                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
@@ -233,9 +265,11 @@ void GeometryPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene,
                     vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
                     vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
                     vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
-                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
 
-                   draw(cmd, g);
+                    if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
+
+                    draw(cmd, g);
                 }
             }
             mesh_idx++;

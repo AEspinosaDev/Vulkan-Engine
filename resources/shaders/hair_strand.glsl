@@ -18,7 +18,6 @@ layout(set = 1, binding = 0) uniform ObjectUniforms {
 //Output
 layout(location = 0) out vec3 v_color;
 layout(location = 1) out vec3 v_tangent;
-layout(location = 2) out int v_id;
 
 void main() {
 
@@ -26,7 +25,6 @@ void main() {
 
     v_tangent = normalize(mat3(transpose(inverse(object.model))) * tangent);
     v_color = color;
-    v_id = gl_VertexIndex;
 
 }
 
@@ -40,7 +38,6 @@ layout(triangle_strip, max_vertices = 4) out;
 //Input
 layout(location = 0) in vec3 v_color[];
 layout(location = 1) in vec3 v_tangent[];
-layout(location = 2) in int v_id[];
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -66,7 +63,7 @@ layout(location = 5) out vec3 g_dir;
 layout(location = 6) out vec3 g_modelDir;
 layout(location = 7) out vec3 g_color;
 layout(location = 8) out vec3 g_origin;
-layout(location = 9) out int g_id;
+// layout(location = 9) out int g_id;
 
 // uniform float u_thickness;
 float thickness = 0.02;
@@ -92,7 +89,7 @@ void emitQuadPoint(
     g_normal = normalize(mat3(transpose(inverse(camera.view))) * normal);
     g_modelNormal = normal;
     g_origin = (camera.view * origin).xyz;
-    g_id = v_id[0];
+    // g_id = v_id[0];
 
     EmitVertex();
 }
@@ -142,7 +139,7 @@ layout(location = 5) in vec3 g_dir;
 layout(location = 6) in vec3 g_modelDir;
 layout(location = 7) in vec3 g_color;
 layout(location = 8) in vec3 g_origin;
-layout(location = 9) in flat int g_id;
+// layout(location = 9) in flat int g_id;
 
 //Uniforms
 layout(set = 0, binding = 0) uniform CameraUniforms {
@@ -189,6 +186,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
 layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
+
 
 layout(set = 1, binding = 0) uniform ObjectUniforms {
     mat4 model;
