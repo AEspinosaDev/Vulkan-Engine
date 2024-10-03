@@ -107,17 +107,7 @@ protected:
 	std::vector<Frame> m_frames;
 
 	RenderPipeline m_renderPipeline;
-	enum DefaultRenderPasses
-	{
-		SHADOW = 0,
-		GEOMETRY = 1,
-		SSAO = 2,
-		SSAO_BLUR = 3,
-		COMPOSITION = 4,
-		FORWARD = 5,
-		FXAA = 6,
-	};
-
+	
 	DescriptorManager m_descriptorMng{};
 
 	utils::DeletionQueue m_deletionQueue;
@@ -206,12 +196,13 @@ public:
 	}
 	inline void set_deferred_output_type(int op)
 	{
-		if (m_initialized)
-			static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_output_type(op);
+		// if (m_initialized)
+		// 	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_output_type(op);
 	}
 	inline int get_deferred_output_type() const
 	{
-		return static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->get_output_type();
+		// return static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->get_output_type();
+		return 0;
 	}
 	inline AmbientOcclusionType get_ssao_type() const { return m_settings.occlusionType; }
 	inline void set_ssao_type(AmbientOcclusionType ao)

@@ -107,8 +107,8 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
 	m_frames[m_currentFrame].globalUniformBuffer.upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
-	static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
-	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
+	// static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
+	// static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
 
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
@@ -231,33 +231,22 @@ void Renderer::set_renderpass_resources()
 	{
 		pass->init_resources();
 
-		if (i == GEOMETRY)
-			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_g_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image);
-		if (i == SSAO)
-			static_cast<SSAOBlurPass *>(m_renderPipeline.renderpasses[SSAO_BLUR])->set_ssao_buffer(pass->get_attachments()[0].image);
+		
 
 		i++;
 	}
-	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image, m_descriptorMng);
-
-	if (m_settings.AAtype == AntialiasingType::FXAA)
-		static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_settings.renderingType == RendererType::TDEFERRED ? m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image : m_renderPipeline.renderpasses[FORWARD]->get_attachments()[0].image);
-
+	
 	// Set global textures descriptor writes
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.sampler,
-											 m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.view,
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[0]->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses[0]->get_attachments().front().image.view,
 											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 2);
+		m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler,
+											 Texture::DEBUG_TEXTURE->m_image.view,
+											 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
 
-		if (m_settings.occlusionType == AmbientOcclusionType::SSAO)
-			m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
-												 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
-												 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
-		else
-			m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments().front().image.sampler,
-												 m_renderPipeline.renderpasses[GEOMETRY]->get_attachments().front().image.view,
-												 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
+		
 	}
 }
 VULKAN_ENGINE_NAMESPACE_END

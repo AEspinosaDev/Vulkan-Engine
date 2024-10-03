@@ -33,25 +33,12 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[DefaultRenderPasses::FORWARD]->set_attachment_clear_value(
-		{m_settings.clearColor.r,
-		 m_settings.clearColor.g,
-		 m_settings.clearColor.b,
-		 m_settings.clearColor.a});
-	m_renderPipeline.renderpasses[DefaultRenderPasses::COMPOSITION]->set_attachment_clear_value(
+	m_renderPipeline.renderpasses[1]->set_attachment_clear_value(
 		{m_settings.clearColor.r,
 		 m_settings.clearColor.g,
 		 m_settings.clearColor.b,
 		 m_settings.clearColor.a});
 
-	// This next code should go in a better place...
-	bool enableClassicSSAO = scene->is_ssao_enabled() && m_settings.occlusionType == AmbientOcclusionType::SSAO;
-	m_renderPipeline.renderpasses[DefaultRenderPasses::SSAO]->set_active(enableClassicSSAO);
-	m_renderPipeline.renderpasses[DefaultRenderPasses::SSAO_BLUR]->set_active(enableClassicSSAO);
-	if (m_settings.renderingType == RendererType::TFORWARD && !scene->is_ssao_enabled())
-		m_renderPipeline.renderpasses[DefaultRenderPasses::GEOMETRY]->set_active(false);
-	else
-		m_renderPipeline.renderpasses[DefaultRenderPasses::GEOMETRY]->set_active(true);
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -151,23 +138,24 @@ void Renderer::on_shutdown(Scene *const scene)
 		m_vignette->get_geometry()->get_render_data().ibo.cleanup(m_context.memory);
 		Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
 
-		for (Mesh *m : scene->get_meshes())
-		{
-			for (size_t i = 0; i < m->get_num_geometries(); i++)
+		if (scene)
+			for (Mesh *m : scene->get_meshes())
 			{
-				Geometry *g = m->get_geometry(i);
-				RenderData rd = g->get_render_data();
-				if (rd.loaded)
+				for (size_t i = 0; i < m->get_num_geometries(); i++)
 				{
-					rd.vbo.cleanup(m_context.memory);
-					if (g->indexed())
-						rd.ibo.cleanup(m_context.memory);
+					Geometry *g = m->get_geometry(i);
+					RenderData rd = g->get_render_data();
+					if (rd.loaded)
+					{
+						rd.vbo.cleanup(m_context.memory);
+						if (g->indexed())
+							rd.ibo.cleanup(m_context.memory);
 
-					rd.loaded = false;
-					g->set_render_data(rd);
+						rd.loaded = false;
+						g->set_render_data(rd);
+					}
 				}
 			}
-		}
 
 		for (RenderPass *pass : m_renderPipeline.renderpasses)
 		{
@@ -190,7 +178,7 @@ void Renderer::init_gui()
 					m_context.device,
 					m_context.gpu,
 					m_context.graphicsQueue,
-					m_renderPipeline.renderpasses[m_settings.AAtype != AntialiasingType::FXAA ? (m_settings.renderingType == RendererType::TFORWARD ? DefaultRenderPasses::FORWARD : DefaultRenderPasses::COMPOSITION) : DefaultRenderPasses::FXAA]->get_handle(),
+					m_renderPipeline.renderpasses[1]->get_handle(),
 					m_context.swapchain.get_image_format(),
 					(VkSampleCountFlagBits)m_settings.AAtype,
 					m_window->get_handle());

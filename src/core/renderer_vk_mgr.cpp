@@ -24,41 +24,23 @@ void Renderer::init_renderpasses()
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 	const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-	// Creating default renderpasses
-	ForwardPass *forwardPass = new ForwardPass(&m_context,
-											   m_window->get_extent(),
-											   totalImagesInFlight,
-											   m_settings.colorFormat,
-											   m_settings.depthFormat,
-											   m_settings.AAtype);
+	ForwardPass *forwardPass = new ForwardPass(
+		&m_context,
+		m_window->get_extent(),
+		totalImagesInFlight,
+		m_settings.colorFormat,
+		m_settings.depthFormat,
+		m_settings.AAtype);
 
-	ShadowPass *shadowPass = new ShadowPass(&m_context, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
-
-	GeometryPass *geometryPass = new GeometryPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.depthFormat);
-
-	SSAOPass *ssaoPass = new SSAOPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_vignette);
-
-	SSAOBlurPass *ssaoBlurPass = new SSAOBlurPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_vignette);
-
-	CompositionPass *compPass = new CompositionPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette, m_settings.AAtype == AntialiasingType::FXAA);
-
-	FXAAPass *fxaaPass = new FXAAPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette);
+	ShadowPass *shadowPass = new ShadowPass(
+		&m_context,
+		{SHADOW_RES, SHADOW_RES},
+		totalImagesInFlight,
+		VK_MAX_LIGHTS,
+		m_settings.depthFormat);
 
 	m_renderPipeline.push_renderpass(shadowPass);
-	m_renderPipeline.push_renderpass(geometryPass);
-	m_renderPipeline.push_renderpass(ssaoPass);
-	m_renderPipeline.push_renderpass(ssaoBlurPass);
-	m_renderPipeline.push_renderpass(compPass);
 	m_renderPipeline.push_renderpass(forwardPass);
-	m_renderPipeline.push_renderpass(fxaaPass);
-
-	if (m_settings.renderingType == RendererType::TFORWARD)
-		compPass->set_active(false);
-	else
-		forwardPass->set_active(false);
-
-	if (m_settings.AAtype != AntialiasingType::FXAA)
-		fxaaPass->set_active(false);
 
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
@@ -91,12 +73,11 @@ void Renderer::init_control_objects()
 void Renderer::init_descriptors()
 {
 	// Global descriptor manager setup
-
 	m_descriptorMng.init(m_context.device);
 	m_descriptorMng.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
 
 	// GLOBAL SET
-	VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,  VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+	VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
 	VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 	VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
 	VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);	 // SSAO
@@ -204,29 +185,10 @@ void Renderer::update_renderpasses()
 			pass->update();
 		}
 
-		if (i == GEOMETRY)
-			static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->set_g_buffer(pass->get_attachments()[0].image, pass->get_attachments()[1].image);
-		if (i == SSAO)
-			static_cast<SSAOBlurPass *>(m_renderPipeline.renderpasses[SSAO_BLUR])->set_ssao_buffer(pass->get_attachments()[0].image);
+		//set the resources of the previews pass
+
 		i++;
 	};
-
-	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_g_buffer(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[0].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[1].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[2].image, m_renderPipeline.renderpasses[GEOMETRY]->get_attachments()[3].image, m_descriptorMng);
-
-	if (m_settings.AAtype == AntialiasingType::FXAA)
-		static_cast<FXAAPass *>(m_renderPipeline.renderpasses[DefaultRenderPasses::FXAA])->set_output_buffer(m_settings.renderingType == RendererType::TDEFERRED ? m_renderPipeline.renderpasses[COMPOSITION]->get_attachments()[0].image : m_renderPipeline.renderpasses[FORWARD]->get_attachments()[0].image);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		if (m_settings.occlusionType == AmbientOcclusionType::SSAO)
-			m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.sampler,
-												 m_renderPipeline.renderpasses[SSAO_BLUR]->get_attachments().front().image.view,
-												 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
-		else
-			m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[GEOMETRY]->get_attachments().front().image.sampler,
-												 m_renderPipeline.renderpasses[GEOMETRY]->get_attachments().front().image.view,
-												 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 3);
-	}
 
 	m_updateFramebuffers = false;
 }
@@ -238,16 +200,16 @@ void Renderer::update_shadow_quality()
 
 	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
 
-	m_renderPipeline.renderpasses[SHADOW]->set_extent({SHADOW_RES, SHADOW_RES});
-	m_renderPipeline.renderpasses[SHADOW]->update();
+	m_renderPipeline.renderpasses[0]->set_extent({SHADOW_RES, SHADOW_RES});
+	m_renderPipeline.renderpasses[0]->update();
 
 	m_updateShadowQuality = false;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 
-		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.sampler,
-											 m_renderPipeline.renderpasses[SHADOW]->get_attachments().front().image.view,
+		m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[0]->get_attachments().front().image.sampler,
+											 m_renderPipeline.renderpasses[0]->get_attachments().front().image.view,
 											 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_frames[i].globalDescriptor, 2);
 	}
 }
