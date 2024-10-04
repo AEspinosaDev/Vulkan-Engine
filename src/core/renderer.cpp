@@ -5,9 +5,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Renderer::run(Scene *const scene)
 {
-	if (!m_initialized)
-		init();
-
 	while (!glfwWindowShouldClose(m_window->get_handle()))
 	{
 		// I-O

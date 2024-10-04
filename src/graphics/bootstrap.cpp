@@ -137,19 +137,26 @@ VkDevice boot::VKBooter::create_logical_device(
 
 	VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
 	physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	physicalDeviceFeatures2.pNext = nullptr;
 
 	enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
 
 	if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
 	{
 		enabledExtensions.push_back("VK_EXT_extended_dynamic_state");
 
-		VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
 		extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
 		extendedDynamicStateFeatures.pNext = physicalDeviceFeatures2.pNext;
 
 		physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
 	}
+
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
+	VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {};
+	VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
 
 	// Check RTX extensions
 	if (utils::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
@@ -165,19 +172,15 @@ VkDevice boot::VKBooter::create_logical_device(
 		enabledExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 		enabledExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
-		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
 		rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 		rayTracingPipelineFeatures.pNext = nullptr;
 
-		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
 		accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 		accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
 
-		VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {};
 		bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
 		bufferDeviceAddressFeatures.pNext = &accelerationStructureFeatures;
 
-		VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
 		descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
 		descriptorIndexingFeatures.pNext = &bufferDeviceAddressFeatures;
 

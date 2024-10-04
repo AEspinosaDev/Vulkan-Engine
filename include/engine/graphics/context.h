@@ -26,7 +26,7 @@ Vulkan API graphic context related data abnd functionality
 */
 struct Context
 {
-    Swapchain swapchain;
+    Swapchain swapchain{};
 
     VkSurfaceKHR surface{};
 
