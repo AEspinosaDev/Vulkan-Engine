@@ -13,6 +13,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+
 struct CameraUniforms
 {
     Mat4 view;

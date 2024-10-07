@@ -99,22 +99,13 @@ class Renderer
 #pragma region Properties
 protected:
 	RendererSettings m_settings{};
-
 	Context m_context{};
-
 	Window *m_window;
-
-	std::vector<Frame> m_frames;
-
 	RenderPipeline m_renderPipeline;
-	
-	DescriptorManager m_descriptorMng{};
 
 	utils::DeletionQueue m_deletionQueue;
 
 	Mesh *m_vignette{nullptr};
-
-	int MAX_FRAMES_IN_FLIGHT;
 
 	uint32_t m_currentFrame{0};
 	bool m_initialized{false};
@@ -218,19 +209,16 @@ public:
 	/**
 	 * Inits the renderer.
 	 */
-	inline void init()
-	{
-		on_init();
-		m_initialized = true;
-	}
+	void init();
+	
 	/**
 	 * Standalone pre-implemented render loop for the renderer.
 	 */
-	virtual void run(Scene *const scene);
+	void run(Scene *const scene);
 	/**
 	 * Renders a given scene.
 	 */
-	virtual void render(Scene *const scene);
+	void render(Scene *const scene);
 	/**
 	 * Shut the renderer down.
 	 */
@@ -240,11 +228,11 @@ protected:
 	/*
 	What to do when instancing the renderer
 	*/
-	virtual void on_awake();
+	virtual void on_awake() {}
 	/*
 	What to do when initiating the renderer
 	*/
-	virtual void on_init();
+	virtual void on_init() {}
 	/*
 	What to do just before rendering
 	*/
@@ -256,53 +244,26 @@ protected:
 	/*
 	What to do when shutting down the renderer
 	*/
-	virtual void on_shutdown(Scene *const scene);
-
-#pragma endregion
-	/*
-		////////////////////////////////////////////////////////////////////////////////////
-
-		Implementation of this region can be found in the module ==>> vk_renderer_vk_mgr.cpp
-
-		////////////////////////////////////////////////////////////////////////////////////
-	*/
-#pragma region Vulkan Management
-
+	virtual void on_shutdown(Scene *const scene) {}
 	/*
 	Init renderpasses and create framebuffers and image resources attached to them
 	*/
-	virtual void init_renderpasses();
-
-	/*
-	Render flow control objects creation
-	*/
-	virtual void init_control_objects();
-
-	/*
-	Descriptor pool and layouts creation
-	*/
-	virtual void init_descriptors();
-
-	/*
-	Graphic pipeline creation
-	*/
-	virtual void init_pipelines();
-
+	virtual void setup_renderpasses(); //Should be zero
+	virtual void set_renderpass_resources();
 	/*
 	Resource like samplers, base textures and misc creation
 	*/
 	virtual void init_resources();
-
-	virtual void set_renderpass_resources();
-
+	virtual void clean_Resources();
 	/*
 	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing context
 	*/
 	virtual void update_renderpasses();
 
-	virtual void update_shadow_quality();
+	// virtual void update_shadow_quality();
 
 #pragma endregion
+
 	/*
 		////////////////////////////////////////////////////////////////////////////////////
 
@@ -330,11 +291,6 @@ protected:
 	*/
 	virtual void upload_geometry_data(Geometry *const g);
 
-	/*
-	Upload texture vertex buffers to the GPU
-	*/
-	virtual void upload_texture_data(Texture *const t);
-	
 #pragma region GUI
 	/*
 	Initialize gui layout in case ther's one enabled

@@ -119,7 +119,55 @@ void ForwardPass::init()
 
     m_initiatized = true;
 }
-void ForwardPass::create_pipelines(DescriptorManager &descriptorManager)
+void ForwardPass::create_descriptors()
+{
+    m_descriptorManager.init(m_context->device);
+    m_descriptorManager.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+    m_descriptors.resize(m_context->frames.size());
+
+    // GLOBAL SET
+    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
+    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);   // SSAO
+    VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, ssaoBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
+
+    // PER-OBJECT SET
+    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
+
+    // MATERIAL TEXTURE SET
+    VkDescriptorSetLayoutBinding textureBinding1 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding textureBinding2 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding textureBinding3 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+    VkDescriptorSetLayoutBinding textureBinding4 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    VkDescriptorSetLayoutBinding textureBinding5 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5};
+    m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, textureBindings, 5);
+
+    for (size_t i = 0; i < m_context->frames.size(); i++)
+    {
+        // Global
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0,
+                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(SceneUniforms),
+                                                 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
+                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+
+        // Per-object
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
+                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
+                                                 utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu),
+                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+    }
+}
+void ForwardPass::create_pipelines()
 {
 
     std::vector<VkDynamicState> dynamicStates = {
@@ -199,7 +247,7 @@ void ForwardPass::create_pipelines(DescriptorManager &descriptorManager)
 
         ShaderPass::build_shader_stages(m_context->device, *pass);
 
-        ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *pass);
+        ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *pass);
     }
 }
 void ForwardPass::init_resources()
@@ -215,9 +263,9 @@ void ForwardPass::init_resources()
         1.0f,
         VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 }
-void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
+void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
-    VkCommandBuffer cmd = frame.commandBuffer;
+    VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
 
@@ -242,7 +290,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
                     (scene->get_active_camera()->get_frustrum_culling() ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()) : true)) // Check if is inside frustrum
                 {
                     // Offset calculation
-                    uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
+                    uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].strideSize * mesh_idx;
                     uint32_t globalOffset = 0;
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
@@ -262,11 +310,11 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
 
                         // GLOBAL LAYOUT BINDING
                         uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptors[frameIndex].globalDescritor.descriptorSet, 2, globalOffsets);
 
                         // PER OBJECT LAYOUT BINDING
                         uint32_t objectOffsets[] = {objectOffset, objectOffset};
-                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1, &frame.objectDescriptor.descriptorSet, 2, objectOffsets);
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1, &m_descriptors[frameIndex].objectDescritor.descriptorSet, 2, objectOffsets);
 
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
@@ -289,6 +337,7 @@ void ForwardPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, 
 
 void ForwardPass::update()
 {
+    
     RenderPass::update();
     m_attachments[0].image.create_sampler(
         m_context->device,
@@ -302,4 +351,33 @@ void ForwardPass::update()
         VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 }
 
+void ForwardPass::setup_material_descriptor(Material *mat)
+{
+    // if (!mat->m_textureDescriptor.allocated)
+    //     m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, &mat->m_textureDescriptor);
+
+    // auto textures = mat->get_textures();
+    // for (auto pair : textures)
+    // {
+    //     Texture *texture = pair.second;
+    //     if (texture && texture->data_loaded())
+    //     {
+
+    //         // Set texture write
+    //         if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
+    //         {
+    //             m_descriptorMng.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
+    //             mat->set_texture_binding_state(pair.first, true);
+    //             texture->m_isDirty = false;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         // SET DUMMY TEXTURE
+    //         if (!mat->get_texture_binding_state()[pair.first])
+    //             m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
+    //         mat->set_texture_binding_state(pair.first, true);
+    //     }
+    // }
+}
 VULKAN_ENGINE_NAMESPACE_END

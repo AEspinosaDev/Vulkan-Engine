@@ -33,6 +33,11 @@ void Context::init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t 
     // Create swapchain
     swapchain.create(gpu, device, surface, windowHandle, surfaceExtent, framesPerFlight, presentFormat, presentMode);
 
+    // Init frames with control objects
+    frames.resize(framesPerFlight);
+    for (size_t i = 0; i < frames.size(); i++)
+        frames[i].init(device, gpu, surface);
+        
     //------<<<
 }
 
@@ -44,6 +49,13 @@ void Context::recreate_swapchain(GLFWwindow *windowHandle, VkExtent2D surfaceExt
 
 void Context::cleanup()
 {
+    for (size_t i = 0; i < frames.size(); i++)
+    {
+        frames[i].cleanup(device);
+    }
+
+    uploadContext.cleanup(device);
+
     swapchain.cleanup(device, memory);
 
     vmaDestroyAllocator(memory);
@@ -59,49 +71,49 @@ void Context::cleanup()
     vkDestroyInstance(instance, nullptr);
 }
 
-VkResult Context::aquire_present_image(Frame &currentFrame, uint32_t &imageIndex)
+VkResult Context::aquire_present_image(const uint32_t &currentFrame, uint32_t &imageIndex)
 {
-    VK_CHECK(vkWaitForFences(device, 1, &currentFrame.renderFence, VK_TRUE, UINT64_MAX));
-    VkResult result = vkAcquireNextImageKHR(device, swapchain.get_handle(), UINT64_MAX, currentFrame.presentSemaphore, VK_NULL_HANDLE, &imageIndex);
+    VK_CHECK(vkWaitForFences(device, 1, &frames[currentFrame].renderFence, VK_TRUE, UINT64_MAX));
+    VkResult result = vkAcquireNextImageKHR(device, swapchain.get_handle(), UINT64_MAX, frames[currentFrame].presentSemaphore, VK_NULL_HANDLE, &imageIndex);
     return result;
 }
 
-void Context::begin_command_buffer(Frame &currentFrame)
+void Context::begin_command_buffer(const uint32_t &currentFrame)
 {
-    VK_CHECK(vkResetFences(device, 1, &currentFrame.renderFence));
-    VK_CHECK(vkResetCommandBuffer(currentFrame.commandBuffer, 0));
+    VK_CHECK(vkResetFences(device, 1, &frames[currentFrame].renderFence));
+    VK_CHECK(vkResetCommandBuffer(frames[currentFrame].commandBuffer, 0));
 
     VkCommandBufferBeginInfo beginInfo = init::command_buffer_begin_info();
 
-    if (vkBeginCommandBuffer(currentFrame.commandBuffer, &beginInfo) != VK_SUCCESS)
+    if (vkBeginCommandBuffer(frames[currentFrame].commandBuffer, &beginInfo) != VK_SUCCESS)
     {
         throw VKException("failed to begin recording command buffer!");
     }
 }
 
-void Context::end_command_buffer(Frame &currentFrame)
+void Context::end_command_buffer(const uint32_t &currentFrame)
 {
-    if (vkEndCommandBuffer(currentFrame.commandBuffer) != VK_SUCCESS)
+    if (vkEndCommandBuffer(frames[currentFrame].commandBuffer) != VK_SUCCESS)
     {
         throw VKException("failed to record command buffer!");
     }
 }
 
-VkResult Context::present_image(Frame &currentFrame, uint32_t imageIndex)
+VkResult Context::present_image(const uint32_t &currentFrame, uint32_t imageIndex)
 {
-    VkSubmitInfo submitInfo = init::submit_info(&currentFrame.commandBuffer);
+    VkSubmitInfo submitInfo = init::submit_info(&frames[currentFrame].commandBuffer);
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    VkSemaphore waitSemaphores[] = {currentFrame.presentSemaphore};
+    VkSemaphore waitSemaphores[] = {frames[currentFrame].presentSemaphore};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
-    VkSemaphore signalSemaphores[] = {currentFrame.renderSemaphore};
+    VkSemaphore signalSemaphores[] = {frames[currentFrame].renderSemaphore};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, currentFrame.renderFence) != VK_SUCCESS)
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, frames[currentFrame].renderFence) != VK_SUCCESS)
     {
         throw VKException("failed to submit draw command buffer!");
     }

@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef FRAME_H
@@ -27,15 +27,11 @@ struct Frame
     VkCommandPool commandPool;
     VkCommandBuffer commandBuffer;
 
-    // GlobalLayout Descriptor
-    DescriptorSet globalDescriptor;
-    Buffer globalUniformBuffer;
-
-    // ObjectLayout descriptors
-    DescriptorSet objectDescriptor;
-    Buffer objectUniformBuffer;
+    // Uniforms
+    std::vector<Buffer> uniformBuffers;
 
     void init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface);
+
     void cleanup(VkDevice &device);
 
     static bool guiEnabled;
