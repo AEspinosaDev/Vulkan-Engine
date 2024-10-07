@@ -1,4 +1,7 @@
  <H1 ALIGN="CENTER"> VULKAN 3D LIBRAY 👀 </H1>
+
+  ![Build Status](https://github.com/AEspinosaDev/Vulkan-Engine/actions/workflows/build-windows.yml/badge.svg)
+
 <p align="center"> 
 A Vulkan based 3D library that acts as a wrapper for the most verbose Vulkan parts that I implemented to learn the API.
 	
