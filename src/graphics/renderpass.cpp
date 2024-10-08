@@ -79,6 +79,18 @@ void RenderPass::create_framebuffer()
                                                m_attachments[i].viewAspect,
                                                m_attachments[i].viewType);
 
+    
+            m_attachments[i].image.create_sampler(
+                m_context->device,
+                m_attachments[i].filter,
+                VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                m_attachments[i].adressMode,
+                0.0f,
+                1.0f,
+                false,
+                1.0f,
+                VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+
             viewAttachments[i] = m_attachments[i].image.view;
         }
         else
@@ -104,7 +116,7 @@ void RenderPass::create_framebuffer()
     }
 }
 
-void RenderPass::clean_framebuffer(bool destroyImageSamplers)
+void RenderPass::clean_framebuffer()
 {
     if (!m_initiatized)
         return;
@@ -113,16 +125,15 @@ void RenderPass::clean_framebuffer(bool destroyImageSamplers)
 
     for (size_t i = 0; i < m_attachments.size(); i++)
     {
-        m_attachments[i].image.cleanup(m_context->device, m_context->memory, destroyImageSamplers);
+        m_attachments[i].image.cleanup(m_context->device, m_context->memory);
     }
 }
 void RenderPass::update()
 {
-
     if (!m_initiatized)
         return;
 
-    clean_framebuffer(true);
+    clean_framebuffer();
     create_framebuffer();
 }
 

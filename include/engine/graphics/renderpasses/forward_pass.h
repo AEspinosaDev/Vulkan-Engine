@@ -27,30 +27,28 @@ class ForwardPass : public RenderPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-    public : ForwardPass(Context *ctx,
-                         VkExtent2D extent,
-                         uint32_t framebufferCount,
-                         ColorFormatType colorFormat,
-                         DepthFormatType depthFormat,
-                         AntialiasingType samples) : RenderPass(ctx, extent, framebufferCount, 1, samples == AntialiasingType::FXAA ? false : true),
-                                                     m_colorFormat(colorFormat),
-                                                     m_depthFormat(depthFormat),
-                                                     m_aa(samples)
-    {
-    }
+public:
+    ForwardPass(Context *ctx,
+                VkExtent2D extent,
+                uint32_t framebufferCount,
+                ColorFormatType colorFormat,
+                DepthFormatType depthFormat,
+                AntialiasingType samples) : RenderPass(ctx, extent, framebufferCount, 1, samples == AntialiasingType::FXAA ? false : true),
+                                            m_colorFormat(colorFormat),
+                                            m_depthFormat(depthFormat),
+                                            m_aa(samples) {}
+
     void init();
 
     void create_descriptors();
 
     void create_pipelines();
 
-    void init_resources();
-
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void update();
+    void connect_to_previous_images(std::vector<Image> images);
 
-    void setup_material_descriptor(Material* mat);
+    void setup_material_descriptor(Material *mat);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

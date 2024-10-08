@@ -2,13 +2,13 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Geometry::fill(std::vector<Vertex> vertexInfo)
+void Geometry::fill(std::vector<utils::Vertex> vertexInfo)
 {
   m_vertexData = vertexInfo;
   m_loaded = true;
   m_indexed = false;
 }
-void Geometry::fill(std::vector<Vertex> vertexInfo, std::vector<uint16_t> vertexIndex)
+void Geometry::fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint16_t> vertexIndex)
 {
   if (vertexIndex.empty())
   {
@@ -34,7 +34,7 @@ void GeometryStats::compute_statistics(Geometry *g)
   maxCoords = {0.0f, 0.0f, 0.0f};
   minCoords = {INFINITY, INFINITY, INFINITY};
 
-  for (const Vertex &v : g->get_vertex_data())
+  for (const utils::Vertex &v : g->get_vertex_data())
   {
     if (v.pos.x > maxCoords.x)
       maxCoords.x = v.pos.x;

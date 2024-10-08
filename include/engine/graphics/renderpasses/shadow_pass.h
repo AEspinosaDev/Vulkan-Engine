@@ -38,11 +38,8 @@ public:
 
     void create_pipelines();
 
-    void init_resources();
-
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void update();
 };
 
 VULKAN_ENGINE_NAMESPACE_END

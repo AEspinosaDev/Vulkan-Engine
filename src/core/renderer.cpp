@@ -26,9 +26,7 @@ void Renderer::init()
 		pass->create_pipelines();
 		pass->init_resources();
 
-		set_renderpass_resources();
-
-		// pass->init_resources();
+		connect_renderpass(pass);
 	};
 
 	m_deletionQueue.push_function([=]()
@@ -129,8 +127,6 @@ void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 	{
 		throw VKException("failed to present swap chain image!");
 	}
-	// if (m_updateShadowQuality)
-	// 	update_shadow_quality();
 
 	m_currentFrame = (m_currentFrame + 1) % m_context.frames.size();
 }
@@ -168,6 +164,84 @@ void Renderer::render(Scene *const scene)
 	VkResult renderResult = m_context.present_image(m_currentFrame, imageIndex);
 
 	on_after_render(renderResult, scene);
+}
+
+
+void Renderer::setup_renderpasses()
+{
+
+	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+	const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
+
+	ForwardPass *forwardPass = new ForwardPass(
+		&m_context,
+		m_window->get_extent(),
+		totalImagesInFlight,
+		m_settings.colorFormat,
+		m_settings.depthFormat,
+		m_settings.AAtype);
+	forwardPass->set_image_dependace_table({{0, {0}}});
+
+	ShadowPass *shadowPass = new ShadowPass(
+		&m_context,
+		{SHADOW_RES, SHADOW_RES},
+		totalImagesInFlight,
+		VK_MAX_LIGHTS,
+		m_settings.depthFormat);
+
+	m_renderPipeline.push_renderpass(shadowPass);
+	m_renderPipeline.push_renderpass(forwardPass);
+}
+
+void Renderer::connect_renderpass(RenderPass *const currentPass)
+{
+	if (currentPass->get_image_dependace_table().empty())
+		return;
+
+	std::vector<Image> images;
+	for (auto pair : currentPass->get_image_dependace_table())
+	{
+		std::vector<Attachment> attachments = m_renderPipeline.renderpasses[pair.first]->get_attachments();
+		for (size_t i = 0; i < pair.second.size(); i++)
+		{
+			images.push_back(attachments[pair.second[i]].image);
+		}
+	}
+	currentPass->connect_to_previous_images(images);
+}
+
+void Renderer::update_renderpasses()
+{
+	// GLFW update framebuffer
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_window->get_handle(), &width, &height);
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_window->get_handle(), &width, &height);
+		glfwWaitEvents();
+	}
+
+	m_context.wait_for_device();
+
+	m_context.recreate_swapchain(
+		m_window->get_handle(),
+		m_window->get_extent(),
+		static_cast<uint32_t>(m_settings.bufferingType),
+		static_cast<VkFormat>(m_settings.colorFormat),
+		static_cast<VkPresentModeKHR>(m_settings.screenSync));
+
+	// Renderpass framebuffer updating
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
+	{
+		if (pass->resizeable())
+		{
+			pass->set_extent(m_window->get_extent());
+			pass->update();
+		}
+		connect_renderpass(pass);
+	};
+
+	m_updateFramebuffers = false;
 }
 
 void Renderer::init_gui()

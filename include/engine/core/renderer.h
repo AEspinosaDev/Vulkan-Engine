@@ -210,7 +210,7 @@ public:
 	 * Inits the renderer.
 	 */
 	void init();
-	
+
 	/**
 	 * Standalone pre-implemented render loop for the renderer.
 	 */
@@ -248,22 +248,25 @@ protected:
 	/*
 	Init renderpasses and create framebuffers and image resources attached to them
 	*/
-	virtual void setup_renderpasses(); //Should be zero
-	virtual void set_renderpass_resources();
+	virtual void setup_renderpasses(); // Should be zero
+	/*
+	Link images of previous passes to current pass
+	*/
+	void connect_renderpass(RenderPass *const currentPass);
+	/*
+	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing context
+	*/
+	void update_renderpasses();
 	/*
 	Resource like samplers, base textures and misc creation
 	*/
 	virtual void init_resources();
-	virtual void clean_Resources();
 	/*
-	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing context
+	Clean all resources used
 	*/
-	virtual void update_renderpasses();
-
-	// virtual void update_shadow_quality();
+	virtual void clean_Resources();
 
 #pragma endregion
-
 	/*
 		////////////////////////////////////////////////////////////////////////////////////
 
@@ -275,27 +278,27 @@ protected:
 	/*
 	Object descriptor layouts uniforms buffer upload to GPU
 	*/
-	virtual void upload_object_data(Scene *const scene);
+	void upload_object_data(Scene *const scene);
 	/*
 	Global descriptor layouts uniforms buffer upload to GPU
 	*/
-	virtual void upload_global_data(Scene *const scene);
+	void upload_global_data(Scene *const scene);
 
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
-	virtual void setup_material(Material *const mat);
+	void setup_material(Material *const mat);
 
 	/*
 	Upload geometry vertex buffers to the GPU
 	*/
-	virtual void upload_geometry_data(Geometry *const g);
+	void upload_geometry_data(Geometry *const g);
 
 #pragma region GUI
 	/*
 	Initialize gui layout in case ther's one enabled
 	*/
-	virtual void init_gui();
+	void init_gui();
 
 #pragma endregion
 };

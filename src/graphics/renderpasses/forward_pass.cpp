@@ -158,6 +158,10 @@ void ForwardPass::create_descriptors()
                                                  utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
                                                  &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
+        m_descriptorManager.set_descriptor_write(Texture::DEBUG_TEXTURE->get_image().sampler,
+                                                 Texture::DEBUG_TEXTURE->get_image().view,
+                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+
         // Per-object
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
@@ -250,21 +254,10 @@ void ForwardPass::create_pipelines()
         ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *pass);
     }
 }
-void ForwardPass::init_resources()
-{
-    m_attachments[0].image.create_sampler(
-        m_context->device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-}
+
 void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
+    
     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
@@ -335,49 +328,44 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
     end(cmd);
 }
 
-void ForwardPass::update()
+void ForwardPass::connect_to_previous_images(std::vector<Image> images)
 {
-    
-    RenderPass::update();
-    m_attachments[0].image.create_sampler(
-        m_context->device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+    for (size_t i = 0; i < m_context->frames.size(); i++)
+    {
+        m_descriptorManager.set_descriptor_write(images[0].sampler,
+                                                 images[0].view,
+                                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+    }
 }
 
 void ForwardPass::setup_material_descriptor(Material *mat)
 {
-    // if (!mat->m_textureDescriptor.allocated)
-    //     m_descriptorMng.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, &mat->m_textureDescriptor);
+    if (!mat->get_texture_descriptor().allocated)
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
 
-    // auto textures = mat->get_textures();
-    // for (auto pair : textures)
-    // {
-    //     Texture *texture = pair.second;
-    //     if (texture && texture->data_loaded())
-    //     {
+    auto textures = mat->get_textures();
+    for (auto pair : textures)
+    {
+        Texture *texture = pair.second;
+        if (texture && texture->data_loaded())
+        {
 
-    //         // Set texture write
-    //         if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
-    //         {
-    //             m_descriptorMng.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
-    //             mat->set_texture_binding_state(pair.first, true);
-    //             texture->m_isDirty = false;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         // SET DUMMY TEXTURE
-    //         if (!mat->get_texture_binding_state()[pair.first])
-    //             m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
-    //         mat->set_texture_binding_state(pair.first, true);
-    //     }
-    // }
+            // Set texture write
+            if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
+            {
+                // DEBUG_LOG("PACO");
+                m_descriptorManager.set_descriptor_write(texture->get_image().sampler, texture->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
+                mat->set_texture_binding_state(pair.first, true);
+                texture->set_dirty(false);
+            }
+        }
+        else
+        {
+            // SET DUMMY TEXTURE
+            if (!mat->get_texture_binding_state()[pair.first])
+                m_descriptorManager.set_descriptor_write(Texture::DEBUG_TEXTURE->get_image().sampler, Texture::DEBUG_TEXTURE->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
+            mat->set_texture_binding_state(pair.first, true);
+        }
+    }
 }
 VULKAN_ENGINE_NAMESPACE_END

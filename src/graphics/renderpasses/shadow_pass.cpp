@@ -136,20 +136,7 @@ void ShadowPass::create_pipelines()
 
     m_shaderPasses["shadow"] = depthPass;
 }
-void ShadowPass::init_resources()
-{
-    // Create sampler for shadow image
-    m_attachments[0].image.create_sampler(
-        m_context->device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-}
+
 void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
@@ -209,19 +196,5 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
     end(cmd);
 }
 
-void ShadowPass::update()
-{
-    RenderPass::update();
-    m_attachments[0].image.create_sampler(
-        m_context->device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-}
 
 VULKAN_ENGINE_NAMESPACE_END

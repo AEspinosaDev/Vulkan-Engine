@@ -106,7 +106,7 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.position = Vec4(camera->get_position(), 0.0f);
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
-	m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
+	m_context.frames[m_currentFrame].uniformBuffers[0].upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
 	// static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
 	// static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
 
@@ -144,8 +144,6 @@ void Renderer::upload_global_data(Scene *const scene)
 
 void Renderer::setup_material(Material *const mat)
 {
-	
-
 	auto textures = mat->get_textures();
 	for (auto pair : textures)
 	{
@@ -163,22 +161,11 @@ void Renderer::setup_material(Material *const mat)
 											  { texture->m_image.cleanup(m_context.device, m_context.memory); });
 			}
 
-			// // Set texture write
-			// if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
-			// {
-			// 	m_descriptorMng.set_descriptor_write(texture->m_image.sampler, texture->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
-			// 	mat->set_texture_binding_state(pair.first, true);
-			// 	texture->m_isDirty = false;
-			// }
 		}
-		// else
-		// {
-		// 	// SET DUMMY TEXTURE
-		// 	if (!mat->get_texture_binding_state()[pair.first])
-		// 		m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler, Texture::DEBUG_TEXTURE->m_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->m_textureDescriptor, pair.first);
-		// 	mat->set_texture_binding_state(pair.first, true);
-		// }
+		
 	}
+
+	static_cast<ForwardPass*>(m_renderPipeline.renderpasses[1])->setup_material_descriptor(mat);
 
 	mat->m_isDirty = false;
 }
@@ -219,10 +206,6 @@ void Renderer::init_resources()
 		m_context.frames[i].uniformBuffers.push_back(objectBuffer);
 	}
 
-	// Setup vignette vertex buffers
-	m_vignette = Mesh::create_quad();
-	upload_geometry_data(m_vignette->get_geometry());
-
 	// Setup dummy texture in case materials dont have textures
 	Texture::DEBUG_TEXTURE = new Texture();
 	Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
@@ -232,6 +215,10 @@ void Renderer::init_resources()
 								   (VkFilter)Texture::DEBUG_TEXTURE->m_settings.filter, (VkSamplerAddressMode)Texture::DEBUG_TEXTURE->m_settings.adressMode,
 								   Texture::DEBUG_TEXTURE->m_settings.anisotropicFilter, false);
 	Texture::DEBUG_TEXTURE->m_buffer_loaded = true;
+
+	// Setup vignette vertex buffers
+	m_vignette = Mesh::create_quad();
+	upload_geometry_data(m_vignette->get_geometry());
 }
 
 void Renderer::clean_Resources()
@@ -244,26 +231,11 @@ void Renderer::clean_Resources()
 		}
 	}
 
+	Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
+
 	m_vignette->get_geometry()->get_render_data().vbo.cleanup(m_context.memory);
 	m_vignette->get_geometry()->get_render_data().ibo.cleanup(m_context.memory);
-
-	Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
 }
 
-void Renderer::set_renderpass_resources()
-{
-	
-	
 
-	// Set global textures descriptor writes
-	for (size_t i = 0; i < m_context.frames.size(); i++)
-	{
-		// m_descriptorMng.set_descriptor_write(m_renderPipeline.renderpasses[0]->get_attachments().front().image.sampler,
-		// 									 m_renderPipeline.renderpasses[0]->get_attachments().front().image.view,
-		// 									 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_context.frames[i].globalDescriptor, 2);
-		// m_descriptorMng.set_descriptor_write(Texture::DEBUG_TEXTURE->m_image.sampler,
-		// 									 Texture::DEBUG_TEXTURE->m_image.view,
-		// 									 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_context.frames[i].globalDescriptor, 3);
-	}
-}
 VULKAN_ENGINE_NAMESPACE_END
