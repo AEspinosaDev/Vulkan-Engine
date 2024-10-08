@@ -39,6 +39,8 @@ struct Context
     VkQueue graphicsQueue{};
     VkQueue presentQueue{};
 
+    std::vector<Frame> frames;
+
     utils::UploadContext uploadContext{};
 
 #ifdef NDEBUG
@@ -53,13 +55,13 @@ struct Context
 
     void cleanup();
 
-    VkResult aquire_present_image(Frame &currentFrame, uint32_t &imageIndex);
+    VkResult aquire_present_image(const uint32_t &currentFrame, uint32_t &imageIndex);
 
-    void begin_command_buffer(Frame &currentFrame);
+    void begin_command_buffer(const uint32_t &currentFrame);
 
-    void end_command_buffer(Frame &currentFrame);
+    void end_command_buffer(const uint32_t &currentFrame);
 
-    VkResult present_image(Frame &currentFrame, uint32_t imageIndex);
+    VkResult present_image(const uint32_t &currentFrame, uint32_t imageIndex);
 
     void upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize, const void *iboData, bool indexed);
 

@@ -14,7 +14,16 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 class ShadowPass : public RenderPass
 {
+    /* Config  */
     DepthFormatType m_depthFormat;
+
+    /*Descriptors*/
+    struct FrameDescriptors
+    {
+        DescriptorSet globalDescritor;
+        DescriptorSet objectDescritor;
+    };
+    std::vector<FrameDescriptors> m_descriptors;
 
 public:
     ShadowPass(Context *ctx, VkExtent2D extent,
@@ -24,13 +33,13 @@ public:
                                               m_depthFormat(depthFormat) {}
 
     void init();
-    void create_pipelines(DescriptorManager &descriptorManager);
 
-    void init_resources();
+    void create_descriptors();
 
-    void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+    void create_pipelines();
 
-    void update();
+    void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+
 };
 
 VULKAN_ENGINE_NAMESPACE_END

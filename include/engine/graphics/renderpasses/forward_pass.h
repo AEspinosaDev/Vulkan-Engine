@@ -14,9 +14,18 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 class ForwardPass : public RenderPass
 {
+    /*Setup*/
     ColorFormatType m_colorFormat;
     DepthFormatType m_depthFormat;
     AntialiasingType m_aa;
+
+    /*Descriptors*/
+    struct FrameDescriptors
+    {
+        DescriptorSet globalDescritor;
+        DescriptorSet objectDescritor;
+    };
+    std::vector<FrameDescriptors> m_descriptors;
 
 public:
     ForwardPass(Context *ctx,
@@ -28,15 +37,18 @@ public:
                                             m_colorFormat(colorFormat),
                                             m_depthFormat(depthFormat),
                                             m_aa(samples) {}
+
     void init();
 
-    void create_pipelines(DescriptorManager &descriptorManager);
+    void create_descriptors();
 
-    void init_resources();
+    void create_pipelines();
 
-    void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+    void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void update();
+    void connect_to_previous_images(std::vector<Image> images);
+
+    void setup_material_descriptor(Material *mat);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

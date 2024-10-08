@@ -22,7 +22,7 @@ namespace loaders
 {
     void load_OBJ(Mesh *const mesh, const std::string fileName, bool importMaterials = false, bool calculateTangents = false, bool overrideGeometry = false);
     void load_PLY(Mesh *const mesh, const std::string fileName, bool preload = true, bool verbose = false, bool calculateTangents = false, bool overrideGeometry = false);
-    void compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices);
+    void compute_tangents_gram_smidt(std::vector<utils::Vertex> &vertices, const std::vector<uint16_t> &indices);
     /*
     Generic loader. It automatically parses the file and find the needed loader for the file extension. Can be called asynchronously
     */

@@ -16,29 +16,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download Vulkan SDK
-        run: |
-          curl -LO https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe
-          ./vulkan-sdk.exe /S /D=C:\VulkanSDK
-        shell: cmd
-
-      - name: Set Vulkan SDK environment variables
-        run: |
-          echo "VULKAN_SDK=C:\VulkanSDK" >> $GITHUB_ENV
-          echo "VK_SDK_PATH=C:\VulkanSDK" >> $GITHUB_ENV
-          echo "C:\VulkanSDK\Bin" >> $GITHUB_PATH
-        shell: bash
-
-      - name: Verify Vulkan SDK installation
-        run: |
-          echo $VULKAN_SDK
-          dir $VULKAN_SDK\Bin
-        shell: bash
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.275.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
 
       - name: Set up CMake 3.16
         uses: jwlawson/actions-setup-cmake@v1
-        with:
-          version: 3.16.0
+      
+      
 
       - name: Configure CMake
         run: cmake -S . -B build

@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void RenderPass::begin(VkCommandBuffer &cmd, uint32_t framebufferId, VkSubpassContents subpassContents)
 {
-    VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_handle, m_extent, m_framebuffers[framebufferId]);
+    VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_handle, m_extent, m_framebuffer_handles[framebufferId]);
 
     std::vector<VkClearValue> clearValues;
     clearValues.reserve(m_attachments.size());
@@ -45,6 +45,7 @@ void RenderPass::cleanup()
         ShaderPass *pass = pair.second;
         pass->cleanup(m_context->device);
     }
+    m_descriptorManager.cleanup();
 }
 
 void RenderPass::create_framebuffer()
@@ -52,7 +53,7 @@ void RenderPass::create_framebuffer()
     if (!m_initiatized)
         return;
     // Prepare data structures
-    m_framebuffers.resize(m_framebufferCount);
+    m_framebuffer_handles.resize(m_framebufferCount);
 
     uint32_t attachmentCount = m_attachments.size();
     std::vector<VkImageView> viewAttachments;
@@ -78,6 +79,18 @@ void RenderPass::create_framebuffer()
                                                m_attachments[i].viewAspect,
                                                m_attachments[i].viewType);
 
+    
+            m_attachments[i].image.create_sampler(
+                m_context->device,
+                m_attachments[i].filter,
+                VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                m_attachments[i].adressMode,
+                0.0f,
+                1.0f,
+                false,
+                1.0f,
+                VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+
             viewAttachments[i] = m_attachments[i].image.view;
         }
         else
@@ -96,32 +109,31 @@ void RenderPass::create_framebuffer()
         fbInfo.attachmentCount = (uint32_t)viewAttachments.size();
         fbInfo.layers = m_framebufferImageDepth;
 
-        if (vkCreateFramebuffer(m_context->device, &fbInfo, nullptr, &m_framebuffers[fb]) != VK_SUCCESS)
+        if (vkCreateFramebuffer(m_context->device, &fbInfo, nullptr, &m_framebuffer_handles[fb]) != VK_SUCCESS)
         {
             throw VKException("failed to create framebuffer!");
         }
     }
 }
 
-void RenderPass::clean_framebuffer(bool destroyImageSamplers)
+void RenderPass::clean_framebuffer()
 {
     if (!m_initiatized)
         return;
-    for (VkFramebuffer &fb : m_framebuffers)
+    for (VkFramebuffer &fb : m_framebuffer_handles)
         vkDestroyFramebuffer(m_context->device, fb, nullptr);
 
     for (size_t i = 0; i < m_attachments.size(); i++)
     {
-        m_attachments[i].image.cleanup(m_context->device, m_context->memory, destroyImageSamplers);
+        m_attachments[i].image.cleanup(m_context->device, m_context->memory);
     }
 }
 void RenderPass::update()
 {
-
     if (!m_initiatized)
         return;
 
-    clean_framebuffer(true);
+    clean_framebuffer();
     create_framebuffer();
 }
 

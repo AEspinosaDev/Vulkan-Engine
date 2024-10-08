@@ -35,7 +35,7 @@ int main()
 		settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
 		settings.renderingType = TFORWARD;
 
-		Renderer* renderer = new Renderer(window, settings);
+		Renderer* renderer = new ForwardRenderer(window, settings);
 
 		Camera* camera = new Camera();
 		camera->set_position(Vec3(0.0f, 0.15f, -1.0f));

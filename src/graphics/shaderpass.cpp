@@ -27,11 +27,11 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = init::vertex_input_state_create_info();
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = init::input_assembly_create_info(shaderPass.settings.topology);
 
-	auto bindingDescription = Vertex::getBindingDescription();
+	auto bindingDescription = utils::Vertex::getBindingDescription();
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 
-	auto attributeDescriptions = Vertex::getAttributeDescriptions(
+	auto attributeDescriptions = utils::Vertex::getAttributeDescriptions(
 		shaderPass.settings.attributes[VertexAttributeType::NORMAL],
 		shaderPass.settings.attributes[VertexAttributeType::TANGENT],
 		shaderPass.settings.attributes[VertexAttributeType::UV],

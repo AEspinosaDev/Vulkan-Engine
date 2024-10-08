@@ -57,6 +57,7 @@ public:
     inline bool data_loaded() const { return m_loaded; }
     inline bool is_buffer_loaded() const { return m_buffer_loaded; }
     inline bool is_dirty() const { return m_isDirty; }
+    inline void set_dirty(bool d) { m_isDirty = d; }
 
     inline TextureSettings get_settings() const { return m_settings; }
     inline void set_settings(TextureSettings settings) { m_settings = settings; }

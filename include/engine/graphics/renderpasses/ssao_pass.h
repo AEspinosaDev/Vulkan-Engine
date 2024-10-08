@@ -1,58 +1,58 @@
-/*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+// /*
+//     This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-    MIT License
+//     MIT License
 
-    Copyright (c) 2023 Antonio Espinosa Garcia
+//     Copyright (c) 2023 Antonio Espinosa Garcia
 
-*/
-#ifndef SSAO_PASS_H
-#define SSAO_PASS_H
-#include <random>
-#include <engine/graphics/renderpass.h>
+// */
+// #ifndef SSAO_PASS_H
+// #define SSAO_PASS_H
+// #include <random>
+// #include <engine/graphics/renderpass.h>
 
-VULKAN_ENGINE_NAMESPACE_BEGIN
+// VULKAN_ENGINE_NAMESPACE_BEGIN
 
-class SSAOPass : public RenderPass
-{
-    Mesh *m_vignette;
+// class SSAOPass : public RenderPass
+// {
+//     Mesh *m_vignette;
 
-    DescriptorManager m_descriptorManager{};
+//     DescriptorManager m_descriptorManager{};
 
-    DescriptorSet m_descriptorSet{};
-    Buffer m_kernelBuffer{};
-    Buffer m_auxBuffer{};
+//     DescriptorSet m_descriptorSet{};
+//     Buffer m_kernelBuffer{};
+//     Buffer m_auxBuffer{};
 
-    Texture *m_noiseTexture{nullptr};
+//     Texture *m_noiseTexture{nullptr};
 
-    Image m_positionBuffer;
-    Image m_normalsBuffer;
+//     Image m_positionBuffer;
+//     Image m_normalsBuffer;
 
-public:
-    SSAOPass(Context *ctx, VkExtent2D extent,
-             uint32_t framebufferCount,
-             Mesh *vignette) : RenderPass(ctx, extent, framebufferCount),
-                               m_vignette(vignette) {}
+// public:
+//     SSAOPass(Context *ctx, VkExtent2D extent,
+//              uint32_t framebufferCount,
+//              Mesh *vignette) : RenderPass(ctx, extent, framebufferCount),
+//                                m_vignette(vignette) {}
 
-    void init();
+//     void init();
 
-    void create_descriptors(uint32_t framesPerFlight);
+//     void create_descriptors();
 
-    void create_pipelines(DescriptorManager &descriptorManager);
+//     void create_pipelines(DescriptorManager &descriptorManager);
 
-    void init_resources();
+//     void init_resources();
 
-    void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+//     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void cleanup();
+//     void cleanup();
 
-    void set_g_buffer(Image position, Image normals);
+//     void set_g_buffer(Image position, Image normals);
 
-    void update_uniforms(CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size);
+//     void update_uniforms(CameraUniforms &cameraUniforms, Vec2 ssaoParams, size_t size);
 
-    void update();
-};
+//     void update();
+// };
 
-VULKAN_ENGINE_NAMESPACE_END
+// VULKAN_ENGINE_NAMESPACE_END
 
-#endif
+// #endif

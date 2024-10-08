@@ -28,3 +28,5 @@
 #include <engine/core/scene/mesh.h>
 #include <engine/core/scene/scene.h>
 
+#include <engine/core/renderers/forward.h>
+

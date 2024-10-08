@@ -67,7 +67,47 @@ void ShadowPass::init()
 
     m_initiatized = true;
 }
-void ShadowPass::create_pipelines(DescriptorManager &descriptorManager)
+void ShadowPass::create_descriptors()
+{
+
+    m_descriptorManager.init(m_context->device);
+    m_descriptorManager.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+    m_descriptors.resize(m_context->frames.size());
+
+    // GLOBAL SET
+    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
+    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);   // SSAO
+    VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, ssaoBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
+
+    // PER-OBJECT SET
+    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
+
+    for (size_t i = 0; i < m_context->frames.size(); i++)
+    {
+        // Global
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0,
+                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(SceneUniforms),
+                                                 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
+                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+
+        // Per-object
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
+                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
+                                                 utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu),
+                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+    }
+}
+void ShadowPass::create_pipelines()
 {
 
     // DEPTH PASS
@@ -92,27 +132,14 @@ void ShadowPass::create_pipelines(DescriptorManager &descriptorManager)
 
     ShaderPass::build_shader_stages(m_context->device, *depthPass);
 
-    ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *depthPass);
+    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *depthPass);
 
     m_shaderPasses["shadow"] = depthPass;
 }
-void ShadowPass::init_resources()
+
+void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
-    // Create sampler for shadow image
-    m_attachments[0].image.create_sampler(
-        m_context->device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-}
-void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
-{
-    VkCommandBuffer cmd = frame.commandBuffer;
+    VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
 
@@ -143,22 +170,23 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
         {
             if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
             {
-                uint32_t objectOffset = frame.objectUniformBuffer.strideSize * mesh_idx;
+                uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].strideSize * mesh_idx;
                 uint32_t globalOffset = 0; // DEPENDENCY !!!!
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
                     // GLOBAL LAYOUT BINDING
                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &frame.globalDescriptor.descriptorSet, 2, globalOffsets);
+                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
+                                            &m_descriptors[frameIndex].globalDescritor.descriptorSet, 2, globalOffsets);
 
                     // PER OBJECT LAYOUT BINDING
                     uint32_t objectOffsets[] = {objectOffset, objectOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
-                                            &frame.objectDescriptor.descriptorSet, 2, objectOffsets);
+                                            &m_descriptors[frameIndex].objectDescritor.descriptorSet, 2, objectOffsets);
 
                     Geometry *g = m->get_geometry(i);
-                   draw(cmd, g);
+                    draw(cmd, g);
                 }
             }
             mesh_idx++;
@@ -168,19 +196,5 @@ void ShadowPass::render(Frame &frame, uint32_t frameIndex, Scene *const scene, u
     end(cmd);
 }
 
-void ShadowPass::update()
-{
-    RenderPass::update();
-    m_attachments[0].image.create_sampler(
-        m_context->device,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-        0.0f,
-        1.0f,
-        false,
-        1.0f,
-        VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-}
 
 VULKAN_ENGINE_NAMESPACE_END

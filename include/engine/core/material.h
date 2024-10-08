@@ -38,14 +38,7 @@ protected:
     bool m_isDirty{true};
 
     friend class Renderer;
-    friend class RenderPass;
 
-    virtual MaterialUniforms get_uniforms() const = 0;
-
-    virtual std::unordered_map<int, Texture *> get_textures() const = 0;
-
-    virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
-    virtual void set_texture_binding_state(int id, bool state) = 0;
 
 public:
     static Material *DEBUG_MATERIAL;
@@ -67,6 +60,13 @@ public:
     virtual inline void enable_blending(bool op) { m_settings.blending = op; }
 
     virtual inline DescriptorSet& get_texture_descriptor()  { return m_textureDescriptor; }
+    
+    virtual MaterialUniforms get_uniforms() const = 0;
+
+    virtual std::unordered_map<int, Texture *> get_textures() const = 0;
+
+    virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
+    virtual void set_texture_binding_state(int id, bool state) = 0;
 };
 
 VULKAN_ENGINE_NAMESPACE_END

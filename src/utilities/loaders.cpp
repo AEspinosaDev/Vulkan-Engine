@@ -25,9 +25,9 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
         return;
     }
 
-    std::vector<Vertex> vertices;
+    std::vector<utils::Vertex> vertices;
     std::vector<uint16_t> indices;
-    std::unordered_map<Vertex, uint32_t> uniqueVertices;
+    std::unordered_map<utils::Vertex, uint32_t> uniqueVertices;
 
     size_t shape_id = 0;
     for (const tinyobj::shape_t &shape : shapes)
@@ -37,7 +37,7 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
             // IS INDEXED
             for (const tinyobj::index_t &index : shape.mesh.indices)
             {
-                Vertex vertex = {};
+                utils::Vertex vertex = {};
 
                 // Position and color
                 if (index.vertex_index >= 0)
@@ -84,7 +84,7 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
             {
                 for (size_t j = 0; j < shape.mesh.num_face_vertices[i]; j++)
                 {
-                    Vertex vertex{};
+                    utils::Vertex vertex{};
                     size_t vertex_index = shape.mesh.indices[i * shape.mesh.num_face_vertices[i] + j].vertex_index;
                     // Pos
                     if (!attrib.vertices.empty())
@@ -146,7 +146,7 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
     mesh->setup_volume();
     return;
 }
-void VkFW::loaders::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
+void VkFW::loaders::compute_tangents_gram_smidt(std::vector<utils::Vertex> &vertices, const std::vector<uint16_t> &indices)
 {
     if (!indices.empty())
         for (size_t i = 0; i < indices.size(); i += 3)
@@ -338,7 +338,7 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
                 std::cout << "\tRead " << (tripstrip->buffer.size_bytes() / tinyply::PropertyTable[tripstrip->t].stride) << " total indices (tristrip) " << std::endl;
         }
 
-        std::vector<Vertex> vertices;
+        std::vector<utils::Vertex> vertices;
         std::vector<uint16_t> indices;
 
         if (positions)
@@ -688,7 +688,7 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
     dirs = new float[header.point_count * 3];
     fillDirectionArray(dirs);
 
-    std::vector<Vertex> vertices;
+    std::vector<utils::Vertex> vertices;
     vertices.reserve(header.point_count * 3);
     std::vector<uint16_t> indices;
 

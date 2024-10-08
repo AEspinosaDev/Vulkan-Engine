@@ -31,10 +31,15 @@ struct Attachment
 {
     Image image{};
 
+    // View
     VkImageUsageFlags viewUsage{};
     VkImageAspectFlags viewAspect{};
     VkImageViewType viewType{};
     VkSampleCountFlagBits samples{};
+
+    // Sampler
+    VkFilter filter{VK_FILTER_LINEAR};
+    VkSamplerAddressMode adressMode{VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER};
 
     VkClearValue clearValue{};
 
@@ -65,17 +70,24 @@ It can be inherited for full user control over the render pipeline.
 class RenderPass
 {
 protected:
+    Context *m_context{nullptr};
+
     VkRenderPass m_handle;
     VkExtent2D m_extent;
-    Context* m_context{nullptr};
+
+    uint32_t m_framebufferCount;      // How many framebuffers will be attached to this renderpass, usually is just one.
+    uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
+    std::vector<VkFramebuffer> m_framebuffer_handles;
 
     std::vector<Attachment> m_attachments;
 
-    std::vector<VkFramebuffer> m_framebuffers;
-    uint32_t m_framebufferCount;      // How many framebuffers will be attached to this renderpass, usually is just one.
-    uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
-
     std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
+
+    DescriptorManager m_descriptorManager{};
+
+    // Key: Renderpass ID
+    // Value: Framebuffer's image ID inside renderpass
+    std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
 
     bool m_initiatized{false};
     bool m_isResizeable{true};
@@ -97,26 +109,24 @@ protected:
     void draw(VkCommandBuffer &cmd, Geometry *g);
 
 public:
-    RenderPass(Context* ctx ,VkExtent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1, bool isDefault = false) : m_context(ctx), m_extent(extent),
-                                                                                                                          m_framebufferCount(framebufferCount),
-                                                                                                                          m_framebufferImageDepth(framebufferDepth),
-                                                                                                                          m_isDefault(isDefault) {}
+    RenderPass(Context *ctx, VkExtent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1, bool isDefault = false) : m_context(ctx), m_extent(extent),
+                                                                                                                                        m_framebufferCount(framebufferCount),
+                                                                                                                                        m_framebufferImageDepth(framebufferDepth),
+                                                                                                                                        m_isDefault(isDefault) {}
+
+#pragma region Getters & Setters
 
     virtual inline void set_active(const bool s) { m_enabled = s; }
     virtual inline bool is_active() { return m_enabled; }
 
     inline VkExtent2D get_extent() const { return m_extent; }
-    inline void set_extent(VkExtent2D extent)
-    {
-        m_extent = extent;
-    }
-    inline std::vector<VkFramebuffer> const get_framebuffers() const { return m_framebuffers; }
-
-    inline std::vector<Attachment> &get_attachments() { return m_attachments; }
-
-    inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) { m_attachments[attachmentLayout].clearValue = value; }
+    inline void set_extent(VkExtent2D extent) { m_extent = extent; }
 
     inline VkRenderPass get_handle() const { return m_handle; }
+    inline std::vector<VkFramebuffer> const get_framebuffers_handle() const { return m_framebuffer_handles; }
+
+    inline std::vector<Attachment> get_attachments() { return m_attachments; }
+    inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) { m_attachments[attachmentLayout].clearValue = value; }
 
     inline bool resizeable() const { return m_isResizeable; }
     inline void set_resizeable(bool op) { m_isResizeable = op; }
@@ -129,26 +139,37 @@ public:
     inline std::unordered_map<std::string, ShaderPass *> const get_shaderpasses() const { return m_shaderPasses; }
 
     /*
+    Sets a table of connection with different passes. Key is the pass ID and value is the atachment number
+    */
+    inline void set_image_dependace_table(std::unordered_map<uint32_t, std::vector<uint32_t>> table) { m_imageDepedanceTable = table; }
+    inline std::unordered_map<uint32_t, std::vector<uint32_t>> get_image_dependace_table() const { return m_imageDepedanceTable; }
+
+#pragma endregion
+#pragma region Core Functions
+    /*
     Configures and creates the renderpass. Rendeerer will call this function when necessary
     */
     virtual void init() = 0;
     /*
     Use it in case renderpass needs local descriptor sets
     */
-    virtual void create_descriptors(uint32_t framesPerFlight) {}
+    virtual void create_descriptors() = 0;
     /*
     Configures and creates the shaderpasses subscribed to the renderpass
     */
-    virtual void create_pipelines( DescriptorManager &descriptorManager) = 0;
+    virtual void create_pipelines() = 0;
+    /*
+    Render
+    */
+    virtual void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0) = 0;
     /*
     Filling of uniform data and attachment samplers setup
     */
     virtual void init_resources() {}
     /*
-    Render
+    Update descriptors pointing to past passes image buffers
     */
-    virtual void render(Frame &frame, uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0) = 0;
-
+    virtual void connect_to_previous_images(std::vector<Image> images) {}
     /**
      * Create framebuffers and images attached to them necessary for the renderpass to work. It also sets the extent of the renderpass.
      */
@@ -156,17 +177,17 @@ public:
     /**
      * Destroy framebuffers and images attached to them necessary for the renderpass to work. If images have a sampler attached to them, contol the destruction of it too.
      */
-    virtual void clean_framebuffer( bool destroyImageSamplers = true);
+    virtual void clean_framebuffer();
     /**
      * Recreates the renderpass with new parameters. Useful for example, when resizing the screen. It automatically manages framebuffer cleanup and regeneration
      *
      */
     virtual void update();
-
     /**
      * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a sepparate function for felxibilty matters
      */
     virtual void cleanup();
+#pragma endregion
 };
 
 VULKAN_ENGINE_NAMESPACE_END
