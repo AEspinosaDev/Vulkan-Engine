@@ -6,7 +6,7 @@ void RendererSettingsWidget::render()
 	ImGui::SeparatorText("Global settings");
 
 	const char *renderTypes[] = {"FORWARD", "DEFERRED"};
-	static int type_current = static_cast<int>(m_renderer->get_settings().renderingType);
+	// static int type_current = static_cast<int>(m_renderer->get_settings().renderingType);
 	// if (ImGui::Combo("Rendering Method", &type_current, renderTypes, IM_ARRAYSIZE(renderTypes)))
 	// {
 	// 	switch (type_current)
@@ -20,9 +20,9 @@ void RendererSettingsWidget::render()
 	// 	}
 	// }
 
-	if (type_current == 1)
-	{
-		const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO", "MATERIAL", "AO"};
+	// if (type_current == 1)
+	// {
+	// 	const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO", "MATERIAL", "AO"};
 		// static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
 		// if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
 		// {
@@ -48,44 +48,44 @@ void RendererSettingsWidget::render()
 		// 		break;
 		// 	}
 		// }
-	}
+	// }
 
-	const char *items[] = {"NONE", "MSAAx4", "MSAAx8", "FXAA"};
-	AntialiasingType item_currentr = m_renderer->get_settings().AAtype;
-	int item_current;
-	switch (item_currentr)
-	{
-	case AntialiasingType::_NONE:
-		item_current = 0;
-		break;
-	case AntialiasingType::MSAA_x4:
-		item_current = 1;
-		break;
-	case AntialiasingType::MSAA_x8:
-		item_current = 2;
-		break;
-	case AntialiasingType::FXAA:
-		item_current = 3;
-		break;
-	}
-	if (ImGui::Combo("Antialiasing", &item_current, items, IM_ARRAYSIZE(items)))
-	{
-		/*switch (item_current)
-		{
-		case 0:
-			m_renderer->set_antialiasing(FXAA);
-			break;
-		case 1:
-			m_renderer->set_antialiasing(_NONE);
-			break;
-		case 4:
-			m_renderer->set_antialiasing(MSAA_x4);
-			break;
-		case 8:
-			m_renderer->set_antialiasing(MSAA_x8);
-			break;
-		}*/
-	}
+	// const char *items[] = {"NONE", "MSAAx4", "MSAAx8", "FXAA"};
+	// MSAASamples item_currentr = m_renderer->get_settings().AAtype;
+	// int item_current;
+	// switch (item_currentr)
+	// {
+	// case MSAASamples::_NONE:
+	// 	item_current = 0;
+	// 	break;
+	// case MSAASamples::MSAA_x4:
+	// 	item_current = 1;
+	// 	break;
+	// case MSAASamples::MSAA_x8:
+	// 	item_current = 2;
+	// 	break;
+	// case MSAASamples::FXAA:
+	// 	item_current = 3;
+	// 	break;
+	// }
+	// if (ImGui::Combo("Antialiasing", &item_current, items, IM_ARRAYSIZE(items)))
+	// {
+	// 	/*switch (item_current)
+	// 	{
+	// 	case 0:
+	// 		m_renderer->set_antialiasing(FXAA);
+	// 		break;
+	// 	case 1:
+	// 		m_renderer->set_antialiasing(_NONE);
+	// 		break;
+	// 	case 4:
+	// 		m_renderer->set_antialiasing(MSAA_x4);
+	// 		break;
+	// 	case 8:
+	// 		m_renderer->set_antialiasing(MSAA_x8);
+	// 		break;
+	// 	}*/
+	// }
 
 	const char *syncs[] = {"NONE", "MAILBOX", "VSYNC"};
 	static int sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
@@ -131,26 +131,26 @@ void RendererSettingsWidget::render()
 
 	const char *res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
 
-	ShadowResolution res_currentr = m_renderer->get_settings().shadowResolution;
-	int res_current;
-	switch (res_currentr)
-	{
-	case ShadowResolution::VERY_LOW:
-		res_current = 0;
-		break;
-	case ShadowResolution::LOW:
-		res_current = 1;
-		break;
-	case ShadowResolution::MEDIUM:
-		res_current = 2;
-		break;
-	case ShadowResolution::HIGH:
-		res_current = 3;
-		break;
-	case ShadowResolution::ULTRA:
-		res_current = 4;
-		break;
-	}
+	// ShadowResolution res_currentr = m_renderer->get_settings().shadowResolution;
+	// int res_current;
+	// switch (res_currentr)
+	// {
+	// case ShadowResolution::VERY_LOW:
+	// 	res_current = 0;
+	// 	break;
+	// case ShadowResolution::LOW:
+	// 	res_current = 1;
+	// 	break;
+	// case ShadowResolution::MEDIUM:
+	// 	res_current = 2;
+	// 	break;
+	// case ShadowResolution::HIGH:
+	// 	res_current = 3;
+	// 	break;
+	// case ShadowResolution::ULTRA:
+	// 	res_current = 4;
+	// 	break;
+	// }
 
 	// if (ImGui::Combo("Shadows Quality", &res_current, res, IM_ARRAYSIZE(res)))
 	// {

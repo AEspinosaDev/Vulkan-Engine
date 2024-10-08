@@ -6,9 +6,6 @@ void ForwardPass::init()
 {
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
     bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
-    bool fxaa = m_aa == AntialiasingType::FXAA;
-    if (fxaa)
-        samples = VK_SAMPLE_COUNT_1_BIT;
 
     std::vector<VkAttachmentDescription> attachmentsInfo;
 
@@ -21,18 +18,18 @@ void ForwardPass::init()
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = !fxaa ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    colorAttachment.finalLayout = m_isDefault ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     attachmentsInfo.push_back(colorAttachment);
 
     Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
-                                fxaa ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                !m_isDefault ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                 VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, samples);
-    _colorAttachment.isPresentImage = !fxaa ? (multisampled ? false : true) : false;
+    _colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
     m_attachments.push_back(_colorAttachment);
 
     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    // // Resolve attachment
+    // Resolve attachment
     if (multisampled)
     {
         VkAttachmentDescription resolveAttachment{};
@@ -181,7 +178,7 @@ void ForwardPass::create_pipelines()
         VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
         VK_DYNAMIC_STATE_CULL_MODE};
 
-    VkSampleCountFlagBits samples = m_aa == AntialiasingType::FXAA ? VK_SAMPLE_COUNT_1_BIT : static_cast<VkSampleCountFlagBits>(m_aa);
+    VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
     // Setup shaderpasses
     m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/unlit.glsl");
@@ -257,7 +254,7 @@ void ForwardPass::create_pipelines()
 
 void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
-    
+
     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);

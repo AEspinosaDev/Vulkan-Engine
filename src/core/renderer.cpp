@@ -221,7 +221,7 @@ void Renderer::init_gui()
 					m_context.graphicsQueue,
 					m_renderPipeline.renderpasses[1]->get_handle(),
 					m_context.swapchain.get_image_format(),
-					(VkSampleCountFlagBits)m_settings.AAtype,
+					(VkSampleCountFlagBits)m_settings.samplesMSAA,
 					m_window->get_handle());
 		m_deletionQueue.push_function([=]()
 									  { m_gui->cleanup(m_context.device); });

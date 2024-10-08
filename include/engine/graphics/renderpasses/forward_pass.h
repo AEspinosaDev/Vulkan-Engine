@@ -17,7 +17,7 @@ class ForwardPass : public RenderPass
     /*Setup*/
     ColorFormatType m_colorFormat;
     DepthFormatType m_depthFormat;
-    AntialiasingType m_aa;
+    MSAASamples m_aa;
 
     /*Descriptors*/
     struct FrameDescriptors
@@ -28,15 +28,14 @@ class ForwardPass : public RenderPass
     std::vector<FrameDescriptors> m_descriptors;
 
 public:
-    ForwardPass(Context *ctx,
-                VkExtent2D extent,
-                uint32_t framebufferCount,
-                ColorFormatType colorFormat,
-                DepthFormatType depthFormat,
-                AntialiasingType samples) : RenderPass(ctx, extent, framebufferCount, 1, samples == AntialiasingType::FXAA ? false : true),
-                                            m_colorFormat(colorFormat),
-                                            m_depthFormat(depthFormat),
-                                            m_aa(samples) {}
+    ForwardPass(
+        Context *ctx,
+        VkExtent2D extent,
+        uint32_t framebufferCount,
+        ColorFormatType colorFormat,
+        DepthFormatType depthFormat,
+        MSAASamples samples,
+        bool isDefault = true) : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat), m_depthFormat(depthFormat), m_aa(samples) {}
 
     void init();
 

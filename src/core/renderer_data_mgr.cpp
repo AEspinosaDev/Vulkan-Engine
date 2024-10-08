@@ -18,6 +18,53 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+void Renderer::upload_global_data(Scene *const scene)
+{
+	Camera *camera = scene->get_active_camera();
+	if (camera->is_dirty())
+		camera->set_projection(m_window->get_extent().width, m_window->get_extent().height);
+	CameraUniforms camData;
+	camData.view = camera->get_view();
+	camData.proj = camera->get_projection();
+	camData.viewProj = camera->get_projection() * camera->get_view();
+	camData.position = Vec4(camera->get_position(), 0.0f);
+	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
+
+	m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
+	// static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
+	// static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
+
+	SceneUniforms sceneParams;
+	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
+	sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), scene->is_ssao_enabled());
+	sceneParams.SSAOtype = 0;
+	sceneParams.emphasizeAO = false;
+	sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
+
+	std::vector<Light *> lights = scene->get_lights();
+	if (lights.size() > VK_MAX_LIGHTS)
+		std::sort(lights.begin(), lights.end(), [=](Light *a, Light *b)
+				  { return math::length(a->get_position() - camera->get_position()) < math::length(b->get_position() - camera->get_position()); });
+
+	size_t lightIdx{0};
+	for (Light *l : lights)
+	{
+		if (l->is_active())
+		{
+			sceneParams.lightUniforms[lightIdx] = l->get_uniforms(camera->get_view());
+			Mat4 depthProjectionMatrix = math::perspective(math::radians(l->m_shadow.fov), 1.0f, l->m_shadow.nearPlane, l->m_shadow.farPlane);
+			Mat4 depthViewMatrix = math::lookAt(l->m_transform.position, l->m_shadow.target, Vec3(0, 1, 0));
+			sceneParams.lightUniforms[lightIdx].viewProj = depthProjectionMatrix * depthViewMatrix;
+			lightIdx++;
+		}
+		if (lightIdx >= VK_MAX_LIGHTS)
+			break;
+	}
+	sceneParams.numLights = static_cast<int>(lights.size());
+
+	m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(m_context.memory, &sceneParams, sizeof(SceneUniforms),
+																			   utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu));
+}
 void Renderer::upload_object_data(Scene *const scene)
 {
 
@@ -61,7 +108,7 @@ void Renderer::upload_object_data(Scene *const scene)
 					m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
 				{
 					// Offset calculation
-					uint32_t objectOffset = m_context.frames[m_currentFrame].uniformBuffers[1].strideSize * mesh_idx;
+					uint32_t objectOffset = m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
 
 					// ObjectUniforms objectData;
 					ObjectUniforms objectData;
@@ -79,13 +126,13 @@ void Renderer::upload_object_data(Scene *const scene)
 						// Object material setup
 						Material *mat = m->get_material(g->get_material_ID());
 						if (mat)
-							setup_material(mat);
+							upload_material_textures(mat);
 						else
-							setup_material(Material::DEBUG_MATERIAL);
+							upload_material_textures(Material::DEBUG_MATERIAL);
 
 						// ObjectUniforms materialData;
 						MaterialUniforms materialData = mat->get_uniforms();
-						m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(m_context.memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu));
+						m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(m_context.memory, &materialData, sizeof(MaterialUniforms), objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu));
 					}
 				}
 			}
@@ -94,55 +141,7 @@ void Renderer::upload_object_data(Scene *const scene)
 	}
 }
 
-void Renderer::upload_global_data(Scene *const scene)
-{
-	Camera *camera = scene->get_active_camera();
-	if (camera->is_dirty())
-		camera->set_projection(m_window->get_extent().width, m_window->get_extent().height);
-	CameraUniforms camData;
-	camData.view = camera->get_view();
-	camData.proj = camera->get_projection();
-	camData.viewProj = camera->get_projection() * camera->get_view();
-	camData.position = Vec4(camera->get_position(), 0.0f);
-	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
-
-	m_context.frames[m_currentFrame].uniformBuffers[0].upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
-	// static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
-	// static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
-
-	SceneUniforms sceneParams;
-	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
-	sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), scene->is_ssao_enabled());
-	sceneParams.SSAOtype = static_cast<int>(m_settings.occlusionType);
-	sceneParams.emphasizeAO = false;
-	sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
-
-	std::vector<Light *> lights = scene->get_lights();
-	if (lights.size() > VK_MAX_LIGHTS)
-		std::sort(lights.begin(), lights.end(), [=](Light *a, Light *b)
-				  { return math::length(a->get_position() - camera->get_position()) < math::length(b->get_position() - camera->get_position()); });
-
-	size_t lightIdx{0};
-	for (Light *l : lights)
-	{
-		if (l->is_active())
-		{
-			sceneParams.lightUniforms[lightIdx] = l->get_uniforms(camera->get_view());
-			Mat4 depthProjectionMatrix = math::perspective(math::radians(l->m_shadow.fov), 1.0f, l->m_shadow.nearPlane, l->m_shadow.farPlane);
-			Mat4 depthViewMatrix = math::lookAt(l->m_transform.position, l->m_shadow.target, Vec3(0, 1, 0));
-			sceneParams.lightUniforms[lightIdx].viewProj = depthProjectionMatrix * depthViewMatrix;
-			lightIdx++;
-		}
-		if (lightIdx >= VK_MAX_LIGHTS)
-			break;
-	}
-	sceneParams.numLights = static_cast<int>(lights.size());
-
-	m_context.frames[m_currentFrame].uniformBuffers[0].upload_data(m_context.memory, &sceneParams, sizeof(SceneUniforms),
-																	 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu));
-}
-
-void Renderer::setup_material(Material *const mat)
+void Renderer::upload_material_textures(Material *const mat)
 {
 	auto textures = mat->get_textures();
 	for (auto pair : textures)
@@ -150,7 +149,6 @@ void Renderer::setup_material(Material *const mat)
 		Texture *texture = pair.second;
 		if (texture && texture->data_loaded())
 		{
-			// SET ACTUAL TEXTURE
 			if (!texture->is_buffer_loaded())
 			{
 				m_context.upload_texture_image(texture->m_image, static_cast<const void *>(texture->m_tmpCache), (VkFormat)texture->m_settings.format,
@@ -160,12 +158,10 @@ void Renderer::setup_material(Material *const mat)
 				m_deletionQueue.push_function([=]()
 											  { texture->m_image.cleanup(m_context.device, m_context.memory); });
 			}
-
 		}
-		
 	}
 
-	static_cast<ForwardPass*>(m_renderPipeline.renderpasses[1])->setup_material_descriptor(mat);
+	static_cast<ForwardPass *>(m_renderPipeline.renderpasses[1])->setup_material_descriptor(mat);
 
 	mat->m_isDirty = false;
 }
@@ -215,8 +211,6 @@ void Renderer::init_resources()
 								   (VkFilter)Texture::DEBUG_TEXTURE->m_settings.filter, (VkSamplerAddressMode)Texture::DEBUG_TEXTURE->m_settings.adressMode,
 								   Texture::DEBUG_TEXTURE->m_settings.anisotropicFilter, false);
 	Texture::DEBUG_TEXTURE->m_buffer_loaded = true;
-
-	
 }
 
 void Renderer::clean_Resources()
@@ -230,6 +224,5 @@ void Renderer::clean_Resources()
 	}
 	Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
 }
-
 
 VULKAN_ENGINE_NAMESPACE_END

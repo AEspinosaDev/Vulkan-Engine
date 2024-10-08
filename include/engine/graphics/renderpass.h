@@ -163,9 +163,13 @@ public:
     */
     virtual void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0) = 0;
     /*
-    Filling of uniform data and attachment samplers setup
+    Filling renderpass local uniforms
     */
     virtual void init_resources() {}
+    /*
+    Upload data related to renderpass local uniforms
+    */
+    virtual void upload_data(uint32_t frameIndex, Scene *const scene) {}
     /*
     Update descriptors pointing to past passes image buffers
     */

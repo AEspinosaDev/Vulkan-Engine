@@ -50,18 +50,11 @@ Renderer Global Settings Data
 */
 struct RendererSettings
 {
-	RendererType renderingType{TFORWARD};
-
-	AntialiasingType AAtype{MSAA_x4};
+	MSAASamples samplesMSAA{MSAA_x4};
 	BufferingType bufferingType{_DOUBLE};
 	SyncType screenSync{MAILBOX_SYNC};
 	ColorFormatType colorFormat{SBGRA_8};
 	DepthFormatType depthFormat{D32F};
-
-	ShadowResolution shadowResolution{LOW};
-	bool updateShadows{false};
-
-	AmbientOcclusionType occlusionType{SSAO};
 
 	Vec4 clearColor{Vec4{0.0, 0.0, 0.0, 1.0}};
 
@@ -70,13 +63,7 @@ struct RendererSettings
 	bool autoClearStencil{true};
 
 	bool enableUI{false};
-
-	bool enableRT{true}; // Ray tracing
-
-	bool enableHardwareDepthBias{false};
-	float hardwareDepthBias{0.0005f};
-
-	bool gammaCorrection{true};
+	
 };
 /*
 Structure that contains a list of renderpasses. These renderpasses will render in the order they where added.
@@ -107,11 +94,13 @@ protected:
 
 	utils::DeletionQueue m_deletionQueue;
 
+	GUIOverlay *m_gui{nullptr};
+
+	//Query
 	uint32_t m_currentFrame{0};
 	bool m_initialized{false};
 	bool m_updateFramebuffers{false};
 
-	GUIOverlay *m_gui{nullptr};
 
 #pragma endregion
 public:
@@ -126,7 +115,7 @@ public:
 	inline void set_settings(RendererSettings settings) { m_settings = settings; }
 
 	inline void set_clearcolor(Vec4 c) { m_settings.clearColor = c; }
-	inline void set_antialiasing(AntialiasingType msaa) { m_settings.AAtype = msaa; }
+	inline void set_antialiasing(MSAASamples msaa) { m_settings.samplesMSAA = msaa; }
 	inline void set_color_format(ColorFormatType color) { m_settings.colorFormat = color; }
 	inline void set_depth_format(DepthFormatType d) { m_settings.depthFormat = d; }
 	inline void set_gui_overlay(GUIOverlay *gui) { m_gui = gui; }
@@ -227,7 +216,7 @@ protected:
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
-	virtual void setup_material(Material *const mat);
+	virtual void upload_material_textures(Material *const mat);
 	/*
 	Upload geometry vertex buffers to the GPU
 	*/

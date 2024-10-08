@@ -31,11 +31,10 @@ int main()
 		window->init();
 
 		RendererSettings settings{};
-		settings.AAtype = AntialiasingType::MSAA_x4;
+		settings.samplesMSAA = MSAASamples::MSAA_x4;
 		settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
-		settings.renderingType = TFORWARD;
 
-		Renderer* renderer = new ForwardRenderer(window, settings);
+		Renderer* renderer = new ForwardRenderer(window, settings, {});
 
 		Camera* camera = new Camera();
 		camera->set_position(Vec3(0.0f, 0.15f, -1.0f));

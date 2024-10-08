@@ -6,7 +6,7 @@ void ForwardRenderer::on_before_render(Scene *const scene)
 {
     Renderer::on_before_render(scene);
 
-    m_renderPipeline.renderpasses[1]->set_attachment_clear_value(
+    m_renderPipeline.renderpasses[FORWARD]->set_attachment_clear_value(
         {m_settings.clearColor.r,
          m_settings.clearColor.g,
          m_settings.clearColor.b,
@@ -17,12 +17,12 @@ void ForwardRenderer::on_after_render(VkResult &renderResult, Scene *const scene
 {
     Renderer::on_after_render(renderResult, scene);
 
-    if (m_settings.updateShadows)
-		update_shadow_quality();
+    if (m_updateShadows)
+        update_shadow_quality();
 }
 void ForwardRenderer::setup_renderpasses()
 {
-    const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+    const uint32_t SHADOW_RES = (uint32_t)m_settings2.shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
     ForwardPass *forwardPass = new ForwardPass(
@@ -31,8 +31,9 @@ void ForwardRenderer::setup_renderpasses()
         totalImagesInFlight,
         m_settings.colorFormat,
         m_settings.depthFormat,
-        m_settings.AAtype);
-    forwardPass->set_image_dependace_table({{0, {0}}});
+        m_settings.samplesMSAA, 
+        m_settings2.fxaa ? false : true);
+    forwardPass->set_image_dependace_table({{SHADOW, {0}}});
 
     ShadowPass *shadowPass = new ShadowPass(
         &m_context,
@@ -65,11 +66,11 @@ void ForwardRenderer::update_shadow_quality()
 {
     m_context.wait_for_device();
 
-    const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
+    const uint32_t SHADOW_RES = (uint32_t)m_settings2.shadowQuality;
     m_renderPipeline.renderpasses[SHADOW]->set_extent({SHADOW_RES, SHADOW_RES});
     m_renderPipeline.renderpasses[SHADOW]->update();
 
-    m_settings.updateShadows = false;
+    m_updateShadows = false;
 
     connect_renderpass(m_renderPipeline.renderpasses[FORWARD]);
 }

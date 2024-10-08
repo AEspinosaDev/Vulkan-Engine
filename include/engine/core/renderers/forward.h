@@ -5,27 +5,39 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+struct ForwardRendererSettings
+{
+
+    ShadowResolution shadowQuality{ShadowResolution::MEDIUM};
+    bool fxaa{false};
+};
+
 /*
 Renders a given scene data to a given window using forward rendering. Fully parametrizable.
 */
 class ForwardRenderer : public Renderer
 {
+    ForwardRendererSettings m_settings2{};
+
     Mesh *m_vignette;
 
-    enum RenderPasses{
+    enum RenderPasses
+    {
         SHADOW = 0,
         FORWARD = 1
     };
 
+    bool m_updateShadows{false};
+
 public:
     ForwardRenderer(Window *window) : Renderer(window) {}
-    ForwardRenderer(Window *window, RendererSettings settings) : Renderer(window, settings) {}
+    ForwardRenderer(Window *window, RendererSettings settings, ForwardRendererSettings settings2) : Renderer(window, settings), m_settings2(settings2) {}
 
     inline void set_shadow_quality(ShadowResolution quality)
     {
-        m_settings.shadowResolution = quality;
+        m_settings2.shadowQuality = quality;
         if (m_initialized)
-            m_settings.updateShadows = true;
+            m_updateShadows = true;
     }
 
 protected:

@@ -47,7 +47,7 @@ class VulkanRenderer
 
 public:
     void
-    init(RendererSettings settings);
+    init(RendererSettings settings, ForwardRendererSettings settings2);
 
     void run(int argc, char* argv[]);
 
