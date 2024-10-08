@@ -70,15 +70,16 @@ It can be inherited for full user control over the render pipeline.
 class RenderPass
 {
 protected:
+    Context *m_context{nullptr};
+
     VkRenderPass m_handle;
     VkExtent2D m_extent;
-    std::vector<VkFramebuffer> m_framebuffer_handles;
-
-    Context *m_context{nullptr};
-    std::vector<Attachment> m_attachments;
 
     uint32_t m_framebufferCount;      // How many framebuffers will be attached to this renderpass, usually is just one.
     uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
+    std::vector<VkFramebuffer> m_framebuffer_handles;
+
+    std::vector<Attachment> m_attachments;
 
     std::unordered_map<std::string, ShaderPass *> m_shaderPasses;
 

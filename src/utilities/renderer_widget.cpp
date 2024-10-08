@@ -7,47 +7,47 @@ void RendererSettingsWidget::render()
 
 	const char *renderTypes[] = {"FORWARD", "DEFERRED"};
 	static int type_current = static_cast<int>(m_renderer->get_settings().renderingType);
-	if (ImGui::Combo("Rendering Method", &type_current, renderTypes, IM_ARRAYSIZE(renderTypes)))
-	{
-		switch (type_current)
-		{
-		case 0:
-			m_renderer->set_rendering_method(RendererType::TFORWARD);
-			break;
-		case 1:
-			m_renderer->set_rendering_method(RendererType::TDEFERRED);
-			break;
-		}
-	}
+	// if (ImGui::Combo("Rendering Method", &type_current, renderTypes, IM_ARRAYSIZE(renderTypes)))
+	// {
+	// 	switch (type_current)
+	// 	{
+	// 	case 0:
+	// 		m_renderer->set_rendering_method(RendererType::TFORWARD);
+	// 		break;
+	// 	case 1:
+	// 		m_renderer->set_rendering_method(RendererType::TDEFERRED);
+	// 		break;
+	// 	}
+	// }
 
 	if (type_current == 1)
 	{
 		const char *outputTypes[] = {"LIGHTING", "POSITION", "NORMALS", "ALBEDO", "MATERIAL", "AO"};
-		static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
-		if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
-		{
-			switch (otype_current)
-			{
-			case 0:
-				m_renderer->set_deferred_output_type(0);
-				break;
-			case 1:
-				m_renderer->set_deferred_output_type(1);
-				break;
-			case 2:
-				m_renderer->set_deferred_output_type(2);
-				break;
-			case 3:
-				m_renderer->set_deferred_output_type(3);
-				break;
-			case 4:
-				m_renderer->set_deferred_output_type(4);
-				break;
-			case 5:
-				m_renderer->set_deferred_output_type(5);
-				break;
-			}
-		}
+		// static int otype_current = static_cast<int>(m_renderer->get_deferred_output_type());
+		// if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
+		// {
+		// 	switch (otype_current)
+		// 	{
+		// 	case 0:
+		// 		m_renderer->set_deferred_output_type(0);
+		// 		break;
+		// 	case 1:
+		// 		m_renderer->set_deferred_output_type(1);
+		// 		break;
+		// 	case 2:
+		// 		m_renderer->set_deferred_output_type(2);
+		// 		break;
+		// 	case 3:
+		// 		m_renderer->set_deferred_output_type(3);
+		// 		break;
+		// 	case 4:
+		// 		m_renderer->set_deferred_output_type(4);
+		// 		break;
+		// 	case 5:
+		// 		m_renderer->set_deferred_output_type(5);
+		// 		break;
+		// 	}
+		// }
 	}
 
 	const char *items[] = {"NONE", "MSAAx4", "MSAAx8", "FXAA"};
@@ -112,19 +112,19 @@ void RendererSettingsWidget::render()
 	}
 
 	const char *ssaoType[] = {"SSAO", "Unsharp SSAO"};
-	static int currentSSAO = static_cast<int>(m_renderer->get_ssao_type());
-	if (ImGui::Combo("SSAO Implementation", &currentSSAO, ssaoType, IM_ARRAYSIZE(ssaoType)))
-	{
-		switch (currentSSAO)
-		{
-		case 0:
-			m_renderer->set_ssao_type(AmbientOcclusionType::SSAO);
-			break;
-		case 1:
-			m_renderer->set_ssao_type(AmbientOcclusionType::USSAO);
-			break;
-		}
-	};
+	// static int currentSSAO = static_cast<int>(m_renderer->get_ssao_type());
+	// if (ImGui::Combo("SSAO Implementation", &currentSSAO, ssaoType, IM_ARRAYSIZE(ssaoType)))
+	// {
+	// 	switch (currentSSAO)
+	// 	{
+	// 	case 0:
+	// 		m_renderer->set_ssao_type(AmbientOcclusionType::SSAO);
+	// 		break;
+	// 	case 1:
+	// 		m_renderer->set_ssao_type(AmbientOcclusionType::USSAO);
+	// 		break;
+	// 	}
+	// };
 
 	ImGui::BulletText("Gamma Correction Enabled");
 	ImGui::BulletText("Device Dependable Anisotropic Filter Enabled");
@@ -152,26 +152,26 @@ void RendererSettingsWidget::render()
 		break;
 	}
 
-	if (ImGui::Combo("Shadows Quality", &res_current, res, IM_ARRAYSIZE(res)))
-	{
-		switch (res_current)
-		{
-		case 0:
-			m_renderer->set_shadow_quality(ShadowResolution::VERY_LOW);
-			break;
-		case 1:
-			m_renderer->set_shadow_quality(ShadowResolution::LOW);
-			break;
-		case 2:
-			m_renderer->set_shadow_quality(ShadowResolution::MEDIUM);
-			break;
-		case 3:
-			m_renderer->set_shadow_quality(ShadowResolution::HIGH);
-			break;
-		case 4:
-			m_renderer->set_shadow_quality(ShadowResolution::ULTRA);
-			break;
-		}
-	}
+	// if (ImGui::Combo("Shadows Quality", &res_current, res, IM_ARRAYSIZE(res)))
+	// {
+	// 	switch (res_current)
+	// 	{
+	// 	case 0:
+	// 		m_renderer->set_shadow_quality(ShadowResolution::VERY_LOW);
+	// 		break;
+	// 	case 1:
+	// 		m_renderer->set_shadow_quality(ShadowResolution::LOW);
+	// 		break;
+	// 	case 2:
+	// 		m_renderer->set_shadow_quality(ShadowResolution::MEDIUM);
+	// 		break;
+	// 	case 3:
+	// 		m_renderer->set_shadow_quality(ShadowResolution::HIGH);
+	// 		break;
+	// 	case 4:
+	// 		m_renderer->set_shadow_quality(ShadowResolution::ULTRA);
+	// 		break;
+	// 	}
+	// }
 }
 VULKAN_ENGINE_NAMESPACE_END

@@ -3,14 +3,13 @@
 
 #include <chrono>
 
-#include <engine/core/renderer.h>
-#include <engine/core/texture.h>
+#include <engine/core.h>
 
 #include <engine/utilities/controller.h>
 #include <engine/utilities/gui.h>
 #include <engine/utilities/renderer_widget.h>
 
-#include <engine/core/materials/physically_based.h>
+
 
 /**
  * Example app

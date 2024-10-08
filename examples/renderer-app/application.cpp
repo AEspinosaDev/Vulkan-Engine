@@ -15,7 +15,7 @@ void VulkanRenderer::init(RendererSettings settings)
                                          std::placeholders::_2, std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Renderer(m_window, settings);
+    m_renderer = settings.renderingType == TFORWARD ? new ForwardRenderer(m_window, settings) : nullptr;
 
     setup();
 
@@ -289,10 +289,6 @@ void VulkanRenderer::setup()
     // hair->set_scale(0.1f);
     // m_scene->add(hair);
 
-
-
-
-
     Mesh *lanternMesh = new Mesh();
     lanternMesh->load_file(MESH_PATH + "lantern.obj", true);
     auto lanternMat = new PhysicallyBasedMaterial();
@@ -336,7 +332,7 @@ void VulkanRenderer::setup()
     stoneMat->set_roughness(0.9f);
     m_scene->add(stoneMesh);
 
-    m_scene->set_ambient_color({0.2,0.25,0.61});
+    m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
     m_controller = new Controller(camera);
 }

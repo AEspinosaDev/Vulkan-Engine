@@ -10,7 +10,6 @@
 	Implementation of this class is fragmentated in three submodules:
 
 	* vk_renderer.cpp
-	* vk_renderer_vk_mgr.cpp
 	* vk_renderer_data_mgr.cpp
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +50,7 @@ Renderer Global Settings Data
 */
 struct RendererSettings
 {
-	RendererType renderingType{TDEFERRED};
+	RendererType renderingType{TFORWARD};
 
 	AntialiasingType AAtype{MSAA_x4};
 	BufferingType bufferingType{_DOUBLE};
@@ -60,6 +59,7 @@ struct RendererSettings
 	DepthFormatType depthFormat{D32F};
 
 	ShadowResolution shadowResolution{LOW};
+	bool updateShadows{false};
 
 	AmbientOcclusionType occlusionType{SSAO};
 
@@ -92,33 +92,31 @@ struct RenderPipeline
 };
 
 /**
- * Renders a given scene data to a given window. Fully parametrizable. Main class of the library. It can be inherited for achieving a higher end application.
+ * Virtual class. Renders a given scene data to a given window. Fully parametrizable. It has to be inherited for achieving a higher end application.
  */
 class Renderer
 {
 #pragma region Properties
 protected:
 	RendererSettings m_settings{};
+
 	Context m_context{};
 	Window *m_window;
+
 	RenderPipeline m_renderPipeline;
 
 	utils::DeletionQueue m_deletionQueue;
 
-	Mesh *m_vignette{nullptr};
-
 	uint32_t m_currentFrame{0};
 	bool m_initialized{false};
-	bool m_updateShadowQuality{false};
-	bool m_updateContext{false};
 	bool m_updateFramebuffers{false};
 
 	GUIOverlay *m_gui{nullptr};
 
 #pragma endregion
 public:
-	Renderer(Window *window) : m_window(window) { on_awake(); }
-	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { on_awake(); }
+	Renderer(Window *window) : m_window(window) { on_instance(); }
+	Renderer(Window *window, RendererSettings settings) : m_window(window), m_settings(settings) { on_instance(); }
 
 #pragma region Getters & Setters
 
@@ -127,36 +125,16 @@ public:
 	inline RendererSettings get_settings() { return m_settings; }
 	inline void set_settings(RendererSettings settings) { m_settings = settings; }
 
-	inline void set_clearcolor(Vec4 c)
-	{
-		m_settings.clearColor = c;
-	}
-	inline void set_antialiasing(AntialiasingType msaa)
-	{
-		m_settings.AAtype = msaa;
-		if (m_initialized)
-		{
-			m_updateContext = true;
-		}
-	}
-	inline void set_shadow_quality(ShadowResolution quality)
-	{
-		m_settings.shadowResolution = quality;
-		if (m_initialized)
-			m_updateShadowQuality = true;
-	}
-	inline void set_color_format(ColorFormatType color)
-	{
-		m_settings.colorFormat = color;
-		if (m_initialized)
-			m_updateContext = true;
-	}
-	inline void set_depth_format(DepthFormatType d)
-	{
-		m_settings.depthFormat = d;
-		if (m_initialized)
-			m_updateContext = true;
-	}
+	inline void set_clearcolor(Vec4 c) { m_settings.clearColor = c; }
+	inline void set_antialiasing(AntialiasingType msaa) { m_settings.AAtype = msaa; }
+	inline void set_color_format(ColorFormatType color) { m_settings.colorFormat = color; }
+	inline void set_depth_format(DepthFormatType d) { m_settings.depthFormat = d; }
+	inline void set_gui_overlay(GUIOverlay *gui) { m_gui = gui; }
+
+	inline GUIOverlay *get_gui_overlay() { return m_gui; }
+	inline RenderPipeline get_render_pipeline() const { return m_renderPipeline; }
+
+	inline void enable_gui_overlay(bool op) { m_settings.enableUI; }
 	inline void set_sync_type(SyncType sync)
 	{
 		m_settings.screenSync = sync;
@@ -164,47 +142,8 @@ public:
 			m_updateFramebuffers = true;
 	}
 
-	inline void enable_gui_overlay(bool op) { m_settings.enableUI; }
-
-	inline void set_gui_overlay(GUIOverlay *gui)
-	{
-		m_gui = gui;
-	}
-
-	inline GUIOverlay *get_gui_overlay()
-	{
-		return m_gui;
-	}
-	inline void set_hardware_depth_bias(bool op) { m_settings.enableHardwareDepthBias = op; };
-
-	inline RenderPipeline get_render_pipeline() const { return m_renderPipeline; }
-
-	inline void set_rendering_method(RendererType type)
-	{
-		m_settings.renderingType = type;
-		if (m_initialized)
-			m_updateContext = true;
-	}
-	inline void set_deferred_output_type(int op)
-	{
-		// if (m_initialized)
-		// 	static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->set_output_type(op);
-	}
-	inline int get_deferred_output_type() const
-	{
-		// return static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->get_output_type();
-		return 0;
-	}
-	inline AmbientOcclusionType get_ssao_type() const { return m_settings.occlusionType; }
-	inline void set_ssao_type(AmbientOcclusionType ao)
-	{
-		m_settings.occlusionType = ao;
-		if (m_initialized)
-			m_updateFramebuffers = true;
-	}
-
 #pragma endregion
-#pragma region Core Functions
+#pragma region Public Functions
 
 	/**
 	 * Inits the renderer.
@@ -224,11 +163,13 @@ public:
 	 */
 	void shutdown(Scene *const scene);
 
+#pragma endregion
+#pragma region Core Functions
 protected:
 	/*
 	What to do when instancing the renderer
 	*/
-	virtual void on_awake() {}
+	virtual void on_instance() {}
 	/*
 	What to do when initiating the renderer
 	*/
@@ -248,7 +189,7 @@ protected:
 	/*
 	Init renderpasses and create framebuffers and image resources attached to them
 	*/
-	virtual void setup_renderpasses(); // Should be zero
+	virtual void setup_renderpasses() = 0;
 	/*
 	Link images of previous passes to current pass
 	*/
@@ -257,15 +198,7 @@ protected:
 	Clean and recreates swapchain and framebuffers in the renderer. Useful to use when resizing context
 	*/
 	void update_renderpasses();
-	/*
-	Resource like samplers, base textures and misc creation
-	*/
-	virtual void init_resources();
-	/*
-	Clean all resources used
-	*/
-	virtual void clean_Resources();
-
+	
 #pragma endregion
 	/*
 		////////////////////////////////////////////////////////////////////////////////////
@@ -276,19 +209,25 @@ protected:
 	*/
 #pragma region Data Management
 	/*
+	Resource like samplers, base textures and misc creation
+	*/
+	virtual void init_resources();
+	/*
+	Clean all resources used
+	*/
+	virtual void clean_Resources();
+	/*
 	Object descriptor layouts uniforms buffer upload to GPU
 	*/
-	void upload_object_data(Scene *const scene);
+	virtual void upload_object_data(Scene *const scene);
 	/*
 	Global descriptor layouts uniforms buffer upload to GPU
 	*/
-	void upload_global_data(Scene *const scene);
-
+	virtual void upload_global_data(Scene *const scene);
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
-	void setup_material(Material *const mat);
-
+	virtual void setup_material(Material *const mat);
 	/*
 	Upload geometry vertex buffers to the GPU
 	*/

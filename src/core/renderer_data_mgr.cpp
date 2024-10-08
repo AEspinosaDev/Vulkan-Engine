@@ -216,9 +216,7 @@ void Renderer::init_resources()
 								   Texture::DEBUG_TEXTURE->m_settings.anisotropicFilter, false);
 	Texture::DEBUG_TEXTURE->m_buffer_loaded = true;
 
-	// Setup vignette vertex buffers
-	m_vignette = Mesh::create_quad();
-	upload_geometry_data(m_vignette->get_geometry());
+	
 }
 
 void Renderer::clean_Resources()
@@ -230,11 +228,7 @@ void Renderer::clean_Resources()
 			buffer.cleanup(m_context.memory);
 		}
 	}
-
 	Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
-
-	m_vignette->get_geometry()->get_render_data().vbo.cleanup(m_context.memory);
-	m_vignette->get_geometry()->get_render_data().ibo.cleanup(m_context.memory);
 }
 
 

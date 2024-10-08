@@ -15,7 +15,7 @@ void VulkanRenderer::init(RendererSettings settings)
                                          std::placeholders::_2, std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Renderer(m_window, settings);
+    m_renderer = new ForwardRenderer(m_window, settings);
 
     setup();
 

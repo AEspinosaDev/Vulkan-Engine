@@ -100,7 +100,6 @@ void Renderer::shutdown(Scene *const scene)
 
 void Renderer::on_before_render(Scene *const scene)
 {
-
 	if (Frame::guiEnabled && m_gui)
 		m_gui->render();
 
@@ -108,11 +107,6 @@ void Renderer::on_before_render(Scene *const scene)
 
 	upload_object_data(scene);
 
-	m_renderPipeline.renderpasses[1]->set_attachment_clear_value(
-		{m_settings.clearColor.r,
-		 m_settings.clearColor.g,
-		 m_settings.clearColor.b,
-		 m_settings.clearColor.a});
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -164,33 +158,6 @@ void Renderer::render(Scene *const scene)
 	VkResult renderResult = m_context.present_image(m_currentFrame, imageIndex);
 
 	on_after_render(renderResult, scene);
-}
-
-
-void Renderer::setup_renderpasses()
-{
-
-	const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowResolution;
-	const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
-
-	ForwardPass *forwardPass = new ForwardPass(
-		&m_context,
-		m_window->get_extent(),
-		totalImagesInFlight,
-		m_settings.colorFormat,
-		m_settings.depthFormat,
-		m_settings.AAtype);
-	forwardPass->set_image_dependace_table({{0, {0}}});
-
-	ShadowPass *shadowPass = new ShadowPass(
-		&m_context,
-		{SHADOW_RES, SHADOW_RES},
-		totalImagesInFlight,
-		VK_MAX_LIGHTS,
-		m_settings.depthFormat);
-
-	m_renderPipeline.push_renderpass(shadowPass);
-	m_renderPipeline.push_renderpass(forwardPass);
 }
 
 void Renderer::connect_renderpass(RenderPass *const currentPass)
