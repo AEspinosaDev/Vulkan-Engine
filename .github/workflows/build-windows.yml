@@ -27,6 +27,15 @@ jobs:
           version: 1.3.250.1
           cache: false
 
+         
+      - name: Download VMA (Vulkan Memory Allocator)
+        shell: bash
+        run: |
+            curl -L https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/heads/master.zip -o vma.zip
+            unzip vma.zip
+            cp VulkanMemoryAllocator-master/src/vk_mem_alloc.h $VULKAN_SDK/include/vma/
+
+
       - name: Set up CMake 3.16
         uses: jwlawson/actions-setup-cmake@v1
       
