@@ -9,15 +9,15 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <engine/core/scene/mesh.h>
 #include <engine/core/scene/camera.h>
 #include <engine/core/scene/light.h>
+#include <engine/core/scene/mesh.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 class Scene : public Object3D
 {
-private:
+  private:
     Camera *m_activeCamera;
 
     std::vector<Camera *> m_cameras;
@@ -57,8 +57,11 @@ private:
             classify_object(child);
     }
 
-public:
-    Scene(Camera *cam) : m_activeCamera(cam) { add_child(cam); };
+  public:
+    Scene(Camera *cam) : m_activeCamera(cam)
+    {
+        add_child(cam);
+    };
     ~Scene()
     {
         delete m_activeCamera;
@@ -76,38 +79,98 @@ public:
         isDirty = true;
     }
 
-    inline Camera *const get_active_camera() const { return m_activeCamera; }
-    inline const std::vector<Mesh *> get_meshes() const { return m_meshes; }
-    inline void set_meshes(std::vector<Mesh *> meshes) { m_meshes = meshes; }
-    inline const std::vector<Camera *> get_cameras() const { return m_cameras; }
-    inline const std::vector<Light *> get_lights() const { return m_lights; }
+    inline Camera *const get_active_camera() const
+    {
+        return m_activeCamera;
+    }
+    inline const std::vector<Mesh *> get_meshes() const
+    {
+        return m_meshes;
+    }
+    inline void set_meshes(std::vector<Mesh *> meshes)
+    {
+        m_meshes = meshes;
+    }
+    inline const std::vector<Camera *> get_cameras() const
+    {
+        return m_cameras;
+    }
+    inline const std::vector<Light *> get_lights() const
+    {
+        return m_lights;
+    }
 
-    inline void set_ambient_color(Vec3 c) { m_ambientColor = c; }
-    inline Vec3 get_ambient_color() const { return m_ambientColor; }
+    inline void set_ambient_color(Vec3 c)
+    {
+        m_ambientColor = c;
+    }
+    inline Vec3 get_ambient_color() const
+    {
+        return m_ambientColor;
+    }
 
-    inline void set_ambient_intensity(float i) { m_ambientIntensity = i; }
-    inline float get_ambient_intensity() const { return m_ambientIntensity; }
+    inline void set_ambient_intensity(float i)
+    {
+        m_ambientIntensity = i;
+    }
+    inline float get_ambient_intensity() const
+    {
+        return m_ambientIntensity;
+    }
 
-    inline void enable_fog(bool op) { m_fog = op; }
-    inline bool is_fog_enabled() const { return m_fog; }
+    inline void enable_fog(bool op)
+    {
+        m_fog = op;
+    }
+    inline bool is_fog_enabled() const
+    {
+        return m_fog;
+    }
 
-    inline void set_fog_color(Vec3 c) { m_fogColor = c; }
-    inline Vec3 get_fog_color() const { return m_fogColor; }
+    inline void set_fog_color(Vec3 c)
+    {
+        m_fogColor = c;
+    }
+    inline Vec3 get_fog_color() const
+    {
+        return m_fogColor;
+    }
 
-    inline void set_fog_intensity(float i) { m_fogIntensity = i; }
-    inline float get_fog_intensity() const { return m_fogIntensity; }
+    inline void set_fog_intensity(float i)
+    {
+        m_fogIntensity = i;
+    }
+    inline float get_fog_intensity() const
+    {
+        return m_fogIntensity;
+    }
 
-    inline void enable_ssao(bool op) { m_ssao = op; }
-    inline bool is_ssao_enabled() const { return m_ssao; }
+    inline void enable_ssao(bool op)
+    {
+        m_ssao = op;
+    }
+    inline bool is_ssao_enabled() const
+    {
+        return m_ssao;
+    }
 
-    inline void set_ssao_radius(float i) { m_occRadius = i; }
-    inline float get_ssao_radius() const { return m_occRadius; }
+    inline void set_ssao_radius(float i)
+    {
+        m_occRadius = i;
+    }
+    inline float get_ssao_radius() const
+    {
+        return m_occRadius;
+    }
 
-    inline void set_ssao_bias(float i) { m_occBias = i; }
-    inline float get_ssao_bias() { return m_occBias; }
-
-   
-
+    inline void set_ssao_bias(float i)
+    {
+        m_occBias = i;
+    }
+    inline float get_ssao_bias()
+    {
+        return m_occBias;
+    }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -146,7 +146,7 @@ Vec3 utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1,
 
 	// return glm::normalize(tangent);
 }
-void utils::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
+void utils::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
 	if (!indices.empty())
 		for (size_t i = 0; i < indices.size(); i += 3)

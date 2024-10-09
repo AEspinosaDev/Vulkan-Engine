@@ -42,7 +42,7 @@ bool Sphere::is_on_frustrum(const Frustum &frustum) const
 
     const Vec3 globalCenter{mesh->get_model_matrix() * Vec4(center, 1.f)};
 
-    const float maxScale = max(max(globalScale.x, globalScale.y), globalScale.z);
+    const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
     const float globalRadius = radius * maxScale;
 
     return (frustum.leftFace.get_signed_distance(globalCenter) >= -globalRadius &&

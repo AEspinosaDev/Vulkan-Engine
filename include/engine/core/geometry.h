@@ -11,14 +11,12 @@
 #define GEOMETRY_H
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
 #include <engine/common.h>
 #include <engine/graphics/buffer.h>
 #include <engine/graphics/utils.h>
+#include <glm/gtx/hash.hpp>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-
-
 
 class Geometry;
 
@@ -44,10 +42,10 @@ Class that defines the mesh geometry. Can be setup by filling it with a canonica
 class Geometry
 {
 
-private:
+  private:
     RenderData m_renderData{};
 
-    std::vector<uint16_t> m_vertexIndex;
+    std::vector<uint32_t> m_vertexIndex;
     std::vector<utils::Vertex> m_vertexData;
 
     size_t m_materialID{0};
@@ -55,42 +53,68 @@ private:
     bool m_loaded{false};
     bool m_indexed{false};
 
-public:
-    Geometry() {}
+  public:
+    Geometry()
+    {
+    }
 
-    inline size_t get_material_ID() const { return m_materialID; }
-    inline void set_material_ID(size_t id) { m_materialID = id; }
+    inline size_t get_material_ID() const
+    {
+        return m_materialID;
+    }
+    inline void set_material_ID(size_t id)
+    {
+        m_materialID = id;
+    }
 
-    inline bool data_loaded() const { return m_loaded; }
-    inline bool indexed() const { return m_indexed; }
+    inline bool data_loaded() const
+    {
+        return m_loaded;
+    }
+    inline bool indexed() const
+    {
+        return m_indexed;
+    }
 
-    inline std::vector<uint16_t> const get_vertex_index() const { return m_vertexIndex; }
-    inline std::vector<utils::Vertex> const get_vertex_data() const { return m_vertexData; }
-    inline RenderData get_render_data() const { return m_renderData; }
-    inline void set_render_data(RenderData rd) { m_renderData = rd; }
+    inline std::vector<uint32_t> const get_vertex_index() const
+    {
+        return m_vertexIndex;
+    }
+    inline std::vector<utils::Vertex> const get_vertex_data() const
+    {
+        return m_vertexData;
+    }
+    inline RenderData get_render_data() const
+    {
+        return m_renderData;
+    }
+    inline void set_render_data(RenderData rd)
+    {
+        m_renderData = rd;
+    }
 
-    ~Geometry() {}
+    ~Geometry()
+    {
+    }
 
     void fill(std::vector<utils::Vertex> vertexInfo);
-    void fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint16_t> vertexIndex);
+    void fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
-
 };
 
 VULKAN_ENGINE_NAMESPACE_END;
 
 namespace std
 {
-    template <>
-    struct hash<VkFW::utils::Vertex>
+template <> struct hash<VkFW::utils::Vertex>
+{
+    size_t operator()(VkFW::utils::Vertex const &vertex) const
     {
-        size_t operator()(VkFW::utils::Vertex const &vertex) const
-        {
-            size_t seed = 0;
-            VkFW::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
-            return seed;
-        }
-    };
+        size_t seed = 0;
+        VkFW::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
+        return seed;
+    }
 };
+}; // namespace std
 
 #endif // VK_GEOMETRY_H

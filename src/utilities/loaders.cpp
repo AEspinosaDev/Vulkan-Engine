@@ -26,7 +26,7 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
     }
 
     std::vector<utils::Vertex> vertices;
-    std::vector<uint16_t> indices;
+    std::vector<uint32_t> indices;
     std::unordered_map<utils::Vertex, uint32_t> uniqueVertices;
 
     size_t shape_id = 0;
@@ -311,7 +311,7 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
         }
 
         std::vector<utils::Vertex> vertices;
-        std::vector<uint16_t> indices;
+        std::vector<uint32_t> indices;
 
         if (positions)
         {
@@ -662,7 +662,7 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
 
     std::vector<utils::Vertex> vertices;
     vertices.reserve(header.point_count * 3);
-    std::vector<uint16_t> indices;
+    std::vector<uint32_t> indices;
 
     size_t index = 0;
     size_t pointId = 0;

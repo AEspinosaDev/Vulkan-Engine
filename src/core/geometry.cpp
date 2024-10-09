@@ -8,7 +8,7 @@ void Geometry::fill(std::vector<utils::Vertex> vertexInfo)
   m_loaded = true;
   m_indexed = false;
 }
-void Geometry::fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint16_t> vertexIndex)
+void Geometry::fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex)
 {
   if (vertexIndex.empty())
   {
