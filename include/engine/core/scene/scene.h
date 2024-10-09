@@ -27,11 +27,6 @@ class Scene : public Object3D
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
     float m_ambientIntensity{0.2f};
 
-    // SSAO
-    bool m_ssao{true};
-    float m_occRadius{0.5};
-    float m_occBias{0.025};
-
     // FOG
     bool m_fog{true};
     Vec3 m_fogColor{0.2f, 0.2f, 0.2f};
@@ -145,32 +140,6 @@ class Scene : public Object3D
         return m_fogIntensity;
     }
 
-    inline void enable_ssao(bool op)
-    {
-        m_ssao = op;
-    }
-    inline bool is_ssao_enabled() const
-    {
-        return m_ssao;
-    }
-
-    inline void set_ssao_radius(float i)
-    {
-        m_occRadius = i;
-    }
-    inline float get_ssao_radius() const
-    {
-        return m_occRadius;
-    }
-
-    inline void set_ssao_bias(float i)
-    {
-        m_occBias = i;
-    }
-    inline float get_ssao_bias()
-    {
-        return m_occBias;
-    }
 };
 
 VULKAN_ENGINE_NAMESPACE_END

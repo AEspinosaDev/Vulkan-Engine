@@ -42,7 +42,7 @@ void Renderer::update_global_data(Scene *const scene)
     SceneUniforms sceneParams;
     sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(),
                              scene->is_fog_enabled()};
-    sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), scene->is_ssao_enabled());
+    sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), 0.0f);
     sceneParams.SSAOtype = 0;
     sceneParams.emphasizeAO = false;
     sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
@@ -125,10 +125,11 @@ void Renderer::update_object_data(Scene *const scene)
 
                     ObjectUniforms objectData;
                     objectData.model = m->get_model_matrix();
-                    objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(),
-                    m->get_cast_shadows(), false}; objectData.otherParams2 = {m->is_selected(), 0.0, 0.0, 0.0};
-                    m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(m_context.memory, &objectData,
-                    sizeof(ObjectUniforms), objectOffset);
+                    objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(),
+                                               false};
+                    objectData.otherParams2 = {m->is_selected(), 0.0, 0.0, 0.0};
+                    m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(
+                        m_context.memory, &objectData, sizeof(ObjectUniforms), objectOffset);
 
                     // void *meshData = nullptr;
                     // size_t size = 0;
