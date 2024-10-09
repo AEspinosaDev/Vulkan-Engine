@@ -18,8 +18,11 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Renderer::upload_global_data(Scene *const scene)
+void Renderer::update_global_data(Scene *const scene)
 {
+	/*
+	CAMERA UNIFORMS LOAD
+	*/
 	Camera *camera = scene->get_active_camera();
 	if (camera->is_dirty())
 		camera->set_projection(m_window->get_extent().width, m_window->get_extent().height);
@@ -31,9 +34,10 @@ void Renderer::upload_global_data(Scene *const scene)
 	camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
 	m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(m_context.memory, &camData, sizeof(CameraUniforms), 0);
-	// static_cast<SSAOPass *>(m_renderPipeline.renderpasses[SSAO])->update_uniforms(camData, {scene->get_ssao_radius(), scene->get_ssao_bias()}, utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) + utils::pad_uniform_buffer_size(sizeof(Vec2), m_context.gpu));
-	// static_cast<CompositionPass *>(m_renderPipeline.renderpasses[COMPOSITION])->update_uniforms();
-
+	
+	/*
+	SCENE UNIFORMS LOAD
+	*/
 	SceneUniforms sceneParams;
 	sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
 	sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), scene->is_ssao_enabled());
@@ -65,7 +69,7 @@ void Renderer::upload_global_data(Scene *const scene)
 	m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(m_context.memory, &sceneParams, sizeof(SceneUniforms),
 																			   utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu));
 }
-void Renderer::upload_object_data(Scene *const scene)
+void Renderer::update_object_data(Scene *const scene)
 {
 
 	if (scene->get_active_camera() && scene->get_active_camera()->is_active())
@@ -160,10 +164,6 @@ void Renderer::upload_material_textures(Material *const mat)
 			}
 		}
 	}
-
-	static_cast<ForwardPass *>(m_renderPipeline.renderpasses[1])->setup_material_descriptor(mat);
-
-	mat->m_isDirty = false;
 }
 
 void Renderer::upload_geometry_data(Geometry *const g)

@@ -18,7 +18,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 struct DescriptorSet
 {
-	VkDescriptorSet descriptorSet{};
+	VkDescriptorSet handle{};
 
 	std::vector<Buffer *> binded_buffers;
 	uint32_t layoutID;

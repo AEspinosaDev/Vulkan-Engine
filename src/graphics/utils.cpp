@@ -146,6 +146,35 @@ Vec3 utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1,
 
 	// return glm::normalize(tangent);
 }
+void utils::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices)
+{
+	if (!indices.empty())
+		for (size_t i = 0; i < indices.size(); i += 3)
+		{
+			size_t i0 = indices[i];
+			size_t i1 = indices[i + 1];
+			size_t i2 = indices[i + 2];
+
+			Vec3 tangent = get_tangent_gram_smidt(vertices[i0].pos, vertices[i1].pos, vertices[i2].pos,
+												  vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord,
+												  vertices[i0].normal);
+
+			vertices[i0].tangent += tangent;
+			vertices[i1].tangent += tangent;
+			vertices[i2].tangent += tangent;
+		}
+	else
+		for (size_t i = 0; i < vertices.size(); i += 3)
+		{
+			Vec3 tangent = get_tangent_gram_smidt(vertices[i].pos, vertices[i + 1].pos, vertices[i + 2].pos,
+														 vertices[i].texCoord, vertices[i + 1].texCoord, vertices[i + 2].texCoord,
+														 vertices[i].normal);
+
+			vertices[i].tangent += tangent;
+			vertices[i + 1].tangent += tangent;
+			vertices[i + 2].tangent += tangent;
+		}
+}
 
 void utils::UploadContext::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
 {
@@ -163,11 +192,11 @@ void utils::UploadContext::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfa
 }
 void utils::UploadContext::cleanup(VkDevice &device)
 {
-	 vkDestroyFence(device, uploadFence, nullptr);
-	 vkDestroyCommandPool(device, commandPool, nullptr);
+	vkDestroyFence(device, uploadFence, nullptr);
+	vkDestroyCommandPool(device, commandPool, nullptr);
 }
 
-void utils::UploadContext::immediate_submit(VkDevice &device , VkQueue &gfxQueue, std::function<void(VkCommandBuffer cmd)> &&function)
+void utils::UploadContext::immediate_submit(VkDevice &device, VkQueue &gfxQueue, std::function<void(VkCommandBuffer cmd)> &&function)
 {
 	VkCommandBuffer cmd = commandBuffer;
 

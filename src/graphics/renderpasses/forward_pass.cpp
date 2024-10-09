@@ -149,9 +149,9 @@ void ForwardPass::create_descriptors()
     {
         // Global
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0,
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0,
                                                  &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(SceneUniforms),
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(SceneUniforms),
                                                  utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
                                                  &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
@@ -161,9 +161,9 @@ void ForwardPass::create_descriptors()
 
         // Per-object
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0,
                                                  &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(MaterialUniforms),
                                                  utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu),
                                                  &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
@@ -300,15 +300,15 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
 
                         // GLOBAL LAYOUT BINDING
                         uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptors[frameIndex].globalDescritor.descriptorSet, 2, globalOffsets);
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
 
                         // PER OBJECT LAYOUT BINDING
                         uint32_t objectOffsets[] = {objectOffset, objectOffset};
-                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1, &m_descriptors[frameIndex].objectDescritor.descriptorSet, 2, objectOffsets);
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1, &m_descriptors[frameIndex].objectDescritor.handle, 2, objectOffsets);
 
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
-                            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
+                            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().handle, 0, nullptr);
 
                         draw(cmd, g);
                     }
@@ -325,6 +325,21 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
     end(cmd);
 }
 
+void ForwardPass::upload_data(uint32_t frameIndex, Scene *const scene)
+{
+    for (Mesh *m : scene->get_meshes())
+    {
+        if (m)
+        {
+            for (size_t i = 0; i < m->get_num_geometries(); i++)
+            {
+                Geometry *g = m->get_geometry(i);
+                Material *mat = m->get_material(g->get_material_ID());
+                setup_material_descriptor(mat);
+            }
+        }
+    }
+}
 void ForwardPass::connect_to_previous_images(std::vector<Image> images)
 {
     for (size_t i = 0; i < m_context->frames.size(); i++)

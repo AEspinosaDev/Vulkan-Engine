@@ -287,6 +287,7 @@ Canonical vertex definition. Most meshes will use some or all of these attribute
 	void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 
 	Vec3 get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3, Vec3 normal);
+	void compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices);
 
 	template <typename T, typename... Rest>
 	void hash_combine(std::size_t &seed, const T &v, const Rest &...rest)

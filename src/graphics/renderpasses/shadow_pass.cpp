@@ -178,12 +178,12 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
                     // GLOBAL LAYOUT BINDING
                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
-                                            &m_descriptors[frameIndex].globalDescritor.descriptorSet, 2, globalOffsets);
+                                            &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
 
                     // PER OBJECT LAYOUT BINDING
                     uint32_t objectOffsets[] = {objectOffset, objectOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
-                                            &m_descriptors[frameIndex].objectDescritor.descriptorSet, 2, objectOffsets);
+                                            &m_descriptors[frameIndex].objectDescritor.handle, 2, objectOffsets);
 
                     Geometry *g = m->get_geometry(i);
                     draw(cmd, g);

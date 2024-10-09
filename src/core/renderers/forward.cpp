@@ -25,25 +25,39 @@ void ForwardRenderer::setup_renderpasses()
     const uint32_t SHADOW_RES = (uint32_t)m_settings2.shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    ForwardPass *forwardPass = new ForwardPass(
-        &m_context,
-        m_window->get_extent(),
-        totalImagesInFlight,
-        m_settings.colorFormat,
-        m_settings.depthFormat,
-        m_settings.samplesMSAA, 
-        m_settings2.fxaa ? false : true);
-    forwardPass->set_image_dependace_table({{SHADOW, {0}}});
-
+    // Shadow Pass
     ShadowPass *shadowPass = new ShadowPass(
         &m_context,
         {SHADOW_RES, SHADOW_RES},
         totalImagesInFlight,
         VK_MAX_LIGHTS,
         m_settings.depthFormat);
-
     m_renderPipeline.push_renderpass(shadowPass);
+
+    // Forward Pass
+    ForwardPass *forwardPass = new ForwardPass(
+        &m_context,
+        m_window->get_extent(),
+        totalImagesInFlight,
+        m_settings.colorFormat,
+        m_settings.depthFormat,
+        m_settings.samplesMSAA,
+        m_settings2.fxaa ? false : true);
+    forwardPass->set_image_dependace_table({{SHADOW, {0}}});
     m_renderPipeline.push_renderpass(forwardPass);
+
+    // FXAA Pass
+    FXAAPass *fxaaPass = new FXAAPass(
+        &m_context,
+        m_window->get_extent(),
+        totalImagesInFlight,
+        m_settings.colorFormat,
+        m_vignette,
+        m_settings2.fxaa);
+    fxaaPass->set_image_dependace_table({{FORWARD, {0}}});
+    m_renderPipeline.push_renderpass(fxaaPass);
+    if (!m_settings2.fxaa)
+        fxaaPass->set_active(false);
 }
 
 void ForwardRenderer::init_resources()

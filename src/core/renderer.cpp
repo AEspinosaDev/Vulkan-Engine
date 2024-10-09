@@ -15,18 +15,20 @@ void Renderer::init()
 		static_cast<VkFormat>(m_settings.colorFormat),
 		static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
-	setup_renderpasses();
 	init_resources();
+	setup_renderpasses();
 
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		pass->init();
-		pass->create_framebuffer();
-		pass->create_descriptors();
-		pass->create_pipelines();
-		pass->init_resources();
-
-		connect_renderpass(pass);
+		if (pass->is_active())
+		{
+			pass->init();
+			pass->create_framebuffer();
+			pass->create_descriptors();
+			pass->create_pipelines();
+			pass->init_resources();
+			connect_renderpass(pass);
+		}
 	};
 
 	m_deletionQueue.push_function([=]()
@@ -103,10 +105,14 @@ void Renderer::on_before_render(Scene *const scene)
 	if (Frame::guiEnabled && m_gui)
 		m_gui->render();
 
-	upload_global_data(scene);
+	update_global_data(scene);
+	update_object_data(scene);
 
-	upload_object_data(scene);
-
+	for (RenderPass *pass : m_renderPipeline.renderpasses)
+	{
+		if (pass->is_active())
+			pass->upload_data(m_currentFrame, scene);
+	}
 }
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
@@ -200,12 +206,15 @@ void Renderer::update_renderpasses()
 	// Renderpass framebuffer updating
 	for (RenderPass *pass : m_renderPipeline.renderpasses)
 	{
-		if (pass->resizeable())
+		if (pass->is_active())
 		{
-			pass->set_extent(m_window->get_extent());
-			pass->update();
+			if (pass->resizeable())
+			{
+				pass->set_extent(m_window->get_extent());
+				pass->update();
+			}
+			connect_renderpass(pass);
 		}
-		connect_renderpass(pass);
 	};
 
 	m_updateFramebuffers = false;
@@ -213,13 +222,23 @@ void Renderer::update_renderpasses()
 
 void Renderer::init_gui()
 {
+
 	if (m_gui)
 	{
+		RenderPass* defaultPass = nullptr;
+		for (RenderPass *pass : m_renderPipeline.renderpasses)
+		{
+			if (pass->is_active() && pass->default_pass())
+			{
+				defaultPass = pass;
+			}
+		};
+
 		m_gui->init(m_context.instance,
 					m_context.device,
 					m_context.gpu,
 					m_context.graphicsQueue,
-					m_renderPipeline.renderpasses[1]->get_handle(),
+					defaultPass->get_handle(),
 					m_context.swapchain.get_image_format(),
 					(VkSampleCountFlagBits)m_settings.samplesMSAA,
 					m_window->get_handle());

@@ -27,6 +27,7 @@ class ForwardPass : public RenderPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
+    void setup_material_descriptor(Material *mat);
 public:
     ForwardPass(
         Context *ctx,
@@ -45,9 +46,10 @@ public:
 
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
+    void upload_data(uint32_t frameIndex, Scene *const scene);
+
     void connect_to_previous_images(std::vector<Image> images);
 
-    void setup_material_descriptor(Material *mat);
 };
 VULKAN_ENGINE_NAMESPACE_END
 

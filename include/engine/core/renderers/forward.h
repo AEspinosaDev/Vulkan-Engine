@@ -24,7 +24,8 @@ class ForwardRenderer : public Renderer
     enum RenderPasses
     {
         SHADOW = 0,
-        FORWARD = 1
+        FORWARD = 1,
+        FXAA = 2
     };
 
     bool m_updateShadows{false};

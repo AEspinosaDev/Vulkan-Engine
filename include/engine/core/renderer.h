@@ -206,13 +206,13 @@ protected:
 	*/
 	virtual void clean_Resources();
 	/*
-	Object descriptor layouts uniforms buffer upload to GPU
-	*/
-	virtual void upload_object_data(Scene *const scene);
-	/*
 	Global descriptor layouts uniforms buffer upload to GPU
 	*/
-	virtual void upload_global_data(Scene *const scene);
+	virtual void update_global_data(Scene *const scene);
+	/*
+	Object descriptor layouts uniforms buffer upload to GPU
+	*/
+	virtual void update_object_data(Scene *const scene);
 	/*
 	Initialize and setup textures and uniforms in given material
 	*/
