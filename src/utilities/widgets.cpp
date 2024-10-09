@@ -346,7 +346,7 @@ void ObjectExplorerWidget::render()
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::Text("Receive shadows");
+        ImGui::Text("Cast shadows");
         ImGui::TableNextColumn();
         bool shadows = model->get_cast_shadows();
         if (ImGui::Checkbox("", &shadows))

@@ -18,11 +18,15 @@ void ForwardPass::init()
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = m_isDefault ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    colorAttachment.finalLayout =
+        m_isDefault ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+                    : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     attachmentsInfo.push_back(colorAttachment);
 
     Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
-                                !m_isDefault ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                !m_isDefault
+                                    ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+                                    : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                 VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, samples);
     _colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
     m_attachments.push_back(_colorAttachment);
@@ -63,14 +67,12 @@ void ForwardPass::init()
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attachmentsInfo.push_back(depthAttachment);
 
-    m_attachments.push_back(
-        Attachment(static_cast<VkFormat>(m_depthFormat),
-                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                   VK_IMAGE_ASPECT_DEPTH_BIT,
-                   VK_IMAGE_VIEW_TYPE_2D,
-                   samples));
+    m_attachments.push_back(Attachment(static_cast<VkFormat>(m_depthFormat),
+                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT,
+                                       VK_IMAGE_VIEW_TYPE_2D, samples));
 
-    VkAttachmentReference depthRef = init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference depthRef =
+        init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
@@ -123,121 +125,132 @@ void ForwardPass::create_descriptors()
     m_descriptors.resize(m_context->frames.size());
 
     // GLOBAL SET
-    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
-    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);   // SSAO
+    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
+    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // SSAO
     VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, ssaoBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
 
     // PER-OBJECT SET
-    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
 
     // MATERIAL TEXTURE SET
-    VkDescriptorSetLayoutBinding textureBinding1 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding textureBinding2 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding textureBinding3 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
-    VkDescriptorSetLayoutBinding textureBinding4 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
-    VkDescriptorSetLayoutBinding textureBinding5 = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5};
+    VkDescriptorSetLayoutBinding textureBinding1 =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding textureBinding2 =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding textureBinding3 =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+    VkDescriptorSetLayoutBinding textureBinding4 =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    VkDescriptorSetLayoutBinding textureBinding5 =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding1, textureBinding2, textureBinding3,
+                                                      textureBinding4, textureBinding5};
     m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, textureBindings, 5);
 
     for (size_t i = 0; i < m_context->frames.size(); i++)
     {
         // Global
-        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0,
-                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(SceneUniforms),
-                                                 utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
-                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT,
+                                                    &m_descriptors[i].globalDescritor);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                                 sizeof(CameraUniforms), 0, &m_descriptors[i].globalDescritor,
+                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(
+            &m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(SceneUniforms),
+            utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu), &m_descriptors[i].globalDescritor,
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
-        m_descriptorManager.set_descriptor_write(Texture::DEBUG_TEXTURE->get_image().sampler,
-                                                 Texture::DEBUG_TEXTURE->get_image().view,
-                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorManager.set_descriptor_write(
+            Texture::DEBUG_TEXTURE->get_image().sampler, Texture::DEBUG_TEXTURE->get_image().view,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
 
         // Per-object
-        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0,
-                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(MaterialUniforms),
-                                                 utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu),
-                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT,
+                                                    &m_descriptors[i].objectDescritor);
+        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                                 sizeof(ObjectUniforms), 0, &m_descriptors[i].objectDescritor,
+                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(
+            &m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(MaterialUniforms),
+            utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu), &m_descriptors[i].objectDescritor,
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
 void ForwardPass::create_pipelines()
 {
 
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
-        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
-        VK_DYNAMIC_STATE_CULL_MODE};
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
+                                                 VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+                                                 VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, VK_DYNAMIC_STATE_CULL_MODE};
+    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{init::color_blend_attachment_state(true)};
 
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
     // Setup shaderpasses
     m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/unlit.glsl");
-    m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs =
-        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["unlit"]->settings.attributes =
-        {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, false},
-         {VertexAttributeType::UV, false},
-         {VertexAttributeType::TANGENT, false},
-         {VertexAttributeType::COLOR, false}};
-    m_shaderPasses["unlit"]->settings.blending = true;
+    m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                                {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                                {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["unlit"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                    {VertexAttributeType::NORMAL, false},
+                                                    {VertexAttributeType::UV, false},
+                                                    {VertexAttributeType::TANGENT, false},
+                                                    {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["unlit"]->settings.blendAttachments = blendAttachments;
     m_shaderPasses["unlit"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["unlit"]->settings.samples = samples;
 
     m_shaderPasses["phong"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/phong.glsl");
-    m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs =
-        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["phong"]->settings.attributes =
-        {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, true},
-         {VertexAttributeType::UV, true},
-         {VertexAttributeType::TANGENT, false},
-         {VertexAttributeType::COLOR, false}};
-    m_shaderPasses["phong"]->settings.blending = true;
+    m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                                {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                                {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["phong"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                    {VertexAttributeType::NORMAL, true},
+                                                    {VertexAttributeType::UV, true},
+                                                    {VertexAttributeType::TANGENT, false},
+                                                    {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["phong"]->settings.blendAttachments = blendAttachments;
     m_shaderPasses["phong"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["phong"]->settings.samples = samples;
 
     m_shaderPasses["physical"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/physically_based.glsl");
-    m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs =
-        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["physical"]->settings.attributes =
-        {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, true},
-         {VertexAttributeType::UV, true},
-         {VertexAttributeType::TANGENT, true},
-         {VertexAttributeType::COLOR, false}};
-    m_shaderPasses["physical"]->settings.blending = true;
+    m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                                   {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                                   {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["physical"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                       {VertexAttributeType::NORMAL, true},
+                                                       {VertexAttributeType::UV, true},
+                                                       {VertexAttributeType::TANGENT, true},
+                                                       {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["physical"]->settings.blendAttachments = blendAttachments;
     m_shaderPasses["physical"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["physical"]->settings.samples = samples;
 
     m_shaderPasses["hair"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/hair_strand.glsl");
-    m_shaderPasses["hair"]->settings.descriptorSetLayoutIDs =
-        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["hair"]->settings.attributes =
-        {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, false},
-         {VertexAttributeType::UV, false},
-         {VertexAttributeType::TANGENT, true},
-         {VertexAttributeType::COLOR, true}};
-    m_shaderPasses["hair"]->settings.blending = true;
+    m_shaderPasses["hair"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                               {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                               {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["hair"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                   {VertexAttributeType::NORMAL, false},
+                                                   {VertexAttributeType::UV, false},
+                                                   {VertexAttributeType::TANGENT, true},
+                                                   {VertexAttributeType::COLOR, true}};
     m_shaderPasses["hair"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["hair"]->settings.samples = samples;
     m_shaderPasses["hair"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -275,9 +288,11 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
         {
             if (m)
             {
-                if (m->is_active() &&                                                                                                                                   // Check if is active
-                    m->get_num_geometries() > 0 &&                                                                                                                      // Check if has geometry
-                    (scene->get_active_camera()->get_frustrum_culling() ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()) : true)) // Check if is inside frustrum
+                if (m->is_active() &&              // Check if is active
+                    m->get_num_geometries() > 0 && // Check if has geometry
+                    (scene->get_active_camera()->get_frustrum_culling()
+                         ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())
+                         : true)) // Check if is inside frustrum
                 {
                     // Offset calculation
                     uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].strideSize * mesh_idx;
@@ -291,7 +306,9 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                         // Setup per object render state
                         vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
                         vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
-                        vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
+                        vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling
+                                                  ? (VkCullModeFlags)mat->get_parameters().culling
+                                                  : VK_CULL_MODE_NONE);
 
                         ShaderPass *shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
@@ -300,15 +317,18 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
 
                         // GLOBAL LAYOUT BINDING
                         uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
+                                                &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
 
                         // PER OBJECT LAYOUT BINDING
                         uint32_t objectOffsets[] = {objectOffset, objectOffset};
-                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1, &m_descriptors[frameIndex].objectDescritor.handle, 2, objectOffsets);
+                        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
+                                                &m_descriptors[frameIndex].objectDescritor.handle, 2, objectOffsets);
 
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
-                            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().handle, 0, nullptr);
+                            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2,
+                                                    1, &mat->get_texture_descriptor().handle, 0, nullptr);
 
                         draw(cmd, g);
                     }
@@ -344,16 +364,17 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images)
 {
     for (size_t i = 0; i < m_context->frames.size(); i++)
     {
-        m_descriptorManager.set_descriptor_write(images[0].sampler,
-                                                 images[0].view,
-                                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+        m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
+                                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                                 &m_descriptors[i].globalDescritor, 2);
     }
 }
 
 void ForwardPass::setup_material_descriptor(Material *mat)
 {
     if (!mat->get_texture_descriptor().allocated)
-        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT,
+                                                    &mat->get_texture_descriptor());
 
     auto textures = mat->get_textures();
     for (auto pair : textures)
@@ -366,7 +387,9 @@ void ForwardPass::setup_material_descriptor(Material *mat)
             if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
             {
                 // DEBUG_LOG("PACO");
-                m_descriptorManager.set_descriptor_write(texture->get_image().sampler, texture->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
+                m_descriptorManager.set_descriptor_write(texture->get_image().sampler, texture->get_image().view,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                         &mat->get_texture_descriptor(), pair.first);
                 mat->set_texture_binding_state(pair.first, true);
                 texture->set_dirty(false);
             }
@@ -375,7 +398,9 @@ void ForwardPass::setup_material_descriptor(Material *mat)
         {
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorManager.set_descriptor_write(Texture::DEBUG_TEXTURE->get_image().sampler, Texture::DEBUG_TEXTURE->get_image().view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
+                m_descriptorManager.set_descriptor_write(
+                    Texture::DEBUG_TEXTURE->get_image().sampler, Texture::DEBUG_TEXTURE->get_image().view,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
             mat->set_texture_binding_state(pair.first, true);
         }
     }

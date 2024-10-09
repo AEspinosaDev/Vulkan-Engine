@@ -60,8 +60,7 @@ struct ShaderPassSettings
 	VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
 
 	// Blending
-	bool blending{false};
-	std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{init::color_blend_attachment_state(blending)};
+	std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{init::color_blend_attachment_state(false)};
 	// blendingOperation{};
 
 	// Depth Test

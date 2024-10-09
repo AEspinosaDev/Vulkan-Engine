@@ -15,11 +15,9 @@ void ShadowPass::init()
     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-    m_attachments.push_back(
-        Attachment(static_cast<VkFormat>(m_depthFormat),
-                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                   VK_IMAGE_ASPECT_DEPTH_BIT,
-                   VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+    m_attachments.push_back(Attachment(static_cast<VkFormat>(m_depthFormat),
+                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                       VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY));
 
     VkAttachmentReference depthRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
@@ -75,36 +73,52 @@ void ShadowPass::create_descriptors()
     m_descriptors.resize(m_context->frames.size());
 
     // GLOBAL SET
-    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
-    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);   // SSAO
+    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
+    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // SSAO
     VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, ssaoBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
 
     // PER-OBJECT SET
-    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
 
     for (size_t i = 0; i < m_context->frames.size(); i++)
     {
         // Global
-        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT,
+                                                    &m_descriptors[i].globalDescritor);
         m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0,
-                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+                                                 &m_descriptors[i].globalDescritor,
+                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
         m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(SceneUniforms),
                                                  utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
-                                                 &m_descriptors[i].globalDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+                                                 &m_descriptors[i].globalDescritor,
+                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
         // Per-object
-        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
+        m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT,
+                                                    &m_descriptors[i].objectDescritor);
         m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
-                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
-                                                 utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu),
-                                                 &m_descriptors[i].objectDescritor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
+                                                 &m_descriptors[i].objectDescritor,
+                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
+        m_descriptorManager.set_descriptor_write(
+            &m_context->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
+            utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu), &m_descriptors[i].objectDescritor,
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
 void ShadowPass::create_pipelines()
@@ -112,22 +126,16 @@ void ShadowPass::create_pipelines()
 
     // DEPTH PASS
     ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows.glsl");
-    depthPass->settings.descriptorSetLayoutIDs =
-        {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_LAYOUT, true},
-         {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    depthPass->settings.attributes =
-        {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, false},
-         {VertexAttributeType::UV, false},
-         {VertexAttributeType::TANGENT, false},
-         {VertexAttributeType::COLOR, false}};
-    depthPass->settings.dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-        VK_DYNAMIC_STATE_DEPTH_BIAS,
-        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
-    depthPass->settings.blending = false;
+    depthPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                  {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                  {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    depthPass->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                      {VertexAttributeType::NORMAL, false},
+                                      {VertexAttributeType::UV, false},
+                                      {VertexAttributeType::TANGENT, false},
+                                      {VertexAttributeType::COLOR, false}};
+    depthPass->settings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
+                                         VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
     depthPass->settings.blendAttachments = {};
 
     ShaderPass::build_shader_stages(m_context->device, *depthPass);
@@ -155,11 +163,7 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
     vkCmdSetDepthBiasEnable(cmd, true);
     float depthBiasConstant = 0.0;
     float depthBiasSlope = 0.0f;
-    vkCmdSetDepthBias(
-        cmd,
-        depthBiasConstant,
-        0.0f,
-        depthBiasSlope);
+    vkCmdSetDepthBias(cmd, depthBiasConstant, 0.0f, depthBiasSlope);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline); // DEPENDENCY !!!!
 
@@ -195,6 +199,5 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 
     end(cmd);
 }
-
 
 VULKAN_ENGINE_NAMESPACE_END
