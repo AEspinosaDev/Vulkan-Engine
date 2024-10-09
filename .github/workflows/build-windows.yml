@@ -33,7 +33,7 @@ jobs:
         run: |
             curl -L https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/heads/master.zip -o vma.zip
             unzip vma.zip
-            cp VulkanMemoryAllocator-master/src/vk_mem_alloc.h $VULKAN_SDK/include/vma/
+            cp VulkanMemoryAllocator-master/include/vk_mem_alloc.h $VULKAN_SDK/include/vma/
 
 
       - name: Set up CMake 3.16
