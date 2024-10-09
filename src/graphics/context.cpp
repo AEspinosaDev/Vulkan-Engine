@@ -132,13 +132,13 @@ VkResult Context::present_image(const uint32_t &currentFrame, uint32_t imageInde
 
 void Context::draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint32_t vertexCount, uint32_t indexCount, bool indexed, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance)
 {
-    VkBuffer vertexBuffers[] = {vbo.buffer};
+    VkBuffer vertexBuffers[] = {vbo.handle};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
 
     if (indexed)
     {
-        vkCmdBindIndexBuffer(cmd, ibo.buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(cmd, ibo.handle, 0, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(cmd, indexCount, instanceCount, firstOcurrence, offset, firstInstance);
     }
     else
@@ -164,7 +164,7 @@ void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, 
 				copy.dstOffset = 0;
 				copy.srcOffset = 0;
 				copy.size = vboSize;
-				vkCmdCopyBuffer(cmd, vboStagingBuffer.buffer, vbo.buffer, 1, &copy); });
+				vkCmdCopyBuffer(cmd, vboStagingBuffer.handle, vbo.handle, 1, &copy); });
 
     vboStagingBuffer.cleanup(memory);
 
@@ -185,7 +185,7 @@ void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, 
 					index_copy.dstOffset = 0;
 					index_copy.srcOffset = 0;
 					index_copy.size = iboSize;
-					vkCmdCopyBuffer(cmd, iboStagingBuffer.buffer, ibo.buffer, 1, &index_copy); });
+					vkCmdCopyBuffer(cmd, iboStagingBuffer.handle, ibo.handle, 1, &index_copy); });
 
         iboStagingBuffer.cleanup(memory);
     }

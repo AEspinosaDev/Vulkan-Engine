@@ -53,7 +53,7 @@ void DescriptorManager::allocate_descriptor_set(uint32_t layoutSetIndex, Descrip
 void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
 {
     VkDescriptorBufferInfo info;
-    info.buffer = buffer->buffer;
+    info.buffer = buffer->handle;
     info.offset = readOffset;
     info.range = dataSize;
 

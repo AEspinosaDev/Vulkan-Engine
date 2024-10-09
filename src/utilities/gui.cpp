@@ -3,8 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 bool GUIOverlay::m_initialized = false;
 
-void GUIOverlay::init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass renderPass,
-                      VkFormat format, VkSampleCountFlagBits samples, GLFWwindow *window)
+void GUIOverlay::init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *windowHandle, VkFormat format, VkSampleCountFlagBits samples)
 {
     // if (GUIOverlay::m_initialized)
     //     return;
@@ -29,7 +28,7 @@ void GUIOverlay::init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &
     pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    VK_CHECK(vkCreateDescriptorPool(device, &pool_info, nullptr, &m_pool));
+    VK_CHECK(vkCreateDescriptorPool(ctx.device, &pool_info, nullptr, &m_pool));
 
     // 2: initialize imgui library
     // this initializes the core structures of imgui
@@ -51,18 +50,18 @@ void GUIOverlay::init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &
     }
 
     // this initializes imgui for SDL
-    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplGlfw_InitForVulkan(windowHandle, true);
 
     // this initializes imgui for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = instance;
-    init_info.PhysicalDevice = gpu;
-    init_info.Device = device;
-    init_info.Queue = graphicsQueue;
+    init_info.Instance = ctx.instance;
+    init_info.PhysicalDevice =  ctx.gpu;
+    init_info.Device =  ctx.device;
+    init_info.Queue =  ctx.graphicsQueue;
     init_info.DescriptorPool = m_pool;
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;
-    init_info.RenderPass = renderPass;
+    init_info.RenderPass = renderPassHandle;
     init_info.MSAASamples = samples;
 
     ImGui_ImplVulkan_Init(&init_info);

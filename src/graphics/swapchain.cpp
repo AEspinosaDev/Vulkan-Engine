@@ -58,7 +58,7 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR sur
 	m_presentImages.resize(imageCount);
 	for (size_t i = 0; i < imageCount; i++)
 	{
-		m_presentImages[i].image = images[i];
+		m_presentImages[i].handle = images[i];
 	}
 
 	m_presentFormat = surfaceFormat.format;
@@ -135,7 +135,7 @@ void Swapchain::create_image_views(VkDevice &device)
 	{
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_presentImages[i].image;
+		createInfo.image = m_presentImages[i].handle;
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		createInfo.format = m_presentFormat;
 		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;

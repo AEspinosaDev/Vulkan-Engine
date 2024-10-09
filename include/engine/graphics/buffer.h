@@ -15,7 +15,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 /*Vulkan buffer object*/
 struct Buffer
 {
-    VkBuffer buffer;
+    VkBuffer handle;
     /*Memory allocation controlled by VMA*/
     VmaAllocation allocation;
     /*For dynamic descriptor binding operation*/

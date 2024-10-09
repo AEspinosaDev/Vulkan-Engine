@@ -13,10 +13,10 @@
 
 #include <engine/common.h>
 
-#include <engine/graphics/swapchain.h>
-#include <engine/graphics/frame.h>
-#include <engine/graphics/descriptors.h>
 #include <engine/graphics/context.h>
+#include <engine/graphics/descriptors.h>
+#include <engine/graphics/frame.h>
+#include <engine/graphics/swapchain.h>
 
 #include <engine/core/scene/scene.h>
 
@@ -45,16 +45,10 @@ struct Attachment
 
     bool isPresentImage{false};
 
-    Attachment(VkFormat format,
-               VkImageUsageFlags _viewUsage,
-               VkImageAspectFlags _viewAspect,
+    Attachment(VkFormat format, VkImageUsageFlags _viewUsage, VkImageAspectFlags _viewAspect,
                VkImageViewType _viewType = VK_IMAGE_VIEW_TYPE_2D,
-               VkSampleCountFlagBits _samples = VK_SAMPLE_COUNT_1_BIT,
-               VkClearValue clearVal = {{{0.0, 0.0, 0.0, 1.0}}}) : viewAspect(_viewAspect),
-                                                                   viewUsage(_viewUsage),
-                                                                   viewType(_viewType),
-                                                                   samples(_samples),
-                                                                   clearValue(clearVal)
+               VkSampleCountFlagBits _samples = VK_SAMPLE_COUNT_1_BIT, VkClearValue clearVal = {{{0.0, 0.0, 0.0, 1.0}}})
+        : viewAspect(_viewAspect), viewUsage(_viewUsage), viewType(_viewType), samples(_samples), clearValue(clearVal)
     {
         image.format = format;
         clearValue.depthStencil.depth = 1.0f;
@@ -63,19 +57,20 @@ struct Attachment
 
 /*
 Core abstract class needed for rendering.
-It controls the flow of the render state, what information and how it is being rendered.
-It also gives access to the framebuffers containing the rendered data.
+It controls the flow of the render state, what information and how it is being
+rendered. It also gives access to the framebuffers containing the rendered data.
 It can be inherited for full user control over the render pipeline.
 */
 class RenderPass
 {
-protected:
+  protected:
     Context *m_context{nullptr};
 
     VkRenderPass m_handle;
     VkExtent2D m_extent;
 
-    uint32_t m_framebufferCount;      // How many framebuffers will be attached to this renderpass, usually is just one.
+    uint32_t m_framebufferCount;      // How many framebuffers will be attached to this
+                                      // renderpass, usually is just one.
     uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
     std::vector<VkFramebuffer> m_framebuffer_handles;
 
@@ -97,7 +92,8 @@ protected:
     /**
      * Begin render pass. Should be called at the start of the render function
      */
-    void begin(VkCommandBuffer &cmd, uint32_t framebufferId = 0, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+    void begin(VkCommandBuffer &cmd, uint32_t framebufferId = 0,
+               VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
     /**
      * End render pass.  Should be called at the end of the render function
      */
@@ -108,46 +104,96 @@ protected:
      */
     void draw(VkCommandBuffer &cmd, Geometry *g);
 
-public:
-    RenderPass(Context *ctx, VkExtent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1, bool isDefault = false) : m_context(ctx), m_extent(extent),
-                                                                                                                                        m_framebufferCount(framebufferCount),
-                                                                                                                                        m_framebufferImageDepth(framebufferDepth),
-                                                                                                                                        m_isDefault(isDefault) {}
+  public:
+    RenderPass(Context *ctx, VkExtent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1,
+               bool isDefault = false)
+        : m_context(ctx), m_extent(extent), m_framebufferCount(framebufferCount),
+          m_framebufferImageDepth(framebufferDepth), m_isDefault(isDefault)
+    {
+    }
 
 #pragma region Getters & Setters
 
-    virtual inline void set_active(const bool s) { m_enabled = s; }
-    virtual inline bool is_active() { return m_enabled; }
+    virtual inline void set_active(const bool s)
+    {
+        m_enabled = s;
+    }
+    virtual inline bool is_active()
+    {
+        return m_enabled;
+    }
 
-    inline VkExtent2D get_extent() const { return m_extent; }
-    inline void set_extent(VkExtent2D extent) { m_extent = extent; }
+    inline VkExtent2D get_extent() const
+    {
+        return m_extent;
+    }
+    inline void set_extent(VkExtent2D extent)
+    {
+        m_extent = extent;
+    }
 
-    inline VkRenderPass get_handle() const { return m_handle; }
-    inline std::vector<VkFramebuffer> const get_framebuffers_handle() const { return m_framebuffer_handles; }
+    inline VkRenderPass get_handle() const
+    {
+        return m_handle;
+    }
+    inline std::vector<VkFramebuffer> const get_framebuffers_handle() const
+    {
+        return m_framebuffer_handles;
+    }
 
-    inline std::vector<Attachment> get_attachments() { return m_attachments; }
-    inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) { m_attachments[attachmentLayout].clearValue = value; }
+    inline std::vector<Attachment> get_attachments()
+    {
+        return m_attachments;
+    }
+    inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0)
+    {
+        m_attachments[attachmentLayout].clearValue = value;
+    }
 
-    inline bool resizeable() const { return m_isResizeable; }
-    inline void set_resizeable(bool op) { m_isResizeable = op; }
+    inline bool resizeable() const
+    {
+        return m_isResizeable;
+    }
+    inline void set_resizeable(bool op)
+    {
+        m_isResizeable = op;
+    }
     /**
-     * Check if its the renderpass that directly renders onto the backbuffer (swapchain present image).
+     * Check if its the renderpass that directly renders onto the backbuffer
+     * (swapchain present image).
      */
-    inline bool default_pass() const { return m_isDefault; }
-    inline bool initialized() const { return m_initiatized; }
+    inline bool default_pass() const
+    {
+        return m_isDefault;
+    }
+    inline bool initialized() const
+    {
+        return m_initiatized;
+    }
 
-    inline std::unordered_map<std::string, ShaderPass *> const get_shaderpasses() const { return m_shaderPasses; }
+    inline std::unordered_map<std::string, ShaderPass *> const get_shaderpasses() const
+    {
+        return m_shaderPasses;
+    }
 
     /*
-    Sets a table of connection with different passes. Key is the pass ID and value is the atachment number
+    Sets a table of connection with different passes. Key is the pass ID and value
+    is the atachment number
     */
-    inline void set_image_dependace_table(std::unordered_map<uint32_t, std::vector<uint32_t>> table) { m_imageDepedanceTable = table; }
-    inline std::unordered_map<uint32_t, std::vector<uint32_t>> get_image_dependace_table() const { return m_imageDepedanceTable; }
+    inline void set_image_dependace_table(std::unordered_map<uint32_t, std::vector<uint32_t>> table)
+    {
+        m_imageDepedanceTable = table;
+    }
+    inline std::unordered_map<uint32_t, std::vector<uint32_t>> get_image_dependace_table() const
+    {
+        return m_imageDepedanceTable;
+    }
 
 #pragma endregion
 #pragma region Core Functions
     /*
-    Configures and creates the renderpass. Rendeerer will call this function when necessary
+    Configures and creates the renderpass. Rendeerer will call this function when
+    necessary
     */
     virtual void init() = 0;
     /*
@@ -165,30 +211,42 @@ public:
     /*
     Filling renderpass local uniforms buffers and misc
     */
-    virtual void init_resources() {}
+    virtual void init_resources()
+    {
+    }
     /*
     Upload data related to renderpass local uniforms and its descriptors sets
     */
-    virtual void upload_data(uint32_t frameIndex, Scene *const scene) {}
+    virtual void upload_data(uint32_t frameIndex, Scene *const scene)
+    {
+    }
     /*
     Update descriptors pointing to past passes image buffers
     */
-    virtual void connect_to_previous_images(std::vector<Image> images) {}
+    virtual void connect_to_previous_images(std::vector<Image> images)
+    {
+    }
     /**
-     * Create framebuffers and images attached to them necessary for the renderpass to work. It also sets the extent of the renderpass.
+     * Create framebuffers and images attached to them necessary for the
+     * renderpass to work. It also sets the extent of the renderpass.
      */
     virtual void create_framebuffer();
     /**
-     * Destroy framebuffers and images attached to them necessary for the renderpass to work. If images have a sampler attached to them, contol the destruction of it too.
+     * Destroy framebuffers and images attached to them necessary for the
+     * renderpass to work. If images have a sampler attached to them, contol the
+     * destruction of it too.
      */
     virtual void clean_framebuffer();
     /**
-     * Recreates the renderpass with new parameters. Useful for example, when resizing the screen. It automatically manages framebuffer cleanup and regeneration
+     * Recreates the renderpass with new parameters. Useful for example, when
+     * resizing the screen. It automatically manages framebuffer cleanup and
+     * regeneration
      *
      */
     virtual void update();
     /**
-     * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a sepparate function for felxibilty matters
+     * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a
+     * sepparate function for felxibilty matters
      */
     virtual void cleanup();
 #pragma endregion

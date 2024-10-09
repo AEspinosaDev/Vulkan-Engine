@@ -2,9 +2,8 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-
-
-void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers)
+void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,
+                 bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers)
 {
     extent = imageExtent;
 
@@ -12,7 +11,9 @@ void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags us
 
     layers = imageLayers;
 
-    mipLevels = useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
+    mipLevels = useMipmaps
+                    ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1
+                    : 1;
 
     VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples, layers);
 
@@ -20,12 +21,14 @@ void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags us
     img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
     // allocate and create the image
-    vmaCreateImage(memory, &img_info, &img_allocinfo, &image, &allocation, nullptr);
+    vmaCreateImage(memory, &img_info, &img_allocinfo, &handle, &allocation, nullptr);
 
     isInitialized = true;
 }
 
-void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers)
+void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags,
+                 VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps,
+                 VkSampleCountFlagBits samples, uint32_t imageLayers)
 {
     extent = imageExtent;
 
@@ -33,11 +36,13 @@ void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags us
 
     layers = imageLayers;
 
-    mipLevels = useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
+    mipLevels = useMipmaps
+                    ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1
+                    : 1;
 
     VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples, layers);
 
-    vmaCreateImage(memory, &img_info, &allocInfo, &image, &allocation, nullptr);
+    vmaCreateImage(memory, &img_info, &allocInfo, &handle, &allocation, nullptr);
 
     isInitialized = true;
 }
@@ -57,14 +62,15 @@ void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
 
     imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    imageBarrier_toTransfer.image = image;
+    imageBarrier_toTransfer.image = handle;
     imageBarrier_toTransfer.subresourceRange = range;
 
     imageBarrier_toTransfer.srcAccessMask = 0;
     imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
     // barrier the image into the transfer-receive layout
-    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 1, &imageBarrier_toTransfer);
 
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset = 0;
@@ -78,7 +84,7 @@ void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
     copyRegion.imageExtent = extent;
 
     // copy the buffer into the image
-    vkCmdCopyBufferToImage(cmd, stagingBuffer->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+    vkCmdCopyBufferToImage(cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
     if (mipLevels == 1)
     {
@@ -91,7 +97,8 @@ void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
         imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         // barrier the image into the shader readable layout
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                             0, nullptr, 1, &imageBarrier_toReadable);
     }
 }
 void Image::generate_mipmaps(VkCommandBuffer &cmd)
@@ -110,7 +117,7 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
     imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     imageBarrier_toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageBarrier_toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    imageBarrier_toTransfer.image = image;
+    imageBarrier_toTransfer.image = handle;
     imageBarrier_toTransfer.subresourceRange = range;
 
     for (uint32_t i = 1; i < mipLevels; i++)
@@ -122,9 +129,8 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
         imageBarrier_toTransfer.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                             &imageBarrier_toTransfer);
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                             nullptr, 1, &imageBarrier_toTransfer);
 
         VkImageBlit blit{};
         blit.srcOffsets[0] = {0, 0, 0};
@@ -140,19 +146,16 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
         blit.dstSubresource.baseArrayLayer = 0;
         blit.dstSubresource.layerCount = 1;
 
-        vkCmdBlitImage(cmd,
-                       image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                       1, &blit,
-                       VK_FILTER_LINEAR);
+        vkCmdBlitImage(cmd, handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &blit, VK_FILTER_LINEAR);
 
         imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageBarrier_toTransfer.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                             0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                             0, nullptr, 1, &imageBarrier_toTransfer);
 
         if (mipWidth > 1)
             mipWidth /= 2;
@@ -167,27 +170,23 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
     imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-    vkCmdPipelineBarrier(cmd,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                         0, nullptr,
-                         0, nullptr,
-                         1, &imageBarrier_toReadable);
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 1, &imageBarrier_toReadable);
 }
 void Image::create_view(VkDevice &device, VkImageAspectFlags aspectFlags, VkImageViewType viewType)
 {
-    VkImageViewCreateInfo dview_info = init::imageview_create_info(format, image, viewType, aspectFlags, mipLevels, layers);
+    VkImageViewCreateInfo dview_info =
+        init::imageview_create_info(format, handle, viewType, aspectFlags, mipLevels, layers);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 
     hasView = true;
 }
-void Image::create_sampler(VkDevice &device, VkFilter filters, VkSamplerMipmapMode mipmapMode, VkSamplerAddressMode samplerAddressMode, float minLod, float maxLod, bool anysotropicFilter, float maxAnysotropy, VkBorderColor border)
+void Image::create_sampler(VkDevice &device, VkFilter filters, VkSamplerMipmapMode mipmapMode,
+                           VkSamplerAddressMode samplerAddressMode, float minLod, float maxLod, bool anysotropicFilter,
+                           float maxAnysotropy, VkBorderColor border)
 {
-    VkSamplerCreateInfo samplerInfo = init::sampler_create_info(filters,
-                                                                VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                                                                minLod,
-                                                                maxLod,
-                                                                anysotropicFilter, maxAnysotropy,
-                                                                samplerAddressMode);
+    VkSamplerCreateInfo samplerInfo = init::sampler_create_info(filters, VK_SAMPLER_MIPMAP_MODE_LINEAR, minLod, maxLod,
+                                                                anysotropicFilter, maxAnysotropy, samplerAddressMode);
     samplerInfo.borderColor = border;
     vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
 
@@ -198,7 +197,7 @@ void Image::cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler)
     if (hasView)
         vkDestroyImageView(device, view, nullptr);
     if (isInitialized)
-        vmaDestroyImage(memory, image, allocation);
+        vmaDestroyImage(memory, handle, allocation);
     if (destroySampler && hasSampler)
         vkDestroySampler(device, sampler, VK_NULL_HANDLE);
 }

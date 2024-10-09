@@ -3,6 +3,10 @@
 
 #include <engine/core/renderer.h>
 
+#include <engine/graphics/renderpasses/forward_pass.h>
+#include <engine/graphics/renderpasses/fxaa_pass.h>
+#include <engine/graphics/renderpasses/shadow_pass.h>
+
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 struct ForwardRendererSettings
@@ -30,9 +34,14 @@ class ForwardRenderer : public Renderer
 
     bool m_updateShadows{false};
 
-public:
-    ForwardRenderer(Window *window) : Renderer(window) {}
-    ForwardRenderer(Window *window, RendererSettings settings, ForwardRendererSettings settings2) : Renderer(window, settings), m_settings2(settings2) {}
+  public:
+    ForwardRenderer(Window *window) : Renderer(window)
+    {
+    }
+    ForwardRenderer(Window *window, RendererSettings settings, ForwardRendererSettings settings2)
+        : Renderer(window, settings), m_settings2(settings2)
+    {
+    }
 
     inline void set_shadow_quality(ShadowResolution quality)
     {
@@ -41,7 +50,8 @@ public:
             m_updateShadows = true;
     }
 
-protected:
+  protected:
+  
     virtual void on_before_render(Scene *const scene);
 
     virtual void on_after_render(VkResult &renderResult, Scene *const scene);

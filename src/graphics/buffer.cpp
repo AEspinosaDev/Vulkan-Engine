@@ -33,7 +33,7 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     vmaallocInfo.usage = memoryUsage;
 
     VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo,
-                             &buffer,
+                             &handle,
                              &allocation,
                              nullptr));
 
@@ -53,7 +53,7 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     vmaallocInfo.usage = memoryUsage;
 
     VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo,
-                             &buffer,
+                             &handle,
                              &allocation,
                              nullptr));
 
@@ -63,7 +63,7 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
 
 void Buffer::cleanup(VmaAllocator &memory)
 {
-    vmaDestroyBuffer(memory, buffer,
+    vmaDestroyBuffer(memory, handle,
                      allocation);
 }
 

@@ -106,6 +106,8 @@ public:
     inline void set_ssao_bias(float i) { m_occBias = i; }
     inline float get_ssao_bias() { return m_occBias; }
 
+   
+
 };
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -21,12 +21,11 @@ jobs:
           submodules: true  # Ensure submodules are cloned
           fetch-depth: 0     # Fetch all history for submodules
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
         with:
-          vulkan-query-version: 1.3.275.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader
-          vulkan-use-cache: true
+          version: 1.3.204.1
+          cache: true
 
       - name: Set up CMake 3.16
         uses: jwlawson/actions-setup-cmake@v1

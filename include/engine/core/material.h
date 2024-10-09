@@ -9,10 +9,10 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <unordered_map>
 #include <engine/core/texture.h>
 #include <engine/graphics/shaderpass.h>
 #include <engine/graphics/uniforms.h>
+#include <unordered_map>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -28,7 +28,7 @@ struct MaterialSettings
 
 class Material
 {
-protected:
+  protected:
     MaterialSettings m_settings{};
 
     std::string m_shaderPassID{};
@@ -39,28 +39,63 @@ protected:
 
     friend class Renderer;
 
-
-public:
+  public:
     static Material *DEBUG_MATERIAL;
 
-    Material(std::string shaderPassID) : m_shaderPassID(shaderPassID) {}
-    Material(std::string shaderPassID, MaterialSettings params) : m_shaderPassID(shaderPassID), m_settings(params) {}
+    Material(std::string shaderPassID) : m_shaderPassID(shaderPassID)
+    {
+    }
+    Material(std::string shaderPassID, MaterialSettings params) : m_shaderPassID(shaderPassID), m_settings(params)
+    {
+    }
 
-    ~Material() {}
+    ~Material()
+    {
+    }
 
-    virtual std::string get_shaderpass_ID() const { return m_shaderPassID; }
-    virtual inline MaterialSettings get_parameters() const { return m_settings; }
-    virtual void set_parameters(MaterialSettings p) { m_settings = p; }
+    virtual std::string get_shaderpass_ID() const
+    {
+        return m_shaderPassID;
+    }
+    virtual inline MaterialSettings get_parameters() const
+    {
+        return m_settings;
+    }
+    virtual void set_parameters(MaterialSettings p)
+    {
+        m_settings = p;
+    }
 
-    virtual inline void set_enable_culling(bool op) { m_settings.faceCulling = op; }
-    virtual inline void set_culling_type(CullingMode t) { m_settings.culling = t; }
-    virtual inline void enable_depth_test(bool op) { m_settings.depthTest = op; }
-    virtual inline void enable_depth_writes(bool op) { m_settings.depthWrite = op; }
-    virtual inline void enable_alpha_test(bool op) { m_settings.alphaTest = op; }
-    virtual inline void enable_blending(bool op) { m_settings.blending = op; }
+    virtual inline void set_enable_culling(bool op)
+    {
+        m_settings.faceCulling = op;
+    }
+    virtual inline void set_culling_type(CullingMode t)
+    {
+        m_settings.culling = t;
+    }
+    virtual inline void enable_depth_test(bool op)
+    {
+        m_settings.depthTest = op;
+    }
+    virtual inline void enable_depth_writes(bool op)
+    {
+        m_settings.depthWrite = op;
+    }
+    virtual inline void enable_alpha_test(bool op)
+    {
+        m_settings.alphaTest = op;
+    }
+    virtual inline void enable_blending(bool op)
+    {
+        m_settings.blending = op;
+    }
 
-    virtual inline DescriptorSet& get_texture_descriptor()  { return m_textureDescriptor; }
-    
+    virtual inline DescriptorSet &get_texture_descriptor()
+    {
+        return m_textureDescriptor;
+    }
+
     virtual MaterialUniforms get_uniforms() const = 0;
 
     virtual std::unordered_map<int, Texture *> get_textures() const = 0;

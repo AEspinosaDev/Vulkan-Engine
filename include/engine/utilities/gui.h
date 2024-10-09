@@ -10,6 +10,7 @@
 #define GUI_H
 
 #include <engine/utilities/widgets.h>
+#include <engine/graphics/context.h>
 
 // WIP..
 // MUCH TO DO HERE, JUST READY FOR A SIMPLE DEMO
@@ -30,8 +31,7 @@ private:
 
     static bool m_initialized;
 
-    void init(VkInstance &instance, VkDevice &device, VkPhysicalDevice &gpu, VkQueue &graphicsQueue, VkRenderPass renderPass,
-              VkFormat format, VkSampleCountFlagBits samples, GLFWwindow *window);
+    void init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *windowHandle, VkFormat format, VkSampleCountFlagBits samples);
     void render();
     void cleanup(VkDevice &device);
 
