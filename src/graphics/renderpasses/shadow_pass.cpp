@@ -125,7 +125,7 @@ void ShadowPass::create_graphic_pipelines()
 {
 
     // DEPTH PASSES
-    
+
     ShaderPassSettings settings{};
     settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
                                        {DescriptorLayoutType::OBJECT_LAYOUT, true},
@@ -141,13 +141,13 @@ void ShadowPass::create_graphic_pipelines()
                               VK_DYNAMIC_STATE_CULL_MODE};
     settings.blendAttachments = {};
 
-    ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows_geom.glsl");
+    ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows/shadows_geom.glsl");
     depthPass->settings = settings;
     ShaderPass::build_shader_stages(m_context->device, *depthPass);
     ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *depthPass);
     m_shaderPasses["shadow"] = depthPass;
 
-    ShaderPass *depthLinePass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows_line_geom.glsl");
+    ShaderPass *depthLinePass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows/shadows_line_geom.glsl");
     depthLinePass->settings = settings;
     depthLinePass->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;

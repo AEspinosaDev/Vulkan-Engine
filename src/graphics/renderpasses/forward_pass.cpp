@@ -203,7 +203,7 @@ void ForwardPass::create_graphic_pipelines()
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
     // Setup shaderpasses
-    m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/unlit.glsl");
+    m_shaderPasses["unlit"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/unlit.glsl");
     m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
                                                                 {DescriptorLayoutType::OBJECT_LAYOUT, true},
                                                                 {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
@@ -216,7 +216,7 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["unlit"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["unlit"]->settings.samples = samples;
 
-    m_shaderPasses["phong"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/phong.glsl");
+    m_shaderPasses["phong"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/phong.glsl");
     m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
                                                                 {DescriptorLayoutType::OBJECT_LAYOUT, true},
                                                                 {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
@@ -229,7 +229,7 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["phong"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["phong"]->settings.samples = samples;
 
-    m_shaderPasses["physical"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/physically_based.glsl");
+    m_shaderPasses["physical"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/physically_based.glsl");
     m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
                                                                    {DescriptorLayoutType::OBJECT_LAYOUT, true},
                                                                    {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
@@ -242,7 +242,7 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["physical"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["physical"]->settings.samples = samples;
 
-    m_shaderPasses["hair"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/hair_strand.glsl");
+    m_shaderPasses["hair"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
     m_shaderPasses["hair"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
                                                                {DescriptorLayoutType::OBJECT_LAYOUT, true},
                                                                {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
