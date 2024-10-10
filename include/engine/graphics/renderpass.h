@@ -203,7 +203,7 @@ class RenderPass
     /*
     Configures and creates the shaderpasses subscribed to the renderpass
     */
-    virtual void create_pipelines() = 0;
+    virtual void create_graphic_pipelines() = 0;
     /*
     Render
     */

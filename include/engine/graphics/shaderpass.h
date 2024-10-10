@@ -31,11 +31,12 @@ struct ShaderSource
 	std::string vertSource;
 	std::string fragSource;
 	std::string geomSource;
-	std::string tessSource;
+	std::string tessControlSource;
+	std::string tessEvalSource;
 
 	static ShaderSource read_file(const std::string &filePath);
 
-	static std::vector<uint32_t> compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, bool optimize);
+	static std::vector<uint32_t> compile_shader(const std::string src, const std::string shaderName, shaderc_shader_kind kind, shaderc_optimization_level optimization);
 
 	static ShaderStage create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code);
 };
@@ -90,7 +91,7 @@ struct ShaderPass
 	ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile) {}
 	ShaderPass(const std::string shaderFile, ShaderPassSettings sett) : SHADER_FILE(shaderFile), settings(sett) {}
 
-	static void build_shader_stages(VkDevice &device, ShaderPass &pass);
+	static void build_shader_stages(VkDevice &device, ShaderPass &pass, shaderc_optimization_level optimization = shaderc_optimization_level_performance);
 
 	static void build(VkDevice &device, VkRenderPass renderPass, DescriptorManager &descriptorManager, VkExtent2D &extent, ShaderPass &shaderPass);
 

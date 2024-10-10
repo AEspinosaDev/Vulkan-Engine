@@ -192,7 +192,7 @@ void ForwardPass::create_descriptors()
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
-void ForwardPass::create_pipelines()
+void ForwardPass::create_graphic_pipelines()
 {
 
     std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,

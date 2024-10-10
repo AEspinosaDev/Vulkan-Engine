@@ -69,7 +69,7 @@ void FXAAPass::create_descriptors()
 
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_imageDescriptorSet);
 }
-void FXAAPass::create_pipelines()
+void FXAAPass::create_graphic_pipelines()
 {
 
     ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/fxaa.glsl");

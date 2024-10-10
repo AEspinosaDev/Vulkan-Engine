@@ -30,7 +30,7 @@ void Renderer::init()
             pass->init();
             pass->create_framebuffer();
             pass->create_descriptors();
-            pass->create_pipelines();
+            pass->create_graphic_pipelines();
             pass->init_resources();
             connect_renderpass(pass);
         }

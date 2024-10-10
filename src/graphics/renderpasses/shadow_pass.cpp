@@ -121,7 +121,7 @@ void ShadowPass::create_descriptors()
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
-void ShadowPass::create_pipelines()
+void ShadowPass::create_graphic_pipelines()
 {
 
     // DEPTH PASS
@@ -135,7 +135,8 @@ void ShadowPass::create_pipelines()
                                       {VertexAttributeType::TANGENT, false},
                                       {VertexAttributeType::COLOR, false}};
     depthPass->settings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-                                         VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
+                                         VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
+                                         VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
     depthPass->settings.blendAttachments = {};
 
     ShaderPass::build_shader_stages(m_context->device, *depthPass);
@@ -179,6 +180,11 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
+
+                    vkCmdSetPrimitiveTopology(cmd, m->get_material(i)->get_shaderpass_ID() == "hair"
+                                                       ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+                                                       : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
                     // GLOBAL LAYOUT BINDING
                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,

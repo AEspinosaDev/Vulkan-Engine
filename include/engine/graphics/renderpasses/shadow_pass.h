@@ -36,7 +36,7 @@ public:
 
     void create_descriptors();
 
-    void create_pipelines();
+    void create_graphic_pipelines();
 
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
