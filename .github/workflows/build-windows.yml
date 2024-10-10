@@ -22,18 +22,25 @@ jobs:
           fetch-depth: 0     # Fetch all history for submodules
 
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.1.1
-        with:
-          version: 1.3.250.1
-          cache: false
-
-         
-      - name: Download VMA (Vulkan Memory Allocator)
-        shell: bash
         run: |
-            curl -L https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/heads/master.zip -o vma.zip
-            unzip vma.zip
-            cp VulkanMemoryAllocator-master/include/vk_mem_alloc.h $VULKAN_SDK/include/vma/
+         curl -LO https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe
+         ./vulkan-sdk.exe /S /D=C:\VulkanSDK  # Silent install to C:\VulkanSDK
+        shell: cmd
+  
+      - name: Set Vulkan SDK environment variables
+        run: |
+          echo "VULKAN_SDK=C:\VulkanSDK" >> $GITHUB_ENV
+          echo "VK_SDK_PATH=C:\VulkanSDK" >> $GITHUB_ENV
+          echo "Adding Vulkan SDK to PATH"
+          echo "$VULKAN_SDK\Bin" >> $GITHUB_PATH
+        shell: cmd
+  
+      - name: Verify Vulkan SDK installation
+        run: |
+          echo "Vulkan SDK installed at: $VULKAN_SDK"
+          dir $VULKAN_SDK\Bin
+        shell: cmd
+      
 
 
       - name: Set up CMake 3.16

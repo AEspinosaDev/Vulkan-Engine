@@ -15,6 +15,7 @@
 
 #include <engine/graphics/utils.h>
 #include <engine/graphics/bootstrap.h>
+#include <engine/graphics/extensions.h>
 #include <engine/graphics/initializers.h>
 #include <engine/graphics/swapchain.h>
 #include <engine/graphics/frame.h>

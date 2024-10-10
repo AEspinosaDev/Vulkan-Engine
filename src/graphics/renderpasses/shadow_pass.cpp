@@ -134,9 +134,12 @@ void ShadowPass::create_graphic_pipelines()
                                       {VertexAttributeType::UV, false},
                                       {VertexAttributeType::TANGENT, false},
                                       {VertexAttributeType::COLOR, false}};
-    depthPass->settings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-                                         VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
-                                         VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
+    depthPass->settings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,          VK_DYNAMIC_STATE_SCISSOR,
+                                         VK_DYNAMIC_STATE_DEPTH_BIAS,        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
+                                         VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                                         VK_DYNAMIC_STATE_CULL_MODE,         VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,
+                                         VK_DYNAMIC_STATE_POLYGON_MODE_EXT};
+    depthPass->settings.blendAttachments = {};
     depthPass->settings.blendAttachments = {};
 
     ShaderPass::build_shader_stages(m_context->device, *depthPass);
@@ -181,9 +184,23 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
 
-                    vkCmdSetPrimitiveTopology(cmd, m->get_material(i)->get_shaderpass_ID() == "hair"
-                                                       ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST
-                                                       : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+                    // Setup per object render state
+                    Material *mat = m->get_material(i);
+                    if (mat->get_shaderpass_ID() != "hair")
+                    {
+                        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+                        vkCmdSetPolygonMode(cmd, VK_POLYGON_MODE_FILL);
+                    }
+                    else
+                    {
+                        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+                        vkCmdSetPolygonMode(cmd, VK_POLYGON_MODE_LINE);
+                    }
+                    vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
+                    vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
+                    vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling
+                                              ? (VkCullModeFlags)mat->get_parameters().culling
+                                              : VK_CULL_MODE_NONE);
 
                     // GLOBAL LAYOUT BINDING
                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
@@ -197,6 +214,7 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 
                     Geometry *g = m->get_geometry(i);
                     draw(cmd, g);
+
                 }
             }
             mesh_idx++;
