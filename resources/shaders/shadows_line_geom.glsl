@@ -13,8 +13,8 @@ void main() {
 
 #define MAX_LIGHTS 50
 
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 150) out;
+layout(lines) in;
+layout(line_strip, max_vertices = 100) out;
 
 struct LightUniform{
    vec3 position;
@@ -60,8 +60,6 @@ void main() {
         gl_Position = scene.lights[i].viewProj * object.model*gl_in[1].gl_Position;
         EmitVertex();
         
-        gl_Position = scene.lights[i].viewProj * object.model*gl_in[2].gl_Position;
-        EmitVertex();
 
         EndPrimitive();
         
@@ -73,8 +71,5 @@ void main() {
 #shader fragment
 #version 460
 
-layout(location = 0) out vec4 color;
-
 void main() {
-    color = vec4(1.0, 0.0, 0.0, 1.0);
 }

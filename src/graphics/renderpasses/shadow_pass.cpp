@@ -124,29 +124,36 @@ void ShadowPass::create_descriptors()
 void ShadowPass::create_graphic_pipelines()
 {
 
-    // DEPTH PASS
-    ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows.glsl");
-    depthPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                  {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                  {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    depthPass->settings.attributes = {{VertexAttributeType::POSITION, true},
-                                      {VertexAttributeType::NORMAL, false},
-                                      {VertexAttributeType::UV, false},
-                                      {VertexAttributeType::TANGENT, false},
-                                      {VertexAttributeType::COLOR, false}};
-    depthPass->settings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,          VK_DYNAMIC_STATE_SCISSOR,
-                                         VK_DYNAMIC_STATE_DEPTH_BIAS,        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
-                                         VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
-                                         VK_DYNAMIC_STATE_CULL_MODE,         VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,
-                                         VK_DYNAMIC_STATE_POLYGON_MODE_EXT};
-    depthPass->settings.blendAttachments = {};
-    depthPass->settings.blendAttachments = {};
+    // DEPTH PASSES
+    
+    ShaderPassSettings settings{};
+    settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                       {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                       {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    settings.attributes = {{VertexAttributeType::POSITION, true},
+                           {VertexAttributeType::NORMAL, false},
+                           {VertexAttributeType::UV, false},
+                           {VertexAttributeType::TANGENT, false},
+                           {VertexAttributeType::COLOR, false}};
+    settings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,          VK_DYNAMIC_STATE_SCISSOR,
+                              VK_DYNAMIC_STATE_DEPTH_BIAS,        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
+                              VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                              VK_DYNAMIC_STATE_CULL_MODE};
+    settings.blendAttachments = {};
 
+    ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows_geom.glsl");
+    depthPass->settings = settings;
     ShaderPass::build_shader_stages(m_context->device, *depthPass);
-
     ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *depthPass);
-
     m_shaderPasses["shadow"] = depthPass;
+
+    ShaderPass *depthLinePass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows_line_geom.glsl");
+    depthLinePass->settings = settings;
+    depthLinePass->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;
+    ShaderPass::build_shader_stages(m_context->device, *depthLinePass);
+    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *depthLinePass);
+    m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
 void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
@@ -162,14 +169,10 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    ShaderPass *shaderPass = m_shaderPasses["shadow"];
-
     vkCmdSetDepthBiasEnable(cmd, true);
     float depthBiasConstant = 0.0;
     float depthBiasSlope = 0.0f;
     vkCmdSetDepthBias(cmd, depthBiasConstant, 0.0f, depthBiasSlope);
-
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline); // DEPENDENCY !!!!
 
     int mesh_idx = 0;
     for (Mesh *m : scene->get_meshes())
@@ -186,16 +189,12 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 
                     // Setup per object render state
                     Material *mat = m->get_material(i);
-                    if (mat->get_shaderpass_ID() != "hair")
-                    {
-                        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-                        vkCmdSetPolygonMode(cmd, VK_POLYGON_MODE_FILL);
-                    }
-                    else
-                    {
-                        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-                        vkCmdSetPolygonMode(cmd, VK_POLYGON_MODE_LINE);
-                    }
+
+                    ShaderPass *shaderPass =
+                        mat->get_shaderpass_ID() != "hair" ? m_shaderPasses["shadow"] : m_shaderPasses["shadowLine"];
+
+                    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+
                     vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
                     vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
                     vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling
@@ -214,7 +213,6 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 
                     Geometry *g = m->get_geometry(i);
                     draw(cmd, g);
-
                 }
             }
             mesh_idx++;

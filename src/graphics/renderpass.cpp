@@ -4,7 +4,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void RenderPass::begin(VkCommandBuffer &cmd, uint32_t framebufferId, VkSubpassContents subpassContents)
 {
-    VkRenderPassBeginInfo renderPassInfo = init::renderpass_begin_info(m_handle, m_extent, m_framebuffer_handles[framebufferId]);
+    VkRenderPassBeginInfo renderPassInfo =
+        init::renderpass_begin_info(m_handle, m_extent, m_framebuffer_handles[framebufferId]);
 
     std::vector<VkClearValue> clearValues;
     clearValues.reserve(m_attachments.size());
@@ -27,12 +28,8 @@ void RenderPass::draw(VkCommandBuffer &cmd, Geometry *g)
 {
     if (g->get_render_data().loaded)
     {
-        Context::draw_geometry(cmd,
-                               g->get_render_data().vbo,
-                               g->get_render_data().ibo,
-                               g->get_vertex_data().size(),
-                               g->get_vertex_index().size(),
-                               g->indexed());
+        Context::draw_geometry(cmd, g->get_render_data().vbo, g->get_render_data().ibo, g->get_vertex_data().size(),
+                               g->get_vertex_index().size(), g->indexed());
     }
 }
 void RenderPass::cleanup()
@@ -67,29 +64,16 @@ void RenderPass::create_framebuffer()
         // Create image and image view for framebuffer
         if (!m_attachments[i].isPresentImage) // If its not default renderpass
         {
-            m_attachments[i].image.init(m_context->memory,
-                                        m_attachments[i].image.format,
-                                        m_attachments[i].viewUsage,
-                                        {m_extent.width, m_extent.height, 1},
-                                        false,
-                                        m_attachments[i].samples,
+            m_attachments[i].image.init(m_context->memory, m_attachments[i].image.format, m_attachments[i].viewUsage,
+                                        {m_extent.width, m_extent.height, 1}, false, m_attachments[i].samples,
                                         m_framebufferImageDepth);
 
-            m_attachments[i].image.create_view(m_context->device,
-                                               m_attachments[i].viewAspect,
+            m_attachments[i].image.create_view(m_context->device, m_attachments[i].viewAspect,
                                                m_attachments[i].viewType);
 
-    
-            m_attachments[i].image.create_sampler(
-                m_context->device,
-                m_attachments[i].filter,
-                VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                m_attachments[i].adressMode,
-                0.0f,
-                1.0f,
-                false,
-                1.0f,
-                VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+            m_attachments[i].image.create_sampler(m_context->device, m_attachments[i].filter,
+                                                  VK_SAMPLER_MIPMAP_MODE_LINEAR, m_attachments[i].adressMode, 0.0f,
+                                                  1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
 
             viewAttachments[i] = m_attachments[i].image.view;
         }
