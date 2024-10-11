@@ -1,5 +1,6 @@
 #shader vertex
 #version 460 core
+#include object.glsl
 
 //Input
 layout(location = 0) in vec3 position;
@@ -7,13 +8,6 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 uv;
 layout(location = 3) in vec3 tangent;
 layout(location = 4) in vec3 color;
-
-//Uniforms
-layout(set = 1, binding = 0) uniform ObjectUniforms {
-    mat4 model;
-    vec4 otherParams;
-    int selected;
-} object;
 
 //Output
 layout(location = 0) out vec3 v_color;
@@ -30,6 +24,7 @@ void main() {
 
 #shader geometry
 #version 460 core
+#include camera.glsl
 
 //Setup
 layout(lines) in;
@@ -40,14 +35,6 @@ layout(location = 0) in vec3 v_color[];
 layout(location = 1) in vec3 v_tangent[];
 
 //Uniforms
-layout(set = 0, binding = 0) uniform CameraUniforms {
-    mat4 view;
-    mat4 proj;
-    mat4 viewProj;
-    vec4 position;
-     vec2 screenExtent;
-} camera;
-
 layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec3 baseColor;
     float thickness;
@@ -63,9 +50,7 @@ layout(location = 5) out vec3 g_dir;
 layout(location = 6) out vec3 g_modelDir;
 layout(location = 7) out vec3 g_color;
 layout(location = 8) out vec3 g_origin;
-// layout(location = 9) out int g_id;
 
-// uniform float u_thickness;
 float thickness = 0.02;
 
 void emitQuadPoint(
@@ -89,7 +74,6 @@ void emitQuadPoint(
     g_normal = normalize(mat3(transpose(inverse(camera.view))) * normal);
     g_modelNormal = normal;
     g_origin = (camera.view * origin).xyz;
-    // g_id = v_id[0];
 
     EmitVertex();
 }
@@ -126,8 +110,12 @@ void main() {
 
 #shader fragment
 #version 460 core
+#include light.glsl
+#include scene.glsl
+#include camera.glsl
+#include marschner_fit.glsl
+#include shadow_mapping.glsl
 
-#define MAX_LIGHTS 50
 
 //Input
 layout(location = 0) in vec3 g_pos;
@@ -139,51 +127,8 @@ layout(location = 5) in vec3 g_dir;
 layout(location = 6) in vec3 g_modelDir;
 layout(location = 7) in vec3 g_color;
 layout(location = 8) in vec3 g_origin;
-// layout(location = 9) in flat int g_id;
 
 //Uniforms
-layout(set = 0, binding = 0) uniform CameraUniforms {
-    mat4 view;
-    mat4 proj;
-    mat4 viewProj;
-    vec4 position;
-     vec2 screenExtent;
-} camera;
-
-struct LightUniform {
-    vec3 position;
-    int type;
-    vec3 color;
-    float intensity;
-    vec4 data;
-
-    mat4 viewProj;
-
-    float shadowBias;
-    float kernelRadius;
-    bool angleDependantBias;
-    float pcfKernel;
-};
-
-layout(set = 0, binding = 1) uniform SceneUniforms {
-    vec3 fogColor;
-
-    bool enableSSAO;
-
-    float fogMinDistance;
-    float fogMaxDistance;
-    float fogIntensity;
-
-    bool enableFog;
-
-    vec3 ambientColor;
-    float ambientIntensity;
-    LightUniform lights[MAX_LIGHTS];
-    int numLights;
-    int SSAOType;
-    bool emphasizeAO;
-} scene;
-
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
 layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
 
@@ -224,84 +169,10 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
 float scatterWeight = 0.0;
 
-//Constant
-const float PI = 3.14159265359;
+
 
 layout(location = 0) out vec4 fragColor;
 
-bool isInAreaOfInfluence(LightUniform light){
-    if(light.type == 0){ //Point Light
-        return length(light.position - g_pos) <= light.data.x;
-    }
-    else if(light.type == 2){ //Spot light
-        //TO DO...
-        return true;
-    }
-    return true; //Directional influence is total
-}
-
-vec3 shiftTangent(vec3 T, vec3 N, float shift) {
-    vec3 shiftedT = T + shift * N;
-    return normalize(shiftedT);
-}
-
-float linearizeDepth(float depth, float near, float far) {
-    float z = depth * 2.0 - 1.0;
-    float linearZ = (2.0 * near * far) / (far + near - z * (far - near));
-    return (linearZ - near) / (far - near);
-}
-///Fresnel
-float fresnelSchlick(float ior, float cosTheta) {
-    float F0 = ((1.0 - ior) * (1.0 - ior)) / ((1.0 + ior) * (1.0 + ior));
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-// Azimuthal REFLECTION
-float NR(vec3 wi, vec3 wo, float cosPhi) {
-    float cosHalfPhi = sqrt(0.5 + 0.5 * cosPhi);
-
-  // return (0.25*cosHalfPhi)*fresnelSchlick(material.ior,sqrt(0.5*(1+dot(wi,wo)))); //Frostbite
-    return (0.25 * cosHalfPhi) * fresnelSchlick(material.ior, sqrt(0.5 + 0.5 * dot(wi, wo))); //Epic
-}
-//Attenuattion
-vec3 A(float f, int p, vec3 t) { //fresnel, Stage, Absorbtion
-    return (1 - f) * (1 - f) * pow(f, p - 1) * pow(t, vec3(p));
-}
-
-// Azimuthal TRANSMITION
-vec3 NTT(float sinThetaD, float cosThetaD, float cosPhi) {
-
-  // float _ior = sqrt(material.ior*material.ior - sinThetaD* sinThetaD)/ cosThetaD; //Original
-    float _ior = 1.19 / cosThetaD + 0.36 * cosThetaD; //Fit EPIC
-    float a = 1 / _ior;
-
-    float cosHalfPhi = sqrt(0.5 + 0.5 * cosPhi);
-    float h = 1 + a * (0.6 - 0.8 * cosPhi) * cosHalfPhi; //Fit EPIC
-
-    float power = sqrt(1 - h * h * a * a) / (2 * cosThetaD);
-
-    float D = exp(-3.65 * cosPhi - 3.98); //Intensity distribution
-    vec3 T = pow(material.baseColor, vec3(power)); //Absortion
-    float F = fresnelSchlick(material.ior, cosThetaD * sqrt(1 - h * h)); //Fresnel
-
-    return A(F, 1, T) * D;
-}
-// Azimuthal DOUBLE REFLECTION
-vec3 NTRT(float sinThetaD, float cosThetaD, float cosPhi) {
-    float h = sqrt(3.0) * 0.5; //Por que si
-
-    float D = exp(17.0 * cosPhi - 16.78); //Intensity distribution
-    vec3 T = pow(material.baseColor, vec3(0.8 / cosThetaD));
-    float F = fresnelSchlick(material.ior, acos(cosThetaD * sqrt(1 - h * h))); //Fresnel CONSTANT ?
-
-    return A(F, 2, T) * D;
-}
-
-//Longitudinal TERM
-float M(float sinTheta, float roughness) {
-  // return exp(-(sinTheta*sinTheta)/(2*roughness*roughness))/sqrt(2*PI*roughness); //Frostbite 
-    return (1.0 / (roughness * sqrt(2 * PI))) * exp((-sinTheta * sinTheta) / (2.0 * roughness * roughness)); //Epic. sintheta = sinThetaWi+sinThetaV-alpha
-}
 
 //Real-time Marschnerr
 vec3 computeLighting(float beta, float shift, LightUniform light, bool r, bool tt, bool trt) {
@@ -317,10 +188,6 @@ vec3 computeLighting(float beta, float shift, LightUniform light, bool r, bool t
     float betaTT = 0.5 * betaR;
     float betaTRT = 2.0 * betaR;
 
-//   if(material.glints){
-//     float glint = texture(u_noiseMap, vec2(g_id/50000.0,g_uv.y)).r; //Make them move tangent
-//     u = shiftTangent(u,n,(glint)*0.1);
-//   }
 
   //Theta & Phi
     float sinThetaWi = dot(wi, u);
@@ -334,9 +201,9 @@ vec3 computeLighting(float beta, float shift, LightUniform light, bool r, bool t
     float cosThetaD = cos(thetaD);
     float sinThetaD = sin(thetaD);
 
-    float R = r ? M(sinThetaWi + sinThetaV - shift * 2.0, betaR) * NR(wi, v, cosPhiD) / 0.25 : 0.0;
-    vec3 TT = tt ? M(sinThetaWi + sinThetaV + shift, betaTT) * NTT(sinThetaD, cosThetaD, cosPhiD) : vec3(0.0);
-    vec3 TRT = trt ? M(sinThetaWi + sinThetaV + shift * 4.0, betaTRT) * NTRT(sinThetaD, cosThetaD, cosPhiD) : vec3(0.0);
+    float R = r ? M(sinThetaWi + sinThetaV - shift * 2.0, betaR) * NR(wi, v, cosPhiD, material.ior) / 0.25 : 0.0;
+    vec3 TT = tt ? M(sinThetaWi + sinThetaV + shift, betaTT) * NTT(sinThetaD, cosThetaD, cosPhiD, material.ior, material.baseColor) : vec3(0.0);
+    vec3 TRT = trt ? M(sinThetaWi + sinThetaV + shift * 4.0, betaTRT) * NTRT(sinThetaD, cosThetaD, cosPhiD,material.ior, material.baseColor) : vec3(0.0);
 
     vec3 albedo = material.baseColor;
     vec3 specular = (R * material.Rpower + TT * material.TTpower + TRT * material.TRTpower) / max(0.2, cosThetaD * cosThetaD);
@@ -346,33 +213,7 @@ vec3 computeLighting(float beta, float shift, LightUniform light, bool r, bool t
 
 }
 
-float filterPCF(int lightID,int kernelSize, vec3 coords, float bias) {
-// int lightId ,int kernelSize, float extentMultiplier, vec3 coords, float bias
-    int edge = kernelSize / 2;
-    vec3 texelSize = 1.0 / textureSize(shadowMap, 0);
 
-    float currentDepth = coords.z;
-
-    float shadow = 0.0;
-
-    for(int x = -edge; x <= edge; ++x) {
-        for(int y = -edge; y <= edge; ++y) {
-            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy ,lightID)).r;
-
-            // //Scatter weight
-            // float currentZ = linearizeDepth(currentDepth, u_scene.frustrumData.z, u_scene.frustrumData.w);
-            // float shadowZ = linearizeDepth(pcfDepth, u_scene.frustrumData.z, u_scene.frustrumData.w);
-            // float weight = 1.0 - clamp(exp(-material.scatter * abs(currentZ - shadowZ)), 0.0, 1.0);
-            // scatterWeight += weight;
-
-            // shadow += currentDepth - bias > pcfDepth ? 1.0 * (material.useScatter ? weight : 1.0) : 0.0;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-        }
-    }
-    // scatterWeight /= (kernelSize * kernelSize);
-    return shadow /= (kernelSize * kernelSize);
-
-}
 
 float computeShadow(LightUniform light, int lightId) {
 
@@ -388,13 +229,11 @@ float computeShadow(LightUniform light, int lightId) {
     vec3 lightDir = normalize(light.position.xyz - g_pos);
     float bias = max(light.shadowBias * 5.0 * (1.0 - dot(g_dir, lightDir)), light.shadowBias);  //Modulate by angle of incidence
 
-    return filterPCF(lightId,int(light.pcfKernel), projCoords, bias);
+    return filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
 
 }
 
-float getLuminance(vec3 li) {
-    return 0.2126 * li.r + 0.7152 * li.g + 0.0722 * li.b;
-}
+
 
 // vec3 multipleScattering(vec3 n){
 
@@ -406,46 +245,7 @@ float getLuminance(vec3 li) {
 
 // }
 
-// float unsharpSSAO(){ //Very simple SSAO with UNSHARP MASKING only using D BUFFER
 
-//     const float kernelDimension = 15.0;
-//     const ivec2 screenSize = textureSize(u_depthMap,0);
-
-//     float occlusion = 0.0;
-
-//     int i = int(gl_FragCoord.x);
-//     int j = int(gl_FragCoord.y);
-
-//     int maxX = i + int(floor(kernelDimension*0.5));
-//     int maxY = j + int(floor(kernelDimension*0.5));
-
-//     float sampX;
-//     float sampY;
-
-//     float neighborCount = 0;
-
-//     for (int x = i - int(floor(kernelDimension*0.5)); x < maxX; x++) {
-//     for (int y = j - int(floor(kernelDimension*0.5)); y < maxY; y++) {
-
-//     sampX = float(x) / screenSize.x;
-//     sampY = float(y) / screenSize.y;
-
-//     if (sampX >= 0.0 && sampX <= 1.0 && sampY >= 0.0 && sampY <= 1.0 &&
-
-//     abs( linearizeDepth(texture(u_depthMap,gl_FragCoord.xy / screenSize.xy).x, u_scene.frustrumData.x, u_scene.frustrumData.y) -
-//      linearizeDepth(texture(u_depthMap,vec2(sampX,sampY)).x, u_scene.frustrumData.x, u_scene.frustrumData.y)) < 0.02) {
-//     occlusion +=   linearizeDepth(texture(u_depthMap,vec2(sampX,sampY)).x, u_scene.frustrumData.x, u_scene.frustrumData.y);
-//     neighborCount++;
-//     }
-//     }
-//     }
-
-//     occlusion = occlusion / neighborCount;
-
-//     occlusion = 20 * ( linearizeDepth(texture(u_depthMap,gl_FragCoord.xy / screenSize.xy).x, u_scene.frustrumData.x, u_scene.frustrumData.y) - max(0.0, occlusion));
-
-//   return clamp(occlusion,0.0,1.0);
-// }
 
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
@@ -483,7 +283,7 @@ void main() {
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
-        if(isInAreaOfInfluence(scene.lights[i])) {
+        if(isInAreaOfInfluence(scene.lights[i], g_pos)) {
 
             vec3 lighting = computeLighting(material.roughness, material.shift, scene.lights[i], material.r, material.tt, material.trt);
 
@@ -505,6 +305,7 @@ void main() {
     // vec3 n1 = cross(g_modelDir, cross(camera.position, g_modelDir));
     // vec3 n2 = normalize(g_modelPos-u_BVCenter);
     // vec3 fakeNormal = mix(n1,n2,0.5);
+
     vec3 fakeNormal = vec3(0.0);
     //Ambient component
     vec3 ambient = computeAmbient(fakeNormal);

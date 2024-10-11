@@ -1,7 +1,8 @@
 #shader vertex
 #version 450
+#include camera.glsl
+#include object.glsl
 
-#define MAX_LIGHTS 50
 
 //Input
 layout(location = 0) in vec3 pos;
@@ -19,71 +20,19 @@ layout(location = 5) out int v_selected;
 layout(location = 6) out mat3 v_TBN;
 
 //Uniforms
-layout(set = 0, binding = 0) uniform CameraUniforms {
-    mat4 view;
-    mat4 proj;
-    mat4 viewProj;
-    vec4 position;
-    vec2 screenExtent;
-} camera;
-
-struct LightUniform{
-   vec3 position;
-    int type;
-    vec3 color;
-    float intensity;
-    vec4 data;
-
-    mat4 viewProj;
-
-    float shadowBias;
-    float kernelRadius;
-    bool angleDependantBias;
-    float pcfKernel;
-};
-
-layout(set = 0, binding = 1) uniform SceneUniforms {
-    vec3 fogColor;
-
-    bool enableSSAO;
-
-    float fogMinDistance;
-    float fogMaxDistance;
-    float fogIntensity;
-
-    bool enableFog;
-
-    vec3 ambientColor;
-    float ambientIntensity;
-    LightUniform lights[MAX_LIGHTS];
-    int numLights;
-    int SSAOType;
-} scene;
-
-layout(set = 1, binding = 0) uniform ObjectUniforms {
-    mat4 model;
-    vec4 otherParams;
-    int selected;
-} object;
-
 layout(set = 1, binding = 1) uniform MaterialUniforms {
+
     vec3 albedo;
     float opacity;
-
     vec2 tileUV;
-
     bool alphaTest;
-
     float unused;
 
     float albedoWeight;
-
     float metalness;
     float metalnessWeight;
-
     float roughness;
     float roughnessWeight;
-
     float occlusion;
     float occlusionWeight;
 
@@ -92,8 +41,8 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool hasRoughnessTexture;
     bool hasMetallicTexture;
     bool hasAOTexture;
-
     bool hasMaskTexture;
+
     int maskType;
 
 } material;
@@ -125,8 +74,14 @@ void main() {
 
 #shader fragment
 #version 450
-
-#define MAX_LIGHTS 50
+#include light.glsl
+#include scene.glsl
+#include object.glsl
+#include shadow_mapping.glsl
+#include fresnel.glsl
+#include schlick_ggx.glsl
+#include utils.glsl
+#include ssao.glsl
 
 //Input
 layout(location = 0) in vec3 v_pos;
@@ -140,78 +95,31 @@ layout(location = 6) in mat3 v_TBN;
 //Output
 layout(location = 0) out vec4 outColor;
 
-struct LightUniform{
-   vec3 position;
-    int type;
-    vec3 color;
-    float intensity;
-    vec4 data;
-
-    mat4 viewProj;
-
-    float shadowBias;
-    float kernelRadius;
-    bool angleDependantBias;
-    float pcfKernel;
-};
-
-layout(set = 0, binding = 1) uniform SceneUniforms {
-    vec3 fogColor;
-
-    bool enableSSAO;
-
-    float fogMinDistance;
-    float fogMaxDistance;
-    float fogIntensity;
-
-    bool enableFog;
-
-    vec3 ambientColor;
-    float ambientIntensity;
-    LightUniform lights[MAX_LIGHTS];
-    int numLights;
-    int SSAOType;
-    bool emphasizeAO;
-} scene;
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
 layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
 
-layout(set = 1, binding = 0) uniform ObjectUniforms {
-    mat4 model;
-    vec4 otherParams;
-} object;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
      vec3 albedo;
     float opacity;
-
     vec2 tileUV;
-
     bool alphaTest;
-
     bool blending;
-
     float albedoWeight;
-
     float metalness;
     float metalnessWeight;
-
     float roughness;
     float roughnessWeight;
-
     float occlusion;
     float occlusionWeight;
-
     bool hasAlbdoTexture;
     bool hasNormalTexture;
     bool hasRoughnessTexture;
     bool hasMetallicTexture;
     bool hasAOTexture;
-
     bool hasMaskTexture;
     int maskType;
-
     float opacityWeight;
 } material;
 
@@ -231,111 +139,6 @@ float g_roughness;
 float g_metalness;
 float g_ao;
 
-//Constant
-const float PI = 3.14159265359;
-const float EPSILON = 0.1;
-
-bool isInAreaOfInfluence(LightUniform light){
-    if(light.type == 0){ //Point Light
-        return length(light.position - v_pos) <= light.data.x;
-    }
-    else if(light.type == 2){ //Spot light
-        //TO DO...
-        return true;
-    }
-    return true; //Directional influence is total
-}
-
-float computeFog() {
-    float z = (2.0 * scene.fogMinDistance) / (scene.fogMaxDistance + scene.fogMinDistance - gl_FragCoord.z * (scene.fogMaxDistance - scene.fogMinDistance));
-    return exp(-scene.fogIntensity * 0.01 * z);
-}
-
-float computeAttenuation(LightUniform light) {
-    if(light.type != 0)
-        return 1.0;
-
-    float d = length(light.position - v_pos);
-    float influence = light.data.x;
-    float window = pow(max(1 - pow(d / influence, 2), 0), 2);
-
-    return pow(10 / max(d, 0.0001), 2) * window;
-}
-
-float filterPCF(int lightId ,int kernelSize, float extentMultiplier, vec3 coords, float bias) {
-
-    int edge = kernelSize / 2;
-    vec3 texelSize = 1.0 / textureSize(shadowMap, 0);
-
-    float currentDepth = coords.z;
-
-    float shadow = 0.0;
-
-    for(int x = -edge; x <= edge; ++x) {
-        for(int y = -edge; y <= edge; ++y) {
-            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy * extentMultiplier,lightId)).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-        }
-    }
-    return shadow /= (kernelSize * kernelSize);
-
-}
-
-float computeShadow(LightUniform light, int lightId) {
-
-    vec4 pos_lightSpace = light.viewProj * vec4(v_modelPos.xyz, 1.0);
-
-    vec3 projCoords = pos_lightSpace.xyz / pos_lightSpace.w;
-
-    projCoords.xy  = projCoords.xy * 0.5 + 0.5;
-
-    if(projCoords.z > 1.0 || projCoords.z < 0.0)
-        return 0.0;
-
-    
-    return filterPCF(lightId,int(light.pcfKernel), light.kernelRadius, projCoords, light.shadowBias);
-
-}
-
-//Fresnel
-vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-//Normal Distribution 
-//Trowbridge - Reitz GGX
-float distributionGGX(vec3 N, vec3 H, float roughness) {
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
-
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-
-    return num / denom;
-}
-//Geometry
-//Schlick - GGX
-float geometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-
-    float num = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
-    return num / denom;
-}
-
-float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = geometrySchlickGGX(NdotV, roughness);
-    float ggx1 = geometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
 
 vec3 computeLighting(LightUniform light) {
 
@@ -349,7 +152,7 @@ vec3 computeLighting(LightUniform light) {
     F0 = mix(F0, g_albedo, g_metalness);
 
 	//Radiance
-    vec3 radiance = light.color * computeAttenuation(light) * light.intensity;
+    vec3 radiance = light.color * computeAttenuation(light, v_pos) * light.intensity;
 
 	// Cook-Torrance BRDF
     float NDF = distributionGGX(g_normal, halfVector, g_roughness);
@@ -397,55 +200,7 @@ void setupSurfaceProperties(){
     }
 }
 
-float linearizeDepth(float depth, float near, float far) {
-    float z = depth * 2.0 - 1.0; 
-    float linearZ = (2.0 * near * far) / (far + near - z * (far - near));
-    return (linearZ - near) / (far - near);
-}
 
-float UnsharpSSAO(){
-
-    const float kernelDimension = 15.0;
-    const ivec2 screenSize = textureSize(ssaoMap,0);
-
-    float occlusion = 0.0;
-
-    int i = int(gl_FragCoord.x);
-    int j = int(gl_FragCoord.y);
-
-    int maxX = i + int(floor(kernelDimension*0.5));
-    int maxY = j + int(floor(kernelDimension*0.5));
-
-    float sampX;
-    float sampY;
-
-    float neighborCount = 0;
-
-    for (int x = i - int(floor(kernelDimension*0.5)); x < maxX; x++) {
-    for (int y = j - int(floor(kernelDimension*0.5)); y < maxY; y++) {
-    
-    sampX = float(x) / screenSize.x;
-    sampY = float(y) / screenSize.y;
-
-    if (sampX >= 0.0 && sampX <= 1.0 && sampY >= 0.0 && sampY <= 1.0 &&
-    
-    abs( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a,0.1,100.0) -
-     linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a, 0.1,100.0)) < 0.02) {
-    occlusion +=   linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a,0.1,100.0);
-    neighborCount++;
-    }
-    }
-    }
-
-    occlusion = occlusion / neighborCount;
-     
-     
-    occlusion = 20 * ( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a, 0.1,100.0) - max(0.0, occlusion));
-
-
-  return occlusion;
-
-}
 
 void main() {
 
@@ -455,11 +210,11 @@ void main() {
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
-        if(isInAreaOfInfluence(scene.lights[i])){
+        if(isInAreaOfInfluence(scene.lights[i], v_pos)){
 
             vec3 lighting =computeLighting(scene.lights[i]);
             if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-                lighting *= (1.0 - computeShadow(scene.lights[i],i));
+                lighting *= (1.0 - computeShadow(shadowMap,scene.lights[i],i,v_modelPos));
 
             }
 
@@ -477,7 +232,7 @@ void main() {
             occ = texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r;
         }
         if (scene.SSAOType == 1){
-            occ = UnsharpSSAO();
+            occ = UnsharpSSAO(ssaoMap);
         }    
     }
 
@@ -487,10 +242,8 @@ void main() {
         color*=occ;
     }
 
-
 	//Tone Up
     color = color / (color + vec3(1.0));
-
     
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
         float f = computeFog();

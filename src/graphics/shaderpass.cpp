@@ -142,6 +142,7 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
 {
 
     std::ifstream stream(filePath);
+    std::string scriptsPath(ENGINE_RESOURCES_PATH"shaders/scripts/");
 
     enum class ShaderType
     {
@@ -159,6 +160,7 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
 
     while (getline(stream, line))
     {
+        // SELECT THE SHADER STAGE
         if (line.find("#shader") != std::string::npos)
         {
             if (line.find("vertex") != std::string::npos)
@@ -172,6 +174,18 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
             else if (line.find("tesseval") != std::string::npos)
                 type = ShaderType::TESS_EVALUATION;
         }
+        // CHECK MODULES INCLUDED
+        else if (line.find("#include") != std::string::npos)
+        {
+            size_t start = line.find(" ") + 1;                  
+            std::string includeFile = utils::trim(line.substr(start)); // Extract the file name and trim any spaces
+
+            std::string fullIncludePath = scriptsPath + includeFile;
+
+            std::string includeContent = utils::read_file(fullIncludePath);
+            ss[(int)type] << includeContent << '\n';
+        }
+        // FILL THE ACTUAL STAGE CODE
         else
         {
             ss[(int)type] << line << '\n';
