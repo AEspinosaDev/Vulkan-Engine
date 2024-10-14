@@ -4,6 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void ForwardPass::init()
 {
+
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
     bool multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
 

@@ -7,15 +7,14 @@ void VulkanRenderer::init(RendererSettings settings, ForwardRendererSettings set
 
     m_window->init();
 
-    m_window->set_window_size_callback(std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1,
-                                                 std::placeholders::_2));
-    m_window->set_mouse_callback(std::bind(&VulkanRenderer::mouse_callback, this, std::placeholders::_1,
-                                           std::placeholders::_2));
+    m_window->set_window_size_callback(
+        std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_mouse_callback(
+        std::bind(&VulkanRenderer::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
-                                         std::placeholders::_2, std::placeholders::_3,
-                                         std::placeholders::_4));
+                                         std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new ForwardRenderer(m_window, settings, settings2) ;
+    m_renderer = new ForwardRenderer(m_window, settings, settings2);
 
     setup();
 
@@ -86,7 +85,8 @@ void VulkanRenderer::run(int argc, char *argv[])
                 settings.samplesMSAA = MSAASamples::MSAA_x4;
             if (aaType == "msaa8")
                 settings.samplesMSAA = MSAASamples::MSAA_x8;
-            if (aaType == "fxaa"){
+            if (aaType == "fxaa")
+            {
                 settings2.fxaa = true;
                 settings.samplesMSAA = MSAASamples::_NONE;
             }
@@ -342,7 +342,8 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
+    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height,
+                                         GuiColorProfileType::DARK);
 
     Panel *tutorialPanel = new Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 

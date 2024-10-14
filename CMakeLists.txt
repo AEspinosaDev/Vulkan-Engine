@@ -48,6 +48,7 @@ add_subdirectory(thirdparty/imgui)
 add_subdirectory(thirdparty/stb_image)
 add_subdirectory(thirdparty/tiny_obj_loader)	
 add_subdirectory(thirdparty/tinyply)	
+add_subdirectory(thirdparty/optick-1.4.0)	
 
 # Setup
 file(GLOB LIB_SOURCES 
@@ -85,10 +86,11 @@ target_link_libraries(VkFW PUBLIC
     stb_image 
     imgui 
     tiny_obj_loader 
-    tinyply)
+    tinyply
+    optick)
 
 # Set dependencies inside folder
-set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply PROPERTY FOLDER "thirdparty")
+set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply optick PROPERTY FOLDER "thirdparty")
 
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
