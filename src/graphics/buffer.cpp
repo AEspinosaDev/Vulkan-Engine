@@ -4,6 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)
 {
+    PROFILING_EVENT()
     void *data;
     vmaMapMemory(memory, allocation, &data);
     memcpy(data, bufferData, size);
@@ -12,6 +13,7 @@ void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t si
 
 void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size, size_t offset)
 {
+    PROFILING_EVENT()
     char *data;
     vmaMapMemory(memory, allocation, (void **)&data);
     data += offset;

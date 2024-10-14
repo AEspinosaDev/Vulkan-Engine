@@ -20,6 +20,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 void Renderer::update_global_data(Scene *const scene)
 {
+    PROFILING_EVENT()
     /*
     CAMERA UNIFORMS LOAD
     */
@@ -77,6 +78,7 @@ void Renderer::update_global_data(Scene *const scene)
 }
 void Renderer::update_object_data(Scene *const scene)
 {
+    PROFILING_EVENT()
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -188,14 +190,18 @@ void Renderer::upload_material_textures(Material *const mat)
 
 void Renderer::upload_geometry_data(Geometry *const g)
 {
-    if (!g->get_render_data().loaded)
+    PROFILING_EVENT()
+    if (!g->get_render_data().loadedOnGPU)
     {
-        size_t vboSize = sizeof(g->get_vertex_data()[0]) * g->get_vertex_data().size();
-        size_t iboSize = sizeof(g->get_vertex_index()[0]) * g->get_vertex_index().size();
+        GeometryData gd = g->get_geometric_data();
+        size_t vboSize = sizeof(gd.vertexData[0]) * gd.vertexData.size();
+        size_t iboSize = sizeof(gd.vertexIndex[0]) * gd.vertexIndex.size();
         RenderData rd = g->get_render_data();
-        m_context.upload_geometry(rd.vbo, vboSize, g->get_vertex_data().data(), rd.ibo, iboSize,
-                                  g->get_vertex_index().data(), g->indexed());
-        rd.loaded = true;
+        m_context.upload_geometry(rd.vbo, vboSize, gd.vertexData.data(), rd.ibo, iboSize, gd.vertexIndex.data(),
+                                  g->indexed());
+        rd.indexCount = gd.vertexIndex.size();
+        rd.vertexCount = gd.vertexIndex.size();
+        rd.loadedOnGPU = true;
         g->set_render_data(rd);
     }
 }

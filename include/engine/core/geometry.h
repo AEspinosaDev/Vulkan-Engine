@@ -20,20 +20,30 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 class Geometry;
 
-struct GeometryStats
+struct GeometryData
 {
+    std::vector<uint32_t> vertexIndex;
+    std::vector<utils::Vertex> vertexData;
+
+    // Stats
     Vec3 maxCoords;
     Vec3 minCoords;
     Vec3 center;
 
-    void compute_statistics(Geometry *g);
+    bool loaded{false};
+
+    void compute_statistics();
 };
 
 struct RenderData
 {
-    bool loaded{false};
+    bool loadedOnGPU{false};
+
     Buffer vbo{};
     Buffer ibo{};
+
+    uint32_t vertexCount{0};
+    uint32_t indexCount{0};
 };
 
 /*
@@ -44,14 +54,9 @@ class Geometry
 
   private:
     RenderData m_renderData{};
-
-    std::vector<uint32_t> m_vertexIndex;
-    std::vector<utils::Vertex> m_vertexData;
+    GeometryData m_geometryData{};
 
     size_t m_materialID{0};
-
-    bool m_loaded{false};
-    bool m_indexed{false};
 
   public:
     Geometry()
@@ -69,22 +74,23 @@ class Geometry
 
     inline bool data_loaded() const
     {
-        return m_loaded;
+        return m_geometryData.loaded;
     }
     inline bool indexed() const
     {
-        return m_indexed;
+        return !m_geometryData.vertexIndex.empty();
     }
 
-    inline std::vector<uint32_t> const get_vertex_index() const
+    inline GeometryData get_geometric_data()
     {
-        return m_vertexIndex;
+        return m_geometryData;
     }
-    inline std::vector<utils::Vertex> const get_vertex_data() const
+    inline void set_geometric_data(GeometryData gd)
     {
-        return m_vertexData;
+        m_geometryData = gd;
     }
-    inline RenderData get_render_data() const
+
+    inline RenderData get_render_data()
     {
         return m_renderData;
     }

@@ -26,10 +26,11 @@ void RenderPass::end(VkCommandBuffer &cmd)
 }
 void RenderPass::draw(VkCommandBuffer &cmd, Geometry *g)
 {
-    if (g->get_render_data().loaded)
+    PROFILING_EVENT()
+    if (g->get_render_data().loadedOnGPU)
     {
-        Context::draw_geometry(cmd, g->get_render_data().vbo, g->get_render_data().ibo, g->get_vertex_data().size(),
-                               g->get_vertex_index().size(), g->indexed());
+        RenderData rd = g->get_render_data();
+        Context::draw_geometry(cmd, rd.vbo, rd.ibo, rd.vertexCount, rd.indexCount, g->indexed());
     }
 }
 void RenderPass::cleanup()

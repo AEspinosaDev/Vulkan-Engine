@@ -268,6 +268,7 @@ void ForwardPass::create_graphic_pipelines()
 
 void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
+    PROFILING_EVENT()
 
     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 

@@ -158,6 +158,8 @@ void ShadowPass::create_graphic_pipelines()
 
 void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
+    PROFILING_EVENT()
+
     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);

@@ -3,7 +3,8 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 bool GUIOverlay::m_initialized = false;
 
-void GUIOverlay::init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *windowHandle, VkFormat format, VkSampleCountFlagBits samples)
+void GUIOverlay::init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *windowHandle, VkFormat format,
+                      VkSampleCountFlagBits samples)
 {
     // if (GUIOverlay::m_initialized)
     //     return;
@@ -55,9 +56,9 @@ void GUIOverlay::init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *wi
     // this initializes imgui for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = ctx.instance;
-    init_info.PhysicalDevice =  ctx.gpu;
-    init_info.Device =  ctx.device;
-    init_info.Queue =  ctx.graphicsQueue;
+    init_info.PhysicalDevice = ctx.gpu;
+    init_info.Device = ctx.device;
+    init_info.Queue = ctx.graphicsQueue;
     init_info.DescriptorPool = m_pool;
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;
@@ -71,6 +72,8 @@ void GUIOverlay::init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *wi
 
 void GUIOverlay::render()
 {
+    PROFILING_EVENT()
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();

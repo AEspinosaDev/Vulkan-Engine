@@ -134,6 +134,8 @@ void Context::draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint
                             bool indexed, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset,
                             uint32_t firstInstance)
 {
+    PROFILING_EVENT()
+
     VkBuffer vertexBuffers[] = {vbo.handle};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
@@ -152,6 +154,7 @@ void Context::draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint
 void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
                               const void *iboData, bool indexed)
 {
+    PROFILING_EVENT()
     // Should be executed only once if geometry data is not changed
 
     Buffer vboStagingBuffer;
@@ -197,6 +200,7 @@ void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, 
 void Context::upload_texture_image(Image &img, const void *cache, VkFormat format, VkFilter filter,
                                    VkSamplerAddressMode adressMode, bool anisotropicFilter, bool useMipmaps)
 {
+    PROFILING_EVENT()
 
     img.init(memory, format,
              VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, img.extent,

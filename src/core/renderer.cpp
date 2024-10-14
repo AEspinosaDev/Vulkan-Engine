@@ -55,6 +55,7 @@ void Renderer::run(Scene *const scene)
     while (!glfwWindowShouldClose(m_window->get_handle()))
     {
         // I-O
+        PROFILING_FRAME();
         Window::poll_events();
         render(scene);
     }
@@ -80,13 +81,13 @@ void Renderer::shutdown(Scene *const scene)
                 {
                     Geometry *g = m->get_geometry(i);
                     RenderData rd = g->get_render_data();
-                    if (rd.loaded)
+                    if (rd.loadedOnGPU)
                     {
                         rd.vbo.cleanup(m_context.memory);
                         if (g->indexed())
                             rd.ibo.cleanup(m_context.memory);
 
-                        rd.loaded = false;
+                        rd.loadedOnGPU = false;
                         g->set_render_data(rd);
                     }
                 }
@@ -107,6 +108,8 @@ void Renderer::shutdown(Scene *const scene)
 
 void Renderer::on_before_render(Scene *const scene)
 {
+    PROFILING_EVENT()
+
     if (Frame::guiEnabled && m_gui)
         m_gui->render();
 
@@ -122,6 +125,8 @@ void Renderer::on_before_render(Scene *const scene)
 
 void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 {
+    PROFILING_EVENT()
+
     if (renderResult == VK_ERROR_OUT_OF_DATE_KHR || renderResult == VK_SUBOPTIMAL_KHR || m_window->is_resized() ||
         m_updateFramebuffers)
     {
@@ -139,6 +144,9 @@ void Renderer::on_after_render(VkResult &renderResult, Scene *const scene)
 
 void Renderer::render(Scene *const scene)
 {
+    PROFILING_FRAME();
+    PROFILING_EVENT()
+
     if (!m_initialized)
         init();
 
