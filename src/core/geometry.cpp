@@ -25,7 +25,7 @@ void Geometry::fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t v
     m_geometryData.compute_statistics();
 }
 
-void GeometryData::compute_statistics()
+void GeometricData::compute_statistics()
 {
     maxCoords = {0.0f, 0.0f, 0.0f};
     minCoords = {INFINITY, INFINITY, INFINITY};
@@ -48,4 +48,10 @@ void GeometryData::compute_statistics()
 
     center = (maxCoords + minCoords) * 0.5f;
 }
+
+RenderData *const get_render_data(Geometry *g)
+{
+    return &g->m_renderData;
+}
+
 VULKAN_ENGINE_NAMESPACE_END

@@ -20,7 +20,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 class Geometry;
 
-struct GeometryData
+struct GeometricData
 {
     std::vector<uint32_t> vertexIndex;
     std::vector<utils::Vertex> vertexData;
@@ -54,9 +54,11 @@ class Geometry
 
   private:
     RenderData m_renderData{};
-    GeometryData m_geometryData{};
+    GeometricData m_geometryData{};
 
     size_t m_materialID{0};
+
+    friend RenderData *const get_render_data(Geometry *g);
 
   public:
     Geometry()
@@ -81,24 +83,10 @@ class Geometry
         return !m_geometryData.vertexIndex.empty();
     }
 
-    inline GeometryData get_geometric_data()
+    inline const GeometricData *get_geometric_data() const
     {
-        return m_geometryData;
+        return &m_geometryData;
     }
-    inline void set_geometric_data(GeometryData gd)
-    {
-        m_geometryData = gd;
-    }
-
-    inline RenderData get_render_data()
-    {
-        return m_renderData;
-    }
-    inline void set_render_data(RenderData rd)
-    {
-        m_renderData = rd;
-    }
-
     ~Geometry()
     {
     }
@@ -107,6 +95,8 @@ class Geometry
     void fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
 };
+
+RenderData *const get_render_data(Geometry *g);
 
 VULKAN_ENGINE_NAMESPACE_END;
 

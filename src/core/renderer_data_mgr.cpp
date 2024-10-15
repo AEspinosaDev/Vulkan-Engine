@@ -191,18 +191,20 @@ void Renderer::upload_material_textures(Material *const mat)
 void Renderer::upload_geometry_data(Geometry *const g)
 {
     PROFILING_EVENT()
-    if (!g->get_render_data().loadedOnGPU)
+    RenderData* rd = get_render_data(g);
+    if (!rd->loadedOnGPU)
     {
-        GeometryData gd = g->get_geometric_data();
-        size_t vboSize = sizeof(gd.vertexData[0]) * gd.vertexData.size();
-        size_t iboSize = sizeof(gd.vertexIndex[0]) * gd.vertexIndex.size();
-        RenderData rd = g->get_render_data();
-        m_context.upload_geometry(rd.vbo, vboSize, gd.vertexData.data(), rd.ibo, iboSize, gd.vertexIndex.data(),
+        const GeometricData *gd = g->get_geometric_data();
+
+        size_t vboSize = sizeof(gd->vertexData[0]) * gd->vertexData.size();
+        size_t iboSize = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
+
+        m_context.upload_geometry(rd->vbo, vboSize, gd->vertexData.data(), rd->ibo, iboSize, gd->vertexIndex.data(),
                                   g->indexed());
-        rd.indexCount = gd.vertexIndex.size();
-        rd.vertexCount = gd.vertexIndex.size();
-        rd.loadedOnGPU = true;
-        g->set_render_data(rd);
+
+        rd->indexCount = gd->vertexIndex.size();
+        rd->vertexCount = gd->vertexIndex.size();
+        rd->loadedOnGPU = true;
     }
 }
 

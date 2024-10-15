@@ -80,15 +80,14 @@ void Renderer::shutdown(Scene *const scene)
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
                     Geometry *g = m->get_geometry(i);
-                    RenderData rd = g->get_render_data();
-                    if (rd.loadedOnGPU)
+                    RenderData* rd = get_render_data(g);
+                    if (rd->loadedOnGPU)
                     {
-                        rd.vbo.cleanup(m_context.memory);
+                        rd->vbo.cleanup(m_context.memory);
                         if (g->indexed())
-                            rd.ibo.cleanup(m_context.memory);
+                            rd->ibo.cleanup(m_context.memory);
 
-                        rd.loadedOnGPU = false;
-                        g->set_render_data(rd);
+                        rd->loadedOnGPU = false;
                     }
                 }
             }

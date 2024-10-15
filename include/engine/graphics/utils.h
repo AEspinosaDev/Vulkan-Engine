@@ -20,6 +20,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace utils
 {
 
+
+
 struct UploadContext
 {
     VkFence uploadFence;
@@ -192,7 +194,7 @@ struct memory_stream : virtual memory_buffer, public std::istream
 };
 
 // Function to trim leading and trailing whitespace
-std::string trim(const std::string& str);
+std::string trim(const std::string &str);
 
 std::string read_file(const std::string &filePath);
 

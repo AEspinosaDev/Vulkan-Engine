@@ -89,7 +89,7 @@ class Mesh : public Object3D
     /**
      * Returns the geometry in the slot.
      */
-    inline Geometry *get_geometry(size_t id = 0) const
+    inline Geometry *const get_geometry(size_t id = 0) const
     {
         return m_geometry.size() >= id + 1 ? m_geometry[id] : nullptr;
     }
