@@ -24,7 +24,7 @@ jobs:
       - name: Install Vulkan SDK
         run: |
           curl -LO https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe
-          VulkanSDK-1.2.182.1-Installer.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.32bit com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.volk com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
+          vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.32bit com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.volk com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
         shell: cmd
   
      
