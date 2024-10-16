@@ -203,6 +203,7 @@ class Object3D
 
     virtual Mat4 get_model_matrix()
     {
+        //  Dirty flag
         if (isDirty)
         {
 
@@ -215,10 +216,8 @@ class Object3D
 
             isDirty = false;
         }
-        //  Dirty flag
-        m_transform.worldMatrix =
-            m_parent ? m_parent->get_model_matrix() * m_transform.worldMatrix : m_transform.worldMatrix;
-        return m_transform.worldMatrix;
+
+        return m_parent ? m_parent->get_model_matrix() * m_transform.worldMatrix : m_transform.worldMatrix;
     }
 
     virtual void add_child(Object3D *child)
