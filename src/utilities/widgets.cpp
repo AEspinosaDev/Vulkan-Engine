@@ -5,8 +5,10 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 void Panel::render(ImVec2 extent)
 {
     m_pixelExtent = {m_extent.x * extent.x, m_extent.y * extent.y};
-    ImGui::SetNextWindowPos({m_position.x * extent.x, m_position.y * extent.y}, (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
-    ImGui::SetNextWindowSize({m_extent.x * extent.x, m_extent.y * extent.y}, (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
+    ImGui::SetNextWindowPos({m_position.x * extent.x, m_position.y * extent.y},
+                            (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
+    ImGui::SetNextWindowSize({m_extent.x * extent.x, m_extent.y * extent.y},
+                             (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
     ImGui::SetNextWindowCollapsed(m_collapsed, ImGuiCond_Once);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, m_padding);
@@ -17,9 +19,13 @@ void Panel::render(ImVec2 extent)
 
     if (m_open)
     {
-        if (ImGui::Begin(m_title, m_closable ? &m_open : NULL, m_collapsable ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+        if (ImGui::Begin(m_title, m_closable ? &m_open : NULL,
+                         m_collapsable
+                             ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar
+                             : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
         {
-            //     ImGui::SetWindowPos({m_position.x * m_parentOverlay->get_extent().x, m_position.y * m_parentOverlay->get_extent().y});
+            //     ImGui::SetWindowPos({m_position.x * m_parentOverlay->get_extent().x, m_position.y *
+            //     m_parentOverlay->get_extent().y});
             // if (m_resized)
             // {
             //     m_resized = false;
@@ -113,9 +119,11 @@ void SceneExplorerWidget::render()
 
     ImGui::SeparatorText("SCENE EXPLORER");
 
-    static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;
+    static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
+                                   ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;
 
-    if (ImGui::BeginTable("2ways", 2, flags, ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
+    if (ImGui::BeginTable("2ways", 2, flags,
+                          ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
     {
         ImGui::TableSetupColumn(" Name", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, 3 * 18.0f);
@@ -132,76 +140,16 @@ void SceneExplorerWidget::render()
             bool selected;
             static void DisplayNode(MyTreeNode *node, std::vector<MyTreeNode> all_nodes)
             {
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                const bool is_folder = (node->ChildCount > 0);
-                if (is_folder)
-                {
-                    bool open = ImGui::TreeNodeEx(node->Name, ImGuiTreeNodeFlags_SpanFullWidth);
-                    ImGui::TableNextColumn();
-                    ImGui::TextDisabled("--");
-                    if (open)
-                    {
-                        for (int child_n = 0; child_n < node->ChildCount; child_n++)
-                            DisplayNode(&all_nodes[node->ChildIdx + child_n], all_nodes);
-                        ImGui::TreePop();
-                    }
-                }
-                else
-                {
-
-                    if (ImGui::TreeNodeEx(node->obj->get_name().c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth))
-                    {
-                        /*	node->selected = ImGui::IsItemClicked();
-                            if (ImGui::IsItemClicked()) {
-                                UIManager::setSelectedObj(node->obj, true);
-                            }*/
-                    };
-
-                    ImGui::TableNextColumn();
-
-                    if (ImGui::SmallButton(node->obj->is_active() ? "true" : "false"))
-                    {
-                        node->obj->set_active(!node->obj->is_active());
-                    }
-                }
             }
         };
 
         auto objs = m_scene->get_children();
         std::vector<MyTreeNode> nodes;
         int counter = 0;
+
         for (auto obj : objs)
         {
-            auto tpe = obj->get_type();
-
-            ImGui::PushID(counter);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-
-            std::string name = obj->get_name();
-
-            if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth))
-            {
-                // node->selected = ImGui::IsItemClicked();
-                if (ImGui::IsItemClicked())
-                {
-                    if (m_selectedObject)
-                        m_selectedObject->set_selected(false);
-                    m_selectedObject = obj;
-                    obj->set_selected(true);
-                }
-            };
-
-            ImGui::TableNextColumn();
-            if (ImGui::Button(obj->is_active() ? "true" : "false"))
-            {
-                obj->set_active(!obj->is_active());
-            }
-            ImGui::PopID();
-
-            counter++;
+            displayObject(obj, counter);
         }
 
         ImGui::EndTable();
@@ -244,6 +192,42 @@ void SceneExplorerWidget::render()
     ImGui::Spacing();
     ImGui::Separator();
 }
+void SceneExplorerWidget::displayObject(Object3D *const obj, int &counter)
+{
+    auto tpe = obj->get_type();
+
+    ImGui::PushID(counter);
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    std::string name = obj->get_name();
+
+    if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet |
+                                            ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth))
+    {
+        // node->selected = ImGui::IsItemClicked();
+        if (ImGui::IsItemClicked())
+        {
+            if (m_selectedObject)
+                m_selectedObject->set_selected(false);
+            m_selectedObject = obj;
+            obj->set_selected(true);
+        }
+    };
+
+    ImGui::TableNextColumn();
+    if (ImGui::Button(obj->is_active() ? "true" : "false"))
+    {
+        obj->set_active(!obj->is_active());
+    }
+    ImGui::PopID();
+
+    counter++;
+
+    ImGui::Indent();
+    for (auto child : obj->get_children())
+        displayObject(child, counter);
+    ImGui::Unindent();
+}
 void Profiler::render()
 {
     ImGui::Text(" %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -272,23 +256,17 @@ void ObjectExplorerWidget::render()
     ImGui::SeparatorText("Transform");
     const float PI = 3.14159265359f;
 
-    float position[3] = {m_object->get_position().x,
-                         m_object->get_position().y,
-                         m_object->get_position().z};
+    float position[3] = {m_object->get_position().x, m_object->get_position().y, m_object->get_position().z};
     if (ImGui::DragFloat3("Position", position, 0.1f))
     {
         m_object->set_position(Vec3(position[0], position[1], position[2]));
     };
-    float rotation[3] = {(m_object->get_rotation().x),
-                         (m_object->get_rotation().y),
-                         (m_object->get_rotation().z)};
+    float rotation[3] = {(m_object->get_rotation().x), (m_object->get_rotation().y), (m_object->get_rotation().z)};
     if (ImGui::DragFloat3("Rotation", rotation, 0.1f))
     {
         m_object->set_rotation(Vec3(rotation[0], rotation[1], rotation[2]));
     };
-    float scale[3] = {m_object->get_scale().x,
-                      m_object->get_scale().y,
-                      m_object->get_scale().z};
+    float scale[3] = {m_object->get_scale().x, m_object->get_scale().y, m_object->get_scale().z};
     if (ImGui::DragFloat3("Scale", scale, 0.1f))
     {
         m_object->set_scale(Vec3(scale[0], scale[1], scale[2]));
@@ -306,7 +284,8 @@ void ObjectExplorerWidget::render()
             faceCount += (int)get_render_data(model->get_geometry(i))->indexCount / 3;
         }
 
-        ImGui::BeginTable("Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable("Mesh Details", 2,
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
 
         ImGui::TableSetupColumn("Mesh", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, m_parent->get_pixel_extent().x * 0.5f);
@@ -367,14 +346,16 @@ void ObjectExplorerWidget::render()
         ImGui::EndTable();
 
         ImGui::SeparatorText("Material");
-        ImGui::BeginTable("Mesh Details", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable("Mesh Details", 1,
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
         ImGui::TableSetupColumn("Material", ImGuiTableColumnFlags_NoHide);
 
         for (size_t i = 0; i < model->get_num_materials(); i++)
         {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            std::string str = "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_ID() + " material";
+            std::string str =
+                "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_ID() + " material";
             ImGui::Text(str.c_str());
             ImGui::Separator();
 
@@ -727,8 +708,7 @@ void ObjectExplorerWidget::render()
             float shadowFov = light->get_shadow_fov();
             if (ImGui::DragFloat("Shadow FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
                 light->set_shadow_fov(shadowFov);
-            float position[3] = {light->get_shadow_target().x,
-                                 light->get_shadow_target().y,
+            float position[3] = {light->get_shadow_target().x, light->get_shadow_target().y,
                                  light->get_shadow_target().z};
             if (ImGui::DragFloat3("Shadow Target", position, 0.1f))
             {
