@@ -8,6 +8,7 @@
 #include <engine/utilities/controller.h>
 #include <engine/utilities/gui.h>
 #include <engine/utilities/renderer_widget.h>
+#include <engine/utilities/loaders.h>
 
 /**
  * Example app

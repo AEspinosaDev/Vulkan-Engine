@@ -15,9 +15,15 @@ void ShadowPass::init()
     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-    m_attachments.push_back(Attachment(static_cast<VkFormat>(m_depthFormat),
-                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                       VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+    ImageConfig depthAttachmentImageConfig{};
+    depthAttachmentImageConfig.format = static_cast<VkFormat>(m_depthFormat);
+    depthAttachmentImageConfig.usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    SamplerConfig depthAttachmentSamplereConfig{};
+    depthAttachmentSamplereConfig.filters = VK_FILTER_LINEAR;
+    depthAttachmentSamplereConfig.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    m_attachments.push_back(Attachment(depthAttachmentImageConfig,
+                                       {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY},
+                                       depthAttachmentSamplereConfig));
 
     VkAttachmentReference depthRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 

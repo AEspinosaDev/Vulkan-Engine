@@ -12,8 +12,6 @@ jobs:
   build:
     runs-on: windows-latest  # Target Windows environment
 
-
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,19 +25,20 @@ jobs:
           vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.32bit com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.volk com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
         shell: cmd
   
-      # - name: Set Vulkan SDK environment variables
-      #   run: |
-      #     echo "VULKAN_SDK=C:\VulkanSDK" >> $GITHUB_ENV
-      #     echo "VK_SDK_PATH=C:\VulkanSDK" >> $GITHUB_ENV
-      #     echo "Adding Vulkan SDK to PATH"
-      #     echo "$VULKAN_SDK\Bin" >> $GITHUB_PATH
-      #   shell: cmd
+      - name: Set Vulkan SDK environment variables
+        run: |
+          for /d %%i in (C:\VulkanSDK\*) do set VULKAN_SDK=%%i
+          echo "VULKAN_SDK=$VULKAN_SDK" >> $GITHUB_ENV
+          echo "VK_SDK_PATH=$VULKAN_SDK" >> $GITHUB_ENV
+          echo "Adding Vulkan SDK to PATH"
+          echo "$VULKAN_SDK\Bin" >> $GITHUB_PATH
+        shell: cmd
   
-      # - name: Verify Vulkan SDK installation
-      #   run: |
-      #     echo "Vulkan SDK installed at: $VULKAN_SDK"
-      #     dir $VULKAN_SDK\Bin
-      #   shell: cmd
+      - name: Verify Vulkan SDK installation
+        run: |
+          echo "Vulkan SDK installed at: $VULKAN_SDK"
+          dir $VULKAN_SDK\Bin
+        shell: cmd
       
 
 

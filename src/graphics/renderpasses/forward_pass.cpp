@@ -24,11 +24,17 @@ void ForwardPass::init()
                     : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     attachmentsInfo.push_back(colorAttachment);
 
-    Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
-                                !m_isDefault
-                                    ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                                    : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, samples);
+    ImageConfig colorAttachmentImageConfig{};
+    colorAttachmentImageConfig.format = static_cast<VkFormat>(m_colorFormat);
+    colorAttachmentImageConfig.usageFlags =
+        !m_isDefault ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+                     : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    colorAttachmentImageConfig.samples = samples;
+    SamplerConfig colorAttachmentSamplerConfig{};
+    colorAttachmentSamplerConfig.filters = VK_FILTER_LINEAR;
+    colorAttachmentSamplerConfig.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    Attachment _colorAttachment(colorAttachmentImageConfig, {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D},
+                                colorAttachmentSamplerConfig);
     _colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
     m_attachments.push_back(_colorAttachment);
 
@@ -48,9 +54,12 @@ void ForwardPass::init()
         resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         attachmentsInfo.push_back(resolveAttachment);
 
-        Attachment _resolveAttachment(static_cast<VkFormat>(m_colorFormat),
-                                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                      VK_IMAGE_ASPECT_COLOR_BIT);
+        ImageConfig resolveAttachmentImageConfig{};
+        resolveAttachmentImageConfig.format = static_cast<VkFormat>(m_colorFormat);
+        resolveAttachmentImageConfig.usageFlags =
+            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        Attachment _resolveAttachment(resolveAttachmentImageConfig, {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D},
+                                      {});
         _resolveAttachment.isPresentImage = true;
         m_attachments.push_back(_resolveAttachment);
     }
@@ -68,9 +77,12 @@ void ForwardPass::init()
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attachmentsInfo.push_back(depthAttachment);
 
-    m_attachments.push_back(Attachment(static_cast<VkFormat>(m_depthFormat),
-                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT,
-                                       VK_IMAGE_VIEW_TYPE_2D, samples));
+    ImageConfig depthAttachmentImageConfig{};
+    depthAttachmentImageConfig.format = static_cast<VkFormat>(m_depthFormat);
+    depthAttachmentImageConfig.usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    depthAttachmentImageConfig.samples = samples;
+    m_attachments.push_back(
+        Attachment(depthAttachmentImageConfig, {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D}, {}));
 
     VkAttachmentReference depthRef =
         init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -178,7 +190,7 @@ void ForwardPass::create_descriptors()
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
         m_descriptorManager.set_descriptor_write(
-            Texture::DEBUG_TEXTURE->get_image().sampler, Texture::DEBUG_TEXTURE->get_image().view,
+            get_image(Texture::DEBUG_TEXTURE)->sampler, get_image(Texture::DEBUG_TEXTURE)->view,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
 
         // Per-object
@@ -388,8 +400,7 @@ void ForwardPass::setup_material_descriptor(Material *mat)
             // Set texture write
             if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
             {
-                // DEBUG_LOG("PACO");
-                m_descriptorManager.set_descriptor_write(texture->get_image().sampler, texture->get_image().view,
+                m_descriptorManager.set_descriptor_write(get_image(texture)->sampler, get_image(texture)->view,
                                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                          &mat->get_texture_descriptor(), pair.first);
                 mat->set_texture_binding_state(pair.first, true);
@@ -401,7 +412,7 @@ void ForwardPass::setup_material_descriptor(Material *mat)
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
                 m_descriptorManager.set_descriptor_write(
-                    Texture::DEBUG_TEXTURE->get_image().sampler, Texture::DEBUG_TEXTURE->get_image().view,
+                    get_image(Texture::DEBUG_TEXTURE)->sampler, get_image(Texture::DEBUG_TEXTURE)->view,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
             mat->set_texture_binding_state(pair.first, true);
         }

@@ -197,44 +197,52 @@ void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, 
         iboStagingBuffer.cleanup(memory);
     }
 }
-void Context::upload_texture_image(Image &img, const void *cache, VkFormat format, VkFilter filter,
-                                   VkSamplerAddressMode adressMode, bool anisotropicFilter, bool useMipmaps)
+void Context::upload_texture_image(Image *const img, bool mipmapping)
 {
     PROFILING_EVENT()
 
-    img.init(memory, format,
-             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, img.extent,
-             useMipmaps, VK_SAMPLE_COUNT_1_BIT);
-    img.create_view(device, VK_IMAGE_ASPECT_COLOR_BIT);
+    // CREATE IMAGE
+    img->config.usageFlags =
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    img->config.samples = VK_SAMPLE_COUNT_1_BIT;
+    img->init(memory, mipmapping);
+
+    // CREATE VIEW
+    img->viewConfig.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    // What if other type of texture
+    img->create_view(device);
 
     Buffer stagingBuffer;
 
-    VkDeviceSize imageSize = img.extent.width * img.extent.height * img.extent.depth * Image::BYTES_PER_PIXEL;
+    VkDeviceSize imageSize = img->extent.width * img->extent.height * img->extent.depth * Image::BYTES_PER_PIXEL;
 
     stagingBuffer.init(memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer.upload_data(memory, cache, static_cast<size_t>(imageSize));
+    stagingBuffer.upload_data(memory, static_cast<const void *>(img->tmpCache), static_cast<size_t>(imageSize));
 
     uploadContext.immediate_submit(device, graphicsQueue,
-                                   [&](VkCommandBuffer cmd) { img.upload_image(cmd, &stagingBuffer); });
+                                   [&](VkCommandBuffer cmd) { img->upload_image(cmd, &stagingBuffer); });
 
     stagingBuffer.cleanup(memory);
 
     // GENERATE MIPMAPS
-    if (img.mipLevels > 1)
+    if (img->config.mipLevels > 1)
     {
         VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(gpu, img.format, &formatProperties);
+        vkGetPhysicalDeviceFormatProperties(gpu, img->config.format, &formatProperties);
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
         {
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
 
-        uploadContext.immediate_submit(device, graphicsQueue, [&](VkCommandBuffer cmd) { img.generate_mipmaps(cmd); });
+        uploadContext.immediate_submit(device, graphicsQueue, [&](VkCommandBuffer cmd) { img->generate_mipmaps(cmd); });
     }
 
     // CREATE SAMPLER
-    img.create_sampler(device, filter, VK_SAMPLER_MIPMAP_MODE_LINEAR, adressMode, 0, (float)img.mipLevels,
-                       anisotropicFilter, utils::get_gpu_properties(gpu).limits.maxSamplerAnisotropy);
+    img->samplerConfig.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    img->samplerConfig.maxAnysotropy = utils::get_gpu_properties(gpu).limits.maxSamplerAnisotropy;
+    img->create_sampler(device);
+
+    img->loadedOnGPU = true;
 }
 
 void Context::wait_for_device()

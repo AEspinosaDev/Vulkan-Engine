@@ -66,7 +66,7 @@ struct Context
 
     void upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize, const void *iboData, bool indexed);
 
-    void upload_texture_image(Image &img, const void *cache, VkFormat format, VkFilter filter, VkSamplerAddressMode adressMode, bool anisotropicFilter, bool useMipmaps);
+    void upload_texture_image(Image * const img, bool mipmapping);
     
     static void draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint32_t vertexCount, uint32_t indexCount, bool indexed,
                               uint32_t instanceCount = 1, uint32_t firstOcurrence = 0, int32_t offset = 0, uint32_t firstInstance = 0);

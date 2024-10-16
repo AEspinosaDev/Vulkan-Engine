@@ -25,7 +25,7 @@ class Scene : public Object3D
     std::vector<Light *> m_lights;
 
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
-    float m_ambientIntensity{0.2f};
+    float m_ambientIntensity{0.005f};
 
     // FOG
     bool m_fog{true};

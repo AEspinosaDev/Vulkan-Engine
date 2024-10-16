@@ -14,39 +14,62 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+struct ImageConfig
+{
+    VkFormat format{VK_FORMAT_B8G8R8A8_SRGB};
+    VkImageUsageFlags usageFlags{VK_IMAGE_USAGE_SAMPLED_BIT};
+    VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
+    uint32_t mipLevels{1U};
+    uint32_t layers{1U};
+};
+
+struct ViewConfig
+{
+    VkImageAspectFlags aspectFlags{VK_IMAGE_ASPECT_COLOR_BIT};
+    VkImageViewType viewType{VK_IMAGE_VIEW_TYPE_2D};
+};
+
+struct SamplerConfig
+{
+    VkFilter filters{VK_FILTER_LINEAR};
+    VkSamplerMipmapMode mipmapMode{VK_SAMPLER_MIPMAP_MODE_LINEAR};
+    VkSamplerAddressMode samplerAddressMode{VK_SAMPLER_ADDRESS_MODE_REPEAT};
+    float minLod{0.0f};
+    float maxLod{1.0f};
+    bool anysotropicFilter{false};
+    float maxAnysotropy{1.0f};
+    VkBorderColor border{VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE};
+};
+
 struct Image
 {
+
     VkImage handle;
 
-    VkImageView view;
-    VkSampler sampler;
-
     VkExtent3D extent;
-    VkFormat format;
+    unsigned char *tmpCache{nullptr}; // If needed...
 
-    uint32_t layers;
-    uint32_t mipLevels{1};
+    VmaAllocation allocation;
+    ImageConfig config{};
+
+    VkImageView view;
+    ViewConfig viewConfig{};
+
+    VkSampler sampler;
+    SamplerConfig samplerConfig{};
+
+    bool loadedOnCPU{false};
+    bool loadedOnGPU{false};
 
     bool isInitialized{false};
     bool hasView{false};
     bool hasSampler{false};
 
-    VmaAllocation allocation;
+    void init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
 
-    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,
-              bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers = 1);
-              
-    void init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags,
-              VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps,
-              VkSampleCountFlagBits samples, uint32_t imageLayers = 1);
+    void create_view(VkDevice &device);
 
-    void create_view(VkDevice &device, VkImageAspectFlags aspectFlags,
-                     VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
-
-    void create_sampler(VkDevice &device, VkFilter filters, VkSamplerMipmapMode mipmapMode,
-                        VkSamplerAddressMode samplerAddressMode, float minLod = 0.0f, float maxLod = 1.0f,
-                        bool anysotropicFilter = false, float maxAnysotropy = 1.0f,
-                        VkBorderColor border = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+    void create_sampler(VkDevice &device);
 
     void upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer);
 

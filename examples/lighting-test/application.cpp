@@ -7,15 +7,14 @@ void VulkanRenderer::init(RendererSettings settings)
 
     m_window->init();
 
-    m_window->set_window_size_callback(std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1,
-                                                 std::placeholders::_2));
-    m_window->set_mouse_callback(std::bind(&VulkanRenderer::mouse_callback, this, std::placeholders::_1,
-                                           std::placeholders::_2));
+    m_window->set_window_size_callback(
+        std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_mouse_callback(
+        std::bind(&VulkanRenderer::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
-                                         std::placeholders::_2, std::placeholders::_3,
-                                         std::placeholders::_4));
+                                         std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new ForwardRenderer(m_window, settings,{});
+    m_renderer = new ForwardRenderer(m_window, settings, {});
 
     setup();
 
@@ -29,7 +28,6 @@ void VulkanRenderer::run(int argc, char *argv[])
     // settings.AAtype = MSAASamples::FXAA;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
-    
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
@@ -163,8 +161,7 @@ void VulkanRenderer::setup()
             light->set_cast_shadows(false);
 
             // Generate a random color
-            glm::vec3 color(static_cast<float>(rand()) / RAND_MAX,
-                            static_cast<float>(rand()) / RAND_MAX,
+            glm::vec3 color(static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX,
                             static_cast<float>(rand()) / RAND_MAX);
 
             // Set the color of the light
@@ -180,11 +177,11 @@ void VulkanRenderer::setup()
     terrainMesh->set_position({0.0, -2.0, 0.0});
     terrainMesh->set_rotation({-90.0, 0.0, 0.0});
     Texture *floorText = new Texture();
-    floorText->load_image(TEXTURE_PATH + "floor_diffuse.jpg");
+    loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
     Texture *floorNormalText = new Texture();
-    floorNormalText->load_image(TEXTURE_PATH + "floor_normal.jpg");
+    loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
     Texture *floorRoughText = new Texture();
-    floorRoughText->load_image(TEXTURE_PATH + "floor_roughness.jpg");
+    loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
@@ -200,7 +197,7 @@ void VulkanRenderer::setup()
     kabutoMesh->set_position({-5.0, 0.0, 5.0});
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
-    kabutoText->load_image(TEXTURE_PATH + "kabuto_color.png");
+    loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
@@ -224,8 +221,6 @@ void VulkanRenderer::setup()
             // Set the position of the light
             kabutoMesh2->set_position({x, y, z});
 
-
-
             m_scene->add(kabutoMesh2);
 
             m_scene->add(kabutoMesh2);
@@ -239,7 +234,8 @@ void VulkanRenderer::setup()
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
+    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height,
+                                         GuiColorProfileType::DARK);
 
     Panel *tutorialPanel = new Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 

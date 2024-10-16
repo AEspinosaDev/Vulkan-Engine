@@ -1,6 +1,7 @@
 #include <engine/utilities/loaders.h>
 
-void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool importMaterials, bool calculateTangents, bool overrideGeometry)
+void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool importMaterials, bool calculateTangents,
+                             bool overrideGeometry)
 {
     // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
 
@@ -147,7 +148,8 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
     return;
 }
 
-void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool preload, bool verbose, bool calculateTangents, bool overrideGeometry)
+void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool preload, bool verbose,
+                             bool calculateTangents, bool overrideGeometry)
 {
 
     std::unique_ptr<std::istream> file_stream;
@@ -189,7 +191,8 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
                 std::cout << "\t[ply_header] element: " << e.name << " (" << e.size << ")" << std::endl;
                 for (const auto &p : e.properties)
                 {
-                    std::cout << "\t[ply_header] \tproperty: " << p.name << " (type=" << tinyply::PropertyTable[p.propertyType].str << ")";
+                    std::cout << "\t[ply_header] \tproperty: " << p.name
+                              << " (type=" << tinyply::PropertyTable[p.propertyType].str << ")";
                     if (p.isList)
                         std::cout << " (list_type=" << tinyply::PropertyTable[p.listType].str << ")";
                     std::cout << std::endl;
@@ -294,7 +297,8 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
         {
 
             const float parsingTime = static_cast<float>(readTimer.get()) / 1000.f;
-            std::cout << "\tparsing " << size_mb << "mb in " << parsingTime << " seconds [" << (size_mb / parsingTime) << " MBps]" << std::endl;
+            std::cout << "\tparsing " << size_mb << "mb in " << parsingTime << " seconds [" << (size_mb / parsingTime)
+                      << " MBps]" << std::endl;
 
             if (positions)
                 std::cout << "\tRead " << positions->count << " total vertices " << std::endl;
@@ -307,7 +311,8 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
             if (faces)
                 std::cout << "\tRead " << faces->count << " total faces (triangles) " << std::endl;
             if (tripstrip)
-                std::cout << "\tRead " << (tripstrip->buffer.size_bytes() / tinyply::PropertyTable[tripstrip->t].stride) << " total indices (tristrip) " << std::endl;
+                std::cout << "\tRead " << (tripstrip->buffer.size_bytes() / tinyply::PropertyTable[tripstrip->t].stride)
+                          << " total indices (tristrip) " << std::endl;
         }
 
         std::vector<utils::Vertex> vertices;
@@ -330,7 +335,8 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
             {
 
                 Vec3 position = Vec3(posData[i * 3], posData[i * 3 + 1], posData[i * 3 + 2]);
-                Vec3 normal = normals ? Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]) : Vec3(0.0f);
+                Vec3 normal =
+                    normals ? Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]) : Vec3(0.0f);
                 Vec3 color = colors ? Vec3(colorData[i * 3], colorData[i * 3 + 1], colorData[i * 3 + 2]) : Vec3(1.0f);
                 Vec2 uv = texcoords ? Vec2(uvData[i * 2], uvData[i * 2 + 1]) : Vec2(0.0f);
 
@@ -554,8 +560,8 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
 
     fclose(fp);
 
-    auto computeDirection = [](float *d, float &d0len, float &d1len, float const *p0, float const *p1, float const *p2)
-    {
+    auto computeDirection = [](float *d, float &d0len, float &d1len, float const *p0, float const *p1,
+                               float const *p2) {
         // line from p0 to p1
         float d0[3];
         d0[0] = p1[0] - p0[0];
@@ -590,8 +596,7 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
         // return d0len;
     };
 
-    auto fillDirectionArray = [=](float *dir)
-    {
+    auto fillDirectionArray = [=](float *dir) {
         if (dir == nullptr || header.point_count <= 0 || points == nullptr)
             return;
 
@@ -603,7 +608,8 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
             {
                 // direction at point1
                 float len0, len1;
-                computeDirection(&dir[(p + 1) * 3], len0, len1, &points[p * 3], &points[(p + 1) * 3], &points[(p + 2) * 3]);
+                computeDirection(&dir[(p + 1) * 3], len0, len1, &points[p * 3], &points[(p + 1) * 3],
+                                 &points[(p + 2) * 3]);
 
                 // direction at point0
                 float d0[3];
@@ -622,7 +628,8 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
                 // Compute the direction for the rest
                 for (int t = 2; t < s; t++, p++)
                 {
-                    computeDirection(&dir[p * 3], len0, len1, &points[(p - 1) * 3], &points[p * 3], &points[(p + 1) * 3]);
+                    computeDirection(&dir[p * 3], len0, len1, &points[(p - 1) * 3], &points[p * 3],
+                                     &points[(p + 1) * 3]);
                 }
 
                 // direction at the last point
@@ -672,13 +679,21 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
         size_t max_segments = segments ? segments[hair] : header.d_segments;
         for (size_t i = 0; i < max_segments; i++)
         {
-            vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]}, {0.0f, 0.0f, 0.0f}, {dirs[pointId], dirs[pointId + 1], dirs[pointId + 2]}, {0.0f, 0.0f}, color});
+            vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]},
+                                {0.0f, 0.0f, 0.0f},
+                                {dirs[pointId], dirs[pointId + 1], dirs[pointId + 2]},
+                                {0.0f, 0.0f},
+                                color});
             indices.push_back(index);
             indices.push_back(index + 1);
             index++;
             pointId += 3;
         }
-        vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]}, {0.0f, 0.0f, 0.0f}, {dirs[pointId], dirs[pointId + 1], dirs[pointId + 2]}, {0.0f, 0.0f}, color});
+        vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]},
+                            {0.0f, 0.0f, 0.0f},
+                            {dirs[pointId], dirs[pointId + 1], dirs[pointId + 2]},
+                            {0.0f, 0.0f},
+                            color});
         pointId += 3;
         index++;
     }
@@ -687,4 +702,39 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
     g->fill(vertices, indices);
     mesh->set_geometry(g);
     mesh->setup_volume();
+}
+
+void VkFW::loaders::load_texture(Texture *const texture, const std::string fileName, bool asyncCall)
+{
+
+    if (asyncCall)
+    {
+        std::thread loadThread(loaders::load_PNG, texture, fileName);
+        loadThread.detach();
+    }
+    else
+    {
+        load_PNG(texture, fileName);
+    }
+}
+
+void  VkFW::loaders::load_PNG(Texture *const texture, const std::string fileName)
+{
+    int w, h, ch;
+    unsigned char *imgCache = nullptr;
+    imgCache = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
+    if (imgCache)
+    {
+        texture->set_image_cache(imgCache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h)}, ch);
+    }
+    else
+    {
+#ifndef NDEBUG
+        DEBUG_LOG("Failed to load texture PNG file" + fileName);
+#endif
+        return;
+    };
+#ifndef NDEBUG
+    DEBUG_LOG("PNG Texture loaded successfully");
+#endif // DEBUG
 }

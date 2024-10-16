@@ -176,13 +176,11 @@ void Renderer::upload_material_textures(Material *const mat)
         {
             if (!texture->is_buffer_loaded())
             {
-                m_context.upload_texture_image(texture->m_image, static_cast<const void *>(texture->m_tmpCache),
-                                               (VkFormat)texture->m_settings.format,
-                                               (VkFilter)texture->m_settings.filter,
-                                               (VkSamplerAddressMode)texture->m_settings.adressMode,
-                                               texture->m_settings.anisotropicFilter, texture->m_settings.useMipmaps);
-                texture->m_buffer_loaded = true;
-                m_deletionQueue.push_function([=]() { texture->m_image.cleanup(m_context.device, m_context.memory); });
+
+                m_context.upload_texture_image(get_image(texture), texture->get_settings().useMipmaps);
+
+                m_deletionQueue.push_function(
+                    [=]() { get_image(texture)->cleanup(m_context.device, m_context.memory); });
             }
         }
     }
@@ -191,7 +189,7 @@ void Renderer::upload_material_textures(Material *const mat)
 void Renderer::upload_geometry_data(Geometry *const g)
 {
     PROFILING_EVENT()
-    RenderData* rd = get_render_data(g);
+    RenderData *rd = get_render_data(g);
     if (!rd->loadedOnGPU)
     {
         const GeometricData *gd = g->get_geometric_data();
@@ -231,15 +229,11 @@ void Renderer::init_resources()
 
     // Setup dummy texture in case materials dont have textures
     Texture::DEBUG_TEXTURE = new Texture();
-    Texture::DEBUG_TEXTURE->load_image(ENGINE_RESOURCES_PATH "textures/dummy.jpg", false);
+    unsigned char texture_data[4] = {0, 0, 0, 0};
+    Texture::DEBUG_TEXTURE->set_image_cache(texture_data, {2, 2}, 4);
     Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 
-    m_context.upload_texture_image(
-        Texture::DEBUG_TEXTURE->m_image, static_cast<const void *>(Texture::DEBUG_TEXTURE->m_tmpCache),
-        (VkFormat)Texture::DEBUG_TEXTURE->m_settings.format, (VkFilter)Texture::DEBUG_TEXTURE->m_settings.filter,
-        (VkSamplerAddressMode)Texture::DEBUG_TEXTURE->m_settings.adressMode,
-        Texture::DEBUG_TEXTURE->m_settings.anisotropicFilter, false);
-    Texture::DEBUG_TEXTURE->m_buffer_loaded = true;
+    m_context.upload_texture_image(get_image(Texture::DEBUG_TEXTURE), false);
 }
 
 void Renderer::clean_Resources()
@@ -251,7 +245,7 @@ void Renderer::clean_Resources()
             buffer.cleanup(m_context.memory);
         }
     }
-    Texture::DEBUG_TEXTURE->m_image.cleanup(m_context.device, m_context.memory);
+    get_image(Texture::DEBUG_TEXTURE)->cleanup(m_context.device, m_context.memory);
 }
 
 VULKAN_ENGINE_NAMESPACE_END

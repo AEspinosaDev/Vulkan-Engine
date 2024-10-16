@@ -32,28 +32,18 @@ struct Attachment
 {
     Image image{};
 
-    // View
-    VkImageUsageFlags viewUsage{};
-    VkImageAspectFlags viewAspect{};
-    VkImageViewType viewType{};
-    VkSampleCountFlagBits samples{};
-
-    // Sampler
-    VkFilter filter{VK_FILTER_LINEAR};
-    VkSamplerAddressMode adressMode{VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER};
-
     VkClearValue clearValue{};
 
     bool isPresentImage{false};
 
-    Attachment(VkFormat format, VkImageUsageFlags _viewUsage, VkImageAspectFlags _viewAspect,
-               VkImageViewType _viewType = VK_IMAGE_VIEW_TYPE_2D,
-               VkSampleCountFlagBits _samples = VK_SAMPLE_COUNT_1_BIT, VkClearValue clearVal = {{{0.0, 0.0, 0.0, 1.0}}})
-        : viewAspect(_viewAspect), viewUsage(_viewUsage), viewType(_viewType), samples(_samples), clearValue(clearVal)
+     Attachment(ImageConfig config, ViewConfig viewConfig, SamplerConfig samplerConfig, VkClearValue clearVal = {{{0.0, 0.0, 0.0, 1.0}}})
+        : clearValue(clearVal)
     {
-        image.format = format;
+        image.config = config;
+        image.viewConfig = viewConfig;
+        image.samplerConfig = samplerConfig;
         clearValue.depthStencil.depth = 1.0f;
-    };
+    }; 
 };
 
 /*

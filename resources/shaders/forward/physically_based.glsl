@@ -206,6 +206,9 @@ void main() {
 
     setupSurfaceProperties();
 
+    if(material.alphaTest)
+        if(g_opacity<1-EPSILON)discard;
+
     //Compute all lights
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
@@ -223,7 +226,7 @@ void main() {
     }
 
     //Ambient component
-    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo;
+    vec3 ambient = (scene.ambientIntensity * scene.ambientColor) * g_albedo;
 
      //Ambient occlusion
     float occ = 1.0;
@@ -260,7 +263,6 @@ void main() {
         outColor.rgb *= vec3(0.9,0.5,0.0);
     }
 
-    if(material.alphaTest)
-        if(g_opacity<1-EPSILON)discard;
+  
 
 }

@@ -279,7 +279,8 @@ vec3 toneMapReinhard(vec3 color, float exposure) {
 
 void main() {
 
-    //Compute all lights
+    //DIRECT LIGHTING ..............
+
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
@@ -289,37 +290,26 @@ void main() {
 
             if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
                 lighting *= (1.0 - computeShadow(scene.lights[i], i));
-
+                //     // if(material.useScatter && material.coloredScatter)
+                //     //     color+= multipleScattering(n2);
             }
 
             color += lighting;
         }
     }
 
-    // if(u_scene.castShadow == 1.0) {
-    //     color *= 1.0 - computeShadow();
-    //     // if(material.useScatter && material.coloredScatter)
-    //     //     color+= multipleScattering(n2);
-    // }
-
-    // vec3 n1 = cross(g_modelDir, cross(camera.position, g_modelDir));
-    // vec3 n2 = normalize(g_modelPos-u_BVCenter);
-    // vec3 fakeNormal = mix(n1,n2,0.5);
 
     vec3 fakeNormal = vec3(0.0);
-    //Ambient component
-    vec3 ambient = computeAmbient(fakeNormal);
 
+    //AMBIENT COMPONENT ...............
+
+    vec3 ambient = computeAmbient(fakeNormal);
     color += ambient;
 
-    // if(material.occlusion){
-    //   float occ = unsharpSSAO();
-    //   color-=vec3(occ);
-    // }
-
-  // color = color / (color + vec3(1.0));
-  //   const float GAMMA = 2.2;
-  //   color = pow(color, vec3(1.0 / GAMMA));
+    if(int(object.otherParams.x) == 1 && scene.enableFog) {
+        float f = computeFog();
+        color = f * color + (1 - f) * scene.fogColor.rgb;
+    }
 
     fragColor = vec4(color, 1.0);
 
