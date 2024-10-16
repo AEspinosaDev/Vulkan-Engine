@@ -2,49 +2,41 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags, VkExtent3D imageExtent,
-                 bool useMipmaps, VkSampleCountFlagBits samples, uint32_t imageLayers)
+void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsage)
 {
-    extent = imageExtent;
+    VmaAllocationCreateInfo img_allocinfo = {};
+    img_allocinfo.usage = memoryUsage;
 
-    format = imageFormat;
-
-    layers = imageLayers;
-
-    mipLevels = useMipmaps
-                    ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1
+    config.mipLevels = useMipmaps
+                    ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1
                     : 1;
 
-    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples, layers);
+    VkImageCreateInfo img_info = init::image_create_info(config.format, config.usageFlags, extent, config.mipLevels,
+                                                         config.samples, config.layers);
 
-    VmaAllocationCreateInfo img_allocinfo = {};
-    img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-    // allocate and create the image
     vmaCreateImage(memory, &img_info, &img_allocinfo, &handle, &allocation, nullptr);
 
     isInitialized = true;
 }
 
-void Image::init(VmaAllocator memory, VkFormat imageFormat, VkImageUsageFlags usageFlags,
-                 VmaAllocationCreateInfo &allocInfo, VkExtent3D imageExtent, bool useMipmaps,
-                 VkSampleCountFlagBits samples, uint32_t imageLayers)
+void Image::create_view(VkDevice &device)
 {
-    extent = imageExtent;
+    VkImageViewCreateInfo dview_info = init::imageview_create_info(
+        config.format, handle, viewConfig.viewType, viewConfig.aspectFlags, config.mipLevels, config.layers);
+    VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 
-    format = imageFormat;
+    hasView = true;
+}
+void Image::create_sampler(VkDevice &device)
+{
+    VkSamplerCreateInfo samplerInfo = init::sampler_create_info(
+        samplerConfig.filters, VK_SAMPLER_MIPMAP_MODE_LINEAR, samplerConfig.minLod, samplerConfig.maxLod,
+        samplerConfig.anysotropicFilter, samplerConfig.maxAnysotropy, samplerConfig.samplerAddressMode);
+    samplerInfo.borderColor = samplerConfig.border;
 
-    layers = imageLayers;
+    vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
 
-    mipLevels = useMipmaps
-                    ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1
-                    : 1;
-
-    VkImageCreateInfo img_info = init::image_create_info(format, usageFlags, extent, mipLevels, samples, layers);
-
-    vmaCreateImage(memory, &img_info, &allocInfo, &handle, &allocation, nullptr);
-
-    isInitialized = true;
+    hasSampler = true;
 }
 
 void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
@@ -53,7 +45,7 @@ void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
     VkImageSubresourceRange range;
     range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     range.baseMipLevel = 0;
-    range.levelCount = mipLevels;
+    range.levelCount = config.mipLevels;
     range.baseArrayLayer = 0;
     range.layerCount = 1;
 
@@ -86,7 +78,7 @@ void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
     // copy the buffer into the image
     vkCmdCopyBufferToImage(cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    if (mipLevels == 1)
+    if (config.mipLevels == 1)
     {
         VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
@@ -120,7 +112,7 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
     imageBarrier_toTransfer.image = handle;
     imageBarrier_toTransfer.subresourceRange = range;
 
-    for (uint32_t i = 1; i < mipLevels; i++)
+    for (uint32_t i = 1; i < config.mipLevels; i++)
     {
 
         imageBarrier_toTransfer.subresourceRange.baseMipLevel = i - 1;
@@ -164,7 +156,7 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
     }
 
     VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
-    imageBarrier_toReadable.subresourceRange.baseMipLevel = mipLevels - 1;
+    imageBarrier_toReadable.subresourceRange.baseMipLevel = config.mipLevels - 1;
     imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -173,25 +165,7 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
                          nullptr, 1, &imageBarrier_toReadable);
 }
-void Image::create_view(VkDevice &device, VkImageAspectFlags aspectFlags, VkImageViewType viewType)
-{
-    VkImageViewCreateInfo dview_info =
-        init::imageview_create_info(format, handle, viewType, aspectFlags, mipLevels, layers);
-    VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 
-    hasView = true;
-}
-void Image::create_sampler(VkDevice &device, VkFilter filters, VkSamplerMipmapMode mipmapMode,
-                           VkSamplerAddressMode samplerAddressMode, float minLod, float maxLod, bool anysotropicFilter,
-                           float maxAnysotropy, VkBorderColor border)
-{
-    VkSamplerCreateInfo samplerInfo = init::sampler_create_info(filters, VK_SAMPLER_MIPMAP_MODE_LINEAR, minLod, maxLod,
-                                                                anysotropicFilter, maxAnysotropy, samplerAddressMode);
-    samplerInfo.borderColor = border;
-    vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
-
-    hasSampler = true;
-}
 void Image::cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler)
 {
     if (hasView)

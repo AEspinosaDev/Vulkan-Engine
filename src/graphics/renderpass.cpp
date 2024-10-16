@@ -27,7 +27,7 @@ void RenderPass::end(VkCommandBuffer &cmd)
 void RenderPass::draw(VkCommandBuffer &cmd, Geometry *g)
 {
     PROFILING_EVENT()
-    RenderData* rd = get_render_data(g);
+    RenderData *rd = get_render_data(g);
     if (rd->loadedOnGPU)
         Context::draw_geometry(cmd, rd->vbo, rd->ibo, rd->vertexCount, rd->indexCount, g->indexed());
 }
@@ -63,16 +63,13 @@ void RenderPass::create_framebuffer()
         // Create image and image view for framebuffer
         if (!m_attachments[i].isPresentImage) // If its not default renderpass
         {
-            m_attachments[i].image.init(m_context->memory, m_attachments[i].image.format, m_attachments[i].viewUsage,
-                                        {m_extent.width, m_extent.height, 1}, false, m_attachments[i].samples,
-                                        m_framebufferImageDepth);
+            m_attachments[i].image.extent = {m_extent.width, m_extent.height, 1};
+            m_attachments[i].image.config.layers = m_framebufferImageDepth;
+            m_attachments[i].image.init(m_context->memory, false);
 
-            m_attachments[i].image.create_view(m_context->device, m_attachments[i].viewAspect,
-                                               m_attachments[i].viewType);
+            m_attachments[i].image.create_view(m_context->device);
 
-            m_attachments[i].image.create_sampler(m_context->device, m_attachments[i].filter,
-                                                  VK_SAMPLER_MIPMAP_MODE_LINEAR, m_attachments[i].adressMode, 0.0f,
-                                                  1.0f, false, 1.0f, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
+            m_attachments[i].image.create_sampler(m_context->device);
 
             viewAttachments[i] = m_attachments[i].image.view;
         }

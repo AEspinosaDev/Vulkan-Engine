@@ -26,13 +26,10 @@
 
 #include <engine/graphics/bootstrap.h>
 #include <engine/graphics/context.h>
-#include <engine/graphics/descriptors.h>
-#include <engine/graphics/frame.h>
 #include <engine/graphics/image.h>
 #include <engine/graphics/initializers.h>
 #include <engine/graphics/renderpass.h>
 #include <engine/graphics/shaderpass.h>
-#include <engine/graphics/swapchain.h>
 #include <engine/graphics/uniforms.h>
 #include <engine/graphics/utils.h>
 

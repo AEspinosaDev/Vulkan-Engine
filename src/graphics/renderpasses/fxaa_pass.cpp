@@ -15,11 +15,18 @@ void FXAAPass::init()
     attachmentsInfo[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[0].finalLayout = m_isDefault ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    attachmentsInfo[0].finalLayout =
+        m_isDefault ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    Attachment _colorAttachment(static_cast<VkFormat>(m_colorFormat),
-                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D);
+    ImageConfig colorAttachmentImageConfig{};
+    colorAttachmentImageConfig.format = static_cast<VkFormat>(m_colorFormat);
+    colorAttachmentImageConfig.usageFlags =
+        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    SamplerConfig colorAttachmentSamplerConfig{};
+    colorAttachmentSamplerConfig.filters = VK_FILTER_LINEAR;
+    colorAttachmentSamplerConfig.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    Attachment _colorAttachment(colorAttachmentImageConfig, {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D},
+                                colorAttachmentSamplerConfig);
     _colorAttachment.isPresentImage = m_isDefault ? true : false;
     m_attachments.push_back(_colorAttachment);
 
@@ -63,7 +70,8 @@ void FXAAPass::create_descriptors()
     m_descriptorManager.init(m_context->device);
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
-    VkDescriptorSetLayoutBinding outputTextureBinding = init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    VkDescriptorSetLayoutBinding outputTextureBinding =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     VkDescriptorSetLayoutBinding bindings[] = {outputTextureBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 1);
 
@@ -73,14 +81,12 @@ void FXAAPass::create_graphic_pipelines()
 {
 
     ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/fxaa.glsl");
-    fxaaPass->settings.descriptorSetLayoutIDs =
-        {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
-    fxaaPass->settings.attributes =
-        {{VertexAttributeType::POSITION, true},
-         {VertexAttributeType::NORMAL, false},
-         {VertexAttributeType::UV, true},
-         {VertexAttributeType::TANGENT, false},
-         {VertexAttributeType::COLOR, false}};
+    fxaaPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
+    fxaaPass->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                     {VertexAttributeType::NORMAL, false},
+                                     {VertexAttributeType::UV, true},
+                                     {VertexAttributeType::TANGENT, false},
+                                     {VertexAttributeType::COLOR, false}};
     // fxaaPass->settings.blending = false;
     // fxaaPass->settings.blendAttachments = {};
 
@@ -93,7 +99,7 @@ void FXAAPass::create_graphic_pipelines()
 
 void FXAAPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
-     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
+    VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
 
@@ -107,8 +113,9 @@ void FXAAPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentI
     ShaderPass *shaderPass = m_shaderPasses["fxaa"];
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_imageDescriptorSet.handle, 0, VK_NULL_HANDLE);
-    
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
+                            &m_imageDescriptorSet.handle, 0, VK_NULL_HANDLE);
+
     Geometry *g = m_vignette->get_geometry();
     draw(cmd, g);
 
@@ -121,9 +128,8 @@ void FXAAPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentI
 
 void FXAAPass::connect_to_previous_images(std::vector<Image> images)
 {
-    m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+    m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
+                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
-
-
 
 VULKAN_ENGINE_NAMESPACE_END
