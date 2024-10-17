@@ -153,6 +153,8 @@ class Object3D
     {
         enabled = s;
         isDirty = true;
+        for (Object3D *child : m_children)
+            child->set_active(s);
     }
 
     virtual inline float get_pitch()
