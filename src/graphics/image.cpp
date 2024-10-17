@@ -2,14 +2,16 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsage)
 {
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage = memoryUsage;
 
-    config.mipLevels = useMipmaps
-                    ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1
-                    : 1;
+    config.mipLevels =
+        useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
 
     VkImageCreateInfo img_info = init::image_create_info(config.format, config.usageFlags, extent, config.mipLevels,
                                                          config.samples, config.layers);
@@ -175,4 +177,6 @@ void Image::cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler)
     if (destroySampler && hasSampler)
         vkDestroySampler(device, sampler, VK_NULL_HANDLE);
 }
+
+} // namespace render
 VULKAN_ENGINE_NAMESPACE_END

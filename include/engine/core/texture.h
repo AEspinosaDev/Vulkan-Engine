@@ -33,11 +33,11 @@ class Texture
 {
     TextureSettings m_settings{};
 
-    Image m_image{};
+    graphics::Image m_image{};
 
     bool m_isDirty{true};
 
-    friend Image *const get_image(Texture *t);
+    friend graphics::Image *const get_image(Texture *t);
 
   public:
     static Texture *DEBUG_TEXTURE;
@@ -117,7 +117,7 @@ class Texture
     }
 };
 
-Image *const get_image(Texture *t);
+graphics::Image *const get_image(Texture *t);
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif

@@ -12,6 +12,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 class ForwardPass : public RenderPass
 {
     /*Setup*/
@@ -28,15 +31,14 @@ class ForwardPass : public RenderPass
     std::vector<FrameDescriptors> m_descriptors;
 
     void setup_material_descriptor(Material *mat);
-public:
-    ForwardPass(
-        Context *ctx,
-        VkExtent2D extent,
-        uint32_t framebufferCount,
-        ColorFormatType colorFormat,
-        DepthFormatType depthFormat,
-        MSAASamples samples,
-        bool isDefault = true) : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat), m_depthFormat(depthFormat), m_aa(samples) {}
+
+  public:
+    ForwardPass(Context *ctx, VkExtent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
+                DepthFormatType depthFormat, MSAASamples samples, bool isDefault = true)
+        : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat),
+          m_depthFormat(depthFormat), m_aa(samples)
+    {
+    }
 
     void init();
 
@@ -49,8 +51,10 @@ public:
     void upload_data(uint32_t frameIndex, Scene *const scene);
 
     void connect_to_previous_images(std::vector<Image> images);
-
 };
+
+} // namespace render
+
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif

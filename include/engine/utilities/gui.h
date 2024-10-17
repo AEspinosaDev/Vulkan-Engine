@@ -31,7 +31,7 @@ private:
 
     static bool m_initialized;
 
-    void init(Context ctx, VkRenderPass renderPassHandle, GLFWwindow *windowHandle, VkFormat format, VkSampleCountFlagBits samples);
+    void init(graphics::Context ctx, VkRenderPass renderPassHandle, GLFWwindow *windowHandle, VkFormat format, VkSampleCountFlagBits samples);
     void render();
     void cleanup(VkDevice &device);
 

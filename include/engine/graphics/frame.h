@@ -9,12 +9,15 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <engine/graphics/buffer.h>
 #include <engine/graphics/bootstrap.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/buffer.h>
 #include <engine/graphics/descriptors.h>
+#include <engine/graphics/initializers.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace graphics
+{
 
 struct Frame
 {
@@ -36,6 +39,8 @@ struct Frame
 
     static bool guiEnabled;
 };
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

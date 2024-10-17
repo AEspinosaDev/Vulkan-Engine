@@ -37,8 +37,7 @@ protected:
         // bool enableVulkanBias{false};
         int pcfKernel{7};
 
-        Texture *map;
-        DescriptorSet descriptor;
+    
     };
 
     Shadow m_shadow;
@@ -46,7 +45,7 @@ protected:
 
     friend class Renderer;
 
-    virtual LightUniforms get_uniforms(Mat4 cameraView) const = 0;
+    virtual graphics::LightUniforms get_uniforms(Mat4 cameraView) const = 0;
 
 public:
     Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f) : Object3D(name, LIGHT), m_color(color),
@@ -85,8 +84,7 @@ public:
     virtual inline float get_shadow_kernel_radius() const { return m_shadow.kernelRadius; }
     virtual inline void set_shadow_kernel_radius(float o) { m_shadow.kernelRadius = o; }
 
-    // Read only
-    virtual const Texture *const get_shadow_map() const { return m_shadow.map; }
+   
     virtual LightType get_light_type() const { return m_lighType; }
 };
 
@@ -97,7 +95,7 @@ class PointLight : public Light
     float m_effectArea;
     float m_decaying;
 
-    virtual LightUniforms get_uniforms(Mat4 cameraView) const;
+    virtual graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
 
     static int m_instanceCount;
 
@@ -117,7 +115,7 @@ class DirectionalLight : public Light
 {
     Vec3 m_direction;
 
-    virtual LightUniforms get_uniforms(Mat4 cameraView) const;
+    virtual graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
 
     static int m_instanceCount;
 

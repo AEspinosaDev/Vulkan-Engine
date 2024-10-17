@@ -2,6 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 std::string utils::trim(const std::string &str)
 {
     size_t first = str.find_first_not_of(" \t\n\r");
@@ -212,7 +215,7 @@ void utils::UploadContext::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfa
     VK_CHECK(vkCreateFence(device, &uploadFenceCreateInfo, nullptr, &uploadFence));
 
     VkCommandPoolCreateInfo uploadCommandPoolInfo =
-        init::command_pool_create_info(boot::find_queue_families(gpu, surface).graphicsFamily.value());
+        init::command_pool_create_info(find_queue_families(gpu, surface).graphicsFamily.value());
     VK_CHECK(vkCreateCommandPool(device, &uploadCommandPoolInfo, nullptr, &commandPool));
 
     // allocate the default command buffer that we will use for the instant commands
@@ -248,5 +251,7 @@ void utils::UploadContext::immediate_submit(VkDevice &device, VkQueue &gfxQueue,
 
     vkResetCommandPool(device, commandPool, 0);
 }
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END

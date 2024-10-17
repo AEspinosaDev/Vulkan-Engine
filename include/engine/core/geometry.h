@@ -23,7 +23,7 @@ class Geometry;
 struct GeometricData
 {
     std::vector<uint32_t> vertexIndex;
-    std::vector<utils::Vertex> vertexData;
+    std::vector<graphics::utils::Vertex> vertexData;
 
     // Stats
     Vec3 maxCoords;
@@ -39,8 +39,8 @@ struct RenderData
 {
     bool loadedOnGPU{false};
 
-    Buffer vbo{};
-    Buffer ibo{};
+    graphics::Buffer vbo{};
+    graphics::Buffer ibo{};
 
     uint32_t vertexCount{0};
     uint32_t indexCount{0};
@@ -91,8 +91,8 @@ class Geometry
     {
     }
 
-    void fill(std::vector<utils::Vertex> vertexInfo);
-    void fill(std::vector<utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
+    void fill(std::vector<graphics::utils::Vertex> vertexInfo);
+    void fill(std::vector<graphics::utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
 };
 
@@ -102,12 +102,12 @@ VULKAN_ENGINE_NAMESPACE_END;
 
 namespace std
 {
-template <> struct hash<VkFW::utils::Vertex>
+template <> struct hash<VkFW::graphics::utils::Vertex>
 {
-    size_t operator()(VkFW::utils::Vertex const &vertex) const
+    size_t operator()(VkFW::graphics::utils::Vertex const &vertex) const
     {
         size_t seed = 0;
-        VkFW::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
+        VkFW::graphics::utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
         return seed;
     }
 };

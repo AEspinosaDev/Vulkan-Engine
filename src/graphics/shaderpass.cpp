@@ -2,6 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)
 {
     std::vector<VkDescriptorSetLayout> descriptorLayouts;
@@ -142,7 +145,7 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
 {
 
     std::ifstream stream(filePath);
-    std::string scriptsPath(ENGINE_RESOURCES_PATH"shaders/scripts/");
+    std::string scriptsPath(ENGINE_RESOURCES_PATH "shaders/scripts/");
 
     enum class ShaderType
     {
@@ -177,7 +180,7 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
         // CHECK MODULES INCLUDED
         else if (line.find("#include") != std::string::npos)
         {
-            size_t start = line.find(" ") + 1;                  
+            size_t start = line.find(" ") + 1;
             std::string includeFile = utils::trim(line.substr(start)); // Extract the file name and trim any spaces
 
             std::string fullIncludePath = scriptsPath + includeFile;
@@ -275,5 +278,7 @@ void ShaderPass::cleanup(VkDevice &device)
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     vkDestroyPipeline(device, pipeline, nullptr);
 }
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END

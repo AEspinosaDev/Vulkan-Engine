@@ -2,6 +2,8 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics{
+
 void FXAAPass::init()
 {
 
@@ -130,6 +132,8 @@ void FXAAPass::connect_to_previous_images(std::vector<Image> images)
 {
     m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+}
+
 }
 
 VULKAN_ENGINE_NAMESPACE_END

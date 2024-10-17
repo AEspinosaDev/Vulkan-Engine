@@ -1,7 +1,7 @@
 #include "engine/core/materials/physically_based.h"
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const
+graphics::MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const
 {
     // Alignment in shader
     //-----------------
@@ -29,7 +29,7 @@ MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const
 
     //-----------------
 
-    MaterialUniforms uniforms;
+     graphics::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_albedo;
     uniforms.dataSlot2 = {m_tileUV.x, m_tileUV.y, m_settings.alphaTest, m_settings.blending};
     uniforms.dataSlot3 = {m_albedoWeight, m_metalness, m_metalnessWeight, m_roughness};

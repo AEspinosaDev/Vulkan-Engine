@@ -2,13 +2,17 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 bool Frame::guiEnabled = false;
 
 void Frame::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
 {
     // create a command pool for commands submitted to the graphics queue.
     // we also want the pool to allow for resetting of individual command buffers
-    VkCommandPoolCreateInfo commandPoolInfo = init::command_pool_create_info(boot::find_queue_families(gpu, surface).graphicsFamily.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandPoolCreateInfo commandPoolInfo = init::command_pool_create_info(
+        find_queue_families(gpu, surface).graphicsFamily.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool));
 
@@ -36,4 +40,6 @@ void Frame::cleanup(VkDevice &device)
     vkDestroySemaphore(device, presentSemaphore, nullptr);
     vkDestroySemaphore(device, renderSemaphore, nullptr);
 }
+
+} // namespace render
 VULKAN_ENGINE_NAMESPACE_END

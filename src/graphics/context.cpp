@@ -2,13 +2,15 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics{
+
 void Context::init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
                    VkPresentModeKHR presentMode)
 {
 
     // BOOT Vulkan ------>>>
 
-    boot::VKBooter booter(enableValidationLayers);
+    VKBooter booter(enableValidationLayers);
 
     instance = booter.boot_vulkan();
     debugMessenger = booter.create_debug_messenger(instance);
@@ -248,6 +250,8 @@ void Context::upload_texture_image(Image *const img, bool mipmapping)
 void Context::wait_for_device()
 {
     VK_CHECK(vkDeviceWaitIdle(device));
+}
+
 }
 
 VULKAN_ENGINE_NAMESPACE_END

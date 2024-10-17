@@ -12,6 +12,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 class ShadowPass : public RenderPass
 {
     /* Config  */
@@ -25,12 +28,12 @@ class ShadowPass : public RenderPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-public:
-    ShadowPass(Context *ctx, VkExtent2D extent,
-               uint32_t framebufferCount,
-               uint32_t numLights,
-               DepthFormatType depthFormat) : RenderPass(ctx, extent, framebufferCount, numLights),
-                                              m_depthFormat(depthFormat) {}
+  public:
+    ShadowPass(Context *ctx, VkExtent2D extent, uint32_t framebufferCount, uint32_t numLights,
+               DepthFormatType depthFormat)
+        : RenderPass(ctx, extent, framebufferCount, numLights), m_depthFormat(depthFormat)
+    {
+    }
 
     void init();
 
@@ -39,8 +42,9 @@ public:
     void create_graphic_pipelines();
 
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
-
 };
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END
 

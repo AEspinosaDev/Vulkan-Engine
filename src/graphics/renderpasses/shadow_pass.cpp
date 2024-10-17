@@ -2,6 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 void ShadowPass::init()
 {
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
@@ -229,5 +232,7 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 
     end(cmd);
 }
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END

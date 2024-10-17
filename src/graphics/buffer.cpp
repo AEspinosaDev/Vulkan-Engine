@@ -2,6 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)
 {
     PROFILING_EVENT()
@@ -21,7 +24,8 @@ void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t si
     vmaUnmapMemory(memory, allocation);
 }
 
-void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize)
+void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                  uint32_t istrideSize)
 {
 
     VkBufferCreateInfo bufferInfo = {};
@@ -34,15 +38,13 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.usage = memoryUsage;
 
-    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo,
-                             &handle,
-                             &allocation,
-                             nullptr));
+    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &handle, &allocation, nullptr));
 
     strideSize = istrideSize;
 }
 
-void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
+void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                  uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
 {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -54,10 +56,7 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.usage = memoryUsage;
 
-    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo,
-                             &handle,
-                             &allocation,
-                             nullptr));
+    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &handle, &allocation, nullptr));
 
     strideSize = istrideSize;
     partitionsSizes = stridePartitionsSizes;
@@ -65,8 +64,9 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
 
 void Buffer::cleanup(VmaAllocator &memory)
 {
-    vmaDestroyBuffer(memory, handle,
-                     allocation);
+    vmaDestroyBuffer(memory, handle, allocation);
 }
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END

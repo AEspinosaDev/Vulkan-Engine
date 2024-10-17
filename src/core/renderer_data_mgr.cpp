@@ -27,7 +27,7 @@ void Renderer::update_global_data(Scene *const scene)
     Camera *camera = scene->get_active_camera();
     if (camera->is_dirty())
         camera->set_projection(m_window->get_extent().width, m_window->get_extent().height);
-    CameraUniforms camData;
+    graphics::CameraUniforms camData;
     camData.view = camera->get_view();
     camData.proj = camera->get_projection();
     camData.viewProj = camera->get_projection() * camera->get_view();
@@ -35,12 +35,12 @@ void Renderer::update_global_data(Scene *const scene)
     camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
     m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(m_context.memory, &camData,
-                                                                               sizeof(CameraUniforms), 0);
+                                                                               sizeof(graphics::CameraUniforms), 0);
 
     /*
     SCENE UNIFORMS LOAD
     */
-    SceneUniforms sceneParams;
+    graphics::SceneUniforms sceneParams;
     sceneParams.fogParams = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(),
                              scene->is_fog_enabled()};
     sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), 0.0f);
@@ -73,8 +73,8 @@ void Renderer::update_global_data(Scene *const scene)
     sceneParams.numLights = static_cast<int>(lights.size());
 
     m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(
-        m_context.memory, &sceneParams, sizeof(SceneUniforms),
-        utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu));
+        m_context.memory, &sceneParams, sizeof(graphics::SceneUniforms),
+        graphics::utils::pad_uniform_buffer_size(sizeof(graphics::CameraUniforms), m_context.gpu));
 }
 void Renderer::update_object_data(Scene *const scene)
 {
@@ -125,13 +125,13 @@ void Renderer::update_object_data(Scene *const scene)
                     uint32_t objectOffset =
                         m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
 
-                    ObjectUniforms objectData;
+                    graphics::ObjectUniforms objectData;
                     objectData.model = m->get_model_matrix();
                     objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(),
                                                false};
                     objectData.otherParams2 = {m->is_selected(), 0.0, 0.0, 0.0};
                     m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(
-                        m_context.memory, &objectData, sizeof(ObjectUniforms), objectOffset);
+                        m_context.memory, &objectData, sizeof(graphics::ObjectUniforms), objectOffset);
 
                     // void *meshData = nullptr;
                     // size_t size = 0;
@@ -154,10 +154,11 @@ void Renderer::update_object_data(Scene *const scene)
                             upload_material_textures(Material::DEBUG_MATERIAL);
 
                         // ObjectUniforms materialData;
-                        MaterialUniforms materialData = mat->get_uniforms();
+                        graphics::MaterialUniforms materialData = mat->get_uniforms();
                         m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(
-                            m_context.memory, &materialData, sizeof(MaterialUniforms),
-                            objectOffset + utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu));
+                            m_context.memory, &materialData, sizeof(graphics::MaterialUniforms),
+                            objectOffset + graphics::utils::pad_uniform_buffer_size(sizeof(graphics::MaterialUniforms),
+                                                                                  m_context.gpu));
                     }
                 }
             }
@@ -211,17 +212,19 @@ void Renderer::init_resources()
     for (size_t i = 0; i < m_context.frames.size(); i++)
     {
         // Global Buffer
-        Buffer globalBuffer;
-        const size_t globalStrideSize = (utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context.gpu) +
-                                         utils::pad_uniform_buffer_size(sizeof(SceneUniforms), m_context.gpu));
+        graphics::Buffer globalBuffer;
+        const size_t globalStrideSize =
+            (graphics::utils::pad_uniform_buffer_size(sizeof(graphics::CameraUniforms), m_context.gpu) +
+             graphics::utils::pad_uniform_buffer_size(sizeof(graphics::SceneUniforms), m_context.gpu));
         globalBuffer.init(m_context.memory, globalStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
         m_context.frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
-        Buffer objectBuffer;
-        const size_t objectStrideSize = (utils::pad_uniform_buffer_size(sizeof(ObjectUniforms), m_context.gpu) +
-                                         utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context.gpu));
+        graphics::Buffer objectBuffer;
+        const size_t objectStrideSize =
+            (graphics::utils::pad_uniform_buffer_size(sizeof(graphics::ObjectUniforms), m_context.gpu) +
+             graphics::utils::pad_uniform_buffer_size(sizeof(graphics::MaterialUniforms), m_context.gpu));
         objectBuffer.init(m_context.memory, VK_MAX_OBJECTS * objectStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
         m_context.frames[i].uniformBuffers.push_back(objectBuffer);
@@ -240,7 +243,7 @@ void Renderer::clean_Resources()
 {
     for (size_t i = 0; i < m_context.frames.size(); i++)
     {
-        for (Buffer &buffer : m_context.frames[i].uniformBuffers)
+        for (graphics::Buffer &buffer : m_context.frames[i].uniformBuffers)
         {
             buffer.cleanup(m_context.memory);
         }

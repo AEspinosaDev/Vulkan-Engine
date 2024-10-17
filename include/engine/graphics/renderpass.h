@@ -22,8 +22,10 @@
 
 #include <engine/utilities/gui.h>
 
-
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace graphics
+{
 
 /*
 Attachment infor needed for using a renderpasses and its framebuffers.
@@ -36,14 +38,15 @@ struct Attachment
 
     bool isPresentImage{false};
 
-     Attachment(ImageConfig config, ViewConfig viewConfig, SamplerConfig samplerConfig, VkClearValue clearVal = {{{0.0, 0.0, 0.0, 1.0}}})
+    Attachment(ImageConfig config, ViewConfig viewConfig, SamplerConfig samplerConfig,
+               VkClearValue clearVal = {{{0.0, 0.0, 0.0, 1.0}}})
         : clearValue(clearVal)
     {
         image.config = config;
         image.viewConfig = viewConfig;
         image.samplerConfig = samplerConfig;
         clearValue.depthStencil.depth = 1.0f;
-    }; 
+    };
 };
 
 /*
@@ -242,6 +245,8 @@ class RenderPass
     virtual void cleanup();
 #pragma endregion
 };
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END
 

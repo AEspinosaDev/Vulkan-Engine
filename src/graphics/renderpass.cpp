@@ -2,6 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 void RenderPass::begin(VkCommandBuffer &cmd, uint32_t framebufferId, VkSubpassContents subpassContents)
 {
     VkRenderPassBeginInfo renderPassInfo =
@@ -116,5 +119,7 @@ void RenderPass::update()
     clean_framebuffer();
     create_framebuffer();
 }
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END

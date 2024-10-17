@@ -12,20 +12,21 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 class FXAAPass : public RenderPass
 {
     ColorFormatType m_colorFormat;
     Mesh *m_vignette;
     DescriptorSet m_imageDescriptorSet;
-    
-public:
-    FXAAPass(Context *ctx,
-             VkExtent2D extent,
-             uint32_t framebufferCount,
-             ColorFormatType colorFormat,
-             Mesh *vignette,
-             bool isDefault = true) : RenderPass(ctx, extent, framebufferCount, 1, isDefault),
-                                      m_colorFormat(colorFormat), m_vignette(vignette) {}
+
+  public:
+    FXAAPass(Context *ctx, VkExtent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat, Mesh *vignette,
+             bool isDefault = true)
+        : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat), m_vignette(vignette)
+    {
+    }
 
     void init();
 
@@ -37,6 +38,8 @@ public:
 
     void connect_to_previous_images(std::vector<Image> images);
 };
+
+} // namespace render
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif

@@ -17,10 +17,11 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace utils
+namespace graphics
 {
 
-
+namespace utils
+{
 
 struct UploadContext
 {
@@ -321,6 +322,7 @@ template <typename T, typename... Rest> void hash_combine(std::size_t &seed, con
 }
 
 }; // namespace utils
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END
 

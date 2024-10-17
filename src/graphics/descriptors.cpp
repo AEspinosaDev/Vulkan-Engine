@@ -2,14 +2,16 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage, uint32_t numImageCombined, uint32_t maxSets)
+namespace graphics
 {
-    std::vector<VkDescriptorPoolSize> sizes =
-        {
-            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numUBO},
-            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, numUBODynamic},
-            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numUBOStorage},
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImageCombined}};
+
+void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage,
+                                    uint32_t numImageCombined, uint32_t maxSets)
+{
+    std::vector<VkDescriptorPoolSize> sizes = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numUBO},
+                                               {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, numUBODynamic},
+                                               {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numUBOStorage},
+                                               {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImageCombined}};
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -20,7 +22,8 @@ void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uin
 
     VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_pool));
 }
-void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings, uint32_t bindingCount, VkDescriptorSetLayoutCreateFlags flags)
+void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings,
+                                   uint32_t bindingCount, VkDescriptorSetLayoutCreateFlags flags)
 {
     VkDescriptorSetLayout layout;
     VkDescriptorSetLayoutCreateInfo setinfo = {};
@@ -45,12 +48,12 @@ void DescriptorManager::allocate_descriptor_set(uint32_t layoutSetIndex, Descrip
 
     descriptor->layoutID = layoutSetIndex;
 
-    VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo,
-                                      &descriptor->handle));
+    VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo, &descriptor->handle));
 
     descriptor->allocated = true;
 }
-void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset, DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
+void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset,
+                                             DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
 {
     VkDescriptorBufferInfo info;
     info.buffer = buffer->handle;
@@ -65,7 +68,8 @@ void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSi
 
     vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
 }
-void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout, DescriptorSet *descriptor, uint32_t binding)
+void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout,
+                                             DescriptorSet *descriptor, uint32_t binding)
 {
 
     VkDescriptorImageInfo imageBufferInfo;
@@ -73,7 +77,8 @@ void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imag
     imageBufferInfo.imageView = imageView;
     imageBufferInfo.imageLayout = layout;
 
-    VkWriteDescriptorSet texture1 = init::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->handle, &imageBufferInfo, binding);
+    VkWriteDescriptorSet texture1 = init::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                                 descriptor->handle, &imageBufferInfo, binding);
 
     descriptor->bindings += 1;
 
@@ -88,10 +93,8 @@ void DescriptorManager::cleanup()
     vkDestroyDescriptorPool(m_device, m_pool, nullptr);
 }
 
-void DescriptorManager::bind_descriptor_sets(VkCommandBuffer commandBuffer,
-                                             VkPipelineBindPoint pipelineBindPoint,
-                                             VkPipelineLayout pipelineLayout,
-                                             uint32_t firstSet,
+void DescriptorManager::bind_descriptor_sets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                             VkPipelineLayout pipelineLayout, uint32_t firstSet,
                                              const std::vector<DescriptorSet> descriptorSets)
 {
     // std::vector<uint32_t> offsets;
@@ -101,12 +104,17 @@ void DescriptorManager::bind_descriptor_sets(VkCommandBuffer commandBuffer,
     //     // TO DO
     // }
 
-    // vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet, descriptorSets.size(), descriptorSets.data(), 3, descriptorOffsets);
+    // vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet, descriptorSets.size(),
+    // descriptorSets.data(), 3, descriptorOffsets);
 }
-void DescriptorSet::bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout pipelineLayout, uint32_t firstSet, const std::vector<uint32_t> offsets)
+void DescriptorSet::bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                         VkPipelineLayout pipelineLayout, uint32_t firstSet, const std::vector<uint32_t> offsets)
 {
     // for
-    // vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet,1, descriptorSet, isDynamic? bind: 0, offsets.data());
+    // vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet,1, descriptorSet, isDynamic?
+    // bind: 0, offsets.data());
 }
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END

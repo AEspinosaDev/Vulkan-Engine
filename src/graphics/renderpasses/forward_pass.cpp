@@ -2,6 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 void ForwardPass::init()
 {
 
@@ -418,4 +421,5 @@ void ForwardPass::setup_material_descriptor(Material *mat)
         }
     }
 }
+} // namespace render
 VULKAN_ENGINE_NAMESPACE_END

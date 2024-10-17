@@ -60,9 +60,9 @@ in the order they where added.
 */
 struct RenderPipeline
 {
-    std::vector<RenderPass *> renderpasses;
+    std::vector<graphics::RenderPass *> renderpasses;
 
-    void push_renderpass(RenderPass *pass)
+    void push_renderpass(graphics::RenderPass *pass)
     {
         renderpasses.push_back(pass);
     };
@@ -79,12 +79,12 @@ class Renderer
   protected:
     RendererSettings m_settings{};
 
-    Context m_context{};
+    graphics::Context m_context{};
     Window *m_window;
 
     RenderPipeline m_renderPipeline;
 
-    utils::DeletionQueue m_deletionQueue;
+    graphics::utils::DeletionQueue m_deletionQueue;
 
     GUIOverlay *m_gui{nullptr};
 
@@ -218,7 +218,7 @@ class Renderer
     /*
     Link images of previous passes to current pass
     */
-    void connect_renderpass(RenderPass *const currentPass);
+    void connect_renderpass(graphics::RenderPass *const currentPass);
     /*
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context

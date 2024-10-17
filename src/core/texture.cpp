@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 Texture *Texture::DEBUG_TEXTURE = nullptr;
 
-Image *const get_image(Texture *t)
+graphics::Image *const get_image(Texture *t)
 {
     TextureSettings textSettings = t->m_settings;
     t->m_image.config.format = static_cast<VkFormat>(textSettings.format);

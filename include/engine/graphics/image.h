@@ -14,6 +14,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace graphics
+{
+
 struct ImageConfig
 {
     VkFormat format{VK_FORMAT_B8G8R8A8_SRGB};
@@ -79,6 +82,8 @@ struct Image
 
     static const int BYTES_PER_PIXEL{4};
 };
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END
 

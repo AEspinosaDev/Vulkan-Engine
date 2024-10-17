@@ -26,9 +26,9 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
         return;
     }
 
-    std::vector<utils::Vertex> vertices;
+    std::vector<graphics::utils::Vertex> vertices;
     std::vector<uint32_t> indices;
-    std::unordered_map<utils::Vertex, uint32_t> uniqueVertices;
+    std::unordered_map<graphics::utils::Vertex, uint32_t> uniqueVertices;
 
     size_t shape_id = 0;
     for (const tinyobj::shape_t &shape : shapes)
@@ -38,7 +38,7 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
             // IS INDEXED
             for (const tinyobj::index_t &index : shape.mesh.indices)
             {
-                utils::Vertex vertex = {};
+                graphics::utils::Vertex vertex = {};
 
                 // Position and color
                 if (index.vertex_index >= 0)
@@ -85,7 +85,7 @@ void VkFW::loaders::load_OBJ(Mesh *const mesh, const std::string fileName, bool 
             {
                 for (size_t j = 0; j < shape.mesh.num_face_vertices[i]; j++)
                 {
-                    utils::Vertex vertex{};
+                    graphics::utils::Vertex vertex{};
                     size_t vertex_index = shape.mesh.indices[i * shape.mesh.num_face_vertices[i] + j].vertex_index;
                     // Pos
                     if (!attrib.vertices.empty())
@@ -160,8 +160,8 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
         // stream is a net win for parsing speed, about 40% faster.
         if (preload)
         {
-            byte_buffer = utils::read_file_binary(fileName);
-            file_stream.reset(new utils::memory_stream((char *)byte_buffer.data(), byte_buffer.size()));
+            byte_buffer = graphics::utils::read_file_binary(fileName);
+            file_stream.reset(new graphics::utils::memory_stream((char *)byte_buffer.data(), byte_buffer.size()));
         }
         else
         {
@@ -287,7 +287,7 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
         }
-        utils::ManualTimer readTimer;
+        graphics::utils::ManualTimer readTimer;
 
         readTimer.start();
         file.read(*file_stream);
@@ -315,7 +315,7 @@ void VkFW::loaders::load_PLY(Mesh *const mesh, const std::string fileName, bool 
                           << " total indices (tristrip) " << std::endl;
         }
 
-        std::vector<utils::Vertex> vertices;
+        std::vector<graphics::utils::Vertex> vertices;
         std::vector<uint32_t> indices;
 
         if (positions)
@@ -667,7 +667,7 @@ void VkFW::loaders::load_hair(Mesh *const mesh, const char *fileName)
     dirs = new float[header.point_count * 3];
     fillDirectionArray(dirs);
 
-    std::vector<utils::Vertex> vertices;
+    std::vector<graphics::utils::Vertex> vertices;
     vertices.reserve(header.point_count * 3);
     std::vector<uint32_t> indices;
 

@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef BUFFER_H
@@ -12,6 +12,10 @@
 #include <engine/graphics/bootstrap.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace graphics
+{
+
 /*Vulkan buffer object*/
 struct Buffer
 {
@@ -23,8 +27,10 @@ struct Buffer
     /*For buffer info writing operation*/
     std::vector<uint32_t> partitionsSizes;
 
-    void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize = 0);
-    void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes);
+    void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+              uint32_t istrideSize = 0);
+    void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+              uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes);
 
     void upload_data(VmaAllocator &memory, const void *bufferData, size_t size);
 
@@ -32,6 +38,8 @@ struct Buffer
 
     void cleanup(VmaAllocator &memory);
 };
+
+} // namespace render
 
 VULKAN_ENGINE_NAMESPACE_END
 

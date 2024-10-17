@@ -23,7 +23,7 @@ void Renderer::init()
     init_resources();
     setup_renderpasses();
 
-    for (RenderPass *pass : m_renderPipeline.renderpasses)
+    for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
         {
@@ -37,7 +37,7 @@ void Renderer::init()
     };
 
     m_deletionQueue.push_function([=]() {
-        for (RenderPass *pass : m_renderPipeline.renderpasses)
+        for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
         {
             pass->cleanup();
         }
@@ -46,7 +46,7 @@ void Renderer::init()
     if (m_settings.enableUI)
         init_gui();
 
-    Frame::guiEnabled = m_settings.enableUI;
+    graphics::Frame::guiEnabled = m_settings.enableUI;
 
     m_initialized = true;
 }
@@ -92,7 +92,7 @@ void Renderer::shutdown(Scene *const scene)
                 }
             }
 
-        for (RenderPass *pass : m_renderPipeline.renderpasses)
+        for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
         {
             pass->clean_framebuffer();
         }
@@ -109,13 +109,13 @@ void Renderer::on_before_render(Scene *const scene)
 {
     PROFILING_EVENT()
 
-    if (Frame::guiEnabled && m_gui)
+    if (graphics::Frame::guiEnabled && m_gui)
         m_gui->render();
 
     update_global_data(scene);
     update_object_data(scene);
 
-    for (RenderPass *pass : m_renderPipeline.renderpasses)
+    for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
             pass->upload_data(m_currentFrame, scene);
@@ -166,7 +166,7 @@ void Renderer::render(Scene *const scene)
 
     m_context.begin_command_buffer(m_currentFrame);
 
-    for (RenderPass *pass : m_renderPipeline.renderpasses)
+    for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
             pass->render(m_currentFrame, scene, imageIndex);
@@ -179,15 +179,15 @@ void Renderer::render(Scene *const scene)
     on_after_render(renderResult, scene);
 }
 
-void Renderer::connect_renderpass(RenderPass *const currentPass)
+void Renderer::connect_renderpass(graphics::RenderPass *const currentPass)
 {
     if (currentPass->get_image_dependace_table().empty())
         return;
 
-    std::vector<Image> images;
+    std::vector<graphics::Image> images;
     for (auto pair : currentPass->get_image_dependace_table())
     {
-        std::vector<Attachment> attachments = m_renderPipeline.renderpasses[pair.first]->get_attachments();
+        std::vector<graphics::Attachment> attachments = m_renderPipeline.renderpasses[pair.first]->get_attachments();
         for (size_t i = 0; i < pair.second.size(); i++)
         {
             images.push_back(attachments[pair.second[i]].image);
@@ -214,7 +214,7 @@ void Renderer::update_renderpasses()
         static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
     // Renderpass framebuffer updating
-    for (RenderPass *pass : m_renderPipeline.renderpasses)
+    for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
         {
@@ -235,8 +235,8 @@ void Renderer::init_gui()
     if (m_gui)
     {
         // Look for default pass
-        RenderPass *defaultPass = nullptr;
-        for (RenderPass *pass : m_renderPipeline.renderpasses)
+        graphics::RenderPass *defaultPass = nullptr;
+        for (graphics::RenderPass *pass : m_renderPipeline.renderpasses)
         {
             if (pass->is_active() && pass->default_pass())
             {

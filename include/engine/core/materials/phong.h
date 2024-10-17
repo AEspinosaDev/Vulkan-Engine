@@ -42,7 +42,7 @@ protected:
                                                   {SHININESS, nullptr}};
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual MaterialUniforms get_uniforms() const;
+    virtual graphics::MaterialUniforms get_uniforms() const;
     virtual inline std::unordered_map<int, Texture *> get_textures() const
     {
         return m_textures;

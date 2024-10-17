@@ -33,7 +33,7 @@ class Material
 
     std::string m_shaderPassID{};
 
-    DescriptorSet m_textureDescriptor{};
+    graphics::DescriptorSet m_textureDescriptor{};
 
     bool m_isDirty{true};
 
@@ -91,12 +91,12 @@ class Material
         m_settings.blending = op;
     }
 
-    virtual inline DescriptorSet &get_texture_descriptor()
+    virtual inline graphics::DescriptorSet &get_texture_descriptor()
     {
         return m_textureDescriptor;
     }
 
-    virtual MaterialUniforms get_uniforms() const = 0;
+    virtual graphics::MaterialUniforms get_uniforms() const = 0;
 
     virtual std::unordered_map<int, Texture *> get_textures() const = 0;
 

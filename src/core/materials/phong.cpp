@@ -15,10 +15,10 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
  *bool hasNormalTexture;
  *bool hasGlossinessTexture;
 */
-MaterialUniforms PhongMaterial::get_uniforms() const
+graphics::MaterialUniforms PhongMaterial::get_uniforms() const
 {
 
-    MaterialUniforms uniforms;
+     graphics::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_color;
     uniforms.dataSlot2 = {m_shininess, m_glossiness, m_tileUV.x, m_tileUV.y};
     uniforms.dataSlot3 = {m_hasColorTexture, m_hasNormalTexture, m_hasGlossinessTexture, 0.0f};
