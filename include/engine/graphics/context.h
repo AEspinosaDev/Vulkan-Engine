@@ -22,7 +22,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 /*
 Vulkan API graphic context related data abnd functionality
@@ -42,6 +42,8 @@ struct Context
     VkQueue graphicsQueue{};
     VkQueue presentQueue{};
 
+    VkDescriptorPool m_guiPool{};
+
     std::vector<Frame> frames;
 
     utils::UploadContext uploadContext{};
@@ -52,6 +54,11 @@ struct Context
     const bool enableValidationLayers{true};
 #endif
 
+    /*
+    INIT AND SHUTDOWN
+    -----------------------------------------------
+    */
+
     void init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
               VkPresentModeKHR presentMode);
 
@@ -59,6 +66,11 @@ struct Context
                             VkFormat presentFormat, VkPresentModeKHR presentMode);
 
     void cleanup();
+
+    /*
+    DRAWING
+    -----------------------------------------------
+    */
 
     VkResult aquire_present_image(const uint32_t &currentFrame, uint32_t &imageIndex);
 
@@ -68,19 +80,28 @@ struct Context
 
     VkResult present_image(const uint32_t &currentFrame, uint32_t imageIndex);
 
+    static void draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint32_t vertexCount, uint32_t indexCount,
+                              bool indexed, uint32_t instanceCount = 1, uint32_t firstOcurrence = 0, int32_t offset = 0,
+                              uint32_t firstInstance = 0);
+    /*
+    DATA TRANSFER
+    -----------------------------------------------
+    */
     void upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
                          const void *iboData, bool indexed);
 
     void upload_texture_image(Image *const img, bool mipmapping);
 
-    static void draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint32_t vertexCount, uint32_t indexCount,
-                              bool indexed, uint32_t instanceCount = 1, uint32_t firstOcurrence = 0, int32_t offset = 0,
-                              uint32_t firstInstance = 0);
-
+    /*
+    MISC
+    -----------------------------------------------
+    */
     void wait_for_device();
+
+    void init_gui_pool();
 };
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 

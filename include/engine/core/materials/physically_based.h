@@ -3,26 +3,28 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef PBR_H
 #define PBR_H
 
+#include <engine/core/materials/material.h>
 #include <engine/graphics/descriptors.h>
-#include <engine/core/material.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Core
+{
 
 /// Epic's Unreal Engine 4 PBR Metallic-Roughness Workflow
 class PhysicallyBasedMaterial : public Material
 {
-protected:
+  protected:
     Vec2 m_tileUV{1.0f, 1.0f};
 
-    Vec4 m_albedo{0.5,0.5,0.5,1.0};         // w for opacity
-    float m_albedoWeight{1.0f}; // Weight between parameter and albedo texture
+    Vec4 m_albedo{0.5, 0.5, 0.5, 1.0}; // w for opacity
+    float m_albedoWeight{1.0f};        // Weight between parameter and albedo texture
     float m_opacityWeight{0.0f};
 
     float m_metalness{0.5f};
@@ -55,15 +57,12 @@ protected:
         AO = 4,
     };
 
-    std::unordered_map<int, Texture *> m_textures{{ALBEDO, nullptr},
-                                                  {NORMAL, nullptr},
-                                                  {MASK_ROUGHNESS, nullptr},
-                                                  {METALNESS, nullptr},
-                                                  {AO, nullptr}};
+    std::unordered_map<int, Texture *> m_textures{
+        {ALBEDO, nullptr}, {NORMAL, nullptr}, {MASK_ROUGHNESS, nullptr}, {METALNESS, nullptr}, {AO, nullptr}};
 
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual graphics::MaterialUniforms get_uniforms() const;
+    virtual Graphics::MaterialUniforms get_uniforms() const;
     virtual inline std::unordered_map<int, Texture *> get_textures() const
     {
         return m_textures;
@@ -78,26 +77,39 @@ protected:
         m_textureBindingState[id] = state;
     }
 
-public:
-    PhysicallyBasedMaterial(Vec4 albedo = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("physical"), m_albedo(albedo) {}
-    PhysicallyBasedMaterial(Vec4 albedo, MaterialSettings params) : Material("physical", params), m_albedo(albedo) {}
+  public:
+    PhysicallyBasedMaterial(Vec4 albedo = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("physical"), m_albedo(albedo)
+    {
+    }
+    PhysicallyBasedMaterial(Vec4 albedo, MaterialSettings params) : Material("physical", params), m_albedo(albedo)
+    {
+    }
 
-    inline Vec2 get_tile() const { return m_tileUV; }
+    inline Vec2 get_tile() const
+    {
+        return m_tileUV;
+    }
     inline void set_tile(Vec2 tile)
     {
         m_tileUV = tile;
         m_isDirty = true;
     }
 
-    inline Vec3 get_albedo() const { return Vec3(m_albedo); }
+    inline Vec3 get_albedo() const
+    {
+        return Vec3(m_albedo);
+    }
     inline void set_albedo(Vec3 c)
     {
-        m_albedo = Vec4(c,m_albedo.w);
+        m_albedo = Vec4(c, m_albedo.w);
         m_isDirty = true;
     }
 
     // Weight between parameter and albedo texture
-    virtual inline float get_albedo_weight() const { return m_albedoWeight; }
+    virtual inline float get_albedo_weight() const
+    {
+        return m_albedoWeight;
+    }
     // Weight between parameter and albedo texture
     virtual inline void set_albedo_weight(float w)
     {
@@ -105,14 +117,20 @@ public:
         m_isDirty = true;
     }
 
-    inline float get_opacity() const { return m_albedo.a; }
+    inline float get_opacity() const
+    {
+        return m_albedo.a;
+    }
     inline void set_opacity(float op)
     {
         m_albedo.a = op;
         m_isDirty = true;
     }
     // Weight between parameter and op texture
-    virtual inline float get_opacity_weight() const { return m_opacityWeight; }
+    virtual inline float get_opacity_weight() const
+    {
+        return m_opacityWeight;
+    }
     // Weight between parameter and op texture
     virtual inline void set_opacity_weight(float w)
     {
@@ -120,8 +138,10 @@ public:
         m_isDirty = true;
     }
 
-
-    inline float get_metalness() const { return m_metalness; }
+    inline float get_metalness() const
+    {
+        return m_metalness;
+    }
     inline void set_metalness(float m)
     {
         m_metalness = m;
@@ -129,7 +149,10 @@ public:
     }
 
     // Weight between parameter and metallness texture
-    virtual inline float get_metalness_weight() const { return m_metalnessWeight; }
+    virtual inline float get_metalness_weight() const
+    {
+        return m_metalnessWeight;
+    }
     // Weight between parameter and metallness texture
     virtual inline void set_metalness_weight(float w)
     {
@@ -137,7 +160,10 @@ public:
         m_isDirty = true;
     }
 
-    inline float get_roughness() const { return m_roughness; }
+    inline float get_roughness() const
+    {
+        return m_roughness;
+    }
     inline void set_roughness(float r)
     {
         m_roughness = r;
@@ -145,7 +171,10 @@ public:
     }
 
     // Weight between parameter and roughness texture
-    virtual inline float get_roughness_weight() const { return m_roughnessWeight; }
+    virtual inline float get_roughness_weight() const
+    {
+        return m_roughnessWeight;
+    }
     // Weight between parameter and roughness texture
     virtual inline void set_roughness_weight(float w)
     {
@@ -153,7 +182,10 @@ public:
         m_isDirty = true;
     }
 
-    inline float get_occlusion() const { return m_occlusion; }
+    inline float get_occlusion() const
+    {
+        return m_occlusion;
+    }
     inline void set_occlusion(float r)
     {
         m_occlusion = r;
@@ -161,7 +193,10 @@ public:
     }
 
     // Weight between parameter and occlusion texture
-    virtual inline float get_occlusion_weight() const { return m_occlusionWeight; }
+    virtual inline float get_occlusion_weight() const
+    {
+        return m_occlusionWeight;
+    }
     // Weight between parameter and occlusion texture
     virtual inline void set_occlusion_weight(float w)
     {
@@ -169,7 +204,10 @@ public:
         m_isDirty = true;
     }
 
-    inline Texture *get_albedo_texture() { return m_textures[ALBEDO]; }
+    inline Texture *get_albedo_texture()
+    {
+        return m_textures[ALBEDO];
+    }
     inline void set_albedo_texture(Texture *t)
     {
         m_hasAlbedoTexture = t ? true : false;
@@ -178,7 +216,10 @@ public:
         m_isDirty = true;
     }
 
-    inline Texture *get_normal_texture() { return m_textures[NORMAL]; }
+    inline Texture *get_normal_texture()
+    {
+        return m_textures[NORMAL];
+    }
     inline void set_normal_texture(Texture *t)
     {
         m_hasNormalTexture = t ? true : false;
@@ -190,7 +231,10 @@ public:
     /*
     Sets mask texture. Support for some presets of commercial game engines.
     */
-    inline Texture *get_mask_texture() { return m_textures[MASK_ROUGHNESS]; }
+    inline Texture *get_mask_texture()
+    {
+        return m_textures[MASK_ROUGHNESS];
+    }
     inline void set_mask_texture(Texture *t, MaskType preset)
     {
         m_hasMaskTexture = t ? true : false;
@@ -200,7 +244,10 @@ public:
         m_isDirty = true;
     }
 
-    inline Texture *get_roughness_texture() { return m_textures[MASK_ROUGHNESS]; }
+    inline Texture *get_roughness_texture()
+    {
+        return m_textures[MASK_ROUGHNESS];
+    }
     inline void set_roughness_texture(Texture *t)
     {
         m_hasRoughnessTexture = t ? true : false;
@@ -208,7 +255,10 @@ public:
         m_textures[MASK_ROUGHNESS] = t;
         m_isDirty = true;
     }
-    inline Texture *get_metallic_texture() { return m_textures[METALNESS]; }
+    inline Texture *get_metallic_texture()
+    {
+        return m_textures[METALNESS];
+    }
     inline void set_metallic_texture(Texture *t)
     {
         m_hasMetallicTexture = t ? true : false;
@@ -216,7 +266,10 @@ public:
         m_textures[METALNESS] = t;
         m_isDirty = true;
     }
-    inline Texture *get_occlusion_texture() { return m_textures[AO]; }
+    inline Texture *get_occlusion_texture()
+    {
+        return m_textures[AO];
+    }
     inline void set_occlusion_texture(Texture *t)
     {
         m_hasAOTexture = t ? true : false;
@@ -224,7 +277,11 @@ public:
         m_textures[AO] = t;
         m_isDirty = true;
     }
-    inline MaskType get_mask_type() const { return (MaskType)m_maskType; }
+    inline MaskType get_mask_type() const
+    {
+        return (MaskType)m_maskType;
+    }
 };
+} // namespace Core
 VULKAN_ENGINE_NAMESPACE_END
 #endif

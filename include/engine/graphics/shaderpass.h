@@ -10,7 +10,6 @@
 #define SHADER_H
 
 #include <engine/common.h>
-#include <engine/core/geometry.h>
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/initializers.h>
 
@@ -18,7 +17,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 struct ShaderStage

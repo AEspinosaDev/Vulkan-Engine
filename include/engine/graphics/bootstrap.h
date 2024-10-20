@@ -14,7 +14,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 struct QueueFamilyIndices

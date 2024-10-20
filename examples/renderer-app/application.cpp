@@ -1,7 +1,7 @@
 #include "application.h"
 #include <filesystem>
 
-void VulkanRenderer::init(RendererSettings settings, ForwardRendererSettings settings2)
+void VulkanRenderer::init( Systems::RendererSettings settings,  Systems::ForwardRendererSettings settings2)
 {
     m_window = new Window("VK Engine", 1280, 1024);
 
@@ -14,21 +14,22 @@ void VulkanRenderer::init(RendererSettings settings, ForwardRendererSettings set
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
                                          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new ForwardRenderer(m_window, settings, settings2);
+    m_renderer = new  Systems::ForwardRenderer(m_window, settings, settings2);
 
     setup();
 
     setup_gui();
+
 }
 
 void VulkanRenderer::run(int argc, char *argv[])
 {
 
-    RendererSettings settings{};
+   Systems:: RendererSettings settings{};
     settings.samplesMSAA = MSAASamples::MSAA_x8;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
-    ForwardRendererSettings settings2{};
+   Systems:: ForwardRendererSettings settings2{};
     settings2.shadowQuality = ShadowResolution::MEDIUM;
     settings2.fxaa = false;
 
@@ -167,18 +168,18 @@ void VulkanRenderer::setup()
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();
     Texture *toriiT = new Texture();
-    loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
+    Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
     Texture *toriiN = new Texture();
-    loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png");
+    Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png");
     Texture *toriiM = new Texture();
-    loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
+    Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
     toriiMat->set_normal_texture(toriiN);
     toriiMat->set_metalness(0.5);
     toriiMat->set_roughness(0.5);
     // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMesh->set_material(toriiMat);
-    toriiMesh->load_file(MESH_PATH + "torii.obj", true);
+    Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj");
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
     toriiMesh->set_position({1.6, -2.3, 6.1});
@@ -188,14 +189,14 @@ void VulkanRenderer::setup()
     Mesh *terrainMesh = new Mesh();
     terrainMesh->set_scale(10.0);
     terrainMesh->set_position({0.0, -4.0, 0.0});
-    terrainMesh->load_file(MESH_PATH + "terrain.obj", true);
+    Loaders::load_3D_file(terrainMesh, MESH_PATH + "terrain.obj");
     Texture *floorText = new Texture();
-    loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
+    Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
 
     Texture *floorNormalText = new Texture();
-    loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
+    Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
     Texture *floorRoughText = new Texture();
-    loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
+    Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
@@ -209,9 +210,9 @@ void VulkanRenderer::setup()
     Mesh *boxMesh = new Mesh();
     boxMesh->set_position({-3, -2.3, 3.f});
     boxMesh->set_rotation({0.0, 20.0f, 0.0f});
-    boxMesh->load_file(ENGINE_MESH_PATH + "cube.obj");
+    Loaders::load_3D_file(boxMesh, MESH_PATH + "cube.obj");
     Texture *woodText = new Texture();
-    loaders::load_texture(woodText, TEXTURE_PATH + "wood_diffuse.jpg");
+    Loaders::load_texture(woodText, TEXTURE_PATH + "wood_diffuse.jpg");
     auto boxMat = new PhysicallyBasedMaterial();
     boxMat->set_albedo_texture(woodText);
     boxMesh->set_material(boxMat);
@@ -222,18 +223,18 @@ void VulkanRenderer::setup()
     auto lightMat = new UnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_lights()[0]->get_color(), 1.0f));
     m_lightDummy = new Mesh();
-    m_lightDummy->load_file(ENGINE_MESH_PATH + "sphere.obj");
+    Loaders::load_3D_file(m_lightDummy, ENGINE_MESH_PATH + "sphere.obj");
     m_lightDummy->set_material(lightMat);
     m_lightDummy->set_scale(0.5f);
     m_lightDummy->set_name("Light Gizmo");
     // m_scene->add(m_lightDummy);
 
     Mesh *kabutoMesh = new Mesh();
-    kabutoMesh->load_file(MESH_PATH + "kabuto.obj");
+    Loaders::load_3D_file(kabutoMesh, MESH_PATH + "kabuto.obj");
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
-    loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
+    Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
@@ -244,15 +245,15 @@ void VulkanRenderer::setup()
 
     Mesh *templeMesh = new Mesh();
 
-    templeMesh->load_file(MESH_PATH + "temple.obj");
+    Loaders::load_3D_file(templeMesh, MESH_PATH + "temple.obj");
     templeMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto templeMat = new PhysicallyBasedMaterial();
     Texture *templeText = new Texture();
-    loaders::load_texture(templeText, TEXTURE_PATH + "temple_diffuse.png");
+    Loaders::load_texture(templeText, TEXTURE_PATH + "temple_diffuse.png");
     Texture *templeRText = new Texture();
-    loaders::load_texture(templeRText, TEXTURE_PATH + "temple_rough.png");
+    Loaders::load_texture(templeRText, TEXTURE_PATH + "temple_rough.png");
     Texture *templeMText = new Texture();
-    loaders::load_texture(templeMText, TEXTURE_PATH + "temple_metal.png");
+    Loaders::load_texture(templeMText, TEXTURE_PATH + "temple_metal.png");
     templeMat->set_albedo_texture(templeText);
     templeMat->set_metallic_texture(templeMText);
     templeMat->set_roughness_texture(templeRText);
@@ -267,15 +268,15 @@ void VulkanRenderer::setup()
 
     Mesh *templeMesh2 = new Mesh();
 
-    templeMesh2->load_file(MESH_PATH + "shrine.obj");
+    Loaders::load_3D_file(templeMesh2, MESH_PATH + "shrine.obj");
     templeMesh2->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto templeMat2 = new PhysicallyBasedMaterial();
     Texture *templeText2 = new Texture();
-    loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
+    Loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
     Texture *templeRText2 = new Texture();
-    loaders::load_texture(templeRText, TEXTURE_PATH + "shrine_rough.png");
+    Loaders::load_texture(templeRText, TEXTURE_PATH + "shrine_rough.png");
     Texture *templeMText2 = new Texture();
-    loaders::load_texture(templeMText2, TEXTURE_PATH + "shrine_metal.png");
+    Loaders::load_texture(templeMText2, TEXTURE_PATH + "shrine_metal.png");
     templeMat2->set_albedo_texture(templeText2);
     templeMat2->set_metallic_texture(templeMText2);
     templeMat2->set_roughness_texture(templeRText2);
@@ -294,10 +295,10 @@ void VulkanRenderer::setup()
     // m_scene->add(hair);
 
     Mesh *lanternMesh = new Mesh();
-    lanternMesh->load_file(MESH_PATH + "lantern.obj", true);
+    Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj");
     auto lanternMat = new PhysicallyBasedMaterial();
     Texture *lanternT = new Texture();
-    loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
+    Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
     lanternMat->set_albedo_texture(lanternT);
     lanternMesh->set_material(lanternMat);
     lanternMesh->set_name("Lantern");
@@ -323,10 +324,10 @@ void VulkanRenderer::setup()
     m_scene->add(lanternMesh4);
 
     Mesh *stoneMesh = new Mesh();
-    stoneMesh->load_file(MESH_PATH + "stone_lantern.obj", false);
+    Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
     auto stoneMat = new PhysicallyBasedMaterial();
     Texture *stonelanternT = new Texture();
-    loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
+    Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
     stoneMat->set_albedo_texture(stonelanternT);
     stoneMesh->set_material(stoneMat);
     stoneMesh->set_name("Stone Lantern");
@@ -384,7 +385,7 @@ void VulkanRenderer::setup_gui()
     m_interface.overlay->add_panel(propertiesPanel);
     m_interface.properties = propertiesPanel;
 
-    m_renderer->set_gui_overlay(m_interface.overlay);
+    // m_renderer->set_gui_overlay(m_interface.overlay);
 }
 
 void VulkanRenderer::update()
@@ -417,5 +418,6 @@ void VulkanRenderer::tick()
 
     update();
 
+    m_interface.overlay->render();
     m_renderer->render(m_scene);
 }

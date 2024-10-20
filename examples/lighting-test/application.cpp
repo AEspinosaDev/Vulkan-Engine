@@ -1,7 +1,7 @@
 #include "application.h"
 #include <filesystem>
 
-void VulkanRenderer::init(RendererSettings settings)
+void VulkanRenderer::init(Systems::RendererSettings settings)
 {
     m_window = new Window("Lighting Test", 1280, 1024);
 
@@ -14,7 +14,7 @@ void VulkanRenderer::init(RendererSettings settings)
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
                                          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new ForwardRenderer(m_window, settings, {});
+    m_renderer = new Systems::ForwardRenderer(m_window, settings, {});
 
     setup();
 
@@ -24,7 +24,7 @@ void VulkanRenderer::init(RendererSettings settings)
 void VulkanRenderer::run(int argc, char *argv[])
 {
 
-    RendererSettings settings{};
+    Systems::RendererSettings settings{};
     // settings.AAtype = MSAASamples::FXAA;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
@@ -172,16 +172,17 @@ void VulkanRenderer::setup()
         }
     }
 
-    Mesh *terrainMesh = Mesh::create_quad();
+    Mesh *terrainMesh = new Mesh();
+    terrainMesh->set_geometry(Geometry::create_quad());
     terrainMesh->set_scale(25.0);
     terrainMesh->set_position({0.0, -2.0, 0.0});
     terrainMesh->set_rotation({-90.0, 0.0, 0.0});
     Texture *floorText = new Texture();
-    loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
+    Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
     Texture *floorNormalText = new Texture();
-    loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
+    Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
     Texture *floorRoughText = new Texture();
-    loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
+    Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
@@ -192,12 +193,12 @@ void VulkanRenderer::setup()
     m_scene->add(terrainMesh);
 
     Mesh *kabutoMesh = new Mesh();
-    kabutoMesh->load_file(MESH_PATH + "kabuto.obj", false);
+     Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     kabutoMesh->set_position({-5.0, 0.0, 5.0});
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
-    loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
+    Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
@@ -275,7 +276,7 @@ void VulkanRenderer::setup_gui()
     m_interface.overlay->add_panel(propertiesPanel);
     m_interface.properties = propertiesPanel;
 
-    m_renderer->set_gui_overlay(m_interface.overlay);
+    // m_renderer->set_gui_overlay(m_interface.overlay);
 }
 
 void VulkanRenderer::update()

@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)

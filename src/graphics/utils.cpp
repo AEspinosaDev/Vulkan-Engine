@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 std::string utils::trim(const std::string &str)

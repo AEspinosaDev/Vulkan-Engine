@@ -9,9 +9,12 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <engine/core/object3D.h>
+#include <engine/core/scene/object3D.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace Core
+{
 
 struct Face
 {
@@ -20,14 +23,10 @@ struct Face
 
     Face() = default;
 
-    Face(const Vec3 &p1, const Vec3 &norm)
-        : normal(math::normalize(norm)),
-          distance(math::dot(normal, p1))
+    Face(const Vec3 &p1, const Vec3 &norm) : normal(math::normalize(norm)), distance(math::dot(normal, p1))
     {
     }
-    Face(const float dist, const Vec3 &norm)
-        : normal(math::normalize(norm)),
-          distance(dist)
+    Face(const float dist, const Vec3 &norm) : normal(math::normalize(norm)), distance(dist)
     {
     }
 
@@ -52,7 +51,7 @@ struct Frustum
 class Camera : public Object3D
 {
 
-private:
+  private:
     Mat4 m_view;
     Mat4 m_proj;
 
@@ -69,8 +68,10 @@ private:
 
     static int m_instanceCount;
 
-public:
-    Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f)) : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, CAMERA), m_fov(45.0f), m_near(.1f), m_far(100.0f)
+  public:
+    Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f))
+        : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, CAMERA), m_fov(45.0f), m_near(.1f),
+          m_far(100.0f)
     {
         set_rotation({-90, 0, 0}, true);
         Camera::m_instanceCount++;
@@ -81,22 +82,37 @@ public:
         m_fov = fov;
         isDirty = true;
     }
-    inline float get_field_of_view() const { return m_fov; }
+    inline float get_field_of_view() const
+    {
+        return m_fov;
+    }
     inline void set_projection(int width, int height)
     {
         m_aspect = (float)width / (float)height;
         m_proj = math::perspective(math::radians(m_fov), m_aspect, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
-    inline Mat4 get_projection() const { return m_proj; }
-    inline Mat4 get_view() { return get_model_matrix(); }
-    inline float get_far() const { return m_far; }
+    inline Mat4 get_projection() const
+    {
+        return m_proj;
+    }
+    inline Mat4 get_view()
+    {
+        return get_model_matrix();
+    }
+    inline float get_far() const
+    {
+        return m_far;
+    }
     inline void set_far(float f)
     {
         m_far = f;
         isDirty = true;
     }
-    inline float get_near() const { return m_near; }
+    inline float get_near() const
+    {
+        return m_near;
+    }
     inline void set_near(float n)
     {
         m_near = n;
@@ -125,9 +141,16 @@ public:
         return m_frustrum;
     }
 
-    inline void enable_frustrum_culling(bool op) { m_frustrumCulling = op; }
-    inline bool get_frustrum_culling() const { return m_frustrumCulling; }
+    inline void enable_frustrum_culling(bool op)
+    {
+        m_frustrumCulling = op;
+    }
+    inline bool get_frustrum_culling() const
+    {
+        return m_frustrumCulling;
+    }
 };
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif // VK_CAMERA_H

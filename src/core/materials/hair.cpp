@@ -2,7 +2,10 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-graphics::MaterialUniforms HairMaterial::get_uniforms() const
+namespace Core
+{
+
+Graphics::MaterialUniforms HairMaterial::get_uniforms() const
 {
     // Alignment in shader
     //-----------------
@@ -29,7 +32,7 @@ graphics::MaterialUniforms HairMaterial::get_uniforms() const
 
     //-----------------
 
-    graphics::MaterialUniforms uniforms;
+    Graphics::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_baseColor;
     uniforms.dataSlot1.w = m_thickness;
     uniforms.dataSlot2 = {m_Rpower, m_TTpower, m_TRTpower, m_roughness};
@@ -39,5 +42,6 @@ graphics::MaterialUniforms HairMaterial::get_uniforms() const
 
     return uniforms;
 }
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

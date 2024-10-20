@@ -1,8 +1,8 @@
 #include <engine/core/scene/mesh.h>
-#include <engine/utilities/loaders.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-
+namespace Core
+{
 int Mesh::m_instanceCount = 0;
 
 void Sphere::setup(Mesh *const mesh)
@@ -12,7 +12,7 @@ void Sphere::setup(Mesh *const mesh)
 
     for (Geometry *g : mesh->get_geometries())
     {
-        const  GeometricData* stats = g->get_geometric_data();
+        const GeometricData *stats = g->get_geometric_data();
 
         if (stats->maxCoords.x > maxCoords.x)
             maxCoords.x = stats->maxCoords.x;
@@ -29,7 +29,7 @@ void Sphere::setup(Mesh *const mesh)
     }
 
     center = (maxCoords + minCoords) * 0.5f;
-    radius = math::length( (maxCoords - minCoords) * 0.5f);
+    radius = math::length((maxCoords - minCoords) * 0.5f);
 
     this->mesh = mesh;
 }
@@ -76,11 +76,6 @@ Material *Mesh::change_material(Material *m, size_t id)
     return old_m;
 }
 
-void Mesh::load_file(const std::string fileName, bool asyncCall, bool overrideGeometry)
-{
-    m_fileRoute = fileName;
-    loaders::load_3D_file(this, fileName, asyncCall, overrideGeometry);
-}
 Mesh *Mesh::clone() const
 {
     Mesh *mesh = new Mesh();
@@ -93,29 +88,12 @@ Mesh *Mesh::clone() const
         mesh->set_geometry(g);
     }
     mesh->setup_volume();
-    mesh->set_name(m_name+std::string(" clone"));
+    mesh->set_name(m_name + std::string(" clone"));
     mesh->set_transform(m_transform);
     m_instanceCount++;
     return mesh;
 }
-Mesh *Mesh::create_quad()
-{
-    Mesh *quad = new Mesh();
-    Geometry *g = new Geometry();
-    
-    g->fill(
-        {{{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-         {{1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-         {{-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},
-         {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},
 
-        {0, 1, 2, 1, 3, 2});
-
-    quad->set_geometry(g);
-    quad->setup_volume();
-
-    return quad;
-}
 void Mesh::set_volume_type(VolumeType t)
 {
     m_volumeType = t;
@@ -127,14 +105,12 @@ void Mesh::set_volume_type(VolumeType t)
     case SPHERE:
         m_volume = new Sphere();
         break;
-    case AABB:
-        /* code */
-        break;
+   
     case OBB:
         /* code */
         break;
     }
     m_volume->setup(this);
 }
-
+} // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)

@@ -1,13 +1,14 @@
 #include <engine/core/scene/light.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-
+namespace Core
+{
 int PointLight::m_instanceCount = 0;
 int DirectionalLight::m_instanceCount = 0;
 
-graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const
+Graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const
 {
-    graphics::LightUniforms uniforms{};
+    Graphics::LightUniforms uniforms{};
     // Transform to camera view for shader
     uniforms.position = cameraView * Vec4(m_transform.position, 1.0f);
     uniforms.position.w = (float)m_lighType;
@@ -17,9 +18,9 @@ graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const
     return uniforms;
 }
 
-graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const
+Graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const
 {
-    graphics::LightUniforms uniforms{};
+    Graphics::LightUniforms uniforms{};
     // Transform to camera view for shader
     uniforms.position = {m_transform.position.x, m_transform.position.y, m_transform.position.z, m_lighType};
     uniforms.position = cameraView * Vec4(m_transform.position, 1.0f);
@@ -31,4 +32,5 @@ graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const
     uniforms.dataSlot2 = {m_shadow.bias, m_shadow.kernelRadius, m_shadow.angleDependableBias, m_shadow.pcfKernel};
     return uniforms;
 }
+} // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

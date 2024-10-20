@@ -3,7 +3,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 VkInstance VKBooter::create_instance()

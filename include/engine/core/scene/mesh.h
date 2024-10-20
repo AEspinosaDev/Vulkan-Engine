@@ -9,12 +9,15 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <engine/core/geometry.h>
-#include <engine/core/material.h>
-#include <engine/core/object3D.h>
+#include <engine/core/geometries/geometry.h>
+#include <engine/core/materials/material.h>
 #include <engine/core/scene/camera.h>
+#include <engine/core/scene/object3D.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace Core
+{
 
 // Ahead declare
 class Mesh;
@@ -123,6 +126,7 @@ class Mesh : public Object3D
     inline void set_geometry(Geometry *g)
     {
         m_geometry.push_back(g);
+        setup_volume();
     }
     /*
      * Adds this material in the next free slot
@@ -189,19 +193,17 @@ class Mesh : public Object3D
         return m_volume;
     }
 
-    /*
-     * Loads any kind of supported mesh file (ply, obj). Can be done asynchronoulsy.
-     */
-    void load_file(const std::string fileName, bool asyncCall = true, bool overrideGeometry = false);
-
     inline std::string get_file_route() const
     {
         return m_fileRoute;
     }
 
-    Mesh *clone() const;
+    inline void set_file_route(std::string r)
+    {
+        m_fileRoute = r;
+    }
 
-    static Mesh *create_quad();
+    Mesh *clone() const;
 
     // void get_uniform_data(void *&data, size_t &size)
     // {
@@ -225,6 +227,7 @@ class Mesh : public Object3D
     //     }
     // }
 };
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END
 

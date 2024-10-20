@@ -4,16 +4,18 @@
 #include <chrono>
 
 #include <engine/core.h>
+#include <engine/systems/renderers/forward.h>
 
-#include <engine/utilities/controller.h>
-#include <engine/utilities/gui.h>
-#include <engine/utilities/renderer_widget.h>
-#include <engine/utilities/loaders.h>
+#include <engine/tools/controller.h>
+#include <engine/tools/gui.h>
+#include <engine/tools/loaders.h>
+#include <engine/tools/renderer_widget.h>
 
 /**
  * Example app
  */
 USING_VULKAN_ENGINE_NAMESPACE
+using namespace Core;
 
 class VulkanRenderer
 {
@@ -30,7 +32,7 @@ class VulkanRenderer
     UserInterface m_interface{};
 
     Window *m_window;
-    Renderer *m_renderer;
+    Systems::Renderer *m_renderer;
     Scene *m_scene;
     Camera *camera;
     Controller *m_controller;
@@ -46,13 +48,12 @@ class VulkanRenderer
     };
     Time m_time{};
 
-public:
-    void
-    init(RendererSettings settings, ForwardRendererSettings settings2);
+  public:
+    void init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2);
 
-    void run(int argc, char* argv[]);
+    void run(int argc, char *argv[]);
 
-private:
+  private:
     void setup();
 
     void setup_gui();

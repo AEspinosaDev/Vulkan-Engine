@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage,

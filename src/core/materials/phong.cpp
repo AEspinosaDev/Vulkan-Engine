@@ -2,6 +2,8 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Core
+{
 /**
  *  Alignment in shader
  *  ---------------
@@ -14,15 +16,16 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
  *bool hasOpacityTexture;
  *bool hasNormalTexture;
  *bool hasGlossinessTexture;
-*/
-graphics::MaterialUniforms PhongMaterial::get_uniforms() const
+ */
+Graphics::MaterialUniforms PhongMaterial::get_uniforms() const
 {
 
-     graphics::MaterialUniforms uniforms;
+    Graphics::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_color;
     uniforms.dataSlot2 = {m_shininess, m_glossiness, m_tileUV.x, m_tileUV.y};
     uniforms.dataSlot3 = {m_hasColorTexture, m_hasNormalTexture, m_hasGlossinessTexture, 0.0f};
 
     return uniforms;
 }
+} // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

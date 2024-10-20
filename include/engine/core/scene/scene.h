@@ -15,6 +15,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Core
+{
+
 class Scene : public Object3D
 {
   private:
@@ -139,8 +142,8 @@ class Scene : public Object3D
     {
         return m_fogIntensity;
     }
-
 };
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

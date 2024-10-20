@@ -9,15 +9,18 @@
 #ifndef HAIR_H
 #define HAIR_H
 
+#include <engine/core/materials/material.h>
 #include <engine/graphics/descriptors.h>
-#include <engine/core/material.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace Core
+{
 
 /// Epic's Fitted Marschner Workflow. Only works with geometry defined as lines.
 class HairMaterial : public Material
 {
-protected:
+  protected:
     Vec4 m_baseColor{0.27f, 0.14f, 0.04f, 1.0f}; // w for opacity
 
     float m_thickness{0.003f};
@@ -45,7 +48,7 @@ protected:
 
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual graphics::MaterialUniforms get_uniforms() const;
+    virtual Graphics::MaterialUniforms get_uniforms() const;
     virtual inline std::unordered_map<int, Texture *> get_textures() const
     {
         return m_textures;
@@ -60,22 +63,38 @@ protected:
         m_textureBindingState[id] = state;
     }
 
-public:
-    HairMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("hair"), m_baseColor(baseColor) {}
-    HairMaterial(Vec4 baseColor, MaterialSettings params) : Material("hair", params), m_baseColor(baseColor) {}
+  public:
+    HairMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("hair"), m_baseColor(baseColor)
+    {
+    }
+    HairMaterial(Vec4 baseColor, MaterialSettings params) : Material("hair", params), m_baseColor(baseColor)
+    {
+    }
 
-    inline Vec3 get_base_color() const { return Vec3(m_baseColor); }
+    inline Vec3 get_base_color() const
+    {
+        return Vec3(m_baseColor);
+    }
     inline void set_base_color(Vec3 c)
     {
         m_baseColor = Vec4(c, m_baseColor.w);
         m_isDirty = true;
     }
 
-    float get_thickness() const { return m_thickness; }
-    void set_thickness(float thickness) { m_thickness = thickness; }
+    float get_thickness() const
+    {
+        return m_thickness;
+    }
+    void set_thickness(float thickness)
+    {
+        m_thickness = thickness;
+    }
 
     // Primary reflection toggle
-    bool get_R() const { return m_R; }
+    bool get_R() const
+    {
+        return m_R;
+    }
     void set_R(bool R)
     {
         m_R = R;
@@ -83,7 +102,10 @@ public:
     }
 
     // Primary reflection scale
-    float get_Rpower() const { return m_Rpower; }
+    float get_Rpower() const
+    {
+        return m_Rpower;
+    }
     void set_Rpower(float Rpower)
     {
         m_Rpower = Rpower;
@@ -91,11 +113,20 @@ public:
     }
 
     // Transmitance reflection toggle
-    bool get_TT() const { return m_TT; }
-    void set_TT(bool TT) { m_TT = TT; }
+    bool get_TT() const
+    {
+        return m_TT;
+    }
+    void set_TT(bool TT)
+    {
+        m_TT = TT;
+    }
 
     // Transmitance reflection scale
-    float get_TTpower() const { return m_TTpower; }
+    float get_TTpower() const
+    {
+        return m_TTpower;
+    }
     void set_TTpower(float TTpower)
     {
         m_TTpower = TTpower;
@@ -103,72 +134,106 @@ public:
     }
 
     // Secoundary reflection toggle
-    bool get_TRT() const { return m_TRT; }
-    void set_TRT(bool TRT) { m_TRT = TRT; }
+    bool get_TRT() const
+    {
+        return m_TRT;
+    }
+    void set_TRT(bool TRT)
+    {
+        m_TRT = TRT;
+    }
 
     // Secoundary reflection scale
-    float get_TRTpower() const { return m_TRTpower; }
+    float get_TRTpower() const
+    {
+        return m_TRTpower;
+    }
     void set_TRTpower(float TRTpower)
     {
         m_TRTpower = TRTpower;
         m_isDirty = true;
     }
 
-    float get_roughness() const { return m_roughness; }
+    float get_roughness() const
+    {
+        return m_roughness;
+    }
     void set_roughness(float roughness)
     {
         m_roughness = roughness;
         m_isDirty = true;
     }
 
-    float get_scatter() const { return m_scatter; }
+    float get_scatter() const
+    {
+        return m_scatter;
+    }
     void set_scatter(float scatter)
     {
         m_scatter = scatter;
         m_isDirty = true;
     }
 
-    float get_shift() const { return m_shift; }
+    float get_shift() const
+    {
+        return m_shift;
+    }
     void set_shift(float shift)
     {
         m_shift = shift;
         m_isDirty = true;
     }
 
-    float get_ior() const { return m_ior; }
+    float get_ior() const
+    {
+        return m_ior;
+    }
     void set_ior(float ior)
     {
         m_ior = ior;
         m_isDirty = true;
     }
 
-    bool get_glints() const { return m_glints; }
+    bool get_glints() const
+    {
+        return m_glints;
+    }
     void set_glints(bool glints)
     {
         m_glints = glints;
         m_isDirty = true;
     }
 
-    bool get_useScatter() const { return m_useScatter; }
+    bool get_useScatter() const
+    {
+        return m_useScatter;
+    }
     void set_useScatter(bool useScatter)
     {
         m_useScatter = useScatter;
         m_isDirty = true;
     }
 
-    bool get_coloredScatter() const { return m_coloredScatter; }
+    bool get_coloredScatter() const
+    {
+        return m_coloredScatter;
+    }
     void set_coloredScatter(bool coloredScatter)
     {
         m_coloredScatter = coloredScatter;
         m_isDirty = true;
     }
 
-    bool get_occlusion() const { return m_occlusion; }
+    bool get_occlusion() const
+    {
+        return m_occlusion;
+    }
     void set_occlusion(bool occlusion)
     {
         m_occlusion = occlusion;
         m_isDirty = true;
     }
 };
+} // namespace Core
 VULKAN_ENGINE_NAMESPACE_END
 #endif

@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace graphics
+namespace Graphics
 {
 
 VkCommandPoolCreateInfo init::command_pool_create_info(uint32_t queueFamilyIndex,

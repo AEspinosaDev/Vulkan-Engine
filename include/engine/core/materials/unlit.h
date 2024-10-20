@@ -3,19 +3,22 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef BASIC_UNLIT_H
 #define BASIC_UNLIT_H
 
-#include <engine/core/material.h>
+#include <engine/core/materials/material.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Core
+{
+
 class UnlitMaterial : public Material
 {
-protected:
+  protected:
     glm::vec2 m_tileUV{1.0f, 1.0f};
 
     glm::vec4 m_color; // w for opacity
@@ -25,7 +28,7 @@ protected:
     std::unordered_map<int, Texture *> m_textures;
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual graphics::MaterialUniforms get_uniforms() const;
+    virtual Graphics::MaterialUniforms get_uniforms() const;
     virtual inline std::unordered_map<int, Texture *> get_textures() const
     {
         return m_textures;
@@ -40,11 +43,18 @@ protected:
         m_textureBindingState[id] = state;
     }
 
-public:
-    UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("unlit"), m_color(color) {}
-    UnlitMaterial(glm::vec4 color, MaterialSettings params) : Material("unlit", params), m_color(color) {}
+  public:
+    UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("unlit"), m_color(color)
+    {
+    }
+    UnlitMaterial(glm::vec4 color, MaterialSettings params) : Material("unlit", params), m_color(color)
+    {
+    }
 
-    inline glm::vec2 get_tile() const { return m_tileUV; }
+    inline glm::vec2 get_tile() const
+    {
+        return m_tileUV;
+    }
     inline void set_tile(glm::vec2 tile)
     {
         m_tileUV = tile;
@@ -67,8 +77,12 @@ public:
         m_textures[0] = t;
         m_isDirty = true;
     }
-    inline Texture *get_color_texture() { return m_textures[0]; }
+    inline Texture *get_color_texture()
+    {
+        return m_textures[0];
+    }
 };
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

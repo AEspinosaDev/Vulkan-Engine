@@ -9,11 +9,22 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#ifdef _WIN32
+// Windows-specific includes and definitions
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#elif __linux__
+// Linux-specific includes and definitions
+#include <vulkan/vulkan.h>
+#define GLFW_INCLUDE_VULKAN
+#define VK_USE_PLATFORM_XCB_KHR
+#include <GLFW/glfw3.h>
+#else
+#error "Unsupported platform"
+#endif
 #include <algorithm>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
@@ -65,10 +76,10 @@
 
 // Namespace define
 #define VULKAN_ENGINE_NAMESPACE_BEGIN                                                                                  \
-    namespace VkFW                                                                                                     \
+    namespace VKFW                                                                                                     \
     {
 #define VULKAN_ENGINE_NAMESPACE_END }
-#define USING_VULKAN_ENGINE_NAMESPACE using namespace VkFW;
+#define USING_VULKAN_ENGINE_NAMESPACE using namespace VKFW;
 
 #define VK_MAX_OBJECTS 100
 #define VK_MAX_LIGHTS 50
@@ -313,8 +324,6 @@ struct Extension
     }
 };
 
-// Ahead declaration of some key classes
-class Renderer;
 
 VULKAN_ENGINE_NAMESPACE_END
 
