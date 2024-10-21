@@ -45,8 +45,10 @@
 #include <vma/vk_mem_alloc.h>
 
 // ENGINE DEFINITIONS
-//  #define ENABLE_OPTICK_PROFILING
 
+#define ASSERT_PTR(ptr) assert((ptr) && "Pointer is null")
+
+//  #define ENABLE_OPTICK_PROFILING
 #ifdef ENABLE_OPTICK_PROFILING
     #define PROFILING_EVENT() OPTICK_EVENT()
 	#define PROFILING_FRAME() OPTICK_FRAME("MainThread");
@@ -308,6 +310,10 @@ typedef enum AmbientOcclusionType
     DSSAO = 2
 } AmbientOcclusionType;
 
+typedef enum WindowingSystem{
+    GLFW = 0,
+    SDL = 1
+} WindowingSystem;
 /*
 Vulkan API extension data
 */

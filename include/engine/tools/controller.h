@@ -3,7 +3,7 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef CONTROLLER_H
@@ -11,6 +11,7 @@
 
 #include <engine/common.h>
 #include <engine/core/scene/object3D.h>
+#include <engine/core/windows/window.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -32,8 +33,10 @@ struct KeyMappings
 
 class Controller
 {
-protected:
+  protected:
     Core::Object3D *m_objPtr;
+    Core::Window *m_windowPtr;
+
     float m_speed;
     ControllerMovementType m_type;
     KeyMappings m_mappings;
@@ -62,30 +65,64 @@ protected:
 
     bool m_enabled{true};
 
-public:
-    Controller(Core::Object3D *obj, ControllerMovementType m = WASD, KeyMappings km = KeyMappings{}) : m_objPtr(obj), m_type(m), m_speed(5.0f),
-                                                                                                 m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f), m_mouseDeltaY(.0f),
-                                                                                                 m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true),
-                                                                                                 m_isMouseLeftPressed(false), m_isMouseMiddlePressed(false), m_isMouseRightPressed(false),
-                                                                                                 m_initialState(obj->get_transform()), m_mappings(km),
-                                                                                                 m_orbitalCenter({0.0, 0.0, 0.0}) {}
+  public:
+    Controller(Core::Object3D *obj, Core::Window *window, ControllerMovementType m = WASD,
+               KeyMappings km = KeyMappings{})
+        : m_objPtr(obj), m_windowPtr(window), m_type(m), m_speed(5.0f), m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f),
+          m_mouseDeltaY(.0f), m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true), m_isMouseLeftPressed(false),
+          m_isMouseMiddlePressed(false), m_isMouseRightPressed(false), m_initialState(obj->get_transform()),
+          m_mappings(km), m_orbitalCenter({0.0, 0.0, 0.0})
+    {
+    }
 
     virtual inline void set_active(const bool s)
     {
         m_enabled = s;
     }
-    virtual inline bool is_active() const { return m_enabled; }
+    virtual inline bool is_active() const
+    {
+        return m_enabled;
+    }
 
-    inline ControllerMovementType get_type() { return m_type; }
-    inline float get_speed() const { return m_speed; }
-    inline void set_speed(float s) { m_speed = s; }
-    inline float get_mouse_sensitivity() const { return m_mouseSensitivity; }
-    inline void set_mouse_sensitivity(float s) { m_mouseSensitivity = s; }
-    inline Core::Object3D *get_object() const { return m_objPtr; }
-    inline void set_object(Core::Object3D *obj) { m_objPtr = obj; }
+    inline ControllerMovementType get_type()
+    {
+        return m_type;
+    }
+    inline float get_speed() const
+    {
+        return m_speed;
+    }
+    inline void set_speed(float s)
+    {
+        m_speed = s;
+    }
+    inline float get_mouse_sensitivity() const
+    {
+        return m_mouseSensitivity;
+    }
+    inline void set_mouse_sensitivity(float s)
+    {
+        m_mouseSensitivity = s;
+    }
+    inline Core::Object3D *get_object() const
+    {
+        return m_objPtr;
+    }
+    inline void set_object(Core::Object3D *obj)
+    {
+        m_objPtr = obj;
+    }
+    inline Core::Window *get_window() const
+    {
+        return m_windowPtr;
+    }
+    inline void set_window(Core::Window *w)
+    {
+        m_windowPtr = w;
+    }
     /*Not insert as GLFW callback!*/
-    virtual void handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime);
-    virtual void handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch = true);
+    virtual void handle_keyboard(int key, int action, const float deltaTime);
+    virtual void handle_mouse(float xpos, float ypos, bool constrainPitch = true);
     virtual void handle_mouse_scroll()
     { /*WIP*/
     }

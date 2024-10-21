@@ -3,7 +3,7 @@
 
 void VulkanRenderer::init(Systems::RendererSettings settings)
 {
-    m_window = new Window("Lighting Test", 1280, 1024);
+    m_window = new WindowGLFW("Lighting Test", 1280, 1024);
 
     m_window->init();
 
@@ -113,7 +113,7 @@ void VulkanRenderer::run(int argc, char *argv[])
     {
 
         // I-O
-        Window::poll_events();
+        m_window->poll_events();
 
         tick();
     }
@@ -193,7 +193,7 @@ void VulkanRenderer::setup()
     m_scene->add(terrainMesh);
 
     Mesh *kabutoMesh = new Mesh();
-     Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
+    Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     kabutoMesh->set_position({-5.0, 0.0, 5.0});
     auto kabutoMat = new PhysicallyBasedMaterial();
@@ -230,7 +230,7 @@ void VulkanRenderer::setup()
 
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
-    m_controller = new Controller(camera);
+    m_controller = new Controller(camera, m_window);
 }
 
 void VulkanRenderer::setup_gui()
@@ -282,14 +282,14 @@ void VulkanRenderer::setup_gui()
 void VulkanRenderer::update()
 {
     if (!m_interface.overlay->wants_to_handle_input())
-        m_controller->handle_keyboard(m_window->get_handle(), 0, 0, m_time.delta);
+        m_controller->handle_keyboard(0, 0, m_time.delta);
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());
 }
 
 void VulkanRenderer::tick()
 {
-    float currentTime = (float)Window::get_time_elapsed();
+    float currentTime = (float)m_window->get_time_elapsed();
     m_time.delta = currentTime - m_time.last;
     m_time.last = currentTime;
     m_time.framesPerSecond = 1.0f / m_time.delta;

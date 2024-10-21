@@ -10,7 +10,6 @@
 #define WINDOW_H
 
 #include <engine/common.h>
-#include <engine/graphics/swapchain.h>
 #include <engine/graphics/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -19,15 +18,12 @@ namespace Core
 {
 
 /**
- * Class containing all functionality related to a window. It uses GLFW as context creator.
+ * Class containing all functionality related to a window.
  */
 class Window
 {
-  private:
+  protected:
     std::string m_title{};
-
-    GLFWwindow *m_handle{nullptr};
-
     Extent2D m_extent;
 
     bool m_initialized{false};
@@ -51,11 +47,38 @@ class Window
     {
     }
 
-    void init();
+    virtual void init() = 0;
 
-    inline void destroy()
+    virtual void destroy() = 0;
+
+    virtual void get_handle(void * &handlePtr) const = 0;
+
+    virtual void set_fullscreen(bool t) = 0;
+
+    virtual int get_window_should_close() const = 0;
+
+    virtual void set_window_should_close(bool op) = 0;
+
+    virtual void poll_events() = 0;
+
+    virtual double get_time_elapsed() = 0;
+
+    virtual void update_framebuffer() = 0;
+
+    virtual WindowingSystem get_windowing_system() const = 0;
+
+    virtual inline void set_position(math::ivec2 p)
     {
-        glfwDestroyWindow(m_handle);
+        if (!m_initialized)
+            return;
+        m_screenPos = p;
+    }
+
+    virtual void set_title(const char *title)
+    {
+        if (!m_initialized)
+            return;
+        m_title = title;
     }
 
     inline void set_size(int w, int h)
@@ -97,24 +120,6 @@ class Window
         return m_fullscreen;
     }
 
-    inline void set_fullscreen(bool t)
-    {
-        if (!m_initialized)
-            return;
-        m_fullscreen = t;
-        if (!m_fullscreen)
-        {
-            glfwSetWindowMonitor(m_handle, NULL, m_screenPos.x, m_screenPos.y, m_windowedExtent.width,
-                                 m_windowedExtent.height, GLFW_DONT_CARE);
-        }
-        else
-        {
-            const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-            glfwSetWindowMonitor(m_handle, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-            m_extent.width = mode->width;
-            m_extent.height = mode->height;
-        }
-    }
     inline bool is_resizable()
     {
         return m_resizeable;
@@ -122,7 +127,7 @@ class Window
 
     inline void set_resizeable(bool t)
     {
-        m_resizeable = t; /*glfwsetwindowresize(GLFW_RESIZABLE, t);*/
+        m_resizeable = t;
     }
 
     inline math::ivec2 get_position()
@@ -130,48 +135,9 @@ class Window
         return m_screenPos;
     }
 
-    inline void set_position(math::ivec2 p)
-    {
-        if (!m_initialized)
-            return;
-        m_screenPos = p;
-        glfwSetWindowPos(m_handle, p.x, p.y);
-    }
-    inline GLFWwindow *const get_handle() const
-    {
-        return m_handle;
-    }
-
-    inline int get_window_should_close() const
-    {
-        return glfwWindowShouldClose(m_handle);
-    }
-
-    inline void set_window_should_close(bool op)
-    {
-        glfwSetWindowShouldClose(m_handle, op);
-    }
-
-    inline void set_title(const char *title)
-    {
-        if (!m_initialized)
-            return;
-        m_title = title;
-        glfwSetWindowTitle(m_handle, title);
-    }
     inline std::string get_title()
     {
         return m_title;
-    }
-
-    inline static void poll_events()
-    {
-        glfwPollEvents();
-    }
-
-    inline static double get_time_elapsed()
-    {
-        return glfwGetTime();
     }
 
     inline void set_key_callback(std::function<void(int, int, int, int)> callback)

@@ -1,9 +1,15 @@
 #include <engine/tools/controller.h>
 VULKAN_ENGINE_NAMESPACE_BEGIN
-void Controller::handle_keyboard(GLFWwindow *window, int key, int action, const float deltaTime)
+void Controller::handle_keyboard(int key, int action, const float deltaTime)
 {
+
     if (!m_enabled)
         return;
+
+    void *windowHandle{nullptr};
+    m_windowPtr->get_handle(windowHandle);
+    GLFWwindow *window = static_cast<GLFWwindow *>(windowHandle);
+
     auto speed = m_speed * deltaTime;
 
     if (m_type == WASD)
@@ -13,9 +19,13 @@ void Controller::handle_keyboard(GLFWwindow *window, int key, int action, const 
         if (glfwGetKey(window, m_mappings.moveBackward) == PRESS)
             m_objPtr->set_position(m_objPtr->get_position() - m_objPtr->get_transform().forward * speed);
         if (glfwGetKey(window, m_mappings.moveLeft) == PRESS)
-            m_objPtr->set_position(m_objPtr->get_position() - glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
+            m_objPtr->set_position(
+                m_objPtr->get_position() -
+                glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
         if (glfwGetKey(window, m_mappings.moveRight) == PRESS)
-            m_objPtr->set_position(m_objPtr->get_position() + glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
+            m_objPtr->set_position(
+                m_objPtr->get_position() +
+                glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
         if (glfwGetKey(window, m_mappings.moveDown) == PRESS)
             m_objPtr->set_position(m_objPtr->get_position() - glm::normalize(m_objPtr->get_transform().up) * speed);
         if (glfwGetKey(window, m_mappings.moveUp) == PRESS)
@@ -31,10 +41,15 @@ void Controller::handle_keyboard(GLFWwindow *window, int key, int action, const 
     }
 }
 
-void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool constrainPitch)
+void Controller::handle_mouse(float xpos, float ypos, bool constrainPitch)
 {
     if (!m_enabled)
         return;
+        
+    void *windowHandle{nullptr};
+    m_windowPtr->get_handle(windowHandle);
+    GLFWwindow *window = static_cast<GLFWwindow *>(windowHandle);
+
     // Pressing
     if (glfwGetMouseButton(window, m_mappings.mouseLeft) == PRESS)
     {
@@ -68,7 +83,7 @@ void Controller::handle_mouse(GLFWwindow *window, float xpos, float ypos, bool c
                     pitch = -89.0f;
             }
 
-            m_objPtr->set_rotation({yaw, pitch, 0.0},true);
+            m_objPtr->set_rotation({yaw, pitch, 0.0}, true);
         }
         if (m_type == ORBITAL)
         {

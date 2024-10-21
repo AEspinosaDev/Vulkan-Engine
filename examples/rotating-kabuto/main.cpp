@@ -28,7 +28,7 @@ int main()
         float delta;
         float last{0};
 
-        Core::Window *window = new Core::Window("Kabuto", 800, 600);
+        Core::Window *window = new Core::WindowGLFW("Kabuto", 800, 600);
 
         window->init();
 
@@ -63,13 +63,13 @@ int main()
         const float DELTA_DEG = 45.0F;
         while (!window->get_window_should_close())
         {
-            float currentTime = (float)Core::Window::get_time_elapsed();
+            float currentTime = (float)window->get_time_elapsed();
             delta = currentTime - last;
             last = currentTime;
 
             kabuto->set_rotation({0.0f, kabuto->get_rotation().y + DELTA_DEG * delta, 0.0f}, false);
 
-            Core::Window::poll_events();
+            window->poll_events();
             renderer->render(scene);
         }
         renderer->shutdown(scene);

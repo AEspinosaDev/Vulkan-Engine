@@ -20,8 +20,11 @@ void Renderer::init()
     if (!m_window->initialized())
         m_window->init();
 
-    m_context.init(m_window->get_handle(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-                   static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+    void *windowHandle{nullptr};
+    m_window->get_handle(windowHandle);
+    m_context.init(windowHandle, m_window->get_windowing_system(), m_window->get_extent(),
+                   static_cast<uint32_t>(m_settings.bufferingType), static_cast<VkFormat>(m_settings.colorFormat),
+                   static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
     init_resources();
     setup_renderpasses();
@@ -55,11 +58,12 @@ void Renderer::init()
 }
 void Renderer::run(Core::Scene *const scene)
 {
-    while (!glfwWindowShouldClose(m_window->get_handle()))
+    ASSERT_PTR(m_window);
+    while (!m_window->get_window_should_close())
     {
         // I-O
         PROFILING_FRAME();
-        Core::Window::poll_events();
+        m_window->poll_events();
         render(scene);
     }
     shutdown(scene);
@@ -198,20 +202,13 @@ void Renderer::connect_renderpass(Core::RenderPass *const currentPass)
 
 void Renderer::update_renderpasses()
 {
-    // GLFW update framebuffer
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(m_window->get_handle(), &width, &height);
-    while (width == 0 || height == 0)
-    {
-        glfwGetFramebufferSize(m_window->get_handle(), &width, &height);
-        glfwWaitEvents();
-    }
+    m_window->update_framebuffer();
 
     m_context.wait_for_device();
 
-    m_context.recreate_swapchain(
-        m_window->get_handle(), m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-        static_cast<VkFormat>(m_settings.colorFormat), static_cast<VkPresentModeKHR>(m_settings.screenSync));
+    m_context.update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+                               static_cast<VkFormat>(m_settings.colorFormat),
+                               static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
     // Renderpass framebuffer updating
     for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
@@ -248,9 +245,11 @@ void Renderer::init_gui()
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        
+
         // this initializes imgui for SDL
-        ImGui_ImplGlfw_InitForVulkan(m_window->get_handle(), true);
+        void *windowHandle{nullptr};
+        m_window->get_handle(windowHandle);
+        ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow *>(windowHandle), true);
 
         // this initializes imgui for Vulkan
         ImGui_ImplVulkan_InitInfo init_info = {};

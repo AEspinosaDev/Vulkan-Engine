@@ -24,6 +24,7 @@
 #include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/windows/window.h>
+#include <engine/core/windows/windowGLFW.h>
 
 #include <engine/graphics/bootstrap.h>
 #include <engine/graphics/context.h>
@@ -88,8 +89,6 @@ class Renderer
     RenderPipeline m_renderPipeline;
 
     Graphics::utils::DeletionQueue m_deletionQueue;
-
-  
 
     // Query
     uint32_t m_currentFrame{0};

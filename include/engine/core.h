@@ -16,6 +16,7 @@
 #include <engine/core/textures/texture.h>
 
 #include <engine/core/windows/window.h>
+#include <engine/core/windows/windowGLFW.h>
 
 #include <engine/core/materials/material.h>
 #include <engine/core/materials/phong.h>

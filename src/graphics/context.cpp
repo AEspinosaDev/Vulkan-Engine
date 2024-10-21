@@ -5,8 +5,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void Context::init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
-                   VkPresentModeKHR presentMode)
+void Context::init(void *windowHandle, WindowingSystem windowingSystem, VkExtent2D surfaceExtent,
+                   uint32_t framesPerFlight, VkFormat presentFormat, VkPresentModeKHR presentMode)
 {
 
     // BOOT Vulkan ------>>>
@@ -16,7 +16,19 @@ void Context::init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t 
     instance = booter.boot_vulkan();
     debugMessenger = booter.create_debug_messenger(instance);
 
-    VK_CHECK(glfwCreateWindowSurface(instance, windowHandle, nullptr, &surface));
+    VkExtent2D actualExtent{};
+    if (windowingSystem == WindowingSystem::GLFW)
+    {
+        GLFWwindow *glfwHandle = static_cast<GLFWwindow *>(windowHandle);
+        VK_CHECK(glfwCreateWindowSurface(instance, glfwHandle, nullptr, &surface));
+        int width, height;
+        glfwGetFramebufferSize(glfwHandle, &width, &height);
+        actualExtent = {static_cast<unsigned int>(width), static_cast<unsigned int>(height)};
+    }
+    else
+    {
+        // TO DO SDL .. 
+    }
 
     // Get gpu
     gpu = booter.pick_graphics_card_device(instance, surface);
@@ -30,7 +42,7 @@ void Context::init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t 
     uploadContext.init(device, gpu, surface);
 
     // Create swapchain
-    swapchain.create(gpu, device, surface, windowHandle, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+    swapchain.create(gpu, device, surface, actualExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
 
     // Init frames with control objects
     frames.resize(framesPerFlight);
@@ -42,11 +54,10 @@ void Context::init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t 
     //------<<<
 }
 
-void Context::recreate_swapchain(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t framesPerFlight,
-                                 VkFormat presentFormat, VkPresentModeKHR presentMode)
+void Context::update_swapchain(VkExtent2D surfaceExtent,
+                               uint32_t framesPerFlight, VkFormat presentFormat, VkPresentModeKHR presentMode)
 {
-    swapchain.cleanup(device, memory);
-    swapchain.create(gpu, device, surface, windowHandle, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+    swapchain.create(gpu, device, surface, surfaceExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
 }
 
 void Context::cleanup()
@@ -58,7 +69,7 @@ void Context::cleanup()
 
     uploadContext.cleanup(device);
 
-    swapchain.cleanup(device, memory);
+    swapchain.cleanup(device);
 
     vmaDestroyAllocator(memory);
 

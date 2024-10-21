@@ -5,17 +5,20 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface, GLFWwindow *window,
+void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface, VkExtent2D actualExtent,
                        VkExtent2D windowExtent, uint32_t imageCount, VkFormat userDefinedcolorFormat,
                        VkPresentModeKHR userDefinedPresentMode)
 {
+    if (m_initialized)
+        cleanup(device);
+
     SwapChainSupportDetails swapChainSupport = query_swapchain_support(gpu, surface);
     QueueFamilyIndices indices = find_queue_families(gpu, surface);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats, userDefinedcolorFormat);
     VkPresentModeKHR presentMode = choose_swap_present_mode(swapChainSupport.presentModes, userDefinedPresentMode);
-    VkExtent2D extent = choose_swap_extent(swapChainSupport.capabilities, window);
+    VkExtent2D extent = choose_swap_extent(swapChainSupport.capabilities, actualExtent);
 
     imageCount = swapChainSupport.capabilities.minImageCount + (imageCount - 1);
 
@@ -70,9 +73,11 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR sur
     windowExtent = extent;
 
     create_image_views(device);
+
+    m_initialized = true;
 }
 
-void Swapchain::cleanup(VkDevice &device, VmaAllocator &memory)
+void Swapchain::cleanup(VkDevice &device)
 {
     for (size_t i = 0; i < m_presentImages.size(); i++)
     {
@@ -80,6 +85,8 @@ void Swapchain::cleanup(VkDevice &device, VmaAllocator &memory)
     }
 
     vkDestroySwapchainKHR(device, m_swapchain, nullptr);
+
+    m_initialized = false;
 }
 
 VkSurfaceFormatKHR Swapchain::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats,
@@ -112,7 +119,7 @@ VkPresentModeKHR Swapchain::choose_swap_present_mode(const std::vector<VkPresent
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D Swapchain::choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window)
+VkExtent2D Swapchain::choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, VkExtent2D actualExtent)
 {
     if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
     {
@@ -120,10 +127,6 @@ VkExtent2D Swapchain::choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabil
     }
     else
     {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-
-        VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
         actualExtent.width =
             std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -157,6 +160,6 @@ void Swapchain::create_image_views(VkDevice &device)
     }
 }
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END

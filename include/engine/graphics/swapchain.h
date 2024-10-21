@@ -18,7 +18,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
-
 class Swapchain
 {
   private:
@@ -31,19 +30,22 @@ class Swapchain
 
     std::vector<VkFramebuffer> m_framebuffers;
 
+    bool m_initialized{false};
+
     VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &availableFormats,
                                                   VkFormat desiredFormat);
     VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> &availablePresentModes,
                                               VkPresentModeKHR desiredMode);
-    VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window);
+    VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities, VkExtent2D actualExtent);
+
     void create_image_views(VkDevice &device);
 
   public:
-    void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface, GLFWwindow *window,
+    void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface, VkExtent2D actualExtent,
                 VkExtent2D windowExtent, uint32_t imageCount = 2,
                 VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB,
                 VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
-    void cleanup(VkDevice &device, VmaAllocator &memory);
+    void cleanup(VkDevice &device);
 
     inline VkSwapchainKHR &get_handle()
     {
@@ -59,7 +61,7 @@ class Swapchain
     }
 };
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

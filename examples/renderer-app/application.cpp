@@ -1,9 +1,9 @@
 #include "application.h"
 #include <filesystem>
 
-void VulkanRenderer::init( Systems::RendererSettings settings,  Systems::ForwardRendererSettings settings2)
+void VulkanRenderer::init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2)
 {
-    m_window = new Window("VK Engine", 1280, 1024);
+    m_window = new WindowGLFW("VK Engine", 1280, 1024);
 
     m_window->init();
 
@@ -14,22 +14,21 @@ void VulkanRenderer::init( Systems::RendererSettings settings,  Systems::Forward
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
                                          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new  Systems::ForwardRenderer(m_window, settings, settings2);
+    m_renderer = new Systems::ForwardRenderer(m_window, settings, settings2);
 
     setup();
 
     setup_gui();
-
 }
 
 void VulkanRenderer::run(int argc, char *argv[])
 {
 
-   Systems:: RendererSettings settings{};
+    Systems::RendererSettings settings{};
     settings.samplesMSAA = MSAASamples::MSAA_x8;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
-   Systems:: ForwardRendererSettings settings2{};
+    Systems::ForwardRendererSettings settings2{};
     settings2.shadowQuality = ShadowResolution::MEDIUM;
     settings2.fxaa = false;
 
@@ -120,7 +119,7 @@ void VulkanRenderer::run(int argc, char *argv[])
     {
 
         // I-O
-        Window::poll_events();
+        m_window->poll_events();
 
         tick();
     }
@@ -339,7 +338,7 @@ void VulkanRenderer::setup()
 
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
-    m_controller = new Controller(camera);
+    m_controller = new Controller(camera, m_window);
 }
 
 void VulkanRenderer::setup_gui()
@@ -391,7 +390,7 @@ void VulkanRenderer::setup_gui()
 void VulkanRenderer::update()
 {
     if (!m_interface.overlay->wants_to_handle_input())
-        m_controller->handle_keyboard(m_window->get_handle(), 0, 0, m_time.delta);
+        m_controller->handle_keyboard(0, 0, m_time.delta);
 
     // Rotate the vector around the ZX plane
     auto light = m_scene->get_lights()[0];
@@ -411,7 +410,7 @@ void VulkanRenderer::update()
 
 void VulkanRenderer::tick()
 {
-    float currentTime = (float)Window::get_time_elapsed();
+    float currentTime = (float)m_window->get_time_elapsed();
     m_time.delta = currentTime - m_time.last;
     m_time.last = currentTime;
     m_time.framesPerSecond = 1.0f / m_time.delta;

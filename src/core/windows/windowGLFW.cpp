@@ -1,9 +1,9 @@
-#include <engine/core/windows/window.h>
+#include <engine/core/windows/windowGLFW.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core
 {
-void Window::init()
+void WindowGLFW::init()
 {
     glfwInit();
 
@@ -24,7 +24,7 @@ void Window::init()
     glfwSetWindowUserPointer(m_handle, this);
 
     glfwSetKeyCallback(m_handle, [](GLFWwindow *w, int key, int scancode, int action, int mods) {
-        Window *instance = static_cast<Window *>(glfwGetWindowUserPointer(w));
+        WindowGLFW *instance = static_cast<WindowGLFW *>(glfwGetWindowUserPointer(w));
         if (instance->m_keyCallback)
         {
             instance->m_keyCallback(key, scancode, action, mods);
@@ -32,7 +32,7 @@ void Window::init()
     });
 
     glfwSetFramebufferSizeCallback(m_handle, [](GLFWwindow *w, int width, int height) {
-        Window *instance = static_cast<Window *>(glfwGetWindowUserPointer(w));
+        WindowGLFW *instance = static_cast<WindowGLFW *>(glfwGetWindowUserPointer(w));
         if (instance->m_windowSizeCallback)
         {
             instance->m_windowSizeCallback(width, height);
@@ -40,7 +40,7 @@ void Window::init()
     });
 
     glfwSetCursorPosCallback(m_handle, [](GLFWwindow *w, double x, double y) {
-        Window *instance = static_cast<Window *>(glfwGetWindowUserPointer(w));
+        WindowGLFW *instance = static_cast<WindowGLFW *>(glfwGetWindowUserPointer(w));
         if (instance->m_mouseCallBack)
         {
             instance->m_mouseCallBack(x, y);
@@ -50,5 +50,35 @@ void Window::init()
     m_initialized = true;
 }
 
+void WindowGLFW::set_fullscreen(bool t)
+{
+    if (!m_initialized)
+        return;
+    m_fullscreen = t;
+    if (!m_fullscreen)
+    {
+        glfwSetWindowMonitor(m_handle, NULL, m_screenPos.x, m_screenPos.y, m_windowedExtent.width,
+                             m_windowedExtent.height, GLFW_DONT_CARE);
+    }
+    else
+    {
+        const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        glfwSetWindowMonitor(m_handle, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+        m_extent.width = mode->width;
+        m_extent.height = mode->height;
+    }
+}
+
+void WindowGLFW::update_framebuffer()
+{
+    // GLFW update framebuffer
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(m_handle, &width, &height);
+    while (width == 0 || height == 0)
+    {
+        glfwGetFramebufferSize(m_handle, &width, &height);
+        glfwWaitEvents();
+    }
+}
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

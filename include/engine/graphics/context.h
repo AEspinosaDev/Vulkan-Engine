@@ -59,11 +59,11 @@ struct Context
     -----------------------------------------------
     */
 
-    void init(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
-              VkPresentModeKHR presentMode);
+    void init(void *windowHandle, WindowingSystem windowingSystem, VkExtent2D surfaceExtent, uint32_t framesPerFlight,
+              VkFormat presentFormat, VkPresentModeKHR presentMode);
 
-    void recreate_swapchain(GLFWwindow *windowHandle, VkExtent2D surfaceExtent, uint32_t framesPerFlight,
-                            VkFormat presentFormat, VkPresentModeKHR presentMode);
+    void update_swapchain(VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
+                          VkPresentModeKHR presentMode);
 
     void cleanup();
 
