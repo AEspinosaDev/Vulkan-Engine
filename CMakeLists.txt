@@ -88,13 +88,16 @@ set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply optick PROP
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/group_sources.cmake)
+create_source_group("Systems\\Renderers" "engine/systems/renderers" "systems/renderers")
 create_source_group("Core" "engine/core" "core")
-create_source_group("Utilities" "engine/utilities" "utilities")
+create_source_group("Tools" "engine/tools" "tools")
 create_source_group("Graphics" "engine/graphics" "graphics")
-create_source_group("Graphics\\RenderPasses" "engine/graphics/renderpasses" "graphics/renderpasses")
+create_source_group("Core\\RenderPasses" "engine/core/renderpasses" "core/renderpasses")
 create_source_group("Core\\Scene Objects" "engine/core/scene" "core/scene")
 create_source_group("Core\\Materials" "engine/core/materials" "core/materials")
-create_source_group("Core\\Renderers" "engine/core/renderers" "core/renderers")
+create_source_group("Core\\Windows" "engine/core/windows" "core/windows")
+create_source_group("Core\\Textures" "engine/core/textures" "core/textures")
+create_source_group("Core\\Geometries" "engine/core/geometries" "core/geometries")
 endif()
 
 # Choose if building demos directory. User-Defined.
