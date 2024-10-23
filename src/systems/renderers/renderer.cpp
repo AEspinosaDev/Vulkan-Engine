@@ -13,8 +13,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Systems
 {
-
-void Renderer::init()
+void RendererBase::init()
 {
 
     if (!m_window->initialized())
@@ -56,7 +55,7 @@ void Renderer::init()
 
     m_initialized = true;
 }
-void Renderer::run(Core::Scene *const scene)
+void RendererBase::run(Core::Scene *const scene)
 {
     ASSERT_PTR(m_window);
     while (!m_window->get_window_should_close())
@@ -69,7 +68,7 @@ void Renderer::run(Core::Scene *const scene)
     shutdown(scene);
 }
 
-void Renderer::shutdown(Core::Scene *const scene)
+void RendererBase::shutdown(Core::Scene *const scene)
 {
     m_context.wait_for_device();
 
@@ -112,7 +111,7 @@ void Renderer::shutdown(Core::Scene *const scene)
     glfwTerminate();
 }
 
-void Renderer::on_before_render(Core::Scene *const scene)
+void RendererBase::on_before_render(Core::Scene *const scene)
 {
     PROFILING_EVENT()
 
@@ -126,7 +125,7 @@ void Renderer::on_before_render(Core::Scene *const scene)
     }
 }
 
-void Renderer::on_after_render(VkResult &renderResult, Core::Scene *const scene)
+void RendererBase::on_after_render(VkResult &renderResult, Core::Scene *const scene)
 {
     PROFILING_EVENT()
 
@@ -145,7 +144,7 @@ void Renderer::on_after_render(VkResult &renderResult, Core::Scene *const scene)
     m_currentFrame = (m_currentFrame + 1) % m_context.frames.size();
 }
 
-void Renderer::render(Core::Scene *const scene)
+void RendererBase::render(Core::Scene *const scene)
 {
     PROFILING_FRAME();
     PROFILING_EVENT()
@@ -183,7 +182,7 @@ void Renderer::render(Core::Scene *const scene)
     on_after_render(renderResult, scene);
 }
 
-void Renderer::connect_renderpass(Core::RenderPass *const currentPass)
+void RendererBase::connect_renderpass(Core::RenderPass *const currentPass)
 {
     if (currentPass->get_image_dependace_table().empty())
         return;
@@ -200,7 +199,7 @@ void Renderer::connect_renderpass(Core::RenderPass *const currentPass)
     currentPass->connect_to_previous_images(images);
 }
 
-void Renderer::update_renderpasses()
+void RendererBase::update_renderpasses()
 {
     m_window->update_framebuffer();
 
@@ -227,7 +226,7 @@ void Renderer::update_renderpasses()
     m_updateFramebuffers = false;
 }
 
-void Renderer::init_gui()
+void RendererBase::init_gui()
 {
     if (m_settings.enableUI)
     {

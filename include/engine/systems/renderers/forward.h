@@ -21,7 +21,7 @@ struct ForwardRendererSettings
 /*
 Renders a given scene data to a given window using forward rendering. Fully parametrizable.
 */
-class ForwardRenderer : public Renderer
+class ForwardRenderer : public RendererBase
 {
     ForwardRendererSettings m_settings2{};
 
@@ -37,11 +37,11 @@ class ForwardRenderer : public Renderer
     bool m_updateShadows{false};
 
   public:
-    ForwardRenderer(Core::Window *window) : Renderer(window)
+    ForwardRenderer(Core::WindowBase *window) : RendererBase(window)
     {
     }
-    ForwardRenderer(Core::Window *window, RendererSettings settings, ForwardRendererSettings settings2)
-        : Renderer(window, settings), m_settings2(settings2)
+    ForwardRenderer(Core::WindowBase *window, RendererSettings settings, ForwardRendererSettings settings2)
+        : RendererBase(window, settings), m_settings2(settings2)
     {
     }
 

@@ -87,10 +87,10 @@ struct Context
     DATA TRANSFER
     -----------------------------------------------
     */
-    void upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
-                         const void *iboData, bool indexed);
+    void upload_vertex_arrays(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
+                              const void *iboData, bool indexed);
 
-    void upload_texture_image(Image *const img, bool mipmapping);
+    void upload_texture_image(const void *imgCache, size_t bytesPerPixel, Image *const img, bool mipmapping);
 
     /*
     MISC

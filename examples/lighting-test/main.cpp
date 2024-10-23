@@ -3,7 +3,6 @@
 
 int main(int argc, char* argv[])
 {
-
     VulkanRenderer app;
     try
     {

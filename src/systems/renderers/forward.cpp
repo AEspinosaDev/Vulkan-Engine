@@ -6,7 +6,7 @@ namespace Systems
 
 void ForwardRenderer::on_before_render(Core::Scene *const scene)
 {
-    Renderer::on_before_render(scene);
+    RendererBase::on_before_render(scene);
 
     m_renderPipeline.renderpasses[FORWARD]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
@@ -14,7 +14,7 @@ void ForwardRenderer::on_before_render(Core::Scene *const scene)
 
 void ForwardRenderer::on_after_render(VkResult &renderResult, Core::Scene *const scene)
 {
-    Renderer::on_after_render(renderResult, scene);
+    RendererBase::on_after_render(renderResult, scene);
 
     if (m_updateShadows)
         update_shadow_quality();
@@ -47,16 +47,16 @@ void ForwardRenderer::setup_renderpasses()
 
 void ForwardRenderer::init_resources()
 {
-    Renderer::init_resources();
+    RendererBase::init_resources();
 
     m_vignette = new Core::Mesh();
-    m_vignette->set_geometry(Core::Geometry::create_quad());
+    m_vignette->push_geometry(Core::Geometry::create_quad());
     upload_geometry_data(m_vignette->get_geometry());
 }
 
 void ForwardRenderer::clean_Resources()
 {
-    Renderer::clean_Resources();
+    RendererBase::clean_Resources();
 
     get_render_data(m_vignette->get_geometry())->vbo.cleanup(m_context.memory);
     get_render_data(m_vignette->get_geometry())->ibo.cleanup(m_context.memory);

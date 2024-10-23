@@ -16,7 +16,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core
 {
 
-class UnlitMaterial : public Material
+class UnlitMaterial : public IMaterial
 {
   protected:
     glm::vec2 m_tileUV{1.0f, 1.0f};
@@ -25,11 +25,11 @@ class UnlitMaterial : public Material
 
     bool m_hasColorTexture{false};
 
-    std::unordered_map<int, Texture *> m_textures;
+    std::unordered_map<int, TextureBase *> m_textures;
     std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, Texture *> get_textures() const
+    virtual inline std::unordered_map<int, TextureBase *> get_textures() const
     {
         return m_textures;
     }
@@ -44,10 +44,10 @@ class UnlitMaterial : public Material
     }
 
   public:
-    UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : Material("unlit"), m_color(color)
+    UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : IMaterial("unlit"), m_color(color)
     {
     }
-    UnlitMaterial(glm::vec4 color, MaterialSettings params) : Material("unlit", params), m_color(color)
+    UnlitMaterial(glm::vec4 color, MaterialSettings params) : IMaterial("unlit", params), m_color(color)
     {
     }
 
@@ -72,12 +72,12 @@ class UnlitMaterial : public Material
     }
 
     // Texture must have A channel reserved for OPACITY
-    inline void set_color_texture(Texture *t)
+    inline void set_color_texture(TextureBase *t)
     {
         m_textures[0] = t;
         m_isDirty = true;
     }
-    inline Texture *get_color_texture()
+    inline TextureBase *get_color_texture()
     {
         return m_textures[0];
     }

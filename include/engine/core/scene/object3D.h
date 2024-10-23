@@ -85,8 +85,10 @@ class Object3D
 
     ~Object3D()
     {
-        // delete[] children;
-        delete m_parent;
+        for(Object3D* obj: m_children){
+            delete obj;
+        }
+        m_children.clear();
     }
 
     virtual inline ObjectType get_type() const

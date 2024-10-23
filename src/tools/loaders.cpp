@@ -1,9 +1,7 @@
 #include <engine/tools/loaders.h>
 
-
-
-void VKFW::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fileName, bool importMaterials, bool calculateTangents,
-                             bool overrideGeometry)
+void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fileName, bool importMaterials,
+                                    bool calculateTangents, bool overrideGeometry)
 {
     // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
 
@@ -142,15 +140,16 @@ void VKFW::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fileName,
 
         Core::Geometry *g = new Core::Geometry();
         g->fill(vertices, indices);
-        mesh->set_geometry(g);
+        mesh->push_geometry(g);
 
         shape_id++;
     }
+    mesh->set_file_route(fileName);
     return;
 }
 
-void VKFW::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fileName, bool preload, bool verbose,
-                             bool calculateTangents, bool overrideGeometry)
+void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fileName, bool preload, bool verbose,
+                                    bool calculateTangents, bool overrideGeometry)
 {
 
     std::unique_ptr<std::istream> file_stream;
@@ -373,14 +372,16 @@ void VKFW::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fileName,
 
         Core::Geometry *g = new Core::Geometry();
         g->fill(vertices, indices);
-        mesh->set_geometry(g);
+        mesh->push_geometry(g);
+        mesh->set_file_route(fileName);
     }
     catch (const std::exception &e)
     {
         std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
     }
 }
-void VKFW::Loaders::load_3D_file(Core::Mesh *const mesh, const std::string fileName, bool asynCall, bool overrideGeometry)
+void VKFW::Tools::Loaders::load_3D_file(Core::Mesh *const mesh, const std::string fileName, bool asynCall,
+                                        bool overrideGeometry)
 {
     size_t dotPosition = fileName.find_last_of(".");
 
@@ -433,7 +434,7 @@ void VKFW::Loaders::load_3D_file(Core::Mesh *const mesh, const std::string fileN
         std::cerr << "Invalid file name: " << fileName << std::endl;
     }
 }
-void VKFW::Loaders::load_hair(Core::Mesh *const mesh, const char *fileName)
+void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileName)
 {
 
 #define HAIR_FILE_SEGMENTS_BIT 1
@@ -700,31 +701,54 @@ void VKFW::Loaders::load_hair(Core::Mesh *const mesh, const char *fileName)
 
     Core::Geometry *g = new Core::Geometry();
     g->fill(vertices, indices);
-    mesh->set_geometry(g);
+    mesh->push_geometry(g);
+    mesh->set_file_route(std::string(fileName));
 }
 
-void VKFW::Loaders::load_texture(Core::Texture *const texture, const std::string fileName, bool asyncCall)
+void VKFW::Tools::Loaders::load_texture(Core::TextureBase *const texture, const std::string fileName, bool asyncCall)
 {
-
+    //For now simplified ...
     if (asyncCall)
     {
-        std::thread loadThread(Loaders::load_PNG, texture, fileName);
+        std::thread loadThread(Loaders::load_PNG, static_cast<Core::TextureLDR *>(texture), fileName);
         loadThread.detach();
     }
     else
     {
-        load_PNG(texture, fileName);
+        load_PNG(static_cast<Core::TextureLDR *>(texture), fileName);
     }
 }
 
-void  VKFW::Loaders::load_PNG(Core::Texture *const texture, const std::string fileName)
+void VKFW::Tools::Loaders::load_PNG(Core::TextureLDR *const texture, const std::string fileName)
 {
     int w, h, ch;
     unsigned char *imgCache = nullptr;
     imgCache = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
     if (imgCache)
     {
-        texture->set_image_cache(imgCache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h)}, ch);
+        texture->set_image_cache(imgCache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
+        texture->set_format(SRGBA_8);
+    }
+    else
+    {
+#ifndef NDEBUG
+        DEBUG_LOG("Failed to load texture PNG file" + fileName);
+#endif
+        return;
+    };
+#ifndef NDEBUG
+    DEBUG_LOG("PNG Texture loaded successfully");
+#endif // DEBUG
+}
+
+void VKFW::Tools::Loaders::load_HDRi(Core::TextureBase *const texture, const std::string fileName)
+{
+    int w, h, ch;
+    float *HDRcache = nullptr;
+    HDRcache = stbi_loadf(fileName.c_str(), &w, &h, &ch, STBI_default);
+    if (HDRcache)
+    {
+        // texture->set_image_cache(HDRcache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h)}, ch);
     }
     else
     {

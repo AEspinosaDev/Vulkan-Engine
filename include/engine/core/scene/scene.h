@@ -12,6 +12,7 @@
 #include <engine/core/scene/camera.h>
 #include <engine/core/scene/light.h>
 #include <engine/core/scene/mesh.h>
+#include <engine/core/scene/skybox.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -26,6 +27,7 @@ class Scene : public Object3D
     std::vector<Camera *> m_cameras;
     std::vector<Mesh *> m_meshes;
     std::vector<Light *> m_lights;
+    Skybox *m_skybox;
 
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
     float m_ambientIntensity{0.005f};
@@ -47,13 +49,17 @@ class Scene : public Object3D
             m_cameras.push_back((Camera *)obj);
             break;
         case LIGHT:
-            // m_light = (Light *)obj;
             m_lights.push_back((Light *)obj);
+            break;
+        case SKYBOX:
+            m_skybox = (Skybox *)obj;
             break;
         }
         for (auto child : obj->get_children())
             classify_object(child);
     }
+
+    friend void set_meshes(Scene *const scene, std::vector<Mesh *> meshes);
 
   public:
     Scene(Camera *cam) : m_activeCamera(cam)
@@ -62,9 +68,26 @@ class Scene : public Object3D
     };
     ~Scene()
     {
+
         delete m_activeCamera;
+        delete m_skybox;
+
+        for (Mesh *m : m_meshes)
+        {
+            delete m;
+        }
+        for (Camera *c : m_cameras)
+        {
+            delete c;
+        }
+        for (Light *l : m_lights)
+        {
+            delete l;
+        }
+
         m_cameras.clear();
         m_meshes.clear();
+        m_lights.clear();
     };
     inline void add(Object3D *obj)
     {
@@ -85,10 +108,6 @@ class Scene : public Object3D
     {
         return m_meshes;
     }
-    inline void set_meshes(std::vector<Mesh *> meshes)
-    {
-        m_meshes = meshes;
-    }
     inline const std::vector<Camera *> get_cameras() const
     {
         return m_cameras;
@@ -97,7 +116,10 @@ class Scene : public Object3D
     {
         return m_lights;
     }
-
+    inline const Skybox *const get_skybox() const
+    {
+        return m_skybox;
+    }
     inline void set_ambient_color(Vec3 c)
     {
         m_ambientColor = c;
@@ -143,6 +165,8 @@ class Scene : public Object3D
         return m_fogIntensity;
     }
 };
+void set_meshes(Scene *const scene, std::vector<Mesh *> meshes);
+
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

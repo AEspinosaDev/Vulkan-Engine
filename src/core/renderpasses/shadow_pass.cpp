@@ -199,7 +199,7 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
                 {
 
                     // Setup per object render state
-                    Material *mat = m->get_material(i);
+                    IMaterial *mat = m->get_material(i);
 
                     ShaderPass *shaderPass =
                         mat->get_shaderpass_ID() != "hair" ? m_shaderPasses["shadow"] : m_shaderPasses["shadowLine"];

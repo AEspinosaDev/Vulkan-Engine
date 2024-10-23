@@ -3,9 +3,9 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core
 {
-Texture *Texture::DEBUG_TEXTURE = nullptr;
 
-Graphics::Image *const get_image(Texture *t)
+
+Graphics::Image *const get_image(TextureBase *t)
 {
     TextureSettings textSettings = t->m_settings;
     t->m_image.config.format = static_cast<VkFormat>(textSettings.format);

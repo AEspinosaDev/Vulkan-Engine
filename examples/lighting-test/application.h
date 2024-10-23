@@ -8,9 +8,8 @@
 
 #include <engine/tools/controller.h>
 #include <engine/tools/gui.h>
-#include <engine/tools/renderer_widget.h>
 #include <engine/tools/loaders.h>
-
+#include <engine/tools/renderer_widget.h>
 
 /**
  * Example app
@@ -21,21 +20,20 @@ class VulkanRenderer
 {
     struct UserInterface
     {
-        GUIOverlay *overlay{nullptr};
-
-        Panel *explorer{nullptr};
-        Panel *tutorial{nullptr};
-        Panel *properties{nullptr};
-        SceneExplorerWidget *scene{nullptr};
-        ObjectExplorerWidget *object{nullptr};
+        Tools::GUIOverlay *overlay{nullptr};
+        Tools::Panel *explorer{nullptr};
+        Tools::Panel *tutorial{nullptr};
+        Tools::Panel *properties{nullptr};
+        Tools::SceneExplorerWidget *scene{nullptr};
+        Tools::ObjectExplorerWidget *object{nullptr};
     };
     UserInterface m_interface{};
 
-    Window *m_window;
-     Systems::Renderer *m_renderer;
+    WindowBase *m_window;
+    Systems::RendererBase *m_renderer;
     Scene *m_scene;
     Camera *camera;
-    Controller *m_controller;
+    Tools::Controller *m_controller;
 
     Mesh *m_lightDummy;
     bool animateLight{true};
@@ -48,13 +46,12 @@ class VulkanRenderer
     };
     Time m_time{};
 
-public:
-    void
-    init( Systems::RendererSettings settings);
+  public:
+    void init(Systems::RendererSettings settings);
 
-    void run(int argc, char* argv[]);
+    void run(int argc, char *argv[]);
 
-private:
+  private:
     void setup();
 
     void setup_gui();
@@ -90,7 +87,7 @@ private:
         if (m_interface.overlay->wants_to_handle_input())
             return;
 
-        m_controller->handle_mouse( (float)xpos, (float)ypos);
+        m_controller->handle_mouse((float)xpos, (float)ypos);
     }
 
     void window_resize_callback(int width, int height)

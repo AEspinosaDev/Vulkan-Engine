@@ -318,7 +318,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
                         Geometry *g = m->get_geometry(i);
-                        Material *mat = m->get_material(g->get_material_ID());
+                        IMaterial *mat = m->get_material(g->get_material_ID());
 
                         // Setup per object render state
                         vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
@@ -372,7 +372,7 @@ void ForwardPass::upload_data(uint32_t frameIndex, Scene *const scene)
             for (size_t i = 0; i < m->get_num_geometries(); i++)
             {
                 Geometry *g = m->get_geometry(i);
-                Material *mat = m->get_material(g->get_material_ID());
+                IMaterial *mat = m->get_material(g->get_material_ID());
                 setup_material_descriptor(mat);
             }
         }
@@ -388,7 +388,7 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images)
     }
 }
 
-void ForwardPass::setup_material_descriptor(Material *mat)
+void ForwardPass::setup_material_descriptor(IMaterial *mat)
 {
     if (!mat->get_texture_descriptor().allocated)
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT,
@@ -397,7 +397,7 @@ void ForwardPass::setup_material_descriptor(Material *mat)
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
-        Texture *texture = pair.second;
+        TextureBase *texture = pair.second;
         if (texture && texture->data_loaded())
         {
 

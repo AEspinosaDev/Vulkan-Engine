@@ -63,7 +63,7 @@ Geometry *Mesh::change_geometry(Geometry *g, size_t id)
     m_geometry[id] = g;
     return old_g;
 }
-Material *Mesh::change_material(Material *m, size_t id)
+IMaterial *Mesh::change_material(IMaterial *m, size_t id)
 {
     if (m_material.size() < id + 1)
     {
@@ -71,7 +71,7 @@ Material *Mesh::change_material(Material *m, size_t id)
         return nullptr;
     }
 
-    Material *old_m = m_material[id];
+    IMaterial *old_m = m_material[id];
     m_material[id] = m;
     return old_m;
 }
@@ -81,11 +81,11 @@ Mesh *Mesh::clone() const
     Mesh *mesh = new Mesh();
     for (auto m : m_material)
     {
-        mesh->set_material(m);
+        mesh->push_material(m);
     }
     for (auto g : m_geometry)
     {
-        mesh->set_geometry(g);
+        mesh->push_geometry(g);
     }
     mesh->setup_volume();
     mesh->set_name(m_name + std::string(" clone"));

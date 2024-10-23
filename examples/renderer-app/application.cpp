@@ -167,18 +167,18 @@ void VulkanRenderer::setup()
     Mesh *toriiMesh = new Mesh();
     auto toriiMat = new PhysicallyBasedMaterial();
     Texture *toriiT = new Texture();
-    Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
+    Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
     Texture *toriiN = new Texture();
-    Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png");
+    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png");
     Texture *toriiM = new Texture();
-    Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
+    Tools::Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
     toriiMat->set_normal_texture(toriiN);
     toriiMat->set_metalness(0.5);
     toriiMat->set_roughness(0.5);
     // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
-    toriiMesh->set_material(toriiMat);
-    Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj");
+    toriiMesh->push_material(toriiMat);
+    Tools::Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj");
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
     toriiMesh->set_position({1.6, -2.3, 6.1});
@@ -188,33 +188,33 @@ void VulkanRenderer::setup()
     Mesh *terrainMesh = new Mesh();
     terrainMesh->set_scale(10.0);
     terrainMesh->set_position({0.0, -4.0, 0.0});
-    Loaders::load_3D_file(terrainMesh, MESH_PATH + "terrain.obj");
+    Tools::Loaders::load_3D_file(terrainMesh, MESH_PATH + "terrain.obj");
     Texture *floorText = new Texture();
-    Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
+    Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
 
     Texture *floorNormalText = new Texture();
-    Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
+    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
     Texture *floorRoughText = new Texture();
-    Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
+    Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
     // terrainMat->set_normal_texture(floorNormalText);
     terrainMat->set_roughness_texture(floorRoughText);
     terrainMat->set_tile({25.0f, 25.0f});
-    terrainMesh->set_material(terrainMat);
+    terrainMesh->push_material(terrainMat);
     terrainMesh->set_name("Terrain");
     m_scene->add(terrainMesh);
 
     Mesh *boxMesh = new Mesh();
     boxMesh->set_position({-3, -2.3, 3.f});
     boxMesh->set_rotation({0.0, 20.0f, 0.0f});
-    Loaders::load_3D_file(boxMesh, MESH_PATH + "cube.obj");
+    Tools::Loaders::load_3D_file(boxMesh, MESH_PATH + "cube.obj");
     Texture *woodText = new Texture();
-    Loaders::load_texture(woodText, TEXTURE_PATH + "wood_diffuse.jpg");
+    Tools::Loaders::load_texture(woodText, TEXTURE_PATH + "wood_diffuse.jpg");
     auto boxMat = new PhysicallyBasedMaterial();
     boxMat->set_albedo_texture(woodText);
-    boxMesh->set_material(boxMat);
+    boxMesh->push_material(boxMat);
     boxMesh->set_name("Box");
     boxMesh->set_scale(0.75);
     m_scene->add(boxMesh);
@@ -222,44 +222,44 @@ void VulkanRenderer::setup()
     auto lightMat = new UnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_lights()[0]->get_color(), 1.0f));
     m_lightDummy = new Mesh();
-    Loaders::load_3D_file(m_lightDummy, ENGINE_MESH_PATH + "sphere.obj");
-    m_lightDummy->set_material(lightMat);
+    Tools::Loaders::load_3D_file(m_lightDummy, ENGINE_MESH_PATH + "sphere.obj");
+    m_lightDummy->push_material(lightMat);
     m_lightDummy->set_scale(0.5f);
     m_lightDummy->set_name("Light Gizmo");
     // m_scene->add(m_lightDummy);
 
     Mesh *kabutoMesh = new Mesh();
-    Loaders::load_3D_file(kabutoMesh, MESH_PATH + "kabuto.obj");
+    Tools::Loaders::load_3D_file(kabutoMesh, MESH_PATH + "kabuto.obj");
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
-    Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
+    Tools::Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
     kabutoMat->set_roughness(0.4f);
-    kabutoMesh->set_material(kabutoMat);
+    kabutoMesh->push_material(kabutoMat);
     kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
 
     Mesh *templeMesh = new Mesh();
 
-    Loaders::load_3D_file(templeMesh, MESH_PATH + "temple.obj");
+    Tools::Loaders::load_3D_file(templeMesh, MESH_PATH + "temple.obj");
     templeMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto templeMat = new PhysicallyBasedMaterial();
     Texture *templeText = new Texture();
-    Loaders::load_texture(templeText, TEXTURE_PATH + "temple_diffuse.png");
+    Tools::Loaders::load_texture(templeText, TEXTURE_PATH + "temple_diffuse.png");
     Texture *templeRText = new Texture();
-    Loaders::load_texture(templeRText, TEXTURE_PATH + "temple_rough.png");
+    Tools::Loaders::load_texture(templeRText, TEXTURE_PATH + "temple_rough.png");
     Texture *templeMText = new Texture();
-    Loaders::load_texture(templeMText, TEXTURE_PATH + "temple_metal.png");
+    Tools::Loaders::load_texture(templeMText, TEXTURE_PATH + "temple_metal.png");
     templeMat->set_albedo_texture(templeText);
     templeMat->set_metallic_texture(templeMText);
     templeMat->set_roughness_texture(templeRText);
     templeMat->set_albedo({0.0, 1.0, 0.0});
     templeMat->set_metalness(0.8f);
     templeMat->set_roughness(0.4f);
-    templeMesh->set_material(templeMat);
+    templeMesh->push_material(templeMat);
     templeMesh->set_name("Temple");
     templeMesh->set_position({7.2, -2.87, 14.1});
     templeMesh->set_rotation({0.0, 230.0f, 0.0f});
@@ -267,19 +267,19 @@ void VulkanRenderer::setup()
 
     Mesh *templeMesh2 = new Mesh();
 
-    Loaders::load_3D_file(templeMesh2, MESH_PATH + "shrine.obj");
+    Tools::Loaders::load_3D_file(templeMesh2, MESH_PATH + "shrine.obj");
     templeMesh2->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto templeMat2 = new PhysicallyBasedMaterial();
     Texture *templeText2 = new Texture();
-    Loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
+    Tools::Loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
     Texture *templeRText2 = new Texture();
-    Loaders::load_texture(templeRText, TEXTURE_PATH + "shrine_rough.png");
+    Tools::Loaders::load_texture(templeRText, TEXTURE_PATH + "shrine_rough.png");
     Texture *templeMText2 = new Texture();
-    Loaders::load_texture(templeMText2, TEXTURE_PATH + "shrine_metal.png");
+    Tools::Loaders::load_texture(templeMText2, TEXTURE_PATH + "shrine_metal.png");
     templeMat2->set_albedo_texture(templeText2);
     templeMat2->set_metallic_texture(templeMText2);
     templeMat2->set_roughness_texture(templeRText2);
-    templeMesh2->set_material(templeMat2);
+    templeMesh2->push_material(templeMat2);
     templeMesh2->set_name("Shrine");
     templeMesh2->set_position({0, -2.77, 14.1});
     templeMesh2->set_rotation({0.0, 160.0f, 0.0f});
@@ -294,12 +294,12 @@ void VulkanRenderer::setup()
     // m_scene->add(hair);
 
     Mesh *lanternMesh = new Mesh();
-    Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj");
+    Tools::Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj");
     auto lanternMat = new PhysicallyBasedMaterial();
     Texture *lanternT = new Texture();
-    Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
+    Tools::Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
     lanternMat->set_albedo_texture(lanternT);
-    lanternMesh->set_material(lanternMat);
+    lanternMesh->push_material(lanternMat);
     lanternMesh->set_name("Lantern");
     lanternMesh->set_position({2.5, -1.67, 2.8});
     lanternMesh->set_rotation({0.0, 23.0f, 0.0f});
@@ -323,12 +323,12 @@ void VulkanRenderer::setup()
     m_scene->add(lanternMesh4);
 
     Mesh *stoneMesh = new Mesh();
-    Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
+    Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
     auto stoneMat = new PhysicallyBasedMaterial();
     Texture *stonelanternT = new Texture();
-    Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
+    Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
     stoneMat->set_albedo_texture(stonelanternT);
-    stoneMesh->set_material(stoneMat);
+    stoneMesh->push_material(stoneMat);
     stoneMesh->set_name("Stone Lantern");
     stoneMesh->set_position({2.5, -2.67, 9.5});
     stoneMesh->set_rotation({0.0, 107.0f, 0.0f});
@@ -338,47 +338,49 @@ void VulkanRenderer::setup()
 
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
-    m_controller = new Controller(camera, m_window);
+    m_controller = new Tools::Controller(camera, m_window);
 }
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height,
-                                         GuiColorProfileType::DARK);
+    m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width,
+                                                (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
-    Panel *tutorialPanel = new Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
+    Tools::Panel *tutorialPanel =
+        new Tools::Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 
-    tutorialPanel->add_child(new Space());
-    tutorialPanel->add_child(new Separator("CONTROLS"));
-    tutorialPanel->add_child(new Separator());
-    tutorialPanel->add_child(new TextLine("WASD: move camera.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("QE: camera down/up.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("Mouse + Left: rotate camera.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("L: toggle light animation", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("F11: toggle fullscreen/windowed mode.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("Esc: exit application.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new Space());
-    tutorialPanel->add_child(new Separator());
-    tutorialPanel->add_child(new TextLine("Enjoy changing the parameters!"));
+    tutorialPanel->add_child(new Tools::Space());
+    tutorialPanel->add_child(new Tools::Separator("CONTROLS"));
+    tutorialPanel->add_child(new Tools::Separator());
+    tutorialPanel->add_child(new Tools::TextLine("WASD: move camera.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("QE: camera down/up.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("Mouse + Left: rotate camera.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("L: toggle light animation", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("F11: toggle fullscreen/windowed mode.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("Esc: exit application.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::Space());
+    tutorialPanel->add_child(new Tools::Separator());
+    tutorialPanel->add_child(new Tools::TextLine("Enjoy changing the parameters!"));
 
     m_interface.overlay->add_panel(tutorialPanel);
     m_interface.tutorial = tutorialPanel;
 
-    Panel *explorerPanel = new Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene = new SceneExplorerWidget(m_scene);
+    Tools::Panel *explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
+    m_interface.scene = new Tools::SceneExplorerWidget(m_scene);
     explorerPanel->add_child(m_interface.scene);
-    explorerPanel->add_child(new Space());
-    explorerPanel->add_child(new RendererSettingsWidget(m_renderer));
-    explorerPanel->add_child(new Separator());
-    explorerPanel->add_child(new TextLine(" Application average"));
-    explorerPanel->add_child(new Profiler());
-    explorerPanel->add_child(new Space());
+    explorerPanel->add_child(new Tools::Space());
+    explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));
+    explorerPanel->add_child(new Tools::Separator());
+    explorerPanel->add_child(new Tools::TextLine(" Application average"));
+    explorerPanel->add_child(new Tools::Profiler());
+    explorerPanel->add_child(new Tools::Space());
 
     m_interface.overlay->add_panel(explorerPanel);
     m_interface.explorer = explorerPanel;
 
-    Panel *propertiesPanel = new Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
-    m_interface.object = new ObjectExplorerWidget();
+    Tools::Panel *propertiesPanel =
+        new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
+    m_interface.object = new Tools::ObjectExplorerWidget();
     propertiesPanel->add_child(m_interface.object);
 
     m_interface.overlay->add_panel(propertiesPanel);

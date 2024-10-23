@@ -9,6 +9,7 @@
 #ifndef FORWARD_PASS_H
 #define FORWARD_PASS_H
 #include <engine/core/renderpasses/renderpass.h>
+#include <engine/core/textures/textureLDR.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -30,7 +31,7 @@ class ForwardPass : public RenderPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-    void setup_material_descriptor(Material *mat);
+    void setup_material_descriptor(IMaterial *mat);
 
   public:
     ForwardPass(Graphics::Context *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,

@@ -20,8 +20,6 @@
 
 #include <engine/core/scene/scene.h>
 
-// #include <engine/utilities/gui.h>
-
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core

@@ -28,7 +28,7 @@ int main()
         float delta;
         float last{0};
 
-        Core::Window *window = new Core::WindowGLFW("Kabuto", 800, 600);
+        Core::WindowBase *window = new Core::WindowGLFW("Kabuto", 800, 600);
 
         window->init();
 
@@ -36,7 +36,7 @@ int main()
         settings.samplesMSAA = MSAASamples::MSAA_x4;
         settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
 
-        Systems::Renderer *renderer = new Systems::ForwardRenderer(window, settings, {});
+        Systems::RendererBase *renderer = new Systems::ForwardRenderer(window, settings, {});
 
         Core::Camera *camera = new Core::Camera();
         camera->set_position(Vec3(0.0f, 0.15f, -1.0f));
@@ -51,12 +51,12 @@ int main()
         scene->add(light);
 
         Core::Mesh *kabuto = new Core::Mesh();
-        Loaders::load_3D_file(kabuto, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj");
+        Tools::Loaders::load_3D_file(kabuto, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj");
         kabuto->set_scale(0.4f);
 
         Core::PhysicallyBasedMaterial *material = new Core::PhysicallyBasedMaterial();
         material->set_albedo(Vec4{1.0});
-        kabuto->set_material(material);
+        kabuto->push_material(material);
 
         scene->add(kabuto);
 

@@ -1,7 +1,8 @@
 #include <engine/tools/gui.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-
+namespace Tools
+{
 void GUIOverlay::render()
 {
     PROFILING_EVENT()
@@ -36,4 +37,5 @@ void GUIOverlay::render()
     m_resized = false;
 }
 
+} // namespace Tools
 VULKAN_ENGINE_NAMESPACE_END

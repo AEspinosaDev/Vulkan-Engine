@@ -121,6 +121,8 @@ typedef enum ObjectType
     MESH = 0,
     LIGHT = 1,
     CAMERA = 2,
+    VOLUME = 3,
+    SKYBOX = 4,
     OTHER
 
 } ObjectType;

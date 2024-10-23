@@ -20,7 +20,7 @@ namespace Core
 /**
  * Class containing all functionality related to a window.
  */
-class Window
+class WindowBase
 {
   protected:
     std::string m_title{};
@@ -41,7 +41,7 @@ class Window
     std::function<void(double, double)> m_mouseCallBack;
 
   public:
-    Window(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false)
+    WindowBase(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false)
         : m_title(t), m_extent(VkExtent2D{w, h}), m_windowedExtent({w, h}), m_resizeable{resizable},
           m_fullscreen{fullscreen}
     {
@@ -66,6 +66,8 @@ class Window
     virtual void update_framebuffer() = 0;
 
     virtual WindowingSystem get_windowing_system() const = 0;
+
+    virtual bool get_key_state(int keyCode, int state) const{return 0;}
 
     virtual inline void set_position(math::ivec2 p)
     {
@@ -154,6 +156,7 @@ class Window
     {
         m_mouseCallBack = callback;
     }
+
 };
 
 } // namespace Core

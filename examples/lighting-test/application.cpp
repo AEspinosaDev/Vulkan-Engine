@@ -173,37 +173,37 @@ void VulkanRenderer::setup()
     }
 
     Mesh *terrainMesh = new Mesh();
-    terrainMesh->set_geometry(Geometry::create_quad());
+    terrainMesh->push_geometry(Geometry::create_quad());
     terrainMesh->set_scale(25.0);
     terrainMesh->set_position({0.0, -2.0, 0.0});
     terrainMesh->set_rotation({-90.0, 0.0, 0.0});
     Texture *floorText = new Texture();
-    Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
+    Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
     Texture *floorNormalText = new Texture();
-    Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
+    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
     Texture *floorRoughText = new Texture();
-    Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
+    Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
     terrainMat->set_roughness_texture(floorRoughText);
     terrainMat->set_tile({25.0f, 25.0f});
-    terrainMesh->set_material(terrainMat);
+    terrainMesh->push_material(terrainMat);
     terrainMesh->set_name("Terrain");
     m_scene->add(terrainMesh);
 
     Mesh *kabutoMesh = new Mesh();
-    Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
+    Tools::Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     kabutoMesh->set_position({-5.0, 0.0, 5.0});
     auto kabutoMat = new PhysicallyBasedMaterial();
     Texture *kabutoText = new Texture();
-    Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
+    Tools::Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
     kabutoMat->set_roughness(0.4f);
-    kabutoMesh->set_material(kabutoMat);
+    kabutoMesh->push_material(kabutoMat);
     kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
 
@@ -230,53 +230,53 @@ void VulkanRenderer::setup()
 
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
-    m_controller = new Controller(camera, m_window);
+    m_controller = new Tools::Controller(camera, m_window);
 }
 
 void VulkanRenderer::setup_gui()
 {
-    m_interface.overlay = new GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height,
-                                         GuiColorProfileType::DARK);
+    m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width,
+                                                (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
-    Panel *tutorialPanel = new Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
+    Tools::Panel *tutorialPanel =
+        new Tools::Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 
-    tutorialPanel->add_child(new Space());
-    tutorialPanel->add_child(new Separator("CONTROLS"));
-    tutorialPanel->add_child(new Separator());
-    tutorialPanel->add_child(new TextLine("WASD: move camera.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("QE: camera down/up.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("Mouse + Left: rotate camera.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("L: toggle light animation", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("F11: toggle fullscreen/windowed mode.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new TextLine("Esc: exit application.", TextWidgetType::BULLET));
-    tutorialPanel->add_child(new Space());
-    tutorialPanel->add_child(new Separator());
-    tutorialPanel->add_child(new TextLine("Enjoy changing the parameters!"));
+    tutorialPanel->add_child(new Tools::Space());
+    tutorialPanel->add_child(new Tools::Separator("CONTROLS"));
+    tutorialPanel->add_child(new Tools::Separator());
+    tutorialPanel->add_child(new Tools::TextLine("WASD: move camera.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("QE: camera down/up.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("Mouse + Left: rotate camera.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("L: toggle light animation", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("F11: toggle fullscreen/windowed mode.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::TextLine("Esc: exit application.", TextWidgetType::BULLET));
+    tutorialPanel->add_child(new Tools::Space());
+    tutorialPanel->add_child(new Tools::Separator());
+    tutorialPanel->add_child(new Tools::TextLine("Enjoy changing the parameters!"));
 
     m_interface.overlay->add_panel(tutorialPanel);
     m_interface.tutorial = tutorialPanel;
 
-    Panel *explorerPanel = new Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene = new SceneExplorerWidget(m_scene);
+    Tools::Panel *explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
+    m_interface.scene = new Tools::SceneExplorerWidget(m_scene);
     explorerPanel->add_child(m_interface.scene);
-    explorerPanel->add_child(new Space());
-    explorerPanel->add_child(new RendererSettingsWidget(m_renderer));
-    explorerPanel->add_child(new Separator());
-    explorerPanel->add_child(new TextLine(" Application average"));
-    explorerPanel->add_child(new Profiler());
-    explorerPanel->add_child(new Space());
+    explorerPanel->add_child(new Tools::Space());
+    explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));
+    explorerPanel->add_child(new Tools::Separator());
+    explorerPanel->add_child(new Tools::TextLine(" Application average"));
+    explorerPanel->add_child(new Tools::Profiler());
+    explorerPanel->add_child(new Tools::Space());
 
     m_interface.overlay->add_panel(explorerPanel);
     m_interface.explorer = explorerPanel;
 
-    Panel *propertiesPanel = new Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
-    m_interface.object = new ObjectExplorerWidget();
+    Tools::Panel *propertiesPanel =
+        new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
+    m_interface.object = new Tools::ObjectExplorerWidget();
     propertiesPanel->add_child(m_interface.object);
 
     m_interface.overlay->add_panel(propertiesPanel);
     m_interface.properties = propertiesPanel;
-
-    // m_renderer->set_gui_overlay(m_interface.overlay);
 }
 
 void VulkanRenderer::update()

@@ -23,6 +23,7 @@
 #include <engine/core/materials/material.h>
 #include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
+#include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
 
@@ -30,7 +31,6 @@
 #include <engine/graphics/context.h>
 #include <engine/graphics/image.h>
 #include <engine/graphics/initializers.h>
-#include <engine/graphics/shaderpass.h>
 #include <engine/graphics/uniforms.h>
 #include <engine/graphics/utils.h>
 
@@ -77,14 +77,14 @@ struct RenderPipeline
  * parametrizable. It has to be inherited for achieving a higher end
  * application.
  */
-class Renderer
+class RendererBase
 {
 #pragma region Properties
   protected:
     RendererSettings m_settings{};
 
     Graphics::Context m_context{};
-    Core::Window *m_window;
+    Core::WindowBase *m_window;
 
     RenderPipeline m_renderPipeline;
 
@@ -97,18 +97,18 @@ class Renderer
 
 #pragma endregion
   public:
-    Renderer(Core::Window *window) : m_window(window)
+    RendererBase(Core::WindowBase *window) : m_window(window)
     {
         on_instance();
     }
-    Renderer(Core::Window *window, RendererSettings settings) : m_window(window), m_settings(settings)
+    RendererBase(Core::WindowBase *window, RendererSettings settings) : m_window(window), m_settings(settings)
     {
         on_instance();
     }
 
 #pragma region Getters & Setters
 
-    inline Core::Window *const get_window() const
+    inline Core::WindowBase *const get_window() const
     {
         return m_window;
     }
@@ -252,7 +252,7 @@ class Renderer
     /*
     Initialize and setup textures and uniforms in given material
     */
-    virtual void upload_material_textures(Core::Material *const mat);
+    virtual void upload_material_textures(Core::IMaterial *const mat);
     /*
     Upload geometry vertex buffers to the GPU
     */

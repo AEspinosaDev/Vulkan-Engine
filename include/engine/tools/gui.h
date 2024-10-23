@@ -3,22 +3,25 @@
 
     MIT License
 
-	Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
 #ifndef GUI_H
 #define GUI_H
 
-#include <engine/tools/widgets.h>
 #include <engine/graphics/context.h>
+#include <engine/tools/widgets.h>
 
 // WIP..
 // MUCH TO DO HERE, JUST READY FOR A SIMPLE DEMO
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Tools
+{
+
 class GUIOverlay
 {
-private:
+  private:
     ImVec2 m_extent;
 
     std::vector<Panel *> m_panels;
@@ -27,8 +30,11 @@ private:
 
     bool m_resized{false};
 
-public:
-    GUIOverlay(float extentX, float extentY, GuiColorProfileType color = GuiColorProfileType::DARK) : m_extent({extentX, extentY}), m_colorProfile(color) {}
+  public:
+    GUIOverlay(float extentX, float extentY, GuiColorProfileType color = GuiColorProfileType::DARK)
+        : m_extent({extentX, extentY}), m_colorProfile(color)
+    {
+    }
     ~GUIOverlay()
     {
         for (auto p : m_panels)
@@ -55,13 +61,17 @@ public:
         return false;
     }
 
-    inline math::vec2 get_extent() const { return {m_extent.x, m_extent.y}; }
+    inline math::vec2 get_extent() const
+    {
+        return {m_extent.x, m_extent.y};
+    }
     inline void set_extent(math::vec2 p)
     {
         m_extent = {p.x, p.y};
         m_resized = true;
     }
 };
+} // namespace Tools
 
 VULKAN_ENGINE_NAMESPACE_END
 

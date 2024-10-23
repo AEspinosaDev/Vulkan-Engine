@@ -27,7 +27,7 @@ void Context::init(void *windowHandle, WindowingSystem windowingSystem, VkExtent
     }
     else
     {
-        // TO DO SDL .. 
+        // TO DO SDL ..
     }
 
     // Get gpu
@@ -54,8 +54,8 @@ void Context::init(void *windowHandle, WindowingSystem windowingSystem, VkExtent
     //------<<<
 }
 
-void Context::update_swapchain(VkExtent2D surfaceExtent,
-                               uint32_t framesPerFlight, VkFormat presentFormat, VkPresentModeKHR presentMode)
+void Context::update_swapchain(VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
+                               VkPresentModeKHR presentMode)
 {
     swapchain.create(gpu, device, surface, surfaceExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
 }
@@ -165,8 +165,8 @@ void Context::draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint
     }
 }
 
-void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
-                              const void *iboData, bool indexed)
+void Context::upload_vertex_arrays(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
+                                   const void *iboData, bool indexed)
 {
     PROFILING_EVENT()
     // Should be executed only once if geometry data is not changed
@@ -211,7 +211,7 @@ void Context::upload_geometry(Buffer &vbo, size_t vboSize, const void *vboData, 
         iboStagingBuffer.cleanup(memory);
     }
 }
-void Context::upload_texture_image(Image *const img, bool mipmapping)
+void Context::upload_texture_image(const void *imgCache, size_t bytesPerPixel, Image *const img, bool mipmapping)
 {
     PROFILING_EVENT()
 
@@ -228,10 +228,10 @@ void Context::upload_texture_image(Image *const img, bool mipmapping)
 
     Buffer stagingBuffer;
 
-    VkDeviceSize imageSize = img->extent.width * img->extent.height * img->extent.depth * Image::BYTES_PER_PIXEL;
+    VkDeviceSize imageSize = img->extent.width * img->extent.height * img->extent.depth * bytesPerPixel;
 
     stagingBuffer.init(memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer.upload_data(memory, static_cast<const void *>(img->tmpCache), static_cast<size_t>(imageSize));
+    stagingBuffer.upload_data(memory, imgCache, static_cast<size_t>(imageSize));
 
     uploadContext.immediate_submit(device, graphicsQueue,
                                    [&](VkCommandBuffer cmd) { img->upload_image(cmd, &stagingBuffer); });

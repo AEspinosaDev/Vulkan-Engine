@@ -18,14 +18,14 @@ namespace Core
 /**
  * GLFW as windowing manage system.
  */
-class WindowGLFW : public Window
+class WindowGLFW : public WindowBase
 {
   private:
     GLFWwindow *m_handle{nullptr};
 
   public:
     WindowGLFW(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false)
-        : Window(t, w, h, resizable, fullscreen)
+        : WindowBase(t, w, h, resizable, fullscreen)
     {
     }
 
@@ -59,12 +59,12 @@ class WindowGLFW : public Window
 
     inline void set_title(const char *title)
     {
-        Window::set_title(title);
+        WindowBase::set_title(title);
         glfwSetWindowTitle(m_handle, title);
     }
     inline void set_position(math::ivec2 p)
     {
-        Window::set_position(p);
+        WindowBase::set_position(p);
         glfwSetWindowPos(m_handle, p.x, p.y);
     }
 

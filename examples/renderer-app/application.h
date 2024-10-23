@@ -21,21 +21,21 @@ class VulkanRenderer
 {
     struct UserInterface
     {
-        GUIOverlay *overlay{nullptr};
-
-        Panel *explorer{nullptr};
-        Panel *tutorial{nullptr};
-        Panel *properties{nullptr};
-        SceneExplorerWidget *scene{nullptr};
-        ObjectExplorerWidget *object{nullptr};
+        Tools::GUIOverlay *overlay{nullptr};
+        
+        Tools::Panel *explorer{nullptr};
+        Tools::Panel *tutorial{nullptr};
+        Tools::Panel *properties{nullptr};
+        Tools::SceneExplorerWidget *scene{nullptr};
+        Tools::ObjectExplorerWidget *object{nullptr};
     };
     UserInterface m_interface{};
 
-    Window *m_window;
-    Systems::Renderer *m_renderer;
+    WindowBase *m_window;
+    Systems::RendererBase *m_renderer;
     Scene *m_scene;
     Camera *camera;
-    Controller *m_controller;
+    Tools::Controller *m_controller;
 
     Mesh *m_lightDummy;
     bool animateLight{true};

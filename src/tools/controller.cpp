@@ -1,5 +1,7 @@
 #include <engine/tools/controller.h>
 VULKAN_ENGINE_NAMESPACE_BEGIN
+namespace Tools
+{
 void Controller::handle_keyboard(int key, int action, const float deltaTime)
 {
 
@@ -45,7 +47,7 @@ void Controller::handle_mouse(float xpos, float ypos, bool constrainPitch)
 {
     if (!m_enabled)
         return;
-        
+
     void *windowHandle{nullptr};
     m_windowPtr->get_handle(windowHandle);
     GLFWwindow *window = static_cast<GLFWwindow *>(windowHandle);
@@ -124,4 +126,5 @@ void Controller::handle_mouse(float xpos, float ypos, bool constrainPitch)
         m_isMouseRightPressed = false;
     }
 }
+} // namespace Tools
 VULKAN_ENGINE_NAMESPACE_END

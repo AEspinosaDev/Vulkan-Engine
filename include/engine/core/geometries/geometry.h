@@ -98,6 +98,7 @@ class Geometry
     void fill(std::vector<Graphics::utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
     void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
     static Geometry *create_quad();
+    static Geometry *create_cube();
 };
 
 RenderData *const get_render_data(Geometry *g);

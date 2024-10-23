@@ -18,7 +18,7 @@ namespace Core
 {
 
 /// Epic's Fitted Marschner Workflow. Only works with geometry defined as lines.
-class HairMaterial : public Material
+class HairMaterial : public IMaterial
 {
   protected:
     Vec4 m_baseColor{0.27f, 0.14f, 0.04f, 1.0f}; // w for opacity
@@ -44,12 +44,12 @@ class HairMaterial : public Material
     bool m_coloredScatter{false};
     bool m_occlusion{false};
 
-    std::unordered_map<int, Texture *> m_textures;
+    std::unordered_map<int, TextureBase *> m_textures;
 
     std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, Texture *> get_textures() const
+    virtual inline std::unordered_map<int, TextureBase *> get_textures() const
     {
         return m_textures;
     }
@@ -64,10 +64,10 @@ class HairMaterial : public Material
     }
 
   public:
-    HairMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : Material("hair"), m_baseColor(baseColor)
+    HairMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : IMaterial("hair"), m_baseColor(baseColor)
     {
     }
-    HairMaterial(Vec4 baseColor, MaterialSettings params) : Material("hair", params), m_baseColor(baseColor)
+    HairMaterial(Vec4 baseColor, MaterialSettings params) : IMaterial("hair", params), m_baseColor(baseColor)
     {
     }
 

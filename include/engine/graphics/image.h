@@ -46,11 +46,10 @@ struct SamplerConfig
 
 struct Image
 {
-
     VkImage handle;
 
     VkExtent3D extent;
-    unsigned char *tmpCache{nullptr}; // If needed...
+   
 
     VmaAllocation allocation;
     ImageConfig config{};
@@ -79,11 +78,9 @@ struct Image
     void generate_mipmaps(VkCommandBuffer &cmd);
 
     void cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler = true);
-
-    static const int BYTES_PER_PIXEL{4};
 };
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 

@@ -29,7 +29,7 @@ struct MaterialSettings
     bool alphaTest{false};
 };
 
-class Material
+class IMaterial
 {
   protected:
     MaterialSettings m_settings{};
@@ -43,16 +43,16 @@ class Material
     friend class Renderer;
 
   public:
-    static Material *DEBUG_MATERIAL;
+    static IMaterial *DEBUG_MATERIAL;
 
-    Material(std::string shaderPassID) : m_shaderPassID(shaderPassID)
+    IMaterial(std::string shaderPassID) : m_shaderPassID(shaderPassID)
     {
     }
-    Material(std::string shaderPassID, MaterialSettings params) : m_shaderPassID(shaderPassID), m_settings(params)
+    IMaterial(std::string shaderPassID, MaterialSettings params) : m_shaderPassID(shaderPassID), m_settings(params)
     {
     }
 
-    ~Material()
+    ~IMaterial()
     {
     }
 
@@ -101,7 +101,7 @@ class Material
 
     virtual Graphics::MaterialUniforms get_uniforms() const = 0;
 
-    virtual std::unordered_map<int, Texture *> get_textures() const = 0;
+    virtual std::unordered_map<int, TextureBase *> get_textures() const = 0;
 
     virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
     virtual void set_texture_binding_state(int id, bool state) = 0;

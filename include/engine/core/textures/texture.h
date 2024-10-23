@@ -11,8 +11,6 @@
 
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/image.h>
-#include <stb_image.h>
-#include <thread>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -32,32 +30,43 @@ struct TextureSettings
     int maxMipLevel{-1};
 };
 
-class Texture
+/*
+Base class for all textures
+*/
+class TextureBase
 {
+  protected:
     TextureSettings m_settings{};
 
     Graphics::Image m_image{};
 
+    uint16_t m_channels{0};
+
     bool m_isDirty{true};
 
-    friend Graphics::Image *const get_image(Texture *t);
+    friend Graphics::Image *const get_image(TextureBase *t);
 
   public:
-    static Texture *DEBUG_TEXTURE;
+   
 
-    Texture()
+    TextureBase()
     {
         m_image.extent = {0, 0, 1};
     }
-    Texture(TextureSettings settings) : m_settings(settings)
+    TextureBase(TextureSettings settings) : m_settings(settings)
     {
         m_image.extent = {0, 0, 1};
     }
-    Texture(unsigned char *data, Extent3D size, TextureSettings settings = {}) : m_settings(settings)
+    TextureBase(Extent3D size, uint16_t channels , TextureSettings settings = {}) : m_settings(settings), m_channels(channels)
     {
-        m_image.tmpCache = data;
         m_image.extent = size;
     }
+
+    virtual void set_image_cache(void *cache, Extent3D extent, uint16_t channels) = 0;
+
+    virtual void get_image_cache(void *&cache) const = 0;
+
+    virtual size_t get_bytes_per_pixel() const = 0;
 
     inline bool data_loaded() const
     {
@@ -90,14 +99,6 @@ class Texture
         return m_image.extent;
     }
 
-    inline void set_image_cache(unsigned char *cache, Extent2D extent, unsigned int channels)
-    {
-        m_image.tmpCache = cache;
-        m_image.extent = {extent.width, extent.height, 1};
-        m_image.loadedOnCPU = true;
-        m_isDirty = true;
-    }
-
     inline void set_use_mipmaps(bool op)
     {
         m_settings.useMipmaps = op;
@@ -120,7 +121,7 @@ class Texture
     }
 };
 
-Graphics::Image *const get_image(Texture *t);
+Graphics::Image *const get_image(TextureBase *t);
 
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

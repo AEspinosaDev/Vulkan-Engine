@@ -15,6 +15,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Tools
+{
+
 struct KeyMappings
 {
     int moveLeft = GLFW_KEY_A;
@@ -35,7 +38,7 @@ class Controller
 {
   protected:
     Core::Object3D *m_objPtr;
-    Core::Window *m_windowPtr;
+    Core::WindowBase *m_windowPtr;
 
     float m_speed;
     ControllerMovementType m_type;
@@ -66,7 +69,7 @@ class Controller
     bool m_enabled{true};
 
   public:
-    Controller(Core::Object3D *obj, Core::Window *window, ControllerMovementType m = WASD,
+    Controller(Core::Object3D *obj, Core::WindowBase *window, ControllerMovementType m = WASD,
                KeyMappings km = KeyMappings{})
         : m_objPtr(obj), m_windowPtr(window), m_type(m), m_speed(5.0f), m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f),
           m_mouseDeltaY(.0f), m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true), m_isMouseLeftPressed(false),
@@ -112,11 +115,11 @@ class Controller
     {
         m_objPtr = obj;
     }
-    inline Core::Window *get_window() const
+    inline Core::WindowBase *get_window() const
     {
         return m_windowPtr;
     }
-    inline void set_window(Core::Window *w)
+    inline void set_window(Core::WindowBase *w)
     {
         m_windowPtr = w;
     }
@@ -127,6 +130,8 @@ class Controller
     { /*WIP*/
     }
 };
+
+} // namespace Tools
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

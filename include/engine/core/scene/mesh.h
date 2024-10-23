@@ -59,7 +59,7 @@ Class used to represent a 3D model instance.
 class Mesh : public Object3D
 {
     std::vector<Geometry *> m_geometry;
-    std::vector<Material *> m_material;
+    std::vector<IMaterial *> m_material;
 
     VolumeType m_volumeType{SPHERE};
     Volume *m_volume{nullptr};
@@ -70,7 +70,7 @@ class Mesh : public Object3D
 
     std::string m_fileRoute{"None"};
 
-    static Material *m_debugMaterial;
+    static IMaterial *m_debugMaterial;
     static int m_instanceCount;
 
   public:
@@ -78,7 +78,7 @@ class Mesh : public Object3D
     {
         Mesh::m_instanceCount++;
     }
-    Mesh(Geometry *geom, Material *mat)
+    Mesh(Geometry *geom, IMaterial *mat)
         : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), MESH), m_volume(new Sphere())
     {
         Mesh::m_instanceCount++;
@@ -107,23 +107,23 @@ class Mesh : public Object3D
     /**
      * Returns the material in the slot.
      */
-    inline Material *get_material(size_t id = 0) const
+    inline IMaterial *get_material(size_t id = 0) const
     {
         return m_material.size() >= id + 1 ? m_material[id] : nullptr;
     }
-    inline std::vector<Material *> get_materials() const
+    inline std::vector<IMaterial *> get_materials() const
     {
         return m_material;
     };
     /**
      * Change the material in the given slot and returns the old one ref.
      */
-    Material *change_material(Material *m, size_t id = 0);
+    IMaterial *change_material(IMaterial *m, size_t id = 0);
     /*
      * Adds this geometry in the next free slot. It is important to set correctly the id of the material slot this
      * geometry is pointing.
      */
-    inline void set_geometry(Geometry *g)
+    inline void push_geometry(Geometry *g)
     {
         m_geometry.push_back(g);
         setup_volume();
@@ -131,7 +131,7 @@ class Mesh : public Object3D
     /*
      * Adds this material in the next free slot
      */
-    inline void set_material(Material *m)
+    inline void push_material(IMaterial *m)
     {
         m_material.push_back(m);
     }
@@ -157,9 +157,9 @@ class Mesh : public Object3D
     {
         m_receiveShadows = op;
     }
-    inline Material *set_debug_material(size_t id = 0)
+    inline IMaterial *set_debug_material(size_t id = 0)
     {
-        Material *m = get_material(id);
+        IMaterial *m = get_material(id);
         m_material[id] = m_debugMaterial;
         return m;
     }

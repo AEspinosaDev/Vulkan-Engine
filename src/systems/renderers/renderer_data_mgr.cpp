@@ -19,7 +19,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems
 {
-void Renderer::update_global_data(Core::Scene *const scene)
+void RendererBase::update_global_data(Core::Scene *const scene)
 {
     PROFILING_EVENT()
     /*
@@ -77,7 +77,7 @@ void Renderer::update_global_data(Core::Scene *const scene)
         m_context.memory, &sceneParams, sizeof(Graphics::SceneUniforms),
         Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_context.gpu));
 }
-void Renderer::update_object_data(Core::Scene *const scene)
+void RendererBase::update_object_data(Core::Scene *const scene)
 {
     PROFILING_EVENT()
 
@@ -109,7 +109,7 @@ void Renderer::update_object_data(Core::Scene *const scene)
             {
                 meshes.push_back(it->second);
             }
-            scene->set_meshes(meshes);
+            Core::set_meshes(scene, meshes);
         }
 
         unsigned int mesh_idx = 0;
@@ -148,11 +148,11 @@ void Renderer::update_object_data(Core::Scene *const scene)
                         upload_geometry_data(g);
 
                         // Object material setup
-                        Core::Material *mat = m->get_material(g->get_material_ID());
+                        Core::IMaterial *mat = m->get_material(g->get_material_ID());
                         if (mat)
                             upload_material_textures(mat);
                         else
-                            upload_material_textures(Core::Material::DEBUG_MATERIAL);
+                            upload_material_textures(Core::IMaterial::DEBUG_MATERIAL);
 
                         // ObjectUniforms materialData;
                         Graphics::MaterialUniforms materialData = mat->get_uniforms();
@@ -168,18 +168,20 @@ void Renderer::update_object_data(Core::Scene *const scene)
     }
 }
 
-void Renderer::upload_material_textures(Core::Material *const mat)
+void RendererBase::upload_material_textures(Core::IMaterial *const mat)
 {
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
-        Core::Texture *texture = pair.second;
+        Core::TextureBase *texture = pair.second;
         if (texture && texture->data_loaded())
         {
             if (!texture->is_buffer_loaded())
             {
-
-                m_context.upload_texture_image(get_image(texture), texture->get_settings().useMipmaps);
+                void *imgCache{nullptr};
+                texture->get_image_cache(imgCache);
+                m_context.upload_texture_image(imgCache, texture->get_bytes_per_pixel(), get_image(texture),
+                                               texture->get_settings().useMipmaps);
 
                 m_deletionQueue.push_function(
                     [=]() { get_image(texture)->cleanup(m_context.device, m_context.memory); });
@@ -188,7 +190,7 @@ void Renderer::upload_material_textures(Core::Material *const mat)
     }
 }
 
-void Renderer::upload_geometry_data(Core::Geometry *const g)
+void RendererBase::upload_geometry_data(Core::Geometry *const g)
 {
     PROFILING_EVENT()
     Core::RenderData *rd = get_render_data(g);
@@ -199,8 +201,8 @@ void Renderer::upload_geometry_data(Core::Geometry *const g)
         size_t vboSize = sizeof(gd->vertexData[0]) * gd->vertexData.size();
         size_t iboSize = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
 
-        m_context.upload_geometry(rd->vbo, vboSize, gd->vertexData.data(), rd->ibo, iboSize, gd->vertexIndex.data(),
-                                  g->indexed());
+        m_context.upload_vertex_arrays(rd->vbo, vboSize, gd->vertexData.data(), rd->ibo, iboSize,
+                                       gd->vertexIndex.data(), g->indexed());
 
         rd->indexCount = gd->vertexIndex.size();
         rd->vertexCount = gd->vertexIndex.size();
@@ -208,7 +210,7 @@ void Renderer::upload_geometry_data(Core::Geometry *const g)
     }
 }
 
-void Renderer::init_resources()
+void RendererBase::init_resources()
 {
     for (size_t i = 0; i < m_context.frames.size(); i++)
     {
@@ -232,15 +234,17 @@ void Renderer::init_resources()
     }
 
     // Setup dummy texture in case materials dont have textures
-    Core::Texture::DEBUG_TEXTURE = new Core::Texture();
     unsigned char texture_data[4] = {0, 0, 0, 0};
-    Core::Texture::DEBUG_TEXTURE->set_image_cache(texture_data, {2, 2}, 4);
+    Core::Texture::DEBUG_TEXTURE = new Core::Texture(texture_data,{2,2,1},4);
     Core::Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 
-    m_context.upload_texture_image(get_image(Core::Texture::DEBUG_TEXTURE), false);
+    void *imgCache{nullptr};
+    Core::Texture::DEBUG_TEXTURE->get_image_cache(imgCache);
+    m_context.upload_texture_image(imgCache, Core::Texture::DEBUG_TEXTURE->get_bytes_per_pixel(),
+                                   get_image(Core::Texture::DEBUG_TEXTURE), false);
 }
 
-void Renderer::clean_Resources()
+void RendererBase::clean_Resources()
 {
     for (size_t i = 0; i < m_context.frames.size(); i++)
     {

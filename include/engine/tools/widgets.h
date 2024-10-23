@@ -23,6 +23,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Tools
+{
+
 class GUIOverlay;
 
 class Panel;
@@ -43,6 +46,14 @@ class Widget
   public:
     Widget(ImVec2 pos, ImVec2 extent) : m_position(pos), m_extent(extent)
     {
+    }
+    ~Widget()
+    {
+        for (Widget *child : m_children)
+        {
+            delete child;
+        }
+        m_children.clear();
     }
 
     virtual inline void add_child(Widget *w)
@@ -103,7 +114,6 @@ class Panel : public Widget
 
     virtual void render()
     {
-      
     }
     virtual void render(ImVec2 extent);
 
@@ -339,7 +349,7 @@ class ObjectExplorerWidget : public Widget
         m_object = obj;
     }
 };
-
+} // namespace Tools
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

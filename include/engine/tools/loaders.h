@@ -10,17 +10,21 @@
 #define LOADERS_H
 
 #include <chrono>
-#include <engine/core/scene/mesh.h>
-#include <engine/core/textures/texture.h>
 #include <thread>
 #include <tiny_obj_loader.h>
 #include <tinyply.h>
+#include <stb_image.h>
 #include <unordered_map>
+
+#include <engine/core/textures/texture.h>
+#include <engine/core/textures/textureLDR.h>
+#include <engine/core/scene/mesh.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-// Meshes and Textures
-namespace Loaders
+
+// Load functions for several mesh and image files
+namespace Tools::Loaders
 {
 void load_OBJ(Core::Mesh *const mesh, const std::string fileName, bool importMaterials = false,
               bool calculateTangents = false, bool overrideGeometry = false);
@@ -33,21 +37,23 @@ asynchronously
 */
 void load_3D_file(Core::Mesh *const mesh, const std::string fileName, bool asynCall = true,
                   bool overrideGeometry = false);
-
 /*
 Use on .hair files.
 */
 void load_hair(Core::Mesh *const mesh, const char *fileName);
-
 /*
 Load image texture
 */
-void load_texture(Core::Texture *const texture, const std::string fileName, bool asyncCall = true);
+void load_texture(Core::TextureBase *const texture, const std::string fileName, bool asyncCall = true);
+/*
+Load .png file.
+ */
+void load_PNG(Core::TextureLDR *const texture, const std::string fileName);
 
 /*
- */
-void load_PNG(Core::Texture *const texture, const std::string fileName);
-
+Load .hrd
+*/
+void load_HDRi(Core::TextureBase *const texture, const std::string fileName);
 }; // namespace Loaders
 
 VULKAN_ENGINE_NAMESPACE_END
