@@ -97,7 +97,7 @@ layout(location = 0) out vec4 outColor;
 
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
-layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
+// layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
 
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -230,14 +230,14 @@ void main() {
 
      //Ambient occlusion
     float occ = 1.0;
-    if(scene.enableSSAO){
-        if (scene.SSAOType == 0) {
-            occ = texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r;
-        }
-        if (scene.SSAOType == 1){
-            occ = UnsharpSSAO(ssaoMap);
-        }    
-    }
+    // if(scene.enableSSAO){
+    //     if (scene.SSAOType == 0) {
+    //         occ = texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r;
+    //     }
+    //     if (scene.SSAOType == 1){
+    //         occ = UnsharpSSAO(ssaoMap);
+    //     }    
+    // }
 
     if(!scene.emphasizeAO){
         color += ambient*occ;

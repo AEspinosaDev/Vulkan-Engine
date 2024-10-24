@@ -17,7 +17,6 @@
 #include <unordered_map>
 
 #include <engine/core/textures/texture.h>
-#include <engine/core/textures/textureLDR.h>
 #include <engine/core/scene/mesh.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -44,16 +43,16 @@ void load_hair(Core::Mesh *const mesh, const char *fileName);
 /*
 Load image texture
 */
-void load_texture(Core::TextureBase *const texture, const std::string fileName, bool asyncCall = true);
+void load_texture(Core::Texture *const texture, const std::string fileName, bool asyncCall = true);
 /*
 Load .png file.
  */
-void load_PNG(Core::TextureLDR *const texture, const std::string fileName);
+void load_PNG(Core::Texture *const texture, const std::string fileName);
 
 /*
 Load .hrd
 */
-void load_HDRi(Core::TextureBase *const texture, const std::string fileName);
+void load_HDRi(Core::TextureHDR *const texture, const std::string fileName);
 }; // namespace Loaders
 
 VULKAN_ENGINE_NAMESPACE_END

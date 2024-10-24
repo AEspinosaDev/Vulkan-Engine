@@ -16,17 +16,21 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core
 {
+/*
+Skybox for rendering enviroments and IBL
+*/
 class Skybox : public Object3D
 {
   private:
     Geometry *m_box{nullptr};
-    TextureBase *m_env{nullptr};
+    TextureHDR *m_env{nullptr};
 
     Graphics::Image m_envCubemap;
     Graphics::Image m_irrCubemap;
 
     float m_blurriness{0.0f};
     float m_intensity{1.0f};
+    bool m_updateEnviroment{true};
 
     static int m_instanceCount;
 
@@ -34,24 +38,29 @@ class Skybox : public Object3D
     friend Graphics::Image *const get_irr_cubemap(Skybox *skb);
 
   public:
-    Skybox(TextureBase *env) : Object3D("Skybox #" + std::to_string(Skybox::m_instanceCount), SKYBOX), m_env(env)
+    Skybox(TextureHDR *env) : Object3D("Skybox #" + std::to_string(Skybox::m_instanceCount), SKYBOX), m_env(env)
     {
         Skybox::m_instanceCount++;
+        m_box = Geometry::create_cube();
     }
     ~Skybox()
     {
         delete m_box;
         delete m_env;
     }
-    TextureBase const *get_enviroment_map() const
+    TextureHDR *const get_enviroment_map() const
     {
         return m_env;
     }
-    TextureBase *set_enviroment_map(TextureBase *env)
+    TextureHDR *set_enviroment_map(TextureHDR *env)
     {
-        TextureBase *oldEnv = m_env;
+        TextureHDR *oldEnv = m_env;
         m_env = env;
         return oldEnv;
+    }
+    Geometry *const get_box() const
+    {
+        return m_box;
     }
     float get_blurriness() const
     {
@@ -69,7 +78,14 @@ class Skybox : public Object3D
     {
         m_intensity = i;
     }
-    
+    bool update_enviroment() const
+    {
+        return m_updateEnviroment;
+    }
+    void set_update_enviroment(bool i)
+    {
+       m_updateEnviroment = i;
+    }
 };
 
 Graphics::Image *const get_env_cubemap(Skybox *skb);

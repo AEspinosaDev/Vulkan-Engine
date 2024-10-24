@@ -27,7 +27,7 @@ class Scene : public Object3D
     std::vector<Camera *> m_cameras;
     std::vector<Mesh *> m_meshes;
     std::vector<Light *> m_lights;
-    Skybox *m_skybox;
+    Skybox *m_skybox{nullptr};
 
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
     float m_ambientIntensity{0.005f};
@@ -116,7 +116,7 @@ class Scene : public Object3D
     {
         return m_lights;
     }
-    inline const Skybox *const get_skybox() const
+    inline Skybox *const get_skybox() const
     {
         return m_skybox;
     }

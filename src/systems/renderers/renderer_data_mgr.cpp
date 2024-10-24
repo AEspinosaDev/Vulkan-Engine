@@ -76,6 +76,28 @@ void RendererBase::update_global_data(Core::Scene *const scene)
     m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(
         m_context.memory, &sceneParams, sizeof(Graphics::SceneUniforms),
         Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_context.gpu));
+
+    /*
+    SKYBOX MESH AND TEXTURE UPLOAD
+    */
+    Core::Skybox *const skybox = scene->get_skybox();
+    if (skybox)
+    {
+        upload_geometry_data(skybox->get_box());
+        Core::TextureHDR *envMap = skybox->get_enviroment_map();
+        if (envMap && envMap->data_loaded())
+        {
+            if (!envMap->is_buffer_loaded())
+            {
+                void *imgCache{nullptr};
+                envMap->get_image_cache(imgCache);
+                m_context.upload_texture_image(imgCache, envMap->get_bytes_per_pixel(), get_image(envMap), false);
+
+                m_deletionQueue.push_function(
+                    [=]() { get_image(envMap)->cleanup(m_context.device, m_context.memory); });
+            }
+        }
+    }
 }
 void RendererBase::update_object_data(Core::Scene *const scene)
 {
@@ -173,7 +195,7 @@ void RendererBase::upload_material_textures(Core::IMaterial *const mat)
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
-        Core::TextureBase *texture = pair.second;
+        Core::Texture *texture = pair.second;
         if (texture && texture->data_loaded())
         {
             if (!texture->is_buffer_loaded())
@@ -208,6 +230,13 @@ void RendererBase::upload_geometry_data(Core::Geometry *const g)
         rd->vertexCount = gd->vertexIndex.size();
         rd->loadedOnGPU = true;
     }
+
+    /*
+    TO DO
+
+    Upload vulkn RT ACCELERAITON STRUCTURES
+
+    */
 }
 
 void RendererBase::init_resources()
@@ -235,7 +264,7 @@ void RendererBase::init_resources()
 
     // Setup dummy texture in case materials dont have textures
     unsigned char texture_data[4] = {0, 0, 0, 0};
-    Core::Texture::DEBUG_TEXTURE = new Core::Texture(texture_data,{2,2,1},4);
+    Core::Texture::DEBUG_TEXTURE = new Core::Texture(texture_data, {2, 2, 1}, 4);
     Core::Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
 
     void *imgCache{nullptr};

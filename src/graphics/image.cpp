@@ -13,8 +13,9 @@ void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsag
     config.mipLevels =
         useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
 
-    VkImageCreateInfo img_info = init::image_create_info(config.format, config.usageFlags, extent, config.mipLevels,
-                                                         config.samples, config.layers);
+    VkImageCreateInfo img_info = init::image_create_info(
+        config.format, config.usageFlags, extent, config.mipLevels, config.samples, config.layers,
+        viewConfig.viewType == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
 
     vmaCreateImage(memory, &img_info, &img_allocinfo, &handle, &allocation, nullptr);
 
@@ -178,5 +179,5 @@ void Image::cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler)
         vkDestroySampler(device, sampler, VK_NULL_HANDLE);
 }
 
-} // namespace render
+} // namespace Graphics
 VULKAN_ENGINE_NAMESPACE_END

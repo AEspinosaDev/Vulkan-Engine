@@ -24,6 +24,11 @@ void ForwardRenderer::setup_renderpasses()
     const uint32_t SHADOW_RES = (uint32_t)m_settings2.shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
+    // Panorama Converter Pass
+    Core::PanroramaConverterPass *converterPass =
+        new Core::PanroramaConverterPass(&m_context, {2048, 2048}, m_vignette);
+    m_renderPipeline.push_renderpass(converterPass);
+
     // Shadow Pass
     Core::ShadowPass *shadowPass = new Core::ShadowPass(&m_context, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight,
                                                         VK_MAX_LIGHTS, m_settings.depthFormat);
@@ -33,7 +38,7 @@ void ForwardRenderer::setup_renderpasses()
     Core::ForwardPass *forwardPass =
         new Core::ForwardPass(&m_context, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat,
                               m_settings.depthFormat, m_settings.samplesMSAA, m_settings2.fxaa ? false : true);
-    forwardPass->set_image_dependace_table({{SHADOW, {0}}});
+    forwardPass->set_image_dependace_table({{SHADOW, {0}}, {PANORAMA_CONVERTER, {0}}});
     m_renderPipeline.push_renderpass(forwardPass);
 
     // FXAA Pass

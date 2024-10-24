@@ -271,6 +271,19 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["hair"]->settings.samples = samples;
     m_shaderPasses["hair"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
+    m_shaderPasses["skybox"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/skybox.glsl");
+    m_shaderPasses["skybox"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                                 {DescriptorLayoutType::OBJECT_LAYOUT, false},
+                                                                 {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["skybox"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                     {VertexAttributeType::NORMAL, false},
+                                                     {VertexAttributeType::UV, false},
+                                                     {VertexAttributeType::TANGENT, false},
+                                                     {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["skybox"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["skybox"]->settings.samples = samples;
+    m_shaderPasses["skybox"]->settings.blendAttachments = blendAttachments;
+
     for (auto pair : m_shaderPasses)
     {
         ShaderPass *pass = pair.second;
@@ -353,10 +366,26 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
             }
             mesh_idx++;
         }
+        // Skybox
+        if (scene->get_skybox())
+        {
+            ShaderPass *shaderPass = m_shaderPasses["skybox"];
+
+            // Bind pipeline
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+
+            // GLOBAL LAYOUT BINDING
+            uint32_t globalOffsets[] = {0, 0};
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
+                                    &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
+
+            draw(cmd, scene->get_skybox()->get_box());
+        }
     }
 
     // Draw gui contents
-    if (m_isDefault && Frame::guiEnabled && ImGui::GetDrawData()){
+    if (m_isDefault && Frame::guiEnabled && ImGui::GetDrawData())
+    {
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
     }
 
@@ -385,6 +414,9 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images)
         m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                                  &m_descriptors[i].globalDescritor, 2);
+        m_descriptorManager.set_descriptor_write(images[1].sampler, images[1].view,
+                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                 &m_descriptors[i].globalDescritor, 3);
     }
 }
 
@@ -397,8 +429,8 @@ void ForwardPass::setup_material_descriptor(IMaterial *mat)
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
-        TextureBase *texture = pair.second;
-        if (texture && texture->data_loaded())
+        Texture *texture = pair.second;
+        if (texture && texture->is_buffer_loaded())
         {
 
             // Set texture write

@@ -4,6 +4,7 @@
 #include <engine/core/renderpasses/forward_pass.h>
 #include <engine/core/renderpasses/fxaa_pass.h>
 #include <engine/core/renderpasses/shadow_pass.h>
+#include <engine/core/renderpasses/panorama_conversion_pass.h>
 #include <engine/systems/renderers/renderer.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -29,9 +30,10 @@ class ForwardRenderer : public RendererBase
 
     enum RenderPasses
     {
-        SHADOW = 0,
-        FORWARD = 1,
-        FXAA = 2
+        PANORAMA_CONVERTER = 0,
+        SHADOW = 1,
+        FORWARD = 2,
+        FXAA = 3
     };
 
     bool m_updateShadows{false};

@@ -165,6 +165,11 @@ void Context::draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint
     }
 }
 
+void Context::draw_empty(VkCommandBuffer &cmd, uint32_t vertexCount, uint32_t instanceCount)
+{
+    PROFILING_EVENT()
+    vkCmdDraw(cmd, vertexCount, instanceCount, 0, 0);
+}
 void Context::upload_vertex_arrays(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
                                    const void *iboData, bool indexed)
 {

@@ -25,11 +25,11 @@ class UnlitMaterial : public IMaterial
 
     bool m_hasColorTexture{false};
 
-    std::unordered_map<int, TextureBase *> m_textures;
+    std::unordered_map<int, Texture *> m_textures;
     std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, TextureBase *> get_textures() const
+    virtual inline std::unordered_map<int, Texture *> get_textures() const
     {
         return m_textures;
     }
@@ -72,12 +72,12 @@ class UnlitMaterial : public IMaterial
     }
 
     // Texture must have A channel reserved for OPACITY
-    inline void set_color_texture(TextureBase *t)
+    inline void set_color_texture(Texture *t)
     {
         m_textures[0] = t;
         m_isDirty = true;
     }
-    inline TextureBase *get_color_texture()
+    inline Texture *get_color_texture()
     {
         return m_textures[0];
     }

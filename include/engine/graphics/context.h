@@ -83,6 +83,8 @@ struct Context
     static void draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint32_t vertexCount, uint32_t indexCount,
                               bool indexed, uint32_t instanceCount = 1, uint32_t firstOcurrence = 0, int32_t offset = 0,
                               uint32_t firstInstance = 0);
+
+    static void draw_empty(VkCommandBuffer &cmd, uint32_t vertexCount = 0, uint32_t instanceCount = 1);
     /*
     DATA TRANSFER
     -----------------------------------------------

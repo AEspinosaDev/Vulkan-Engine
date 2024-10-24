@@ -14,7 +14,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core
 {
-
+/*
+Postprocess pass for antialasing final image using FXAA technique
+*/
 class FXAAPass : public RenderPass
 {
     ColorFormatType m_colorFormat;

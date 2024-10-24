@@ -36,7 +36,8 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 
     auto attributeDescriptions =
-        utils::Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::NORMAL],
+        utils::Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::POSITION],
+                                                shaderPass.settings.attributes[VertexAttributeType::NORMAL],
                                                 shaderPass.settings.attributes[VertexAttributeType::TANGENT],
                                                 shaderPass.settings.attributes[VertexAttributeType::UV],
                                                 shaderPass.settings.attributes[VertexAttributeType::COLOR]);
@@ -279,6 +280,6 @@ void ShaderPass::cleanup(VkDevice &device)
     vkDestroyPipeline(device, pipeline, nullptr);
 }
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -9,7 +9,7 @@
 #ifndef FORWARD_PASS_H
 #define FORWARD_PASS_H
 #include <engine/core/renderpasses/renderpass.h>
-#include <engine/core/textures/textureLDR.h>
+#include <engine/core/textures/texture.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

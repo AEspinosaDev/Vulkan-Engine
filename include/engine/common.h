@@ -57,13 +57,17 @@
 	#define PROFILING_FRAME() 
 #endif
 
+#define _LOG(msg)                                                                                                 \
+    {                                                                                                                  \
+        std::cout << "VKEngine log: " << msg << std::endl;                                                                                 \
+    }
 #define DEBUG_LOG(msg)                                                                                                 \
     {                                                                                                                  \
-        std::cout << msg << std::endl;                                                                                 \
+        std::cout << "VKEngine debug: " << msg << std::endl;                                                                                 \
     }
 #define ERR_LOG(msg)                                                                                                   \
     {                                                                                                                  \
-        std::cerr << msg << std::endl;                                                                                 \
+        std::cerr << "VKEngine error: " << msg << std::endl;                                                                                 \
     }
 #define VK_CHECK(x)                                                                                                    \
     do                                                                                                                 \
@@ -71,7 +75,7 @@
         VkResult err = x;                                                                                              \
         if (err)                                                                                                       \
         {                                                                                                              \
-            std::cout << "Detected Vulkan error: " << err << std::endl;                                                \
+            std::cout << "VKEngine detected a Vulkan error: " << err << std::endl;                                                \
             abort();                                                                                                   \
         }                                                                                                              \
     } while (0)

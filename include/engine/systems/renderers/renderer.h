@@ -23,7 +23,6 @@
 #include <engine/core/materials/material.h>
 #include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
-#include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
 
@@ -81,11 +80,10 @@ class RendererBase
 {
 #pragma region Properties
   protected:
-    RendererSettings m_settings{};
-
     Graphics::Context m_context{};
     Core::WindowBase *m_window;
 
+    RendererSettings m_settings{};
     RenderPipeline m_renderPipeline;
 
     Graphics::utils::DeletionQueue m_deletionQueue;
@@ -184,6 +182,10 @@ class RendererBase
 #pragma region Core Functions
   protected:
     /*
+     Init renderpasses and create framebuffers and image resources attached to them
+     */
+    virtual void setup_renderpasses() = 0;
+    /*
     What to do when instancing the renderer
     */
     virtual void on_instance()
@@ -209,10 +211,6 @@ class RendererBase
     virtual void on_shutdown(Core::Scene *const scene)
     {
     }
-    /*
-    Init renderpasses and create framebuffers and image resources attached to them
-    */
-    virtual void setup_renderpasses() = 0;
     /*
     Link images of previous passes to current pass
     */

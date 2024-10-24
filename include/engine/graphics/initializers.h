@@ -69,7 +69,7 @@ VkWriteDescriptorSet write_descriptor_buffer(VkDescriptorType type, VkDescriptor
 
 VkImageCreateInfo image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent,
                                     uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
-                                    uint32_t layers = 1);
+                                    uint32_t layers = 1, VkImageCreateFlags flags = {});
 
 VkImageViewCreateInfo imageview_create_info(VkFormat format, VkImage image, VkImageViewType viewType,
                                             VkImageAspectFlags aspectFlags, uint32_t mipLevels = 1,

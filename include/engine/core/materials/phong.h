@@ -39,12 +39,12 @@ class PhongMaterial : public IMaterial
         GLOSSINESS = 2,
         SHININESS = 3,
     };
-    std::unordered_map<int, TextureBase *> m_textures{
+    std::unordered_map<int, Texture *> m_textures{
         {ALBEDO, nullptr}, {NORMAL, nullptr}, {GLOSSINESS, nullptr}, {SHININESS, nullptr}};
     std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, TextureBase *> get_textures() const
+    virtual inline std::unordered_map<int, Texture *> get_textures() const
     {
         return m_textures;
     }
@@ -106,11 +106,11 @@ class PhongMaterial : public IMaterial
         m_isDirty = true;
     }
     // Texture must have A channel reserved for OPACITY
-    inline TextureBase *get_color_texture()
+    inline Texture *get_color_texture()
     {
         return m_textures[ALBEDO];
     }
-    inline void set_color_texture(TextureBase *t)
+    inline void set_color_texture(Texture *t)
     {
         m_hasColorTexture = t ? true : false;
         m_textureBindingState[ALBEDO] = false;
@@ -118,11 +118,11 @@ class PhongMaterial : public IMaterial
         m_isDirty = true;
     }
 
-    inline TextureBase *get_normal_texture()
+    inline Texture *get_normal_texture()
     {
         return m_textures[NORMAL];
     }
-    inline void set_normal_texture(TextureBase *t)
+    inline void set_normal_texture(Texture *t)
     {
         m_hasNormalTexture = t ? true : false;
         m_textureBindingState[NORMAL] = false;
@@ -130,22 +130,22 @@ class PhongMaterial : public IMaterial
         m_isDirty = true;
     }
 
-    inline TextureBase *get_glossiness_texture()
+    inline Texture *get_glossiness_texture()
     {
         return m_textures[GLOSSINESS];
     }
-    inline void set_glossiness_texture(TextureBase *t)
+    inline void set_glossiness_texture(Texture *t)
     {
         m_hasGlossinessTexture = t ? true : false;
         m_textureBindingState[GLOSSINESS] = false;
         m_textures[GLOSSINESS] = t;
         m_isDirty = true;
     }
-    inline TextureBase *get_shininess_texture()
+    inline Texture *get_shininess_texture()
     {
         return m_textures[SHININESS];
     }
-    inline void set_shininess_texture(TextureBase *t)
+    inline void set_shininess_texture(Texture *t)
     {
         m_hasGlossinessTexture = t ? true : false;
         m_textureBindingState[SHININESS] = false;

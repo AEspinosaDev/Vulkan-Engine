@@ -291,12 +291,14 @@ VkWriteDescriptorSet init::write_descriptor_buffer(VkDescriptorType type, VkDesc
 }
 
 VkImageCreateInfo init::image_create_info(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent,
-                                          uint32_t mipLevels, VkSampleCountFlagBits samples, uint32_t layers)
+                                          uint32_t mipLevels, VkSampleCountFlagBits samples, uint32_t layers,
+                                          VkImageCreateFlags flags)
 {
 
     VkImageCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext = nullptr;
+    info.flags = flags;
 
     info.imageType = VK_IMAGE_TYPE_2D;
 
@@ -393,6 +395,6 @@ VkViewport init::viewport(VkExtent2D extent, float minDepth, float maxDepth, flo
     return viewport;
 }
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -68,6 +68,7 @@ void RenderPass::create_framebuffer()
         {
             m_attachments[i].image.extent = {m_extent.width, m_extent.height, 1};
             m_attachments[i].image.config.layers = m_framebufferImageDepth;
+            
             m_attachments[i].image.init(m_context->memory, false);
 
             m_attachments[i].image.create_view(m_context->device);

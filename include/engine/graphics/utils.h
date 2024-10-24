@@ -93,20 +93,19 @@ struct Vertex
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         return bindingDescription;
     }
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(bool normal = true,
-                                                                                   bool tangent = true,
-                                                                                   bool texCoord = true,
-                                                                                   bool color = true)
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(
+        bool position = true, bool normal = true, bool tangent = true, bool texCoord = true, bool color = true)
     {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-
-        VkVertexInputAttributeDescription posAtt{};
-        posAtt.binding = 0;
-        posAtt.location = 0;
-        posAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
-        posAtt.offset = offsetof(Vertex, pos);
-        attributeDescriptions.push_back(posAtt);
-
+        if (position)
+        {
+            VkVertexInputAttributeDescription posAtt{};
+            posAtt.binding = 0;
+            posAtt.location = 0;
+            posAtt.format = VK_FORMAT_R32G32B32_SFLOAT;
+            posAtt.offset = offsetof(Vertex, pos);
+            attributeDescriptions.push_back(posAtt);
+        }
         if (normal)
         {
             VkVertexInputAttributeDescription normalAtt{};
@@ -322,7 +321,7 @@ template <typename T, typename... Rest> void hash_combine(std::size_t &seed, con
 }
 
 }; // namespace utils
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 

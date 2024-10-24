@@ -705,21 +705,21 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     mesh->set_file_route(std::string(fileName));
 }
 
-void VKFW::Tools::Loaders::load_texture(Core::TextureBase *const texture, const std::string fileName, bool asyncCall)
+void VKFW::Tools::Loaders::load_texture(Core::Texture *const texture, const std::string fileName, bool asyncCall)
 {
-    //For now simplified ...
+    // For now simplified ...
     if (asyncCall)
     {
-        std::thread loadThread(Loaders::load_PNG, static_cast<Core::TextureLDR *>(texture), fileName);
+        std::thread loadThread(Loaders::load_PNG, texture, fileName);
         loadThread.detach();
     }
     else
     {
-        load_PNG(static_cast<Core::TextureLDR *>(texture), fileName);
+        load_PNG(texture, fileName);
     }
 }
 
-void VKFW::Tools::Loaders::load_PNG(Core::TextureLDR *const texture, const std::string fileName)
+void VKFW::Tools::Loaders::load_PNG(Core::Texture *const texture, const std::string fileName)
 {
     int w, h, ch;
     unsigned char *imgCache = nullptr;
@@ -741,23 +741,23 @@ void VKFW::Tools::Loaders::load_PNG(Core::TextureLDR *const texture, const std::
 #endif // DEBUG
 }
 
-void VKFW::Tools::Loaders::load_HDRi(Core::TextureBase *const texture, const std::string fileName)
+void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR *const texture, const std::string fileName)
 {
     int w, h, ch;
     float *HDRcache = nullptr;
-    HDRcache = stbi_loadf(fileName.c_str(), &w, &h, &ch, STBI_default);
+    HDRcache = stbi_loadf(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
     if (HDRcache)
     {
-        // texture->set_image_cache(HDRcache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h)}, ch);
+        texture->set_image_cache(HDRcache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
     }
     else
     {
 #ifndef NDEBUG
-        DEBUG_LOG("Failed to load texture PNG file" + fileName);
+        DEBUG_LOG("Failed to load texture HDRi file" + fileName);
 #endif
         return;
     };
 #ifndef NDEBUG
-    DEBUG_LOG("PNG Texture loaded successfully");
+    DEBUG_LOG("HDRi Texture loaded successfully");
 #endif // DEBUG
 }

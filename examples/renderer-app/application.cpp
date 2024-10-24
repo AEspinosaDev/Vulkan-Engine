@@ -336,7 +336,14 @@ void VulkanRenderer::setup()
     stoneMat->set_roughness(0.9f);
     m_scene->add(stoneMesh);
 
+
+
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
+
+    TextureHDR* envMap = new TextureHDR();
+    Tools::Loaders::load_HDRi(envMap, TEXTURE_PATH + "night.hdr"); 
+    Skybox* sky = new Skybox(envMap);
+    m_scene->add(sky);
 
     m_controller = new Tools::Controller(camera, m_window);
 }

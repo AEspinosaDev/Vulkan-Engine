@@ -98,6 +98,20 @@ void RendererBase::shutdown(Core::Scene *const scene)
                 }
             }
 
+        if (scene->get_skybox())
+        {
+            Core::Geometry *g = scene->get_skybox()->get_box();
+            Core::RenderData *rd = get_render_data(g);
+            if (rd->loadedOnGPU)
+            {
+                rd->vbo.cleanup(m_context.memory);
+                if (g->indexed())
+                    rd->ibo.cleanup(m_context.memory);
+
+                rd->loadedOnGPU = false;
+            }
+        }
+
         for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
         {
             pass->clean_framebuffer();
