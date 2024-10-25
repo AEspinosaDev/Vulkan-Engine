@@ -8,11 +8,6 @@ layout(location = 0) out vec2 texCoord;
 
 void main() 
 {
-//    float x = float((gl_VertexIndex & 1) << 2);
-//    float y = float((gl_VertexIndex & 2) << 1);
-//    texCoord.x = x * 0.5;
-//    texCoord.y = y * 0.5;
-//    gl_Position = vec4(x - 1.0, y - 1.0, 0, 1);
  	gl_Position = vec4(pos, 1.0);
     texCoord = uv;
 }
@@ -39,26 +34,8 @@ void main() {
             otexCoord = texCoord[i];
             EmitVertex(); 
         }
-        EndPrimitive(); // End the first triangle
+        EndPrimitive(); 
 
-        
-        // for (int i = 0; i < 3; i++) {
-        //     gl_Position = gl_in[i + 1].gl_Position; 
-        //     oTexCoord = texCoord[i + 1]; 
-        //     EmitVertex(); 
-        // }
-
-        // gl_Position = gl_in[0].gl_Position; 
-		// otexCoord = texCoord[0];
-        // EmitVertex();
-        
-        // gl_Position = gl_in[1].gl_Position; 
-		// otexCoord = texCoord[1];
-        // EmitVertex();
-        
-        // gl_Position = gl_in[2].gl_Position; 
-		// otexCoord = texCoord[2];
-        // EmitVertex();
 
         EndPrimitive();
       
@@ -68,6 +45,7 @@ void main() {
 
 #shader fragment
 #version 460 core
+#include reindhart.glsl
 
 #define MATH_PI 3.1415926535897932384626433832795
 #define MATH_INV_PI (1.0 / MATH_PI)
@@ -123,9 +101,7 @@ void main(void)
 {
     fragmentColor = vec4(0.0, 0.0, 0.0, 1.0);
     vec3 color =panoramaToCubeMap(gl_Layer, otexCoord);
-    color = color / (color + vec3(1.0));
-    const float GAMMA = 2.2;
-    color = pow(color, vec3(1.0 / GAMMA));
+    // color = reindhart(color); No need for gamma correction as color format is already HDR
 
 	fragmentColor.rgb = color;
 }

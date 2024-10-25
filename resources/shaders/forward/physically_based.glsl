@@ -82,6 +82,7 @@ void main() {
 #include schlick_ggx.glsl
 #include utils.glsl
 #include ssao.glsl
+#include reindhart.glsl
 
 //Input
 layout(location = 0) in vec3 v_pos;
@@ -245,8 +246,6 @@ void main() {
         color*=occ;
     }
 
-	//Tone Up
-    color = color / (color + vec3(1.0));
     
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
         float f = computeFog();
@@ -256,8 +255,8 @@ void main() {
     outColor = vec4(color, material.blending ? g_opacity: 1.0);
 
 
-    float gamma = 2.2;
-    outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+	outColor.rgb = reindhart(color);
+    
 
     if(v_selected == 1){
         outColor.rgb *= vec3(0.9,0.5,0.0);
