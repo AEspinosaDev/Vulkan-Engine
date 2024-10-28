@@ -1,28 +1,55 @@
 #shader vertex
 #version 460 core
 
-layout (location = 0) in vec3 pos;
-
-out vec3 _pos;
-
-uniform mat4 u_proj;
-uniform mat4 u_view;
+layout(location = 0) in vec3 pos;
 
 void main()
 {
-    _pos = pos;  
-    gl_Position =  u_proj * u_view * vec4(_pos, 1.0);
+    gl_Position = vec4(pos, 1.0);
+}
+
+#shader geometry
+#version 460
+
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 18) out; 
+
+layout(set = 0, binding = 1) uniform CaptureData{
+    mat4 proj;
+	mat4 views[6];
+} capture;
+
+layout(location = 0) out vec3 _pos;
+
+
+void main() {
+
+    //Generate view array, and choose one on the array
+
+    for(int i = 0; i < 6; i++) {
+
+        gl_Layer = i;
+		
+        for (int j = 0; j < 3; j++) {
+            _pos = (capture.proj * capture.views[i] * gl_in[j].gl_Position).xyz; 
+            gl_Position = vec4(_pos,1.0);
+            EmitVertex(); 
+        }
+        EndPrimitive(); 
+
+    }
 }
 
 #shader fragment
- #version 460 core
+#version 460 core
 
-    #define PI 3.1415926535897932384626433832795
+#define PI 3.1415926535897932384626433832795
 
-    in vec3 _pos;
-	out vec4 li;
+layout(location = 0) in vec3 _pos;
 
-    uniform samplerCube u_envMap;
+layout(location = 0) out vec4 li;
+
+layout(set = 0, binding = 0) uniform samplerCube u_envMap;
 
 
 void main()

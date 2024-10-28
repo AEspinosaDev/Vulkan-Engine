@@ -92,7 +92,11 @@ struct Context
     void upload_vertex_arrays(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
                               const void *iboData, bool indexed);
 
+    void destroy_vertex_arrays(Buffer &vbo, Buffer &ibo, bool indexed);
+
     void upload_texture_image(const void *imgCache, size_t bytesPerPixel, Image *const img, bool mipmapping);
+
+    void destroy_texture_image(Image *const img);
 
     /*
     MISC

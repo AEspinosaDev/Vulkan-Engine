@@ -1,11 +1,11 @@
-#include <engine/core/renderpasses/panorama_conversion_pass.h>
+#include <engine/core/renderpasses/irradiance_compute_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core
 {
 
-void PanoramaConverterPass::init()
+void IrrandianceComputePass::init()
 {
 
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
@@ -68,7 +68,7 @@ void PanoramaConverterPass::init()
 
     m_initiatized = true;
 }
-void PanoramaConverterPass::create_descriptors()
+void IrrandianceComputePass::create_descriptors()
 {
     // Init and configure local descriptors
     m_descriptorManager.init(m_context->device);
@@ -76,19 +76,21 @@ void PanoramaConverterPass::create_descriptors()
 
     VkDescriptorSetLayoutBinding panoramaTextureBinding =
         init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding bindings[] = {panoramaTextureBinding};
-    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 1);
+    VkDescriptorSetLayoutBinding auxBufferBinding =
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_GEOMETRY_BIT, 1);
+    VkDescriptorSetLayoutBinding bindings[] = {panoramaTextureBinding, auxBufferBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
-    m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_panoramaDescriptorSet);
+    m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_captureDescriptorSet);
 }
-void PanoramaConverterPass::create_graphic_pipelines()
+void IrrandianceComputePass::create_graphic_pipelines()
 {
 
-    ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/panorama_converter.glsl");
+    ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/irradiance_compute.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
     converterPass->settings.attributes = {{VertexAttributeType::POSITION, true},
                                           {VertexAttributeType::NORMAL, false},
-                                          {VertexAttributeType::UV, true},
+                                          {VertexAttributeType::UV, false},
                                           {VertexAttributeType::TANGENT, false},
                                           {VertexAttributeType::COLOR, false}};
 
@@ -96,10 +98,10 @@ void PanoramaConverterPass::create_graphic_pipelines()
 
     ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *converterPass);
 
-    m_shaderPasses["converter"] = converterPass;
+    m_shaderPasses["irr"] = converterPass;
 }
 
-void PanoramaConverterPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
+void IrrandianceComputePass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
 
     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
@@ -113,41 +115,53 @@ void PanoramaConverterPass::render(uint32_t frameIndex, Scene *const scene, uint
     scissor.extent = m_extent;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    ShaderPass *shaderPass = m_shaderPasses["converter"];
+    ShaderPass *shaderPass = m_shaderPasses["irr"];
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
-                            &m_panoramaDescriptorSet.handle, 0, VK_NULL_HANDLE);
+                            &m_captureDescriptorSet.handle, 0, VK_NULL_HANDLE);
 
-    Geometry *g = m_vignette->get_geometry();
-    draw(cmd, g);
+    draw(cmd, scene->get_skybox()->get_box());
 
     end(cmd);
-
-
 }
 
-void PanoramaConverterPass::upload_data(uint32_t frameIndex, Scene *const scene)
+void IrrandianceComputePass::upload_data(uint32_t frameIndex, Scene *const scene)
 {
-    if (!scene->get_skybox())
-        return;
-    TextureHDR *envMap = scene->get_skybox()->get_enviroment_map();
-    if (envMap && envMap->loaded_on_GPU())
+    struct CaptureData
     {
+        Mat4 proj{math::perspective(math::radians(90.0f), 1.0f, 0.1f, 10.0f)};
+        Mat4 views[CUBEMAP_FACES] = {
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(1.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f)),
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(-1.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f)),
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, 1.0f, 0.0f), math::vec3(0.0f, 0.0f, 1.0f)),
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f), math::vec3(0.0f, 0.0f, -1.0f)),
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, 0.0f, 1.0f), math::vec3(0.0f, -1.0f, 0.0f)),
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, 0.0f, -1.0f), math::vec3(0.0f, -1.0f, 0.0f))};
+    };
 
-        if (m_panoramaDescriptorSet.bindings == 0 || envMap->is_dirty())
-        {
-            m_descriptorManager.set_descriptor_write(get_image(envMap)->sampler, get_image(envMap)->view,
-                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_panoramaDescriptorSet,
-                                                     0);
-            envMap->set_dirty(false);
-        }
-    }
+    CaptureData capture{};
+
+    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(CaptureData), m_context->gpu);
+    m_captureBuffer.init(m_context->memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                         VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+
+    m_captureBuffer.upload_data(m_context->memory, &capture, sizeof(CaptureData));
+
+    m_descriptorManager.set_descriptor_write(&m_captureBuffer, BUFFER_SIZE, 0, &m_captureDescriptorSet,
+                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
 }
-void PanoramaConverterPass::connect_to_previous_images(std::vector<Image> images)
+void IrrandianceComputePass::connect_env_cubemap(Graphics::Image env)
 {
+    m_descriptorManager.set_descriptor_write(env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                             &m_captureDescriptorSet, 0);
 }
 
+void IrrandianceComputePass::cleanup()
+{
+    RenderPass::cleanup();
+    m_captureBuffer.cleanup(m_context->memory);
+}
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

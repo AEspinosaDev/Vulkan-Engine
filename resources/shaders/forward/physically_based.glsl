@@ -144,7 +144,7 @@ float g_ao;
 vec3 computeLighting(LightUniform light) {
 
     //Vector setup
-    vec3 lightDir = light.type == 0 ? normalize(light.position - v_pos) : normalize(light.position);
+    vec3 lightDir = light.type != 1 ? normalize(light.position - v_pos) : normalize(light.data.xyz); //Direction in case of directionlal light
     vec3 viewDir = normalize(-v_pos);
     vec3 halfVector = normalize(lightDir + viewDir); //normalize(viewDir + lightDir);
 

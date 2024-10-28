@@ -62,7 +62,14 @@ struct MaterialUniforms
     Vec4 dataSlot6;
 };
 
-} // namespace render
+struct SkyboxUniforms
+{
+    float blurriness;
+    float intensity;
+    float rotation;
+};
+
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 

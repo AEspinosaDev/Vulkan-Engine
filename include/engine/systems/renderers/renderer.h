@@ -21,8 +21,8 @@
 #include <engine/common.h>
 
 #include <engine/core/materials/material.h>
+#include <engine/core/renderpasses/irradiance_compute_pass.h>
 #include <engine/core/renderpasses/panorama_conversion_pass.h>
-#include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
@@ -69,6 +69,7 @@ struct RenderPipeline
 
     // Auxiliar passes
     Core::PanoramaConverterPass *panoramaConverterPass{nullptr};
+    Core::IrrandianceComputePass *irradianceComputePass{nullptr};
 
     void push_renderpass(Core::RenderPass *pass)
     {
@@ -81,6 +82,28 @@ struct RenderPipeline
             if (pass->is_active())
                 pass->render(frameIndex, scene, presentImageIndex);
         }
+    }
+    void flush()
+    {
+        for (Core::RenderPass *pass : renderpasses)
+        {
+            pass->cleanup();
+        }
+        if (panoramaConverterPass)
+            panoramaConverterPass->cleanup();
+        if (irradianceComputePass)
+            irradianceComputePass->cleanup();
+    }
+    void flush_framebuffers()
+    {
+        for (Core::RenderPass *pass : renderpasses)
+        {
+            pass->clean_framebuffer();
+        }
+        if (panoramaConverterPass)
+            panoramaConverterPass->clean_framebuffer();
+        if (irradianceComputePass)
+            irradianceComputePass->clean_framebuffer();
     }
 };
 
@@ -264,13 +287,19 @@ class BaseRenderer
     */
     virtual void update_object_data(Core::Scene *const scene);
     /*
-    Initialize and setup textures and uniforms in given material
+    Initialize and setup texture IMAGE
     */
-    virtual void upload_material_textures(Core::IMaterial *const mat);
+    void upload_texture_image(Core::ITexture *const t);
+    void destroy_texture_image(Core::ITexture *const t);
     /*
     Upload geometry vertex buffers to the GPU
     */
     void upload_geometry_data(Core::Geometry *const g);
+    void destroy_geometry_data(Core::Geometry *const g);
+    /*
+    Setup skybox
+    */
+    void setup_skybox(Core::Scene *const scene);
 
 #pragma region GUI
     /*

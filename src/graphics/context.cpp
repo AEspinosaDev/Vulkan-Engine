@@ -216,6 +216,12 @@ void Context::upload_vertex_arrays(Buffer &vbo, size_t vboSize, const void *vboD
         iboStagingBuffer.cleanup(memory);
     }
 }
+void Context::destroy_vertex_arrays(Buffer &vbo, Buffer &ibo, bool indexed)
+{
+    vbo.cleanup(memory);
+    if (indexed)
+        ibo.cleanup(memory);
+}
 void Context::upload_texture_image(const void *imgCache, size_t bytesPerPixel, Image *const img, bool mipmapping)
 {
     PROFILING_EVENT()
@@ -262,6 +268,11 @@ void Context::upload_texture_image(const void *imgCache, size_t bytesPerPixel, I
     img->create_sampler(device);
 
     img->loadedOnGPU = true;
+}
+
+void Context::destroy_texture_image(Image *const img)
+{
+    img->cleanup(device, memory);
 }
 
 void Context::wait_for_device()

@@ -80,31 +80,7 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     /*
     SKYBOX MESH AND TEXTURE UPLOAD
     */
-    Core::Skybox *const skybox = scene->get_skybox();
-    if (skybox)
-    {
-        upload_geometry_data(skybox->get_box());
-        Core::TextureHDR *envMap = skybox->get_enviroment_map();
-        if (envMap && envMap->loaded_on_CPU())
-        {
-            if (!envMap->loaded_on_GPU())
-            {
-                void *imgCache{nullptr};
-                envMap->get_image_cache(imgCache);
-                m_context.upload_texture_image(imgCache, envMap->get_bytes_per_pixel(), get_image(envMap), false);
-
-                m_deletionQueue.push_function(
-                    [=]() { get_image(envMap)->cleanup(m_context.device, m_context.memory); });
-
-                // Create Panorama converter pass
-                m_renderPipeline.panoramaConverterPass = new Core::PanoramaConverterPass(
-                    &m_context, {envMap->get_size().height, envMap->get_size().height}, m_vignette);
-                m_renderPipeline.panoramaConverterPass->setup();
-                m_renderPipeline.panoramaConverterPass->upload_data(m_currentFrame, scene);
-                // Create Irradiance coonverter pass
-            }
-        }
-    }
+    setup_skybox(scene);
 }
 void BaseRenderer::update_object_data(Core::Scene *const scene)
 {
@@ -171,10 +147,17 @@ void BaseRenderer::update_object_data(Core::Scene *const scene)
 
                         // Object material setup
                         Core::IMaterial *mat = m->get_material(g->get_material_ID());
+                        if (!mat)
+                            mat = Core::IMaterial::DEBUG_MATERIAL;
                         if (mat)
-                            upload_material_textures(mat);
-                        else
-                            upload_material_textures(Core::IMaterial::DEBUG_MATERIAL);
+                        {
+                            auto textures = mat->get_textures();
+                            for (auto pair : textures)
+                            {
+                                Core::ITexture *texture = pair.second;
+                                upload_texture_image(texture);
+                            }
+                        }
 
                         // ObjectUniforms materialData;
                         Graphics::MaterialUniforms materialData = mat->get_uniforms();
@@ -190,28 +173,24 @@ void BaseRenderer::update_object_data(Core::Scene *const scene)
     }
 }
 
-void BaseRenderer::upload_material_textures(Core::IMaterial *const mat)
+void BaseRenderer::upload_texture_image(Core::ITexture *const t)
 {
-    auto textures = mat->get_textures();
-    for (auto pair : textures)
+    if (t && t->loaded_on_CPU())
     {
-        Core::ITexture *texture = pair.second;
-        if (texture && texture->loaded_on_CPU())
+        if (!t->loaded_on_GPU())
         {
-            if (!texture->loaded_on_GPU())
-            {
-                void *imgCache{nullptr};
-                texture->get_image_cache(imgCache);
-                m_context.upload_texture_image(imgCache, texture->get_bytes_per_pixel(), get_image(texture),
-                                               texture->get_settings().useMipmaps);
-
-                m_deletionQueue.push_function(
-                    [=]() { get_image(texture)->cleanup(m_context.device, m_context.memory); });
-            }
+            void *imgCache{nullptr};
+            t->get_image_cache(imgCache);
+            m_context.upload_texture_image(imgCache, t->get_bytes_per_pixel(), get_image(t),
+                                           t->get_settings().useMipmaps);
         }
     }
 }
-
+void BaseRenderer::destroy_texture_image(Core::ITexture *const t)
+{
+    if (t)
+        m_context.destroy_texture_image(get_image(t));
+}
 void BaseRenderer::upload_geometry_data(Core::Geometry *const g)
 {
     PROFILING_EVENT()
@@ -239,6 +218,56 @@ void BaseRenderer::upload_geometry_data(Core::Geometry *const g)
     */
 }
 
+void BaseRenderer::destroy_geometry_data(Core::Geometry *const g)
+{
+
+    Core::RenderData *rd = get_render_data(g);
+    if (rd->loadedOnGPU)
+    {
+        m_context.destroy_vertex_arrays(rd->vbo, rd->ibo, g->indexed());
+        rd->loadedOnGPU = false;
+    }
+}
+void BaseRenderer::setup_skybox(Core::Scene *const scene)
+{
+    Core::Skybox *const skybox = scene->get_skybox();
+    if (skybox)
+    {
+        if (skybox->update_enviroment())
+        {
+            upload_geometry_data(skybox->get_box());
+            Core::TextureHDR *envMap = skybox->get_enviroment_map();
+            if (envMap && envMap->loaded_on_CPU())
+            {
+                if (!envMap->loaded_on_GPU())
+                {
+                    void *imgCache{nullptr};
+                    envMap->get_image_cache(imgCache);
+                    m_context.upload_texture_image(imgCache, envMap->get_bytes_per_pixel(), get_image(envMap), false);
+                }
+                // Create Panorama converter pass
+                if (m_renderPipeline.panoramaConverterPass)
+                { // If already exists
+                    m_renderPipeline.panoramaConverterPass->cleanup();
+                    m_renderPipeline.irradianceComputePass->cleanup();
+                    m_renderPipeline.panoramaConverterPass->clean_framebuffer();
+                    m_renderPipeline.irradianceComputePass->clean_framebuffer();
+                }
+                m_renderPipeline.panoramaConverterPass = new Core::PanoramaConverterPass(
+                    &m_context, {envMap->get_size().height, envMap->get_size().height}, m_vignette);
+                m_renderPipeline.panoramaConverterPass->setup();
+                m_renderPipeline.panoramaConverterPass->upload_data(m_currentFrame, scene);
+                // Create Irradiance converter pass
+                m_renderPipeline.irradianceComputePass = new Core::IrrandianceComputePass(
+                    &m_context, {envMap->get_size().height, envMap->get_size().height});
+                m_renderPipeline.irradianceComputePass->setup();
+                m_renderPipeline.irradianceComputePass->upload_data(m_currentFrame, scene);
+                m_renderPipeline.irradianceComputePass->connect_env_cubemap(
+                    m_renderPipeline.panoramaConverterPass->get_attachments()[0].image);
+            }
+        }
+    }
+}
 void BaseRenderer::init_resources()
 {
     for (size_t i = 0; i < m_context.frames.size(); i++)
@@ -288,10 +317,9 @@ void BaseRenderer::clean_Resources()
         }
     }
 
-    get_render_data(m_vignette->get_geometry())->vbo.cleanup(m_context.memory);
-    get_render_data(m_vignette->get_geometry())->ibo.cleanup(m_context.memory);
+    destroy_geometry_data(m_vignette->get_geometry());
 
-    get_image(Core::Texture::DEBUG_TEXTURE)->cleanup(m_context.device, m_context.memory);
+    m_context.destroy_texture_image(get_image(Core::Texture::DEBUG_TEXTURE));
 }
 } // namespace Systems
 

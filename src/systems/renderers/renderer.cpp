@@ -37,12 +37,7 @@ void BaseRenderer::init()
         }
     };
 
-    m_deletionQueue.push_function([=]() {
-        for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
-        {
-            pass->cleanup();
-        }
-    });
+    m_deletionQueue.push_function([=]() { m_renderPipeline.flush(); });
 
     if (m_settings.enableUI)
         init_gui();
@@ -82,36 +77,27 @@ void BaseRenderer::shutdown(Core::Scene *const scene)
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
                     Core::Geometry *g = m->get_geometry(i);
-                    Core::RenderData *rd = get_render_data(g);
-                    if (rd->loadedOnGPU)
+                    destroy_geometry_data(g);
+                    Core::IMaterial *mat = m->get_material(g->get_material_ID());
+                    if (mat)
                     {
-                        rd->vbo.cleanup(m_context.memory);
-                        if (g->indexed())
-                            rd->ibo.cleanup(m_context.memory);
-
-                        rd->loadedOnGPU = false;
+                        auto textures = mat->get_textures();
+                        for (auto pair : textures)
+                        {
+                            Core::ITexture *texture = pair.second;
+                            destroy_texture_image(texture);
+                        }
                     }
                 }
             }
 
         if (scene->get_skybox())
         {
-            Core::Geometry *g = scene->get_skybox()->get_box();
-            Core::RenderData *rd = get_render_data(g);
-            if (rd->loadedOnGPU)
-            {
-                rd->vbo.cleanup(m_context.memory);
-                if (g->indexed())
-                    rd->ibo.cleanup(m_context.memory);
-
-                rd->loadedOnGPU = false;
-            }
+            destroy_geometry_data(scene->get_skybox()->get_box());
+            destroy_texture_image(scene->get_skybox()->get_enviroment_map());
         }
 
-        for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
-        {
-            pass->clean_framebuffer();
-        }
+        m_renderPipeline.flush_framebuffers();
 
         m_context.cleanup();
     }
@@ -182,8 +168,14 @@ void BaseRenderer::render(Core::Scene *const scene)
 
     m_context.begin_command_buffer(m_currentFrame);
 
-    m_renderPipeline.panoramaConverterPass->render(m_currentFrame, scene, imageIndex);
-    
+    if (scene->get_skybox())
+        if (scene->get_skybox()->update_enviroment())
+        {
+            m_renderPipeline.panoramaConverterPass->render(m_currentFrame, scene, imageIndex);
+            m_renderPipeline.irradianceComputePass->render(m_currentFrame, scene, imageIndex);
+            scene->get_skybox()->set_update_enviroment(false);
+        }
+
     m_renderPipeline.render(m_currentFrame, scene, imageIndex);
 
     m_context.end_command_buffer(m_currentFrame);

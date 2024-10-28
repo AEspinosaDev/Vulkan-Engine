@@ -80,6 +80,9 @@ struct ShaderPassSettings
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
     };
+
+    // Push Constants
+    std::vector<VkPushConstantRange> pushConstants = {};
 };
 
 struct ShaderPass
@@ -120,7 +123,7 @@ void build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManage
 void build_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent, ShaderPass &shaderPass);
 }; // namespace PipelineBuilder
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

@@ -18,6 +18,12 @@ void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager 
     pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
 
+    if (!pass.settings.pushConstants.empty())
+    {
+        pipelineLayoutInfo.pushConstantRangeCount = pass.settings.pushConstants.size();
+        pipelineLayoutInfo.pPushConstantRanges = pass.settings.pushConstants.data();
+    }
+
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pass.pipelineLayout) != VK_SUCCESS)
     {
         throw new VKException("failed to create pipeline layout!");

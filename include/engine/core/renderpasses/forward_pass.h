@@ -54,7 +54,7 @@ class ForwardPass : public RenderPass
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 
-    void set_envmap_descriptor(Graphics::Image env);
+    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
 };
 
 } // namespace Core

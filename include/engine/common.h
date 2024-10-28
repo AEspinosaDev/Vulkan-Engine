@@ -98,6 +98,8 @@
 #define JPG "jpg"
 #define HAIR "hair"
 
+#define CUBEMAP_FACES 6
+
 /// Simple exception class, which stores a human-readable error description
 class VKException : public std::runtime_error
 {

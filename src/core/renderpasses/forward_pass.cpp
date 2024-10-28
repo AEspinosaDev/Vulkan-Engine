@@ -149,10 +149,13 @@ void ForwardPass::create_descriptors()
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
-    VkDescriptorSetLayoutBinding ssaoBinding = init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // SSAO
-    VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, ssaoBinding};
-    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
+    VkDescriptorSetLayoutBinding envBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // EnvMap
+    VkDescriptorSetLayoutBinding iblBinding = init::descriptorset_layout_binding(
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4); // IrradianceMap
+    VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding,
+                                               iblBinding};
+    m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 5);
 
     // PER-OBJECT SET
     VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(
@@ -283,6 +286,11 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["skybox"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["skybox"]->settings.samples = samples;
     m_shaderPasses["skybox"]->settings.blendAttachments = blendAttachments;
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(Graphics::SkyboxUniforms);
+    m_shaderPasses["skybox"]->settings.pushConstants = {pushConstantRange};
 
     for (auto pair : m_shaderPasses)
     {
@@ -379,6 +387,14 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
                                     &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
 
+            Graphics::SkyboxUniforms sku;
+            sku.blurriness = scene->get_skybox()->get_blurriness();
+            sku.intensity = scene->get_skybox()->get_intensity();
+            sku.rotation = scene->get_skybox()->get_rotation();
+            vkCmdPushConstants(cmd, shaderPass->pipelineLayout,
+                               VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                               sizeof(Graphics::SkyboxUniforms), &sku);
+
             draw(cmd, scene->get_skybox()->get_box());
         }
     }
@@ -414,12 +430,19 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images)
         m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                                  &m_descriptors[i].globalDescritor, 2);
-        // m_descriptorManager.set_descriptor_write(images[1].sampler, images[1].view,
-        //                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        //                                          &m_descriptors[i].globalDescritor, 3);
     }
 }
 
+void ForwardPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr)
+{
+    for (size_t i = 0; i < m_context->frames.size(); i++)
+    {
+        m_descriptorManager.set_descriptor_write(env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                 &m_descriptors[i].globalDescritor, 3);
+        m_descriptorManager.set_descriptor_write(env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                 &m_descriptors[i].globalDescritor, 4);
+    }
+}
 void ForwardPass::setup_material_descriptor(IMaterial *mat)
 {
     if (!mat->get_texture_descriptor().allocated)

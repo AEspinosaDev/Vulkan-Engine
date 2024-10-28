@@ -20,6 +20,7 @@ layout(triangle_strip, max_vertices = 18) out; //6*3
 
 layout(location = 0) in vec2 texCoord[];
 
+
 layout(location = 0) out vec2 otexCoord;
 
 void main() {
@@ -29,16 +30,13 @@ void main() {
         gl_Layer = i;
 
 		
-        for (int i = 0; i < 3; i++) {
-            gl_Position = gl_in[i].gl_Position; 
-            otexCoord = texCoord[i];
+        for (int j = 0; j < 3; j++) {
+            gl_Position = gl_in[j].gl_Position; 
+            otexCoord = texCoord[j];
             EmitVertex(); 
         }
         EndPrimitive(); 
 
-
-        EndPrimitive();
-      
     }
 }
 

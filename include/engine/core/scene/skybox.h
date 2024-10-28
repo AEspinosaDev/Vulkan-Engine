@@ -28,6 +28,8 @@ class Skybox
     // Settings
     float m_blurriness{0.0f};
     float m_intensity{1.0f};
+    float m_rotation{0.0f};
+
     bool m_updateEnviroment{true};
 
   public:
@@ -70,6 +72,20 @@ class Skybox
     void set_intensity(float i)
     {
         m_intensity = i;
+    }
+    /*
+    In degrees
+    */
+    float get_rotation() const
+    {
+        return m_rotation;
+    }
+    /*
+    In degrees
+    */
+    void set_rotation(float r)
+    {
+        m_rotation = r;
     }
     bool update_enviroment() const
     {
