@@ -21,8 +21,10 @@
 #include <engine/common.h>
 
 #include <engine/core/materials/material.h>
+#include <engine/core/renderpasses/panorama_conversion_pass.h>
 #include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
+#include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
 
@@ -65,26 +67,40 @@ struct RenderPipeline
 {
     std::vector<Core::RenderPass *> renderpasses;
 
+    // Auxiliar passes
+    Core::PanoramaConverterPass *panoramaConverterPass{nullptr};
+
     void push_renderpass(Core::RenderPass *pass)
     {
         renderpasses.push_back(pass);
     };
+    void render(uint32_t frameIndex, VKFW::Core::Scene *scene, uint32_t presentImageIndex = 0U)
+    {
+        for (Core::RenderPass *pass : renderpasses)
+        {
+            if (pass->is_active())
+                pass->render(frameIndex, scene, presentImageIndex);
+        }
+    }
 };
 
 /**
- * Virtual class. Renders a given scene data to a given window. Fully
+ * Basic class. Renders a given scene data to a given window. Fully
  * parametrizable. It has to be inherited for achieving a higher end
  * application.
  */
-class RendererBase
+class BaseRenderer
 {
 #pragma region Properties
   protected:
     Graphics::Context m_context{};
-    Core::WindowBase *m_window;
+
+    Core::IWindow *m_window;
 
     RendererSettings m_settings{};
     RenderPipeline m_renderPipeline;
+
+    Core::Mesh *m_vignette{};
 
     Graphics::utils::DeletionQueue m_deletionQueue;
 
@@ -95,18 +111,18 @@ class RendererBase
 
 #pragma endregion
   public:
-    RendererBase(Core::WindowBase *window) : m_window(window)
+    BaseRenderer(Core::IWindow *window) : m_window(window)
     {
         on_instance();
     }
-    RendererBase(Core::WindowBase *window, RendererSettings settings) : m_window(window), m_settings(settings)
+    BaseRenderer(Core::IWindow *window, RendererSettings settings) : m_window(window), m_settings(settings)
     {
         on_instance();
     }
 
 #pragma region Getters & Setters
 
-    inline Core::WindowBase *const get_window() const
+    inline Core::IWindow *const get_window() const
     {
         return m_window;
     }
@@ -184,7 +200,7 @@ class RendererBase
     /*
      Init renderpasses and create framebuffers and image resources attached to them
      */
-    virtual void setup_renderpasses() = 0;
+    virtual void setup_renderpasses();
     /*
     What to do when instancing the renderer
     */

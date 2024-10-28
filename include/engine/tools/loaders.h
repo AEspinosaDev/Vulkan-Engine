@@ -16,7 +16,8 @@
 #include <stb_image.h>
 #include <unordered_map>
 
-#include <engine/core/textures/texture.h>
+#include <engine/core/textures/textureLDR.h>
+#include <engine/core/textures/textureHDR.h>
 #include <engine/core/scene/mesh.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

@@ -20,7 +20,7 @@ namespace Core
 /**
  * Class containing all functionality related to a window.
  */
-class WindowBase
+class IWindow
 {
   protected:
     std::string m_title{};
@@ -31,7 +31,7 @@ class WindowBase
     bool m_resizeable;
     bool m_fullscreen;
 
-    // Windowed
+    // Windowed Mode Data
     Extent2D m_windowedExtent;
     math::ivec2 m_screenPos = math::ivec2(45, 45);
 
@@ -41,7 +41,7 @@ class WindowBase
     std::function<void(double, double)> m_mouseCallBack;
 
   public:
-    WindowBase(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false)
+    IWindow(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false)
         : m_title(t), m_extent(VkExtent2D{w, h}), m_windowedExtent({w, h}), m_resizeable{resizable},
           m_fullscreen{fullscreen}
     {

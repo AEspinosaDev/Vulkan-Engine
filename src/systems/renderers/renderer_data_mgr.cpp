@@ -19,7 +19,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems
 {
-void RendererBase::update_global_data(Core::Scene *const scene)
+void BaseRenderer::update_global_data(Core::Scene *const scene)
 {
     PROFILING_EVENT()
     /*
@@ -85,9 +85,9 @@ void RendererBase::update_global_data(Core::Scene *const scene)
     {
         upload_geometry_data(skybox->get_box());
         Core::TextureHDR *envMap = skybox->get_enviroment_map();
-        if (envMap && envMap->data_loaded())
+        if (envMap && envMap->loaded_on_CPU())
         {
-            if (!envMap->is_buffer_loaded())
+            if (!envMap->loaded_on_GPU())
             {
                 void *imgCache{nullptr};
                 envMap->get_image_cache(imgCache);
@@ -95,11 +95,18 @@ void RendererBase::update_global_data(Core::Scene *const scene)
 
                 m_deletionQueue.push_function(
                     [=]() { get_image(envMap)->cleanup(m_context.device, m_context.memory); });
+
+                // Create Panorama converter pass
+                m_renderPipeline.panoramaConverterPass = new Core::PanoramaConverterPass(
+                    &m_context, {envMap->get_size().height, envMap->get_size().height}, m_vignette);
+                m_renderPipeline.panoramaConverterPass->setup();
+                m_renderPipeline.panoramaConverterPass->upload_data(m_currentFrame, scene);
+                // Create Irradiance coonverter pass
             }
         }
     }
 }
-void RendererBase::update_object_data(Core::Scene *const scene)
+void BaseRenderer::update_object_data(Core::Scene *const scene)
 {
     PROFILING_EVENT()
 
@@ -156,13 +163,6 @@ void RendererBase::update_object_data(Core::Scene *const scene)
                     m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(
                         m_context.memory, &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
 
-                    // void *meshData = nullptr;
-                    // size_t size = 0;
-                    // m->get_uniform_data(meshData, size);
-                    // m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(
-                    //     m_context.memory, meshData, size, objectOffset);
-                    // free(meshData);
-
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
                         // Object vertex buffer setup
@@ -190,15 +190,15 @@ void RendererBase::update_object_data(Core::Scene *const scene)
     }
 }
 
-void RendererBase::upload_material_textures(Core::IMaterial *const mat)
+void BaseRenderer::upload_material_textures(Core::IMaterial *const mat)
 {
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
-        Core::Texture *texture = pair.second;
-        if (texture && texture->data_loaded())
+        Core::ITexture *texture = pair.second;
+        if (texture && texture->loaded_on_CPU())
         {
-            if (!texture->is_buffer_loaded())
+            if (!texture->loaded_on_GPU())
             {
                 void *imgCache{nullptr};
                 texture->get_image_cache(imgCache);
@@ -212,7 +212,7 @@ void RendererBase::upload_material_textures(Core::IMaterial *const mat)
     }
 }
 
-void RendererBase::upload_geometry_data(Core::Geometry *const g)
+void BaseRenderer::upload_geometry_data(Core::Geometry *const g)
 {
     PROFILING_EVENT()
     Core::RenderData *rd = get_render_data(g);
@@ -239,7 +239,7 @@ void RendererBase::upload_geometry_data(Core::Geometry *const g)
     */
 }
 
-void RendererBase::init_resources()
+void BaseRenderer::init_resources()
 {
     for (size_t i = 0; i < m_context.frames.size(); i++)
     {
@@ -262,6 +262,11 @@ void RendererBase::init_resources()
         m_context.frames[i].uniformBuffers.push_back(objectBuffer);
     }
 
+    // Setup vignette
+    m_vignette = new Core::Mesh();
+    m_vignette->push_geometry(Core::Geometry::create_quad());
+    upload_geometry_data(m_vignette->get_geometry());
+
     // Setup dummy texture in case materials dont have textures
     unsigned char texture_data[4] = {0, 0, 0, 0};
     Core::Texture::DEBUG_TEXTURE = new Core::Texture(texture_data, {2, 2, 1}, 4);
@@ -273,7 +278,7 @@ void RendererBase::init_resources()
                                    get_image(Core::Texture::DEBUG_TEXTURE), false);
 }
 
-void RendererBase::clean_Resources()
+void BaseRenderer::clean_Resources()
 {
     for (size_t i = 0; i < m_context.frames.size(); i++)
     {
@@ -282,6 +287,10 @@ void RendererBase::clean_Resources()
             buffer.cleanup(m_context.memory);
         }
     }
+
+    get_render_data(m_vignette->get_geometry())->vbo.cleanup(m_context.memory);
+    get_render_data(m_vignette->get_geometry())->ibo.cleanup(m_context.memory);
+
     get_image(Core::Texture::DEBUG_TEXTURE)->cleanup(m_context.device, m_context.memory);
 }
 } // namespace Systems

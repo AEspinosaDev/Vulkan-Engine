@@ -342,8 +342,7 @@ void VulkanRenderer::setup()
 
     TextureHDR* envMap = new TextureHDR();
     Tools::Loaders::load_HDRi(envMap, TEXTURE_PATH + "night.hdr"); 
-    Skybox* sky = new Skybox(envMap);
-    m_scene->add(sky);
+    m_scene->set_skybox(new Skybox(envMap));
 
     m_controller = new Tools::Controller(camera, m_window);
 }

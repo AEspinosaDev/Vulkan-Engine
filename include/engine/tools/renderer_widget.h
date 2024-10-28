@@ -21,19 +21,19 @@ class RendererSettingsWidget : public Widget
 {
 
   protected:
-    Systems::RendererBase *m_renderer;
+    Systems::BaseRenderer *m_renderer;
     virtual void render();
 
   public:
-    RendererSettingsWidget(Systems::RendererBase *r) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_renderer(r)
+    RendererSettingsWidget(Systems::BaseRenderer *r) : Widget(ImVec2(0, 0), ImVec2(0, 0)), m_renderer(r)
     {
     }
 
-    inline Systems::RendererBase *get_renderer() const
+    inline Systems::BaseRenderer *get_renderer() const
     {
         return m_renderer;
     }
-    inline void set_renderer(Systems::RendererBase *r)
+    inline void set_renderer(Systems::BaseRenderer *r)
     {
         m_renderer = r;
     }

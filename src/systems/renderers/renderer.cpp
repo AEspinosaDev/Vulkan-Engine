@@ -13,7 +13,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Systems
 {
-void RendererBase::init()
+void BaseRenderer::init()
 {
 
     if (!m_window->initialized())
@@ -32,11 +32,7 @@ void RendererBase::init()
     {
         if (pass->is_active())
         {
-            pass->init();
-            pass->create_framebuffer();
-            pass->create_descriptors();
-            pass->create_graphic_pipelines();
-            pass->init_resources();
+            pass->setup();
             connect_renderpass(pass);
         }
     };
@@ -55,7 +51,7 @@ void RendererBase::init()
 
     m_initialized = true;
 }
-void RendererBase::run(Core::Scene *const scene)
+void BaseRenderer::run(Core::Scene *const scene)
 {
     ASSERT_PTR(m_window);
     while (!m_window->get_window_should_close())
@@ -68,7 +64,7 @@ void RendererBase::run(Core::Scene *const scene)
     shutdown(scene);
 }
 
-void RendererBase::shutdown(Core::Scene *const scene)
+void BaseRenderer::shutdown(Core::Scene *const scene)
 {
     m_context.wait_for_device();
 
@@ -124,8 +120,11 @@ void RendererBase::shutdown(Core::Scene *const scene)
 
     glfwTerminate();
 }
-
-void RendererBase::on_before_render(Core::Scene *const scene)
+void BaseRenderer::setup_renderpasses()
+{
+    throw VKException("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
+}
+void BaseRenderer::on_before_render(Core::Scene *const scene)
 {
     PROFILING_EVENT()
 
@@ -139,7 +138,7 @@ void RendererBase::on_before_render(Core::Scene *const scene)
     }
 }
 
-void RendererBase::on_after_render(VkResult &renderResult, Core::Scene *const scene)
+void BaseRenderer::on_after_render(VkResult &renderResult, Core::Scene *const scene)
 {
     PROFILING_EVENT()
 
@@ -158,7 +157,7 @@ void RendererBase::on_after_render(VkResult &renderResult, Core::Scene *const sc
     m_currentFrame = (m_currentFrame + 1) % m_context.frames.size();
 }
 
-void RendererBase::render(Core::Scene *const scene)
+void BaseRenderer::render(Core::Scene *const scene)
 {
     PROFILING_FRAME();
     PROFILING_EVENT()
@@ -183,11 +182,9 @@ void RendererBase::render(Core::Scene *const scene)
 
     m_context.begin_command_buffer(m_currentFrame);
 
-    for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
-    {
-        if (pass->is_active())
-            pass->render(m_currentFrame, scene, imageIndex);
-    }
+    m_renderPipeline.panoramaConverterPass->render(m_currentFrame, scene, imageIndex);
+    
+    m_renderPipeline.render(m_currentFrame, scene, imageIndex);
 
     m_context.end_command_buffer(m_currentFrame);
 
@@ -196,7 +193,7 @@ void RendererBase::render(Core::Scene *const scene)
     on_after_render(renderResult, scene);
 }
 
-void RendererBase::connect_renderpass(Core::RenderPass *const currentPass)
+void BaseRenderer::connect_renderpass(Core::RenderPass *const currentPass)
 {
     if (currentPass->get_image_dependace_table().empty())
         return;
@@ -213,7 +210,7 @@ void RendererBase::connect_renderpass(Core::RenderPass *const currentPass)
     currentPass->connect_to_previous_images(images);
 }
 
-void RendererBase::update_renderpasses()
+void BaseRenderer::update_renderpasses()
 {
     m_window->update_framebuffer();
 
@@ -240,7 +237,7 @@ void RendererBase::update_renderpasses()
     m_updateFramebuffers = false;
 }
 
-void RendererBase::init_gui()
+void BaseRenderer::init_gui()
 {
     if (m_settings.enableUI)
     {

@@ -5,7 +5,7 @@ using namespace Graphics;
 namespace Core
 {
 
-void PanroramaConverterPass::init()
+void PanoramaConverterPass::init()
 {
 
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
@@ -68,7 +68,7 @@ void PanroramaConverterPass::init()
 
     m_initiatized = true;
 }
-void PanroramaConverterPass::create_descriptors()
+void PanoramaConverterPass::create_descriptors()
 {
     // Init and configure local descriptors
     m_descriptorManager.init(m_context->device);
@@ -81,7 +81,7 @@ void PanroramaConverterPass::create_descriptors()
 
     m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_panoramaDescriptorSet);
 }
-void PanroramaConverterPass::create_graphic_pipelines()
+void PanoramaConverterPass::create_graphic_pipelines()
 {
 
     ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/panorama_converter.glsl");
@@ -99,7 +99,7 @@ void PanroramaConverterPass::create_graphic_pipelines()
     m_shaderPasses["converter"] = converterPass;
 }
 
-void PanroramaConverterPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
+void PanoramaConverterPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
     if (!scene->get_skybox())
         return;
@@ -132,12 +132,12 @@ void PanroramaConverterPass::render(uint32_t frameIndex, Scene *const scene, uin
     scene->get_skybox()->set_update_enviroment(false);
 }
 
-void PanroramaConverterPass::upload_data(uint32_t frameIndex, Scene *const scene)
+void PanoramaConverterPass::upload_data(uint32_t frameIndex, Scene *const scene)
 {
     if (!scene->get_skybox())
         return;
     TextureHDR *envMap = scene->get_skybox()->get_enviroment_map();
-    if (envMap && envMap->is_buffer_loaded())
+    if (envMap && envMap->loaded_on_GPU())
     {
 
         if (m_panoramaDescriptorSet.bindings == 0 || envMap->is_dirty())
@@ -149,7 +149,7 @@ void PanroramaConverterPass::upload_data(uint32_t frameIndex, Scene *const scene
         }
     }
 }
-void PanroramaConverterPass::connect_to_previous_images(std::vector<Image> images)
+void PanoramaConverterPass::connect_to_previous_images(std::vector<Image> images)
 {
 }
 

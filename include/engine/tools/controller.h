@@ -38,7 +38,7 @@ class Controller
 {
   protected:
     Core::Object3D *m_objPtr;
-    Core::WindowBase *m_windowPtr;
+    Core::IWindow *m_windowPtr;
 
     float m_speed;
     ControllerMovementType m_type;
@@ -69,7 +69,7 @@ class Controller
     bool m_enabled{true};
 
   public:
-    Controller(Core::Object3D *obj, Core::WindowBase *window, ControllerMovementType m = WASD,
+    Controller(Core::Object3D *obj, Core::IWindow *window, ControllerMovementType m = WASD,
                KeyMappings km = KeyMappings{})
         : m_objPtr(obj), m_windowPtr(window), m_type(m), m_speed(5.0f), m_mouseSensitivity(0.4f), m_mouseDeltaX(.0f),
           m_mouseDeltaY(.0f), m_mouseLastX(.0f), m_mouseLastY(0.0f), m_firstMouse(true), m_isMouseLeftPressed(false),
@@ -115,11 +115,11 @@ class Controller
     {
         m_objPtr = obj;
     }
-    inline Core::WindowBase *get_window() const
+    inline Core::IWindow *get_window() const
     {
         return m_windowPtr;
     }
-    inline void set_window(Core::WindowBase *w)
+    inline void set_window(Core::IWindow *w)
     {
         m_windowPtr = w;
     }

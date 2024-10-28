@@ -22,28 +22,25 @@ struct ForwardRendererSettings
 /*
 Renders a given scene data to a given window using forward rendering. Fully parametrizable.
 */
-class ForwardRenderer : public RendererBase
+class ForwardRenderer : public BaseRenderer
 {
     ForwardRendererSettings m_settings2{};
 
-    Core::Mesh *m_vignette;
-
     enum RenderPasses
     {
-        PANORAMA_CONVERTER = 0,
-        SHADOW = 1,
-        FORWARD = 2,
-        FXAA = 3
+        SHADOW = 0,
+        FORWARD = 1,
+        FXAA = 2
     };
 
     bool m_updateShadows{false};
 
   public:
-    ForwardRenderer(Core::WindowBase *window) : RendererBase(window)
+    ForwardRenderer(Core::IWindow *window) : BaseRenderer(window)
     {
     }
-    ForwardRenderer(Core::WindowBase *window, RendererSettings settings, ForwardRendererSettings settings2)
-        : RendererBase(window, settings), m_settings2(settings2)
+    ForwardRenderer(Core::IWindow *window, RendererSettings settings, ForwardRendererSettings settings2)
+        : BaseRenderer(window, settings), m_settings2(settings2)
     {
     }
 
@@ -60,10 +57,6 @@ class ForwardRenderer : public RendererBase
     virtual void on_after_render(VkResult &renderResult, Core::Scene *const scene);
 
     virtual void setup_renderpasses();
-
-    virtual void init_resources();
-
-    virtual void clean_Resources();
 
     virtual void update_shadow_quality();
 };

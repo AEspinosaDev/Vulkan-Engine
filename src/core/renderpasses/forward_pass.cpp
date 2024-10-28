@@ -320,7 +320,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
             {
                 if (m->is_active() &&              // Check if is active
                     m->get_num_geometries() > 0 && // Check if has geometry
-                    (scene->get_active_camera()->get_frustrum_culling()
+                    (scene->get_active_camera()->get_frustrum_culling() && m->get_bounding_volume()
                          ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())
                          : true)) // Check if is inside frustrum
                 {
@@ -414,9 +414,9 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images)
         m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                                  &m_descriptors[i].globalDescritor, 2);
-        m_descriptorManager.set_descriptor_write(images[1].sampler, images[1].view,
-                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                 &m_descriptors[i].globalDescritor, 3);
+        // m_descriptorManager.set_descriptor_write(images[1].sampler, images[1].view,
+        //                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        //                                          &m_descriptors[i].globalDescritor, 3);
     }
 }
 
@@ -429,8 +429,8 @@ void ForwardPass::setup_material_descriptor(IMaterial *mat)
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
-        Texture *texture = pair.second;
-        if (texture && texture->is_buffer_loaded())
+        ITexture *texture = pair.second;
+        if (texture && texture->loaded_on_GPU())
         {
 
             // Set texture write

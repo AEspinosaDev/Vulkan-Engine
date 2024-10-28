@@ -58,6 +58,7 @@ Class used to represent a 3D model instance.
 */
 class Mesh : public Object3D
 {
+  protected:
     std::vector<Geometry *> m_geometry;
     std::vector<IMaterial *> m_material;
 
@@ -72,6 +73,10 @@ class Mesh : public Object3D
 
     static IMaterial *m_debugMaterial;
     static int m_instanceCount;
+
+    Mesh(std::string name, ObjectType type) : Object3D(name, type)
+    {
+    }
 
   public:
     Mesh() : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), MESH), m_volume(new Sphere())

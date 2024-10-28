@@ -9,20 +9,21 @@
 #ifndef PAN_CONV_PASS_H
 #define PAN_CONV_PASS_H
 #include <engine/core/renderpasses/renderpass.h>
+#include <engine/core/textures/textureHDR.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core
 {
 
-class PanroramaConverterPass : public RenderPass
+class PanoramaConverterPass : public RenderPass
 {
     Graphics::DescriptorSet m_panoramaDescriptorSet;
 
     Mesh *m_vignette;
 
   public:
-    PanroramaConverterPass(Graphics::Context *ctx, Extent2D extent, Mesh *vignette)
+    PanoramaConverterPass(Graphics::Context *ctx, Extent2D extent, Mesh *vignette)
         : RenderPass(ctx, extent, 1, 6, false), m_vignette(vignette)
     {
     }

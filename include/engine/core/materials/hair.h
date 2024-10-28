@@ -44,12 +44,12 @@ class HairMaterial : public IMaterial
     bool m_coloredScatter{false};
     bool m_occlusion{false};
 
-    std::unordered_map<int, Texture *> m_textures;
+    std::unordered_map<int, ITexture *> m_textures;
 
     std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, Texture *> get_textures() const
+    virtual inline std::unordered_map<int, ITexture *> get_textures() const
     {
         return m_textures;
     }

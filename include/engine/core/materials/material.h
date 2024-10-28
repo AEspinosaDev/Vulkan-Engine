@@ -56,6 +56,14 @@ class IMaterial
     {
     }
 
+    virtual Graphics::MaterialUniforms get_uniforms() const = 0;
+
+    virtual std::unordered_map<int, ITexture *> get_textures() const = 0;
+
+    virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
+    
+    virtual void set_texture_binding_state(int id, bool state) = 0;
+
     virtual std::string get_shaderpass_ID() const
     {
         return m_shaderPassID;
@@ -98,13 +106,6 @@ class IMaterial
     {
         return m_textureDescriptor;
     }
-
-    virtual Graphics::MaterialUniforms get_uniforms() const = 0;
-
-    virtual std::unordered_map<int, Texture *> get_textures() const = 0;
-
-    virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
-    virtual void set_texture_binding_state(int id, bool state) = 0;
 };
 
 } // namespace Core

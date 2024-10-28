@@ -10,6 +10,7 @@
 #define FORWARD_PASS_H
 #include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
+#include <engine/core/textures/textureLDR.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -52,6 +53,8 @@ class ForwardPass : public RenderPass
     void upload_data(uint32_t frameIndex, Scene *const scene);
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
+
+    void set_envmap_descriptor(Graphics::Image env);
 };
 
 } // namespace Core

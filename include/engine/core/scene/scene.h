@@ -27,9 +27,10 @@ class Scene : public Object3D
     std::vector<Camera *> m_cameras;
     std::vector<Mesh *> m_meshes;
     std::vector<Light *> m_lights;
-    Skybox *m_skybox{nullptr};
 
-    Vec3 m_ambientColor{0.7f, 0.5f, 0.5f};
+    // ENVIROMENT
+    Skybox *m_skybox{nullptr};
+    Vec3 m_ambientColor{0.7f, 0.5f, 0.5f}; // Fallback if no skybox
     float m_ambientIntensity{0.005f};
 
     // FOG
@@ -50,9 +51,6 @@ class Scene : public Object3D
             break;
         case LIGHT:
             m_lights.push_back((Light *)obj);
-            break;
-        case SKYBOX:
-            m_skybox = (Skybox *)obj;
             break;
         }
         for (auto child : obj->get_children())
@@ -115,6 +113,10 @@ class Scene : public Object3D
     inline const std::vector<Light *> get_lights() const
     {
         return m_lights;
+    }
+    inline void set_skybox(Skybox *skb)
+    {
+        m_skybox = skb;
     }
     inline Skybox *const get_skybox() const
     {

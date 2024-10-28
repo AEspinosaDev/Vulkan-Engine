@@ -206,15 +206,13 @@ typedef enum TextureFilterType
 } TextureFilterType;
 typedef enum ColorFormatType
 {
-    SRGBA_8 = VK_FORMAT_R8G8B8A8_SRGB,
-    SRGB_8 = VK_FORMAT_R8G8B8_SRGB,
-    SBGRA_8 = VK_FORMAT_B8G8R8A8_SRGB,
-    RGBA_8,
-    RGB_8,
-    SRGBA_16,
-    SRGB_16,
-    RGBA_16,
-    RGB_16,
+    SR_8 = VK_FORMAT_R8_SRGB, //Red
+    SRG_8 = VK_FORMAT_R8G8_SRGB, //Red Green
+    SRGB_8 = VK_FORMAT_R8G8B8_SRGB, //RGB
+    SRGBA_8 = VK_FORMAT_R8G8B8A8_SRGB, //RGB with Alpha
+    SBGRA_8 = VK_FORMAT_B8G8R8A8_SRGB, //Other order 
+    SRGBA_16F = VK_FORMAT_R16G16B16A16_SFLOAT, //HDR precission 16
+    SRGBA_32F = VK_FORMAT_R32G32B32A32_SFLOAT, //HDR precission 32
 } ColorFormatType;
 typedef enum DepthFormatType
 {

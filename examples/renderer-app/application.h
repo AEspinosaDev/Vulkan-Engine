@@ -31,8 +31,8 @@ class VulkanRenderer
     };
     UserInterface m_interface{};
 
-    WindowBase *m_window;
-    Systems::RendererBase *m_renderer;
+    IWindow *m_window;
+    Systems::BaseRenderer *m_renderer;
     Scene *m_scene;
     Camera *camera;
     Tools::Controller *m_controller;

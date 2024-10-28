@@ -28,7 +28,7 @@ int main()
         float delta;
         float last{0};
 
-        Core::WindowBase *window = new Core::WindowGLFW("Kabuto", 800, 600);
+        Core::IWindow *window = new Core::WindowGLFW("Kabuto", 800, 600);
 
         window->init();
 
@@ -36,7 +36,7 @@ int main()
         settings.samplesMSAA = MSAASamples::MSAA_x4;
         settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
 
-        Systems::RendererBase *renderer = new Systems::ForwardRenderer(window, settings, {});
+        Systems::BaseRenderer *renderer = new Systems::ForwardRenderer(window, settings, {});
 
         Core::Camera *camera = new Core::Camera();
         camera->set_position(Vec3(0.0f, 0.15f, -1.0f));

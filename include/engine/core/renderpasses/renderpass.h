@@ -184,6 +184,10 @@ class RenderPass
 #pragma endregion
 #pragma region Core Functions
     /*
+    Setups de renderpass. Init, create framebuffers, pipelines and resources ...
+    */
+    void setup();
+    /*
     Configures and creates the renderpass. Rendeerer will call this function when
     necessary
     */
@@ -218,6 +222,7 @@ class RenderPass
     virtual void connect_to_previous_images(std::vector<Graphics::Image> images)
     {
     }
+
     /**
      * Create framebuffers and images attached to them necessary for the
      * renderpass to work. It also sets the extent of the renderpass.

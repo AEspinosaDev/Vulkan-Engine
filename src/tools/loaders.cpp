@@ -749,6 +749,7 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR *const texture, const std:
     if (HDRcache)
     {
         texture->set_image_cache(HDRcache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
+        texture->set_format(SRGBA_32F);
     }
     else
     {

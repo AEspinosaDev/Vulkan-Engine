@@ -57,13 +57,13 @@ class PhysicallyBasedMaterial : public IMaterial
         AO = 4,
     };
 
-    std::unordered_map<int, Texture *> m_textures{
+    std::unordered_map<int, ITexture *> m_textures{
         {ALBEDO, nullptr}, {NORMAL, nullptr}, {MASK_ROUGHNESS, nullptr}, {METALNESS, nullptr}, {AO, nullptr}};
 
     std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, Texture *> get_textures() const
+    virtual inline std::unordered_map<int, ITexture *> get_textures() const
     {
         return m_textures;
     }
@@ -204,11 +204,11 @@ class PhysicallyBasedMaterial : public IMaterial
         m_isDirty = true;
     }
 
-    inline Texture *get_albedo_texture()
+    inline ITexture *get_albedo_texture()
     {
         return m_textures[ALBEDO];
     }
-    inline void set_albedo_texture(Texture *t)
+    inline void set_albedo_texture(ITexture *t)
     {
         m_hasAlbedoTexture = t ? true : false;
         m_textureBindingState[ALBEDO] = false;
@@ -216,11 +216,11 @@ class PhysicallyBasedMaterial : public IMaterial
         m_isDirty = true;
     }
 
-    inline Texture *get_normal_texture()
+    inline ITexture *get_normal_texture()
     {
         return m_textures[NORMAL];
     }
-    inline void set_normal_texture(Texture *t)
+    inline void set_normal_texture(ITexture *t)
     {
         m_hasNormalTexture = t ? true : false;
         m_textureBindingState[NORMAL] = false;
@@ -231,11 +231,11 @@ class PhysicallyBasedMaterial : public IMaterial
     /*
     Sets mask texture. Support for some presets of commercial game engines.
     */
-    inline Texture *get_mask_texture()
+    inline ITexture *get_mask_texture()
     {
         return m_textures[MASK_ROUGHNESS];
     }
-    inline void set_mask_texture(Texture *t, MaskType preset)
+    inline void set_mask_texture(ITexture *t, MaskType preset)
     {
         m_hasMaskTexture = t ? true : false;
         m_textureBindingState[MASK_ROUGHNESS] = false;
@@ -244,33 +244,33 @@ class PhysicallyBasedMaterial : public IMaterial
         m_isDirty = true;
     }
 
-    inline Texture *get_roughness_texture()
+    inline ITexture *get_roughness_texture()
     {
         return m_textures[MASK_ROUGHNESS];
     }
-    inline void set_roughness_texture(Texture *t)
+    inline void set_roughness_texture(ITexture *t)
     {
         m_hasRoughnessTexture = t ? true : false;
         m_textureBindingState[MASK_ROUGHNESS] = false;
         m_textures[MASK_ROUGHNESS] = t;
         m_isDirty = true;
     }
-    inline Texture *get_metallic_texture()
+    inline ITexture *get_metallic_texture()
     {
         return m_textures[METALNESS];
     }
-    inline void set_metallic_texture(Texture *t)
+    inline void set_metallic_texture(ITexture *t)
     {
         m_hasMetallicTexture = t ? true : false;
         m_textureBindingState[METALNESS] = false;
         m_textures[METALNESS] = t;
         m_isDirty = true;
     }
-    inline Texture *get_occlusion_texture()
+    inline ITexture *get_occlusion_texture()
     {
         return m_textures[AO];
     }
-    inline void set_occlusion_texture(Texture *t)
+    inline void set_occlusion_texture(ITexture *t)
     {
         m_hasAOTexture = t ? true : false;
         m_textureBindingState[AO] = false;
