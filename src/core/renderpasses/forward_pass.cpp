@@ -382,8 +382,12 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
         {
             if (scene->get_skybox()->is_active())
             {
+                vkCmdSetDepthTestEnable(cmd, VK_TRUE);
+                vkCmdSetDepthWriteEnable(cmd, VK_TRUE);
+                vkCmdSetCullMode(cmd,VK_CULL_MODE_NONE  );
+
                 ShaderPass *shaderPass = m_shaderPasses["skybox"];
-               
+
                 // Bind pipeline
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
 
