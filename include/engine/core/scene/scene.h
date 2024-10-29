@@ -133,11 +133,17 @@ class Scene : public Object3D
 
     inline void set_ambient_intensity(float i)
     {
-        m_ambientIntensity = i;
+        if (!m_skybox)
+            m_ambientIntensity = i;
+        else
+            m_skybox->set_intensity(i);
     }
     inline float get_ambient_intensity() const
     {
-        return m_ambientIntensity;
+        if (!m_skybox)
+            return m_ambientIntensity;
+        else
+            return m_skybox->get_intensity();
     }
 
     inline void enable_fog(bool op)

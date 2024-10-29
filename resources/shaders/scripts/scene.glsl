@@ -17,6 +17,7 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     int numLights;
     int SSAOType;
     bool emphasizeAO;
+    bool useIBL;
 } scene;
 
 float computeFog() {

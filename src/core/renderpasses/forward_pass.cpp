@@ -439,7 +439,7 @@ void ForwardPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr
     {
         m_descriptorManager.set_descriptor_write(env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                  &m_descriptors[i].globalDescritor, 3);
-        m_descriptorManager.set_descriptor_write(env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        m_descriptorManager.set_descriptor_write(irr.sampler, irr.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                  &m_descriptors[i].globalDescritor, 4);
     }
 }

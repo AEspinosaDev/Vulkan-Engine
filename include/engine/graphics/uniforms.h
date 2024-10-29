@@ -43,6 +43,7 @@ struct SceneUniforms
     int numLights;
     int SSAOtype;
     int emphasizeAO;
+    int useIBL;
 };
 
 struct ObjectUniforms

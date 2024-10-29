@@ -13,10 +13,10 @@ layout(location = 3) in vec3 tangent;
 //Output
 layout(location = 0) out vec3 v_pos;
 layout(location = 1) out vec3 v_normal;
-layout(location = 2) out vec2 v_uv;
-layout(location = 3) out vec3 v_modelPos;
-layout(location = 4) out vec2 v_screenExtent;
-layout(location = 5) out int v_selected;
+layout(location = 2) out vec3 v_modelNormal;
+layout(location = 3) out vec2 v_uv;
+layout(location = 4) out vec3 v_modelPos;
+layout(location = 5) out vec2 v_screenExtent;
 layout(location = 6) out mat3 v_TBN;
 
 //Uniforms
@@ -66,14 +66,15 @@ void main() {
     }
 
     v_modelPos = (object.model * vec4(pos, 1.0)).xyz;
+    v_modelNormal = normalize(mat3(transpose(inverse(object.model))) * normal);
 
     v_screenExtent = camera.screenExtent;
 
-    v_selected = object.selected;
 }
 
 #shader fragment
 #version 450
+#include camera.glsl
 #include light.glsl
 #include scene.glsl
 #include object.glsl
@@ -82,15 +83,16 @@ void main() {
 #include schlick_ggx.glsl
 #include utils.glsl
 #include ssao.glsl
+#include IBL.glsl
 #include reindhart.glsl
 
 //Input
 layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
-layout(location = 2) in vec2 v_uv;
-layout(location = 3) in vec3 v_modelPos;
-layout(location = 4) in vec2 v_screenExtent;
-layout(location = 5) in  flat int  v_selected;
+layout(location = 2) out vec3 v_modelNormal;
+layout(location = 3) in vec2 v_uv;
+layout(location = 4) in vec3 v_modelPos;
+layout(location = 5) in vec2 v_screenExtent;
 layout(location = 6) in mat3 v_TBN;
 
 //Output
@@ -98,7 +100,7 @@ layout(location = 0) out vec4 outColor;
 
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
-// layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
+layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
 
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -139,6 +141,7 @@ float g_opacity;
 float g_roughness;
 float g_metalness;
 float g_ao;
+vec3 g_F0;
 
 
 vec3 computeLighting(LightUniform light) {
@@ -148,9 +151,6 @@ vec3 computeLighting(LightUniform light) {
     vec3 viewDir = normalize(-v_pos);
     vec3 halfVector = normalize(lightDir + viewDir); //normalize(viewDir + lightDir);
 
-	//Heuristic fresnel factor
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, g_albedo, g_metalness);
 
 	//Radiance
     vec3 radiance = light.color * computeAttenuation(light, v_pos) * light.intensity;
@@ -158,7 +158,7 @@ vec3 computeLighting(LightUniform light) {
 	// Cook-Torrance BRDF
     float NDF = distributionGGX(g_normal, halfVector, g_roughness);
     float G = geometrySmith(g_normal, viewDir, lightDir, g_roughness);
-    vec3 F = fresnelSchlick(max(dot(halfVector, viewDir), 0.0), F0);
+    vec3 F = fresnelSchlick(max(dot(halfVector, viewDir), 0.0), g_F0);
 
     vec3 kD = vec3(1.0) - F;
     kD *= 1.0 - g_metalness;
@@ -199,6 +199,8 @@ void setupSurfaceProperties(){
         g_metalness = material.hasMetallicTexture ? mix(material.metalness, texture(metalTex, v_uv).r, material.metalnessWeight) : material.metalness;
         g_ao = material.hasAOTexture ? mix(material.occlusion, texture(occlusionTex, v_uv).r, material.occlusionWeight) : material.occlusion;
     }
+    g_F0 = vec3(0.04);
+    g_F0 = mix(g_F0, g_albedo, g_metalness);
 }
 
 
@@ -227,41 +229,39 @@ void main() {
     }
 
     //Ambient component
-    vec3 ambient = (scene.ambientIntensity * scene.ambientColor) * g_albedo;
-
-     //Ambient occlusion
+    vec3 ambient;
+    if(scene.useIBL){
+        ambient = computeAmbient(
+            irradianceMap,
+            v_modelNormal,
+            camera.position.xyz,
+            g_albedo,
+            g_F0,
+            g_metalness,
+            g_roughness,
+            scene.ambientIntensity);
+    }else{
+        ambient = (scene.ambientIntensity * scene.ambientColor) * g_albedo;
+    }
+    //Ambient occlusion
     float occ = 1.0;
-    // if(scene.enableSSAO){
-    //     if (scene.SSAOType == 0) {
-    //         occ = texture(ssaoMap,vec2(gl_FragCoord.x/v_screenExtent.x,gl_FragCoord.y/v_screenExtent.y)).r;
-    //     }
-    //     if (scene.SSAOType == 1){
-    //         occ = UnsharpSSAO(ssaoMap);
-    //     }    
-    // }
-
     if(!scene.emphasizeAO){
         color += ambient*occ;
     }else{
         color*=occ;
     }
 
-    
+    //Fog
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
         float f = computeFog();
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
+    //Blending
     outColor = vec4(color, material.blending ? g_opacity: 1.0);
 
 
+    //Gama correction
 	outColor.rgb = reindhart(color);
-    
-
-    if(v_selected == 1){
-        outColor.rgb *= vec3(0.9,0.5,0.0);
-    }
-
-  
 
 }

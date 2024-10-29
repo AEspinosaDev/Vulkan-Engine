@@ -47,6 +47,7 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), 0.0f);
     sceneParams.SSAOtype = 0;
     sceneParams.emphasizeAO = false;
+    sceneParams.useIBL = true;
     sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
 
     std::vector<Core::Light *> lights = scene->get_lights();
