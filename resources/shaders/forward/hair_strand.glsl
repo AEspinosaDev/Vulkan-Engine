@@ -255,6 +255,7 @@ vec3 computeAmbient(vec3 n) {
         // material.r,
         // false,
         // material.trt);
+        ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
 
     }else{
         ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
