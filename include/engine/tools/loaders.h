@@ -44,7 +44,7 @@ void load_hair(Core::Mesh *const mesh, const char *fileName);
 /*
 Load image texture
 */
-void load_texture(Core::Texture *const texture, const std::string fileName, bool asyncCall = true);
+void load_texture(Core::ITexture * texture, const std::string fileName, bool asyncCall = true);
 /*
 Load .png file.
  */

@@ -2,7 +2,8 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
-namespace Core{
+namespace Core
+{
 
 void FXAAPass::init()
 {
@@ -122,8 +123,10 @@ void FXAAPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentI
     draw(cmd, g);
 
     // Draw gui contents
-    if (m_isDefault && Frame::guiEnabled)
+    if (m_isDefault && Frame::guiEnabled && ImGui::GetDrawData())
+    {
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    }
 
     end(cmd);
 }
@@ -134,6 +137,6 @@ void FXAAPass::connect_to_previous_images(std::vector<Image> images)
                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
 
-}
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

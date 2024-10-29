@@ -291,6 +291,8 @@ void ForwardPass::create_graphic_pipelines()
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(Graphics::SkyboxUniforms);
     m_shaderPasses["skybox"]->settings.pushConstants = {pushConstantRange};
+    // m_shaderPasses["skybox"]->settings.dynamicStates = {VK_DYNAMIC_STATE_DEPTH_COMPARE_OP};
+    m_shaderPasses["skybox"]->settings.depthOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 
     for (auto pair : m_shaderPasses)
     {
@@ -342,6 +344,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                         IMaterial *mat = m->get_material(g->get_material_ID());
 
                         // Setup per object render state
+
                         vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
                         vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
                         vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling
@@ -377,25 +380,28 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
         // Skybox
         if (scene->get_skybox())
         {
-            ShaderPass *shaderPass = m_shaderPasses["skybox"];
+            if (scene->get_skybox()->is_active())
+            {
+                ShaderPass *shaderPass = m_shaderPasses["skybox"];
+               
+                // Bind pipeline
+                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
 
-            // Bind pipeline
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+                // GLOBAL LAYOUT BINDING
+                uint32_t globalOffsets[] = {0, 0};
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
+                                        &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
 
-            // GLOBAL LAYOUT BINDING
-            uint32_t globalOffsets[] = {0, 0};
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
-                                    &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
+                Graphics::SkyboxUniforms sku;
+                sku.blurriness = scene->get_skybox()->get_blurriness();
+                sku.intensity = scene->get_skybox()->get_intensity();
+                sku.rotation = scene->get_skybox()->get_rotation();
+                vkCmdPushConstants(cmd, shaderPass->pipelineLayout,
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(Graphics::SkyboxUniforms), &sku);
 
-            Graphics::SkyboxUniforms sku;
-            sku.blurriness = scene->get_skybox()->get_blurriness();
-            sku.intensity = scene->get_skybox()->get_intensity();
-            sku.rotation = scene->get_skybox()->get_rotation();
-            vkCmdPushConstants(cmd, shaderPass->pipelineLayout,
-                               VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                               sizeof(Graphics::SkyboxUniforms), &sku);
-
-            draw(cmd, scene->get_skybox()->get_box());
+                draw(cmd, scene->get_skybox()->get_box());
+            }
         }
     }
 

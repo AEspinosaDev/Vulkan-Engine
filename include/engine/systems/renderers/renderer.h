@@ -50,6 +50,7 @@ struct RendererSettings
     SyncType screenSync{MAILBOX_SYNC};
     ColorFormatType colorFormat{SBGRA_8};
     DepthFormatType depthFormat{D32F};
+    uint16_t irradianceResolution{128};
 
     Vec4 clearColor{Vec4{0.0, 0.0, 0.0, 1.0}};
 
@@ -179,7 +180,6 @@ class BaseRenderer
     {
         m_settings.enableUI = op;
     }
-
     inline RenderPipeline get_render_pipeline() const
     {
         return m_renderPipeline;

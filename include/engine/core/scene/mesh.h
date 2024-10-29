@@ -28,6 +28,7 @@ Bounding volume base struct
 struct Volume
 {
     Mesh *mesh;
+    Vec3 center{0.0f, 0.0f, 0.0f};
 
     virtual void setup(Mesh *const mesh) = 0;
 
@@ -35,13 +36,13 @@ struct Volume
 };
 struct Sphere : public Volume
 {
-    Vec3 center{0.0f, 0.0f, 0.0f};
     float radius{0.0f};
 
     Sphere() = default;
 
-    Sphere(const Vec3 c, const float r) : center(c), radius(r)
+    Sphere(const Vec3 c, const float r) :  radius(r)
     {
+        center = c;
     }
 
     virtual void setup(Mesh *const mesh);

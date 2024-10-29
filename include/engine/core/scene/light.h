@@ -165,7 +165,7 @@ class PointLight : public Light
     static int m_instanceCount;
 
   public:
-    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 0.1f)
+    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
         : Light("Point Light #" + std::to_string(PointLight::m_instanceCount), LightType::POINT, color, intensity),
           m_effectArea(12.0f), m_decaying(1.0f)
     {

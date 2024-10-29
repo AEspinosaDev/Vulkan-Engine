@@ -150,13 +150,13 @@ void VulkanRenderer::setup()
     m_scene->get_lights()[1]->set_shadow_target({0.0f, 0.0f, 10.0f});
     m_scene->get_lights()[1]->set_shadow_fov(160.0f);
     m_scene->get_lights()[1]->set_color({0, 0.11, 0.55});
-    m_scene->get_lights()[1]->set_intensity(0.255);
+    m_scene->get_lights()[1]->set_intensity(2.5);
     m_scene->add(new PointLight());
     m_scene->get_lights()[2]->set_position({1.9f, 1.5f, 9.5f});
     m_scene->get_lights()[2]->set_shadow_target({1.1f, 0.0f, 9.5f});
     m_scene->get_lights()[2]->set_shadow_fov(110.0f);
     m_scene->get_lights()[2]->set_color({0.25, 0.13, 0});
-    m_scene->get_lights()[2]->set_intensity(0.060);
+    m_scene->get_lights()[2]->set_intensity(0.6);
     PointLight *light2 = new PointLight();
     light2->set_area_of_effect(0.440);
     m_scene->add(light2);
@@ -174,7 +174,7 @@ void VulkanRenderer::setup()
     Tools::Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
     toriiMat->set_normal_texture(toriiN);
-    toriiMat->set_metalness(0.5);
+    toriiMat->set_metalness(0.05);
     toriiMat->set_roughness(0.5);
     // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMesh->push_material(toriiMat);
@@ -341,10 +341,9 @@ void VulkanRenderer::setup()
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
     TextureHDR* envMap = new TextureHDR();
-    Tools::Loaders::load_HDRi(envMap, TEXTURE_PATH + "night.hdr"); 
+    Tools::Loaders::load_texture(envMap,TEXTURE_PATH + "cloudy.hdr");
     Skybox* sky = new Skybox(envMap);
-    sky->set_rotation(22.0f);
-    sky->set_intensity(0.25f);
+    sky->set_color_intensity(0.25f);
     m_scene->set_skybox(sky);
 
     m_controller = new Tools::Controller(camera, m_window);

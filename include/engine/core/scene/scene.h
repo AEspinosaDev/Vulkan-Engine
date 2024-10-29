@@ -30,13 +30,14 @@ class Scene : public Object3D
 
     // ENVIROMENT
     Skybox *m_skybox{nullptr};
+    bool m_useIBL{false};
     Vec3 m_ambientColor{0.7f, 0.5f, 0.5f}; // Fallback if no skybox
-    float m_ambientIntensity{0.005f};
+    float m_ambientIntensity{0.2f};
 
     // FOG
     bool m_fog{true};
     Vec3 m_fogColor{0.2f, 0.2f, 0.2f};
-    float m_fogIntensity{0.25f};
+    float m_fogIntensity{20.0f};
     float m_fogExponent{1.0f};
 
     inline void classify_object(Object3D *obj)
@@ -44,13 +45,13 @@ class Scene : public Object3D
         switch (obj->get_type())
         {
         case MESH:
-            m_meshes.push_back((Mesh *)obj);
+            m_meshes.push_back(static_cast<Mesh*>(obj));
             break;
         case CAMERA:
-            m_cameras.push_back((Camera *)obj);
+            m_cameras.push_back(static_cast<Camera*>(obj));
             break;
         case LIGHT:
-            m_lights.push_back((Light *)obj);
+            m_lights.push_back(static_cast<Light*>(obj));
             break;
         }
         for (auto child : obj->get_children())
@@ -117,6 +118,7 @@ class Scene : public Object3D
     inline void set_skybox(Skybox *skb)
     {
         m_skybox = skb;
+        m_useIBL = true;
     }
     inline Skybox *const get_skybox() const
     {
@@ -133,17 +135,11 @@ class Scene : public Object3D
 
     inline void set_ambient_intensity(float i)
     {
-        if (!m_skybox)
-            m_ambientIntensity = i;
-        else
-            m_skybox->set_intensity(i);
+        m_ambientIntensity = i;
     }
     inline float get_ambient_intensity() const
     {
-        if (!m_skybox)
-            return m_ambientIntensity;
-        else
-            return m_skybox->get_intensity();
+        return m_ambientIntensity;
     }
 
     inline void enable_fog(bool op)
@@ -171,6 +167,14 @@ class Scene : public Object3D
     inline float get_fog_intensity() const
     {
         return m_fogIntensity;
+    }
+    inline bool use_IBL() const
+    {
+        return m_useIBL;
+    }
+    inline void set_use_IBL(bool p)
+    {
+        m_useIBL = p;
     }
 };
 void set_meshes(Scene *const scene, std::vector<Mesh *> meshes);

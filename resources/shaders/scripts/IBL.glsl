@@ -8,7 +8,6 @@ vec3 computeAmbient(samplerCube irradianceMap,vec3 worldNormal, vec3 camPos, vec
     vec3 aDiffuse = vec3(1.0)  - specularity;
     aDiffuse *= 1.0 - metalness;	
     vec3 irradiance = texture(irradianceMap, worldNormal).rgb*intensity;
-    // irradiance = toneMapReinhard(irradiance,u_camera.exposure);
    
     vec3 diffuse = irradiance * albedo;
     return aDiffuse * diffuse;

@@ -18,13 +18,13 @@ namespace Core
 
 class PanoramaConverterPass : public RenderPass
 {
+    ColorFormatType m_format;
     Graphics::DescriptorSet m_panoramaDescriptorSet;
-
     Mesh *m_vignette;
 
   public:
-    PanoramaConverterPass(Graphics::Context *ctx, Extent2D extent, Mesh *vignette)
-        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false), m_vignette(vignette)
+    PanoramaConverterPass(Graphics::Context *ctx, ColorFormatType format, Extent2D extent, Mesh *vignette)
+        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false), m_vignette(vignette), m_format(format)
     {
     }
 

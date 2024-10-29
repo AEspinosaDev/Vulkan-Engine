@@ -11,7 +11,7 @@ void IrrandianceComputePass::init()
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
     // Color attachment
-    attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_SRGB;
+    attachmentsInfo[0].format = static_cast<VkFormat>(m_format);
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -21,7 +21,7 @@ void IrrandianceComputePass::init()
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     ImageConfig colorAttachmentImageConfig{};
-    colorAttachmentImageConfig.format = VK_FORMAT_R8G8B8A8_SRGB;
+    colorAttachmentImageConfig.format =  static_cast<VkFormat>(m_format);
     colorAttachmentImageConfig.usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     SamplerConfig colorAttachmentSamplerConfig{};
@@ -77,7 +77,7 @@ void IrrandianceComputePass::create_descriptors()
     VkDescriptorSetLayoutBinding panoramaTextureBinding =
         init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     VkDescriptorSetLayoutBinding auxBufferBinding =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_GEOMETRY_BIT, 1);
+        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding bindings[] = {panoramaTextureBinding, auxBufferBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
@@ -132,8 +132,8 @@ void IrrandianceComputePass::upload_data(uint32_t frameIndex, Scene *const scene
     {
         Mat4 proj{math::perspective(math::radians(90.0f), 1.0f, 0.1f, 10.0f)};
         Mat4 views[CUBEMAP_FACES] = {
-            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(1.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f)),
             math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(-1.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f)),
+            math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(1.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f)),
             math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, 1.0f, 0.0f), math::vec3(0.0f, 0.0f, 1.0f)),
             math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, -1.0f, 0.0f), math::vec3(0.0f, 0.0f, -1.0f)),
             math::lookAt(math::vec3(0.0f, 0.0f, 0.0f), math::vec3(0.0f, 0.0f, 1.0f), math::vec3(0.0f, -1.0f, 0.0f)),

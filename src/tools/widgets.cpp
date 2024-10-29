@@ -159,35 +159,56 @@ void SceneExplorerWidget::render()
         ImGui::EndTable();
     }
     ImGui::Spacing();
+    ImGui::SeparatorText("Ambient Light");
+    const char *ambientType[] = {"CONSTANT", "ENVIROMENT"};
+    static int currentAmbient = static_cast<int>(m_scene->use_IBL());
+    if (ImGui::Combo("Ambient Type", &currentAmbient, ambientType, IM_ARRAYSIZE(ambientType)))
+    {
+        switch (currentAmbient)
+        {
+        case 0:
+            m_scene->set_use_IBL(false);
+            break;
+        case 1:
+            m_scene->set_use_IBL(true);
+            break;
+        }
+    };
+    if (currentAmbient == 0)
+    {
+        Vec3 ambientColor = m_scene->get_ambient_color();
+        if (ImGui::ColorEdit3("Ambient Color", (float *)&ambientColor))
+        {
+            m_scene->set_ambient_color(ambientColor);
+        }
+    }
+    float ambientIntensity = m_scene->get_ambient_intensity();
+    if (ImGui::DragFloat("Ambient Intensity", &ambientIntensity, 0.05f, 0.0f, 1.0f))
+    {
+        m_scene->set_ambient_intensity(ambientIntensity);
+    }
+    ImGui::Spacing();
     if (m_scene->get_skybox())
     {
         Skybox *sky = m_scene->get_skybox();
         ImGui::SeparatorText("Skybox");
-        float skyIntensity = sky->get_intensity();
-        if (ImGui::DragFloat("Sky Intensity", &skyIntensity, 0.05f, 0.0f, 2.0f))
+        bool skyboxActive = sky->is_active();
+        if (ImGui::Checkbox("Active", &skyboxActive))
         {
-            sky->set_intensity(skyIntensity);
+            sky->set_active(skyboxActive);
+        }
+        float skyIntensity = sky->get_intensity();
+        if (ImGui::DragFloat("Env. Color Intensity", &skyIntensity, 0.05f, 0.0f, 2.0f))
+        {
+            sky->set_color_intensity(skyIntensity);
         }
         float skyRotation = sky->get_rotation();
-        if (ImGui::DragFloat("Sky Rotation", &skyRotation, 1.0f, 0.0f, 360.0f))
+        if (ImGui::DragFloat("Env. Rotation", &skyRotation, 1.0f, 0.0f, 360.0f))
         {
             sky->set_rotation(skyRotation);
         }
     }
 
-    ImGui::Spacing();
-    ImGui::SeparatorText("Ambient Light");
-    ImGui::Spacing();
-    Vec3 ambientColor = m_scene->get_ambient_color();
-    if (ImGui::ColorEdit3("Ambient Color", (float *)&ambientColor))
-    {
-        m_scene->set_ambient_color(ambientColor);
-    }
-    float ambientIntensity = m_scene->get_ambient_intensity();
-    if (ImGui::DragFloat("Intensity", &ambientIntensity, 0.05f, 0.0f, 1.0f))
-    {
-        m_scene->set_ambient_intensity(ambientIntensity);
-    }
     ImGui::Spacing();
     ImGui::SeparatorText("Fog");
     ImGui::Spacing();

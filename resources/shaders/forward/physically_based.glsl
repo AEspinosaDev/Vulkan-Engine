@@ -89,7 +89,7 @@ void main() {
 //Input
 layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
-layout(location = 2) out vec3 v_modelNormal;
+layout(location = 2) in vec3 v_modelNormal;
 layout(location = 3) in vec2 v_uv;
 layout(location = 4) in vec3 v_modelPos;
 layout(location = 5) in vec2 v_screenExtent;
@@ -234,7 +234,7 @@ void main() {
         ambient = computeAmbient(
             irradianceMap,
             v_modelNormal,
-            camera.position.xyz,
+            normalize(camera.position.xyz-v_modelPos),
             g_albedo,
             g_F0,
             g_metalness,
@@ -244,12 +244,7 @@ void main() {
         ambient = (scene.ambientIntensity * scene.ambientColor) * g_albedo;
     }
     //Ambient occlusion
-    float occ = 1.0;
-    if(!scene.emphasizeAO){
-        color += ambient*occ;
-    }else{
-        color*=occ;
-    }
+    color+=ambient * g_ao;
 
     //Fog
     if(int(object.otherParams.x) == 1 && scene.enableFog) {

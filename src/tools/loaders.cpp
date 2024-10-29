@@ -705,17 +705,45 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     mesh->set_file_route(std::string(fileName));
 }
 
-void VKFW::Tools::Loaders::load_texture(Core::Texture *const texture, const std::string fileName, bool asyncCall)
+void VKFW::Tools::Loaders::load_texture(Core::ITexture *const texture, const std::string fileName, bool asyncCall)
 {
-    // For now simplified ...
-    if (asyncCall)
+    size_t dotPosition = fileName.find_last_of(".");
+
+    if (dotPosition != std::string::npos)
     {
-        std::thread loadThread(Loaders::load_PNG, texture, fileName);
-        loadThread.detach();
+
+        std::string fileExtension = fileName.substr(dotPosition + 1);
+
+        if (fileExtension == PNG || fileExtension == JPG)
+        {
+            if (asyncCall)
+            {
+                std::thread loadThread(Loaders::load_PNG, static_cast<Core::Texture*>(texture), fileName);
+                loadThread.detach();
+            }
+            else
+                Loaders::load_PNG(static_cast<Core::Texture*>(texture), fileName);
+
+            return;
+        }
+        if (fileExtension == HDR)
+        {
+            if (asyncCall)
+            {
+                std::thread loadThread(Loaders::load_HDRi, static_cast<Core::TextureHDR*>(texture), fileName);
+                loadThread.detach();
+            }
+            else
+                Loaders::load_HDRi(static_cast<Core::TextureHDR*>(texture), fileName);
+
+            return;
+        }
+
+        std::cerr << "Unsupported file format: " << fileExtension << std::endl;
     }
     else
     {
-        load_PNG(texture, fileName);
+        std::cerr << "Invalid file name: " << fileName << std::endl;
     }
 }
 

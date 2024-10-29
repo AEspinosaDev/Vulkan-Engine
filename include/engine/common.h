@@ -95,6 +95,7 @@
 #define OBJ "obj"
 #define FBX "fbx"
 #define PNG "png"
+#define HDR "hdr"
 #define JPG "jpg"
 #define HAIR "hair"
 

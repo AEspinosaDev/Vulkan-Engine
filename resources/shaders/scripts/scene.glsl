@@ -13,11 +13,15 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
 
     vec3 ambientColor;
     float ambientIntensity;
+
     LightUniform lights[MAX_LIGHTS];
     int numLights;
+
     int SSAOType;
     bool emphasizeAO;
+    
     bool useIBL;
+    float envRotation;
 } scene;
 
 float computeFog() {

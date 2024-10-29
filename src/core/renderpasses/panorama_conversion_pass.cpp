@@ -11,7 +11,7 @@ void PanoramaConverterPass::init()
     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
     // Color attachment
-    attachmentsInfo[0].format = VK_FORMAT_R8G8B8A8_SRGB;
+    attachmentsInfo[0].format =  static_cast<VkFormat>(m_format);
     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -21,7 +21,7 @@ void PanoramaConverterPass::init()
     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     ImageConfig colorAttachmentImageConfig{};
-    colorAttachmentImageConfig.format = VK_FORMAT_R8G8B8A8_SRGB;
+    colorAttachmentImageConfig.format =  static_cast<VkFormat>(m_format);
     colorAttachmentImageConfig.usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     SamplerConfig colorAttachmentSamplerConfig{};

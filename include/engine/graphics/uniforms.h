@@ -44,6 +44,7 @@ struct SceneUniforms
     int SSAOtype;
     int emphasizeAO;
     int useIBL;
+    float envRotation;
 };
 
 struct ObjectUniforms

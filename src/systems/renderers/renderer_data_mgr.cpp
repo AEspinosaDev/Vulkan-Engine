@@ -47,8 +47,10 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), 0.0f);
     sceneParams.SSAOtype = 0;
     sceneParams.emphasizeAO = false;
-    sceneParams.useIBL = true;
     sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
+    sceneParams.useIBL = scene->use_IBL();
+    if (scene->get_skybox())
+        sceneParams.envRotation = scene->get_skybox()->get_rotation();
 
     std::vector<Core::Light *> lights = scene->get_lights();
     if (lights.size() > VK_MAX_LIGHTS)
@@ -136,7 +138,7 @@ void BaseRenderer::update_object_data(Core::Scene *const scene)
                     objectData.model = m->get_model_matrix();
                     objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(),
                                                false};
-                    objectData.otherParams2 = {m->is_selected(), 0.0, 0.0, 0.0};
+                    objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
                     m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(
                         m_context.memory, &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
 
@@ -254,13 +256,15 @@ void BaseRenderer::setup_skybox(Core::Scene *const scene)
                     m_renderPipeline.panoramaConverterPass->clean_framebuffer();
                     m_renderPipeline.irradianceComputePass->clean_framebuffer();
                 }
-                m_renderPipeline.panoramaConverterPass = new Core::PanoramaConverterPass(
-                    &m_context, {envMap->get_size().height, envMap->get_size().height}, m_vignette);
+                m_renderPipeline.panoramaConverterPass =
+                    new Core::PanoramaConverterPass(&m_context, envMap->get_settings().format,
+                                                    {envMap->get_size().height, envMap->get_size().height}, m_vignette);
                 m_renderPipeline.panoramaConverterPass->setup();
                 m_renderPipeline.panoramaConverterPass->upload_data(m_currentFrame, scene);
                 // Create Irradiance converter pass
                 m_renderPipeline.irradianceComputePass = new Core::IrrandianceComputePass(
-                    &m_context, {envMap->get_size().height, envMap->get_size().height});
+                    &m_context, envMap->get_settings().format,
+                    {m_settings.irradianceResolution, m_settings.irradianceResolution});
                 m_renderPipeline.irradianceComputePass->setup();
                 m_renderPipeline.irradianceComputePass->upload_data(m_currentFrame, scene);
                 m_renderPipeline.irradianceComputePass->connect_env_cubemap(

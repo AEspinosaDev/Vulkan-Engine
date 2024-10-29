@@ -113,6 +113,7 @@ void main() {
 #include light.glsl
 #include scene.glsl
 #include camera.glsl
+#include object.glsl
 #include marschner_fit.glsl
 #include shadow_mapping.glsl
 
@@ -130,13 +131,8 @@ layout(location = 8) in vec3 g_origin;
 
 //Uniforms
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
-layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
+layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
 
-
-layout(set = 1, binding = 0) uniform ObjectUniforms {
-    mat4 model;
-    vec4 otherParams;
-} object;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec3 baseColor;
@@ -247,34 +243,23 @@ float computeShadow(LightUniform light, int lightId) {
 
 
 
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
 
 vec3 computeAmbient(vec3 n) {
 
     vec3 ambient;
-    // if(u_useSkybox){
+    if(scene.useIBL){
 
-    //     vec3 irradiance = texture(u_irradianceMap, n).rgb*u_scene.ambientIntensity;
+        // vec3 irradiance = texture(irradianceMap, n).rgb*scene.ambientIntensity;
 
-    //     ambient = computeLighting(material.roughness+0.2,material.shift,irradiance, 
-    //     material.r,
-    //     false,
-    //     material.trt);
+        // ambient = computeLighting(material.roughness+0.2,material.shift,irradiance, 
+        // material.r,
+        // false,
+        // material.trt);
 
-    // }else{
-
-    ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
-
-    // }
-  // ambient = fn;
+    }else{
+        ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
+    }
     return ambient;
-}
-
-vec3 toneMapReinhard(vec3 color, float exposure) {
-    vec3 mapped = exposure * color;
-    return mapped / (1.0 + mapped);
 }
 
 void main() {
@@ -299,7 +284,9 @@ void main() {
     }
 
 
-    vec3 fakeNormal = vec3(0.0);
+    vec3 n1 = cross(g_modelDir, cross(camera.position.xyz, g_modelDir));
+    vec3 n2 = normalize(g_modelPos-object.volumeCenter);
+    vec3 fakeNormal = mix(n1,n2,0.5);
 
     //AMBIENT COMPONENT ...............
 

@@ -31,6 +31,7 @@ class Skybox
     float m_rotation{0.0f};
 
     bool m_updateEnviroment{true};
+    bool m_active{true};
 
   public:
     Skybox(TextureHDR *env) : m_env(env)
@@ -57,43 +58,51 @@ class Skybox
     {
         return m_box;
     }
-    float get_blurriness() const
+    inline float get_blurriness() const
     {
         return m_blurriness;
     }
-    void set_blurriness(float b)
+    inline void set_blurriness(float b)
     {
         m_blurriness = b;
     }
-    float get_intensity() const
+    inline float get_intensity() const
     {
         return m_intensity;
     }
-    void set_intensity(float i)
+    inline void set_color_intensity(float i)
     {
         m_intensity = i;
     }
     /*
     In degrees
     */
-    float get_rotation() const
+    inline float get_rotation() const
     {
         return m_rotation;
     }
     /*
     In degrees
     */
-    void set_rotation(float r)
+    inline void set_rotation(float r)
     {
         m_rotation = r;
     }
-    bool update_enviroment() const
+    inline bool update_enviroment() const
     {
         return m_updateEnviroment;
     }
-    void set_update_enviroment(bool i)
+    inline void set_update_enviroment(bool i)
     {
         m_updateEnviroment = i;
+    }
+    inline void set_active(const bool s)
+    {
+        m_active = s;
+    }
+    inline bool is_active()
+    {
+        return m_active;
     }
 };
 

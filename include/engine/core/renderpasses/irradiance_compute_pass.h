@@ -17,12 +17,13 @@ namespace Core
 
 class IrrandianceComputePass : public RenderPass
 {
+    ColorFormatType m_format;
     Graphics::DescriptorSet m_captureDescriptorSet;
     Graphics::Buffer m_captureBuffer;
 
   public:
-    IrrandianceComputePass(Graphics::Context *ctx, Extent2D extent)
-        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false)
+    IrrandianceComputePass(Graphics::Context *ctx, ColorFormatType format, Extent2D extent)
+        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false),  m_format(format)
     {
     }
 
