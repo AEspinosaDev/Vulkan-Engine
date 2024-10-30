@@ -116,6 +116,7 @@ void main() {
 #include object.glsl
 #include marschner_BSDF.glsl
 #include shadow_mapping.glsl
+#include reindhart.glsl
 
 //Input
 layout(location = 0) in vec3 g_pos;
@@ -186,17 +187,28 @@ vec3 computeAmbient(vec3 n) {
 
     vec3 ambient;
     if(scene.useIBL){
+        float rad = radians(scene.envRotation);
+        float c = cos(rad);
+        float s = sin(rad);
+        mat3 rotationY = mat3(c, 0.0, -s,
+                0.0, 1.0, 0.0,
+                s, 0.0, c);
+        vec3 rotatedNormal = normalize(rotationY * n);
 
-        // vec3 irradiance = texture(irradianceMap, n).rgb*scene.ambientIntensity;
+        MarschnerBSDF dummyBSDF = bsdf;
+        dummyBSDF.beta+=0.1;
+        ambient = evalMarschnerBSDF(
+                rotatedNormal, 
+                normalize(-g_pos),
+                texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity,
+                dummyBSDF, 
+                material.r, 
+                false,  //Take oput transmitance
+                material.trt);
 
-        // ambient = computeLighting(material.roughness+0.2,material.shift,irradiance, 
-        // material.r,
-        // false,
-        // material.trt);
-        ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
 
     }else{
-        ambient = (scene.ambientIntensity * scene.ambientColor) * material.baseColor;
+        ambient = (scene.ambientIntensity * scene.ambientColor) *  bsdf.baseColor;
     }
     return ambient;
 }
@@ -240,9 +252,9 @@ void main() {
     }
 
 
-    vec3 n1 = cross(g_modelDir, cross(camera.position.xyz, g_modelDir));
-    vec3 n2 = normalize(g_modelPos-object.volumeCenter);
-    vec3 fakeNormal = mix(n1,n2,0.5);
+    // vec3 n1 = cross(g_modelDir, cross(camera.position.xyz, g_modelDir));
+    vec3 fakeNormal = normalize(g_modelPos-object.volumeCenter);
+    // vec3 fakeNormal = mix(n1,n2,0.5);
 
     //AMBIENT COMPONENT ..........................................................
 
@@ -254,6 +266,6 @@ void main() {
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(reindhart(color), 1.0);
 
 }

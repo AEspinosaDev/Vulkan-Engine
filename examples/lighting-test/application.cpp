@@ -14,7 +14,7 @@ void VulkanRenderer::init(Systems::RendererSettings settings)
     m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback, this, std::placeholders::_1,
                                          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new Systems::ForwardRenderer(m_window, settings, {});
+    m_renderer = new Systems::ForwardRenderer(m_window, settings, {LOW,true});
 
     setup();
 
@@ -26,6 +26,7 @@ void VulkanRenderer::run(int argc, char *argv[])
 
     Systems::RendererSettings settings{};
     // settings.AAtype = MSAASamples::FXAA;
+    settings.samplesMSAA = _NONE;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI = true;
 
