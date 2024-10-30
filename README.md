@@ -152,64 +152,63 @@ USING_VULKAN_ENGINE_NAMESPACE
 int main()
 {
 
-	try
-	{
-		float delta;
+    try
+    {
+        float delta;
         float last{0};
 
-//Setup a window
-		Core::WindowBase *window = new Core::WindowGLFW("Kabuto", 800, 600);
+        // Setup a window
+        Core::IWindow *window = new Core::WindowGLFW("Kabuto", 800, 600);
         window->init();
 
-//Create the renderer, you can play with the settings here
-		Systems::RendererSettings settings{};
+        // Create the renderer, you can play with the settings here
+        Systems::RendererSettings settings{};
         settings.samplesMSAA = MSAASamples::MSAA_x4;
         settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
-        Systems::RendererBase *renderer = new Systems::ForwardRenderer(window, settings, {});
+        Systems::BaseRenderer *renderer = new Systems::ForwardRenderer(window, settings, {});
 
-//Create a camera
-		Core::Camera *camera = new Core::Camera();
+        // Create a camera
+        Core::Camera *camera = new Core::Camera();
         camera->set_position(Vec3(0.0f, 0.15f, -1.0f));
         camera->set_far(10);
         camera->set_near(0.1f);
         camera->set_field_of_view(70.0f);
 
-//Create a scene and fill it with a light and a model
-		Core::Scene *scene = new Core::Scene(camera);
+        // Create a scene and fill it with a light and a model
+        Core::Scene *scene = new Core::Scene(camera);
         Core::PointLight *light = new Core::PointLight();
-		light->set_position({ -3.0f, -3.0f, -1.0f });
-		light->set_cast_shadows(false);
-		scene->add(light);
+        light->set_position({-3.0f, -3.0f, -1.0f});
+        light->set_cast_shadows(false);
+        scene->add(light);
 
-		Core::Mesh* model = new Core::Mesh();
-		Tools::Loaders::load_3D_file(model, ENGINE_RESOURCES_PATH "meshes/cube.obj");
-		model->set_scale(0.4f);
-		model->set_rotation({ 45.0f,45.0f,0.0f });
+        Core::Mesh *model = new Core::Mesh();
+        Tools::Loaders::load_3D_file(model, ENGINE_RESOURCES_PATH "meshes/cube.obj");
+        model->set_scale(0.4f);
+        model->set_rotation({45.0f, 45.0f, 0.0f});
 
-		Core::PhysicallyBasedMaterial* material = new Core::PhysicallyBasedMaterial();
-		material->set_albedo(Vec4{ 1.0 });
-		model->push_material(material);
+        Core::PhysicallyBasedMaterial *material = new Core::PhysicallyBasedMaterial();
+        material->set_albedo(Vec4{1.0});
+        model->push_material(material);
 
-		scene->add(model);
+        scene->add(model);
 
-//Rendering loop by quering the window obj
-		while (!window->get_window_should_close())
-		{
-			window->poll_events();
-			renderer->render(scene);
-		}
-//Call this function conviniently shut down the renderer
-//By doing this, the renderer will clean all memory used by its resources
-		renderer->shutdown(scene);
+        // Rendering loop by quering the window obj
+        while (!window->get_window_should_close())
+        {
+            window->poll_events();
+            renderer->render(scene);
+        }
+        // Call this function conviniently shut down the renderer
+        // By doing this, the renderer will clean all memory used by its resources
+        renderer->shutdown(scene);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 ```
 
