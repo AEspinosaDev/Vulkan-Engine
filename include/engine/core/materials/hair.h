@@ -26,13 +26,13 @@ class HairMaterial : public IMaterial
     float m_thickness{0.003f};
 
     bool m_R{true}; // Reflection
-    float m_Rpower{1.0f};
+    float m_Rpower{0.6f};
 
     bool m_TT{true}; // Transmitance
     float m_TTpower{1.0f};
 
     bool m_TRT{true}; // Second reflection
-    float m_TRTpower{25.0f};
+    float m_TRTpower{5.0f};
 
     float m_roughness{0.4f};
     float m_scatter{500.0f};

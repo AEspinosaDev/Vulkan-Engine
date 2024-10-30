@@ -172,11 +172,20 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
 void Image::cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler)
 {
     if (hasView)
+    {
         vkDestroyImageView(device, view, nullptr);
+        hasView = false;
+    }
     if (isInitialized)
+    {
         vmaDestroyImage(memory, handle, allocation);
+        isInitialized = false;
+    }
     if (destroySampler && hasSampler)
+    {
         vkDestroySampler(device, sampler, VK_NULL_HANDLE);
+        hasSampler = false;
+    }
 }
 
 } // namespace Graphics

@@ -52,7 +52,7 @@ struct ObjectUniforms
 {
     Mat4 model;
     Vec4 otherParams1; // x is affected by fog, y is receive shadows, z cast shadows
-    Vec4 otherParams2; // x is selected
+    Vec4 otherParams2; // x is selected // is affected by ambient light
 };
 
 struct MaterialUniforms

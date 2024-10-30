@@ -206,18 +206,6 @@ void VulkanRenderer::setup()
     terrainMesh->set_name("Terrain");
     m_scene->add(terrainMesh);
 
-    Mesh *boxMesh = new Mesh();
-    boxMesh->set_position({-3, -2.3, 3.f});
-    boxMesh->set_rotation({0.0, 20.0f, 0.0f});
-    Tools::Loaders::load_3D_file(boxMesh, MESH_PATH + "cube.obj");
-    Texture *woodText = new Texture();
-    Tools::Loaders::load_texture(woodText, TEXTURE_PATH + "wood_diffuse.jpg");
-    auto boxMat = new PhysicallyBasedMaterial();
-    boxMat->set_albedo_texture(woodText);
-    boxMesh->push_material(boxMat);
-    boxMesh->set_name("Box");
-    boxMesh->set_scale(0.75);
-    m_scene->add(boxMesh);
 
     auto lightMat = new UnlitMaterial();
     lightMat->set_color(glm::vec4(m_scene->get_lights()[0]->get_color(), 1.0f));
@@ -294,7 +282,7 @@ void VulkanRenderer::setup()
     // m_scene->add(hair);
 
     Mesh *lanternMesh = new Mesh();
-    Tools::Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj");
+    Tools::Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj",false);
     auto lanternMat = new PhysicallyBasedMaterial();
     Texture *lanternT = new Texture();
     Tools::Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
