@@ -45,6 +45,7 @@ struct SceneUniforms
     int emphasizeAO;
     int useIBL;
     float envRotation;
+    float envColorMultiplier;
 };
 
 struct ObjectUniforms

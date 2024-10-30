@@ -80,7 +80,7 @@ void main() {
 #include object.glsl
 #include shadow_mapping.glsl
 #include fresnel.glsl
-#include schlick_ggx.glsl
+#include schlick_smith_BRDF.glsl
 #include utils.glsl
 #include ssao.glsl
 #include IBL.glsl
@@ -134,91 +134,64 @@ layout(set = 2, binding = 3) uniform sampler2D metalTex;
 layout(set = 2, binding = 4) uniform sampler2D occlusionTex;
 
 
-//Surface global properties
-vec3 g_normal;
-vec3 g_albedo;
-float g_opacity;
-float g_roughness;
-float g_metalness;
-float g_ao;
-vec3 g_F0;
+//BRDF Definiiton
+SchlickSmithBRDF brdf;
 
 
-vec3 computeLighting(LightUniform light) {
-
-    //Vector setup
-    vec3 lightDir = light.type != 1 ? normalize(light.position - v_pos) : normalize(light.data.xyz); //Direction in case of directionlal light
-    vec3 viewDir = normalize(-v_pos);
-    vec3 halfVector = normalize(lightDir + viewDir); //normalize(viewDir + lightDir);
-
-
-	//Radiance
-    vec3 radiance = light.color * computeAttenuation(light, v_pos) * light.intensity;
-
-	// Cook-Torrance BRDF
-    float NDF = distributionGGX(g_normal, halfVector, g_roughness);
-    float G = geometrySmith(g_normal, viewDir, lightDir, g_roughness);
-    vec3 F = fresnelSchlick(max(dot(halfVector, viewDir), 0.0), g_F0);
-
-    vec3 kD = vec3(1.0) - F;
-    kD *= 1.0 - g_metalness;
-
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(g_normal, viewDir), 0.0) * max(dot(g_normal, lightDir), 0.0) + 0.0001;
-    vec3 specular = numerator / denominator;
-
-	// Add to outgoing radiance result
-    float lambertian = max(dot(g_normal, lightDir), 0.0);
-    return (kD * g_albedo / PI + specular) * radiance * lambertian;
-
-}
-
-void setupSurfaceProperties(){
+void setupBRDFProperties(){
   //Setting input surface properties
-    g_albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
-    g_opacity =  material.hasAlbdoTexture ?  mix(material.opacity, texture(albedoTex, v_uv).a, material.opacityWeight) :material.opacity;
-    g_normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
+    brdf.albedo = material.hasAlbdoTexture ? mix(material.albedo.rgb, texture(albedoTex, v_uv).rgb, material.albedoWeight) : material.albedo.rgb;
+    brdf.opacity =  material.hasAlbdoTexture ?  mix(material.opacity, texture(albedoTex, v_uv).a, material.opacityWeight) :material.opacity;
+    brdf.normal = material.hasNormalTexture ? normalize(v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0)) : v_normal;
 
     if(material.hasMaskTexture) {
         // vec4 mask = pow(texture(maskRoughTex, v_uv).rgba, vec4(2.2)); //Correction linearize color
         vec4 mask = texture(maskRoughTex, v_uv).rgba; //Correction linearize color
         if(material.maskType == 0) { //HDRP UNITY
 		    //Unity HDRP uses glossiness not roughness pipeline, so it has to be inversed
-            g_roughness = 1.0 - mask.a;
-            g_metalness = mask.r;
-            g_ao = mask.g;
+            brdf.roughness = 1.0 - mask.a;
+            brdf.metalness = mask.r;
+            brdf.ao = mask.g;
         } else if(material.maskType == 1) { //UNREAL
-            g_roughness = mask.r;
-            g_metalness = mask.b;
-            g_ao = mask.g;
+            brdf.roughness = mask.r;
+            brdf.metalness = mask.b;
+            brdf.ao = mask.g;
         } else if(material.maskType == 2) { //URP UNITY
             // TO DO ...
         }
     } else {
-        g_roughness = material.hasRoughnessTexture ? mix(material.roughness, texture(maskRoughTex, v_uv).r, material.roughnessWeight) : material.roughness;
-        g_metalness = material.hasMetallicTexture ? mix(material.metalness, texture(metalTex, v_uv).r, material.metalnessWeight) : material.metalness;
-        g_ao = material.hasAOTexture ? mix(material.occlusion, texture(occlusionTex, v_uv).r, material.occlusionWeight) : material.occlusion;
+        brdf.roughness = material.hasRoughnessTexture ? mix(material.roughness, texture(maskRoughTex, v_uv).r, material.roughnessWeight) : material.roughness;
+        brdf.metalness = material.hasMetallicTexture ? mix(material.metalness, texture(metalTex, v_uv).r, material.metalnessWeight) : material.metalness;
+        brdf.ao = material.hasAOTexture ? mix(material.occlusion, texture(occlusionTex, v_uv).r, material.occlusionWeight) : material.occlusion;
     }
-    g_F0 = vec3(0.04);
-    g_F0 = mix(g_F0, g_albedo, g_metalness);
+    brdf.F0 = vec3(0.04);
+    brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
 }
 
 
 
 void main() {
 
-    setupSurfaceProperties();
+    // BRDF  ___________________________________________________________________
+    setupBRDFProperties();
 
     if(material.alphaTest)
-        if(g_opacity<1-EPSILON)discard;
+        if(brdf.opacity<1-EPSILON)discard;
 
-    //Compute all lights
+    //Compute all lights ___________________________________________________________________
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
         if(isInAreaOfInfluence(scene.lights[i], v_pos)){
 
-            vec3 lighting =computeLighting(scene.lights[i]);
+            vec3 lighting =evalSchlickSmithBRDF( 
+                scene.lights[i].type != 1 ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].data.xyz), //wi
+                normalize(-v_pos),                                                                                           //wo
+                scene.lights[i].color * computeAttenuation( scene.lights[i], v_pos) *  scene.lights[i].intensity,              //radiance
+                brdf
+                );
+
+
             if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
                 lighting *= (1.0 - computeShadow(shadowMap,scene.lights[i],i,v_modelPos));
 
@@ -228,32 +201,33 @@ void main() {
         }
     }
 
-    //Ambient component
+    //Ambient component ___________________________________________________________________
     vec3 ambient;
     if(scene.useIBL){
         ambient = computeAmbient(
             irradianceMap,
+            scene.envRotation,
             v_modelNormal,
             normalize(camera.position.xyz-v_modelPos),
-            g_albedo,
-            g_F0,
-            g_metalness,
-            g_roughness,
+            brdf.albedo,
+            brdf.F0,
+            brdf.metalness,
+            brdf.roughness,
             scene.ambientIntensity);
     }else{
-        ambient = (scene.ambientIntensity * scene.ambientColor) * g_albedo;
+        ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
     }
-    //Ambient occlusion
-    color+=ambient * g_ao;
+    //Ambient occlusion ___________________________________________________________________
+    color+=ambient * brdf.ao;
 
-    //Fog
+    //Fog ___________________________________________________________________
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
-        float f = computeFog();
+        float f = computeFog(gl_FragCoord.z);
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
     //Blending
-    outColor = vec4(color, material.blending ? g_opacity: 1.0);
+    outColor = vec4(color, material.blending ? brdf.opacity: 1.0);
 
 
     //Gama correction

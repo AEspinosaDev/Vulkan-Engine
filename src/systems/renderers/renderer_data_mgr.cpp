@@ -49,8 +49,11 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     sceneParams.emphasizeAO = false;
     sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
     sceneParams.useIBL = scene->use_IBL();
-    if (scene->get_skybox())
+    if (scene->get_skybox()) //If skybox
+    {
         sceneParams.envRotation = scene->get_skybox()->get_rotation();
+        sceneParams.envColorMultiplier = scene->get_skybox()->get_intensity();
+    }
 
     std::vector<Core::Light *> lights = scene->get_lights();
     if (lights.size() > VK_MAX_LIGHTS)

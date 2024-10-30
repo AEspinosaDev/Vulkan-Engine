@@ -114,9 +114,8 @@ void main() {
 #include scene.glsl
 #include camera.glsl
 #include object.glsl
-#include marschner_fit.glsl
+#include marschner_BSDF.glsl
 #include shadow_mapping.glsl
-
 
 //Input
 layout(location = 0) in vec3 g_pos;
@@ -157,58 +156,11 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool occlusion;
 } material;
 
-// uniform sampler2D u_noiseMap;
-// uniform sampler2D u_depthMap;
-// uniform samplerCube u_irradianceMap;
-// uniform bool u_useSkybox;
-// uniform vec3 u_BVCenter;
-
 float scatterWeight = 0.0;
 
-
+MarschnerBSDF bsdf;
 
 layout(location = 0) out vec4 fragColor;
-
-
-//Real-time Marschnerr
-vec3 computeLighting(float beta, float shift, LightUniform light, bool r, bool tt, bool trt) {
-
-  //--->>>View space
-    vec3 wi = normalize(light.position.xyz - g_pos);   //Light vector
-    vec3 n = g_normal;                                 //Strand shading normal
-    vec3 v = normalize(-g_pos);                         //Camera vector
-    vec3 u = normalize(g_dir);                          //Strand tangent/direction
-
-  //Betas
-    float betaR = beta * beta;
-    float betaTT = 0.5 * betaR;
-    float betaTRT = 2.0 * betaR;
-
-
-  //Theta & Phi
-    float sinThetaWi = dot(wi, u);
-    float sinThetaV = dot(v, u);
-    vec3 wiPerp = wi - sinThetaWi * u;
-    vec3 vPerp = v - sinThetaV * u;
-    float cosPhiD = dot(wiPerp, vPerp) / sqrt(dot(wiPerp, wiPerp) * dot(vPerp, vPerp));
-
-  // Diff
-    float thetaD = (asin(sinThetaWi) - asin(sinThetaV)) * 0.5;
-    float cosThetaD = cos(thetaD);
-    float sinThetaD = sin(thetaD);
-
-    float R = r ? M(sinThetaWi + sinThetaV - shift * 2.0, betaR) * NR(wi, v, cosPhiD, material.ior) / 0.25 : 0.0;
-    vec3 TT = tt ? M(sinThetaWi + sinThetaV + shift, betaTT) * NTT(sinThetaD, cosThetaD, cosPhiD, material.ior, material.baseColor) : vec3(0.0);
-    vec3 TRT = trt ? M(sinThetaWi + sinThetaV + shift * 4.0, betaTRT) * NTRT(sinThetaD, cosThetaD, cosPhiD,material.ior, material.baseColor) : vec3(0.0);
-
-    vec3 albedo = material.baseColor;
-    vec3 specular = (R * material.Rpower + TT * material.TTpower + TRT * material.TRTpower) / max(0.2, cosThetaD * cosThetaD);
-    vec3 radiance = light.color * light.intensity;
-
-    return (specular + albedo) * radiance;
-
-}
-
 
 
 float computeShadow(LightUniform light, int lightId) {
@@ -228,20 +180,6 @@ float computeShadow(LightUniform light, int lightId) {
     return filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
 
 }
-
-
-
-// vec3 multipleScattering(vec3 n){
-
-//    vec3 l = normalize(u_scene.lightPos.xyz- g_pos);  //Light vector
-
-//   float wrapLight = (dot(n,l)+1.0)/(4.0*PI);
-//   vec3 scattering = sqrt(material.baseColor) * wrapLight * pow(material.baseColor/getLuminance(u_scene.lightColor),vec3(scatterWeight));
-//   return scattering;
-
-// }
-
-
 
 
 vec3 computeAmbient(vec3 n) {
@@ -265,14 +203,31 @@ vec3 computeAmbient(vec3 n) {
 
 void main() {
 
-    //DIRECT LIGHTING ..............
+    //BSDF setup ............................................................
+    bsdf.tangent =  normalize(g_dir);
+    bsdf.baseColor = material.baseColor;
+    bsdf.beta = material.roughness;
+    bsdf.shift = material.shift;
+    bsdf.ior = material.ior;
+    bsdf.Rpower = material.Rpower;
+    bsdf.TTpower = material.TTpower;
+    bsdf.TRTpower = material.TRTpower;
 
+
+    //DIRECT LIGHTING .......................................................
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
         if(isInAreaOfInfluence(scene.lights[i], g_pos)) {
 
-            vec3 lighting = computeLighting(material.roughness, material.shift, scene.lights[i], material.r, material.tt, material.trt);
+            vec3 lighting = evalMarschnerBSDF(
+                normalize(scene.lights[i].position.xyz - g_pos), 
+                normalize(-g_pos),
+                scene.lights[i].color * scene.lights[i].intensity,
+                bsdf, 
+                material.r, 
+                material.tt, 
+                material.trt);
 
             if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
                 lighting *= (1.0 - computeShadow(scene.lights[i], i));
@@ -289,13 +244,13 @@ void main() {
     vec3 n2 = normalize(g_modelPos-object.volumeCenter);
     vec3 fakeNormal = mix(n1,n2,0.5);
 
-    //AMBIENT COMPONENT ...............
+    //AMBIENT COMPONENT ..........................................................
 
     vec3 ambient = computeAmbient(fakeNormal);
     color += ambient;
 
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
-        float f = computeFog();
+        float f = computeFog(gl_FragCoord.z);
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 

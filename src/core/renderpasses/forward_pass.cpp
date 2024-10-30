@@ -286,11 +286,11 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["skybox"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["skybox"]->settings.samples = samples;
     m_shaderPasses["skybox"]->settings.blendAttachments = blendAttachments;
-    VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(Graphics::SkyboxUniforms);
-    m_shaderPasses["skybox"]->settings.pushConstants = {pushConstantRange};
+    // VkPushConstantRange pushConstantRange{};
+    // pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    // pushConstantRange.offset = 0;
+    // pushConstantRange.size = sizeof(Graphics::SkyboxUniforms);
+    // m_shaderPasses["skybox"]->settings.pushConstants = {pushConstantRange};
     // m_shaderPasses["skybox"]->settings.dynamicStates = {VK_DYNAMIC_STATE_DEPTH_COMPARE_OP};
     m_shaderPasses["skybox"]->settings.depthOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 
@@ -384,7 +384,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
             {
                 vkCmdSetDepthTestEnable(cmd, VK_TRUE);
                 vkCmdSetDepthWriteEnable(cmd, VK_TRUE);
-                vkCmdSetCullMode(cmd,VK_CULL_MODE_NONE  );
+                vkCmdSetCullMode(cmd,VK_CULL_MODE_NONE);
 
                 ShaderPass *shaderPass = m_shaderPasses["skybox"];
 
@@ -396,13 +396,6 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                 vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
                                         &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
 
-                Graphics::SkyboxUniforms sku;
-                sku.blurriness = scene->get_skybox()->get_blurriness();
-                sku.intensity = scene->get_skybox()->get_intensity();
-                sku.rotation = scene->get_skybox()->get_rotation();
-                vkCmdPushConstants(cmd, shaderPass->pipelineLayout,
-                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                   sizeof(Graphics::SkyboxUniforms), &sku);
 
                 draw(cmd, scene->get_skybox()->get_box());
             }

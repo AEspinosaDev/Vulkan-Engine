@@ -36,18 +36,13 @@ void main() {
 
 #shader fragment
 #version 460
+#include light.glsl
+#include scene.glsl
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in flat int affectedByFog;
 
 
-layout(set = 0, binding = 1) uniform SceneUniforms {
-    vec4 fogColor; // w is for exponent
-    vec4 fogParams; //x for min, y for max, zw unused.
-    vec4 ambientColor;
-    vec4 lightDirection; //w for sun power
-    vec4 lightColor;
-} scene;
 layout(set = 1, binding = 1) uniform MaterialUniforms {
      vec4 color;
     vec2 tile;
@@ -60,25 +55,17 @@ layout(location = 0) out vec4 outColor;
 
 const float EPSILON = 0.1;
 
-float computeFog() {
-    float z = (2.0 * scene.fogParams.x) / (scene.fogParams.y + scene.fogParams.x - gl_FragCoord.z * (scene.fogParams.y - scene.fogParams.x));
-    return exp(-scene.fogParams.z * z);
-}
-
 void main() {
 
     vec3 color;
     if(affectedByFog==1){
-        float f = computeFog();
+        float f = computeFog(gl_FragCoord.z);
         color = f * fragColor.rgb + (1 - f) * scene.fogColor.rgb;
     }else{
         color = fragColor.rgb;
     }
 
     outColor = vec4(color, 1.0);
-
-    //  float gamma = 2.2;
-    // outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
 
     if(material.alphaTest)
         if(material.color.a<1-EPSILON)discard;

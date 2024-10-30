@@ -4,7 +4,6 @@ float linearizeDepth(float depth, float near, float far) {
     return (linearZ - near) / (far - near);
 }
 
-
 vec3 shiftTangent(vec3 T, vec3 N, float shift) {
     vec3 shiftedT = T + shift * N;
     return normalize(shiftedT);

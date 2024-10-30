@@ -22,9 +22,10 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     
     bool useIBL;
     float envRotation;
+    float envColorMultiplier;
 } scene;
 
-float computeFog() {
-    float z = (2.0 * scene.fogMinDistance) / (scene.fogMaxDistance + scene.fogMinDistance - gl_FragCoord.z * (scene.fogMaxDistance - scene.fogMinDistance));
+float computeFog(float coordDepth) {
+    float z = (2.0 * scene.fogMinDistance) / (scene.fogMaxDistance + scene.fogMinDistance - coordDepth * (scene.fogMaxDistance - scene.fogMinDistance));
     return exp(-scene.fogIntensity * 0.01 * z);
 }
