@@ -65,6 +65,7 @@ struct ShaderPassSettings
 
     // Samples per pixel
     VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
+    bool sampleShading{true};
 
     // Blending
     std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{init::color_blend_attachment_state(false)};

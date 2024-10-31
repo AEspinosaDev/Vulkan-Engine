@@ -272,6 +272,7 @@ void ForwardPass::create_graphic_pipelines()
                                                       {VertexAttributeType::COLOR, true}};
     m_shaderPasses["hairstr"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["hairstr"]->settings.samples = samples;
+    m_shaderPasses["hairstr"]->settings.sampleShading = false;
     m_shaderPasses["hairstr"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
     m_shaderPasses["hairstr2"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
@@ -285,6 +286,7 @@ void ForwardPass::create_graphic_pipelines()
                                                        {VertexAttributeType::COLOR, true}};
     m_shaderPasses["hairstr2"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["hairstr2"]->settings.samples = samples;
+    m_shaderPasses["hairstr2"]->settings.sampleShading = false;
     m_shaderPasses["hairstr2"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
     m_shaderPasses["skybox"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");

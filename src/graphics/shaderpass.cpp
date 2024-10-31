@@ -76,6 +76,8 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
     // Multisampling
     VkPipelineMultisampleStateCreateInfo multisampling =
         init::multisampling_state_create_info(shaderPass.settings.samples);
+    multisampling.sampleShadingEnable = shaderPass.settings.samples > VK_SAMPLE_COUNT_1_BIT && shaderPass.settings.sampleShading ? VK_TRUE : VK_FALSE;
+    multisampling.minSampleShading = .2f;
 
     // Blending
     VkPipelineColorBlendStateCreateInfo colorBlending = init::color_blend_create_info();
