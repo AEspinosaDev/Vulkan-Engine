@@ -256,16 +256,33 @@ class HairStrandMaterial2 : public HairStrandMaterial
     std::unordered_map<int, ITexture *> m_textures{{M, nullptr}, {N, nullptr}};
     virtual Graphics::MaterialUniforms get_uniforms() const;
 
+    virtual inline std::unordered_map<int, ITexture *> get_textures() const
+    {
+        return m_textures;
+    }
+
+    virtual std::unordered_map<int, bool> get_texture_binding_state() const
+    {
+        return m_textureBindingState;
+    }
+    virtual void set_texture_binding_state(int id, bool state)
+    {
+        m_textureBindingState[id] = state;
+    }
+
   public:
     HairStrandMaterial2(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : HairStrandMaterial(baseColor, {}, "hairstr2")
     {
-        TextureSettings settings;
+        TextureSettings settings{};
         settings.useMipmaps = false;
         settings.adressMode = TextureAdressModeType::EDGE_CLAMP;
-        m_textures[M]->set_settings(settings);
-        m_textures[N]->set_settings(settings);
-        Tools::Loaders::load_texture(m_textures[M], ENGINE_RESOURCES_PATH "textures/m.png");
-        Tools::Loaders::load_texture(m_textures[N], ENGINE_RESOURCES_PATH "textures/n.png");
+        m_textures[M] = new Texture(settings);
+        m_textures[N] = new Texture(settings);
+        Tools::Loaders::load_texture(m_textures[M], ENGINE_RESOURCES_PATH "textures/m.png", false);
+        Tools::Loaders::load_texture(m_textures[N], ENGINE_RESOURCES_PATH "textures/n.png", false);
+        m_textureBindingState[M] = false;
+        m_textureBindingState[N] = false;
+        m_isDirty = true;
     }
 };
 } // namespace Core

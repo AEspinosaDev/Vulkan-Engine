@@ -202,7 +202,9 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
                     IMaterial *mat = m->get_material(i);
 
                     ShaderPass *shaderPass =
-                        mat->get_shaderpass_ID() != "hair" ? m_shaderPasses["shadow"] : m_shaderPasses["shadowLine"];
+                        mat->get_shaderpass_ID() != "hairstr" && mat->get_shaderpass_ID() != "hairstr2"
+                            ? m_shaderPasses["shadow"]
+                            : m_shaderPasses["shadowLine"];
 
                     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
 
@@ -233,6 +235,6 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
     end(cmd);
 }
 
-} // namespace render
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END
