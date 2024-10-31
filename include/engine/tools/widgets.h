@@ -10,10 +10,7 @@
 #define WIDGETS_H
 
 #include <engine/common.h>
-
-#include <engine/core/materials/hair.h>
-#include <engine/core/materials/physically_based.h>
-#include <engine/core/scene/scene.h>
+#include <engine/core.h>
 
 #include <engine/systems/renderers/renderer.h>
 

@@ -94,7 +94,7 @@ VkSurfaceFormatKHR Swapchain::choose_swap_surface_format(const std::vector<VkSur
 {
     for (const auto &availableFormat : availableFormats)
     {
-        if (availableFormat.format == desiredFormat && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        if (availableFormat.format == desiredFormat)
         {
             return availableFormat;
         }

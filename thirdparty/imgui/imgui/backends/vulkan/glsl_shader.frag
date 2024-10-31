@@ -11,4 +11,7 @@ layout(location = 0) in struct {
 void main()
 {
     fColor = In.Color * texture(sTexture, In.UV.st);
+    // const vec4 color = In.Color * texture(sTexture, In.UV.st);
+    // const vec3 colorTgt = pow(color.rgb, vec3(2.2)) ;
+    // fColor = vec4(colorTgt, color.a);
 }

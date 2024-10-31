@@ -83,7 +83,7 @@ void FXAAPass::create_descriptors()
 void FXAAPass::create_graphic_pipelines()
 {
 
-    ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/fxaa.glsl");
+    ShaderPass *fxaaPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl");
     fxaaPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
     fxaaPass->settings.attributes = {{VertexAttributeType::POSITION, true},
                                      {VertexAttributeType::NORMAL, false},

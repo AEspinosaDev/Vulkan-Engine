@@ -58,6 +58,7 @@ class VKBooter
 
     const std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation"};
     std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                                    // "VK_EXT_swapchain_colorspace", 
                                                     "VK_EXT_extended_dynamic_state",
                                                     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                                                     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,

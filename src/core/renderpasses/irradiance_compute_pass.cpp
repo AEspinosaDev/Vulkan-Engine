@@ -86,7 +86,7 @@ void IrrandianceComputePass::create_descriptors()
 void IrrandianceComputePass::create_graphic_pipelines()
 {
 
-    ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/irradiance_compute.glsl");
+    ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/misc/irradiance_compute.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
     converterPass->settings.attributes = {{VertexAttributeType::POSITION, true},
                                           {VertexAttributeType::NORMAL, false},

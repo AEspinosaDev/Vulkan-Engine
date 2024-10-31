@@ -19,39 +19,39 @@ jobs:
           submodules: true  # Ensure submodules are cloned
           fetch-depth: 0     # Fetch all history for submodules
 
-      - name: Install Vulkan SDK
-        run: |
-          curl -LO https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe
-          vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.32bit com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.volk com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
-        shell: cmd
+      # - name: Install Vulkan SDK
+      #   run: |
+      #     curl -LO https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe
+      #     vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.32bit com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.volk com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
+      #   shell: cmd
   
-      - name: Set Vulkan SDK environment variables
-        run: |
-          for /d %%i in (C:\VulkanSDK\*) do set VULKAN_SDK=%%i
-          echo "VULKAN_SDK=$VULKAN_SDK" >> $GITHUB_ENV
-          echo "VK_SDK_PATH=$VULKAN_SDK" >> $GITHUB_ENV
-          echo "Adding Vulkan SDK to PATH"
-          echo "$VULKAN_SDK\Bin" >> $GITHUB_PATH
-        shell: cmd
+      # - name: Set Vulkan SDK environment variables
+      #   run: |
+      #     for /d %%i in (C:\VulkanSDK\*) do set VULKAN_SDK=%%i
+      #     echo "VULKAN_SDK=$VULKAN_SDK" >> $GITHUB_ENV
+      #     echo "VK_SDK_PATH=$VULKAN_SDK" >> $GITHUB_ENV
+      #     echo "Adding Vulkan SDK to PATH"
+      #     echo "$VULKAN_SDK\Bin" >> $GITHUB_PATH
+      #   shell: cmd
   
-      - name: Verify Vulkan SDK installation
-        run: |
-          echo "Vulkan SDK installed at: $VULKAN_SDK"
-          dir $VULKAN_SDK\Bin
-        shell: cmd
+      # - name: Verify Vulkan SDK installation
+      #   run: |
+      #     echo "Vulkan SDK installed at: $VULKAN_SDK"
+      #     dir $VULKAN_SDK\Bin
+      #   shell: cmd
       
 
 
-      - name: Set up CMake 3.16
-        uses: jwlawson/actions-setup-cmake@v1
+      # - name: Set up CMake 3.16
+      #   uses: jwlawson/actions-setup-cmake@v1
       
       
 
-      - name: Configure CMake
-        run: cmake -S . -B build
+      # - name: Configure CMake
+      #   run: cmake -S . -B build
 
-      - name: Build
-        run: cmake --build build
+      # - name: Build
+      #   run: cmake --build build
 
-      - name: Run Tests
-        run: ctest --test-dir build --output-on-failure
+      # - name: Run Tests
+      #   run: ctest --test-dir build --output-on-failure

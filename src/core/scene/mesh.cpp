@@ -81,7 +81,7 @@ Mesh *Mesh::clone() const
     Mesh *mesh = new Mesh();
     mesh->m_material = m_material;
     mesh->m_geometry = m_geometry;
-    mesh->m_volume = m_volume;
+    mesh->setup_volume();
     mesh->set_name(m_name + std::string(" clone"));
     mesh->set_transform(m_transform);
     m_instanceCount++;

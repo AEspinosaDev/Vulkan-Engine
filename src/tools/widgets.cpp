@@ -62,6 +62,7 @@ void TextLine::render()
         break;
     }
 }
+#pragma region SCENE EXPLORER
 void SceneExplorerWidget::render()
 {
 
@@ -282,6 +283,7 @@ void Separator::render()
 {
     !m_text ? ImGui::Separator() : ImGui::SeparatorText(m_text);
 }
+#pragma region OBJECT EXPLORER
 
 void ObjectExplorerWidget::render()
 {
@@ -599,9 +601,10 @@ void ObjectExplorerWidget::render()
 
                 ImGui::Separator();
             }
-            if (model->get_material(i)->get_shaderpass_ID() == "hair")
+            if (model->get_material(i)->get_shaderpass_ID() == "hairstr" ||
+                model->get_material(i)->get_shaderpass_ID() == "hairstr2")
             {
-                HairMaterial *mat = static_cast<HairMaterial *>(model->get_material(i));
+                HairStrandMaterial *mat = static_cast<HairStrandMaterial *>(model->get_material(i));
                 // ImGui UI code
                 Vec3 baseColor = mat->get_base_color();
                 if (ImGui::ColorEdit3("Base Color (RGBA)", (float *)&baseColor))
@@ -699,11 +702,34 @@ void ObjectExplorerWidget::render()
                 }
             }
 
-            if (model->get_material(i)->get_shaderpass_ID() == "phong")
-            {
-                // TO DO...
-            }
             if (model->get_material(i)->get_shaderpass_ID() == "unlit")
+            {
+                UnlitMaterial *mat = static_cast<UnlitMaterial *>(model->get_material(i));
+                Vec3 albedo = mat->get_color();
+                if (ImGui::ColorEdit3("Color", (float *)&albedo))
+                {
+                    mat->set_color(Vec4{albedo, mat->get_color().a});
+                };
+
+                float opacity = mat->get_color().a;
+                if (ImGui::DragFloat("Opacity", &opacity, 0.05f, 0.0f, 1.0f))
+                {
+                    mat->set_color(Vec4{Vec3(mat->get_color()), opacity});
+                }
+
+                ImGui::Separator();
+                float tile_u = mat->get_tile().x;
+                float tile_v = mat->get_tile().y;
+                if (ImGui::DragFloat("Tile U", &tile_u, 0.5f, -100.0f, 100.0f))
+                {
+                    mat->set_tile({tile_u, mat->get_tile().y});
+                }
+                if (ImGui::DragFloat("Tile V", &tile_v, 0.5f, -100.0f, 100.0f))
+                {
+                    mat->set_tile({mat->get_tile().x, tile_v});
+                }
+            }
+            if (model->get_material(i)->get_shaderpass_ID() == "phong")
             {
                 // TO DO...
             }

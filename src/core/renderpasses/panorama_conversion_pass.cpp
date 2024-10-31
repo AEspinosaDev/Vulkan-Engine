@@ -84,7 +84,7 @@ void PanoramaConverterPass::create_descriptors()
 void PanoramaConverterPass::create_graphic_pipelines()
 {
 
-    ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/panorama_converter.glsl");
+    ShaderPass *converterPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
     converterPass->settings.attributes = {{VertexAttributeType::POSITION, true},
                                           {VertexAttributeType::NORMAL, false},

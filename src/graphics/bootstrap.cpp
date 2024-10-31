@@ -152,6 +152,15 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
         physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
     }
 
+    // if (utils::is_device_extension_supported(gpu, "VK_EXT_swapchain_colorspace"))
+    // {
+    //     enabledExtensions.push_back("VK_EXT_swapchain_colorspace");
+
+    //     // Link the extended dynamic state features to the physical device features
+    //     extendedDynamicStateFeatures.pNext = physicalDeviceFeatures2.pNext;
+    //     physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
+    // }
+
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2Features = {};
 
     if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state2"))
@@ -397,6 +406,6 @@ VmaAllocator VKBooter::setup_memory(VkInstance instance, VkDevice device, VkPhys
     return memoryAllocator;
 }
 
-} // namespace render
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END

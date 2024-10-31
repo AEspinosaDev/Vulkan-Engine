@@ -80,11 +80,11 @@ void main() {
 #include object.glsl
 #include shadow_mapping.glsl
 #include fresnel.glsl
-#include schlick_smith_BRDF.glsl
 #include utils.glsl
 #include ssao.glsl
 #include IBL.glsl
 #include reindhart.glsl
+#include BRDFs/schlick_smith_BRDF.glsl
 
 //Input
 layout(location = 0) in vec3 v_pos;
@@ -230,7 +230,7 @@ void main() {
     outColor = vec4(color, material.blending ? brdf.opacity: 1.0);
 
 
-    //Gama correction
-	outColor.rgb = reindhart(color);
+    //Postprocess
+	color = reindhartTonemap(color);
 
 }

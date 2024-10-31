@@ -261,20 +261,33 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["physical"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["physical"]->settings.samples = samples;
 
-    m_shaderPasses["hair"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
-    m_shaderPasses["hair"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                               {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                               {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["hair"]->settings.attributes = {{VertexAttributeType::POSITION, true},
-                                                   {VertexAttributeType::NORMAL, false},
-                                                   {VertexAttributeType::UV, false},
-                                                   {VertexAttributeType::TANGENT, true},
-                                                   {VertexAttributeType::COLOR, true}};
-    m_shaderPasses["hair"]->settings.dynamicStates = dynamicStates;
-    m_shaderPasses["hair"]->settings.samples = samples;
-    m_shaderPasses["hair"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    m_shaderPasses["hairstr"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
+    m_shaderPasses["hairstr"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                                  {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                                  {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["hairstr"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                      {VertexAttributeType::NORMAL, false},
+                                                      {VertexAttributeType::UV, false},
+                                                      {VertexAttributeType::TANGENT, true},
+                                                      {VertexAttributeType::COLOR, true}};
+    m_shaderPasses["hairstr"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["hairstr"]->settings.samples = samples;
+    m_shaderPasses["hairstr"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
-    m_shaderPasses["skybox"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/skybox.glsl");
+    m_shaderPasses["hairstr2"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
+    m_shaderPasses["hairstr2"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
+                                                                   {DescriptorLayoutType::OBJECT_LAYOUT, true},
+                                                                   {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["hairstr2"]->settings.attributes = {{VertexAttributeType::POSITION, true},
+                                                       {VertexAttributeType::NORMAL, false},
+                                                       {VertexAttributeType::UV, false},
+                                                       {VertexAttributeType::TANGENT, true},
+                                                       {VertexAttributeType::COLOR, true}};
+    m_shaderPasses["hairstr2"]->settings.dynamicStates = dynamicStates;
+    m_shaderPasses["hairstr2"]->settings.samples = samples;
+    m_shaderPasses["hairstr2"]->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+
+    m_shaderPasses["skybox"] = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
     m_shaderPasses["skybox"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
                                                                  {DescriptorLayoutType::OBJECT_LAYOUT, false},
                                                                  {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
@@ -286,12 +299,6 @@ void ForwardPass::create_graphic_pipelines()
     m_shaderPasses["skybox"]->settings.dynamicStates = dynamicStates;
     m_shaderPasses["skybox"]->settings.samples = samples;
     m_shaderPasses["skybox"]->settings.blendAttachments = blendAttachments;
-    // VkPushConstantRange pushConstantRange{};
-    // pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    // pushConstantRange.offset = 0;
-    // pushConstantRange.size = sizeof(Graphics::SkyboxUniforms);
-    // m_shaderPasses["skybox"]->settings.pushConstants = {pushConstantRange};
-    // m_shaderPasses["skybox"]->settings.dynamicStates = {VK_DYNAMIC_STATE_DEPTH_COMPARE_OP};
     m_shaderPasses["skybox"]->settings.depthOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 
     for (auto pair : m_shaderPasses)
@@ -384,7 +391,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
             {
                 vkCmdSetDepthTestEnable(cmd, VK_TRUE);
                 vkCmdSetDepthWriteEnable(cmd, VK_TRUE);
-                vkCmdSetCullMode(cmd,VK_CULL_MODE_NONE);
+                vkCmdSetCullMode(cmd, VK_CULL_MODE_NONE);
 
                 ShaderPass *shaderPass = m_shaderPasses["skybox"];
 
@@ -395,7 +402,6 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                 uint32_t globalOffsets[] = {0, 0};
                 vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1,
                                         &m_descriptors[frameIndex].globalDescritor.handle, 2, globalOffsets);
-
 
                 draw(cmd, scene->get_skybox()->get_box());
             }

@@ -116,7 +116,7 @@ void main() {
 #include object.glsl
 #include shadow_mapping.glsl
 #include reindhart.glsl
-#include BRDFs/marschner_BSDF.glsl
+#include BRDFs/marschner_LUT_BSDF.glsl
 
 //Input
 layout(location = 0) in vec3 g_pos;
@@ -140,26 +140,23 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
     float Rpower;
     float TTpower;
-    float TRTpower;
-    float roughness;
-
+    float TRTpower; 
     float scatter;
-    float shift;
-    float ior;
-    bool glints;
 
+    bool glints;
     bool useScatter;
     bool coloredScatter;
     bool r;
-    bool tt;
 
+    bool tt;
     bool trt;
     bool occlusion;
 } material;
 
-float scatterWeight = 0.0;
+layout(set = 2, binding = 0) uniform sampler2D mTexture;
+layout(set = 2, binding = 1) uniform sampler2D nTexture;
 
-MarschnerBSDF bsdf;
+MarschnerLookupBSDF bsdf;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -195,13 +192,13 @@ vec3 computeAmbient(vec3 n) {
                 s, 0.0, c);
         vec3 rotatedNormal = normalize(rotationY * n);
 
-        MarschnerBSDF dummyBSDF = bsdf;
-        dummyBSDF.beta+=0.1;
-        ambient = evalMarschnerBSDF(
+        ambient = evalMarschnerLookupBSDF(
                 rotatedNormal, 
                 normalize(-g_pos),
                 texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity,
-                dummyBSDF, 
+                bsdf, 
+                mTexture,
+                nTexture,
                 material.r, 
                 false,  //Take oput transmitance
                 material.trt);
@@ -218,9 +215,6 @@ void main() {
     //BSDF setup ............................................................
     bsdf.tangent =  normalize(g_dir);
     bsdf.baseColor = material.baseColor;
-    bsdf.beta = material.roughness;
-    bsdf.shift = material.shift;
-    bsdf.ior = material.ior;
     bsdf.Rpower = material.Rpower;
     bsdf.TTpower = material.TTpower;
     bsdf.TRTpower = material.TRTpower;
@@ -232,11 +226,13 @@ void main() {
         //If inside liught area influence
         if(isInAreaOfInfluence(scene.lights[i], g_pos)) {
 
-            vec3 lighting = evalMarschnerBSDF(
+            vec3 lighting = evalMarschnerLookupBSDF(
                 normalize(scene.lights[i].position.xyz - g_pos), 
                 normalize(-g_pos),
                 scene.lights[i].color * scene.lights[i].intensity,
                 bsdf, 
+                mTexture,
+                nTexture,
                 material.r, 
                 material.tt, 
                 material.trt);

@@ -11,6 +11,7 @@
 
 #include <engine/core/materials/material.h>
 #include <engine/graphics/descriptors.h>
+#include <engine/tools/loaders.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -18,7 +19,7 @@ namespace Core
 {
 
 /// Epic's Fitted Marschner Workflow. Only works with geometry defined as lines.
-class HairMaterial : public IMaterial
+class HairStrandMaterial : public IMaterial
 {
   protected:
     Vec4 m_baseColor{0.27f, 0.14f, 0.04f, 1.0f}; // w for opacity
@@ -63,11 +64,16 @@ class HairMaterial : public IMaterial
         m_textureBindingState[id] = state;
     }
 
-  public:
-    HairMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : IMaterial("hair"), m_baseColor(baseColor)
+    HairStrandMaterial(Vec4 baseColor, MaterialSettings params, std::string shaderPassID)
+        : IMaterial(shaderPassID, params), m_baseColor(baseColor)
     {
     }
-    HairMaterial(Vec4 baseColor, MaterialSettings params) : IMaterial("hair", params), m_baseColor(baseColor)
+
+  public:
+    HairStrandMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : IMaterial("hairstr"), m_baseColor(baseColor)
+    {
+    }
+    HairStrandMaterial(Vec4 baseColor, MaterialSettings params) : IMaterial("hairstr", params), m_baseColor(baseColor)
     {
     }
 
@@ -232,6 +238,34 @@ class HairMaterial : public IMaterial
     {
         m_occlusion = occlusion;
         m_isDirty = true;
+    }
+};
+
+/*
+Testing material
+*/
+class HairStrandMaterial2 : public HairStrandMaterial
+{
+
+    enum Textures
+    {
+        M = 0,
+        N = 1,
+    };
+
+    std::unordered_map<int, ITexture *> m_textures{{M, nullptr}, {N, nullptr}};
+    virtual Graphics::MaterialUniforms get_uniforms() const;
+
+  public:
+    HairStrandMaterial2(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : HairStrandMaterial(baseColor, {}, "hairstr2")
+    {
+        TextureSettings settings;
+        settings.useMipmaps = false;
+        settings.adressMode = TextureAdressModeType::EDGE_CLAMP;
+        m_textures[M]->set_settings(settings);
+        m_textures[N]->set_settings(settings);
+        Tools::Loaders::load_texture(m_textures[M], ENGINE_RESOURCES_PATH "textures/m.png");
+        Tools::Loaders::load_texture(m_textures[N], ENGINE_RESOURCES_PATH "textures/n.png");
     }
 };
 } // namespace Core
