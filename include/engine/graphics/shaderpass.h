@@ -108,7 +108,7 @@ struct ShaderPass
     static void build_shader_stages(VkDevice &device, ShaderPass &pass,
                                     shaderc_optimization_level optimization = shaderc_optimization_level_performance);
 
-    static void build(VkDevice &device, VkRenderPass renderPass, DescriptorManager &descriptorManager,
+    static void build(VkDevice &device, VkRenderPass renderPass, DescriptorPool &descriptorManager,
                       VkExtent2D &extent, ShaderPass &shaderPass);
 
     void cleanup(VkDevice &device);
@@ -119,7 +119,7 @@ struct ShaderPass
 */
 namespace PipelineBuilder
 {
-void build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &shaderPass);
+void build_pipeline_layout(VkDevice &device, DescriptorPool &descriptorManager, ShaderPass &shaderPass);
 
 void build_graphic_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent, ShaderPass &shaderPass);
 }; // namespace PipelineBuilder

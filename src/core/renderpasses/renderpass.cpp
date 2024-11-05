@@ -47,11 +47,11 @@ void RenderPass::cleanup()
 {
     if (!m_initiatized)
         return;
-    vkDestroyRenderPass(m_context->device, m_handle, nullptr);
+    vkDestroyRenderPass(m_device->handle, m_handle, nullptr);
     for (auto pair : m_shaderPasses)
     {
         ShaderPass *pass = pair.second;
-        pass->cleanup(m_context->device);
+        pass->cleanup(m_device->handle);
     }
     m_descriptorManager.cleanup();
 }
@@ -78,11 +78,11 @@ void RenderPass::create_framebuffer()
             m_attachments[i].image.extent = {m_extent.width, m_extent.height, 1};
             m_attachments[i].image.config.layers = m_framebufferImageDepth;
 
-            m_attachments[i].image.init(m_context->memory, false);
+            m_device->init_image(m_attachments[i].image, false);
 
-            m_attachments[i].image.create_view(m_context->device);
+            m_attachments[i].image.create_view();
 
-            m_attachments[i].image.create_sampler(m_context->device);
+            m_attachments[i].image.create_sampler();
 
             viewAttachments[i] = m_attachments[i].image.view;
         }
@@ -95,14 +95,14 @@ void RenderPass::create_framebuffer()
     for (size_t fb = 0; fb < m_framebufferCount; fb++)
     {
         if (m_isDefault) // If its default need swapchain PRESENT images
-            viewAttachments[presentViewIndex] = m_context->swapchain.get_present_images()[fb].view;
+            viewAttachments[presentViewIndex] = m_device->swapchain.get_present_images()[fb].view;
 
         VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(m_handle, m_extent);
         fbInfo.pAttachments = viewAttachments.data();
         fbInfo.attachmentCount = (uint32_t)viewAttachments.size();
         fbInfo.layers = m_framebufferImageDepth;
 
-        if (vkCreateFramebuffer(m_context->device, &fbInfo, nullptr, &m_framebuffer_handles[fb]) != VK_SUCCESS)
+        if (vkCreateFramebuffer(m_device->handle, &fbInfo, nullptr, &m_framebuffer_handles[fb]) != VK_SUCCESS)
         {
             throw VKException("failed to create framebuffer!");
         }
@@ -114,11 +114,11 @@ void RenderPass::clean_framebuffer()
     if (!m_initiatized)
         return;
     for (VkFramebuffer &fb : m_framebuffer_handles)
-        vkDestroyFramebuffer(m_context->device, fb, nullptr);
+        vkDestroyFramebuffer(m_device->handle, fb, nullptr);
 
     for (size_t i = 0; i < m_attachments.size(); i++)
     {
-        m_attachments[i].image.cleanup(m_context->device, m_context->memory);
+        m_attachments[i].image.cleanup();
     }
 }
 void RenderPass::update()

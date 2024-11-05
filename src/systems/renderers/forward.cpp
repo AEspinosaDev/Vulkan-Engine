@@ -53,7 +53,7 @@ void ForwardRenderer::setup_renderpasses()
 
 void ForwardRenderer::update_shadow_quality()
 {
-    m_device.wait_for_device();
+    m_device.wait();
 
     const uint32_t SHADOW_RES = (uint32_t)m_settings2.shadowQuality;
     m_renderPipeline.renderpasses[SHADOW]->set_extent({SHADOW_RES, SHADOW_RES});

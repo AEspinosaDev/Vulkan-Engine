@@ -65,7 +65,7 @@ void ShadowPass::init()
     renderPassInfo.dependencyCount = 2;
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_device->handle, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
@@ -77,9 +77,9 @@ void ShadowPass::init()
 void ShadowPass::create_descriptors()
 {
 
-    m_descriptorManager.init(m_context->device);
+    m_descriptorManager.init(m_device->handle);
     m_descriptorManager.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
-    m_descriptors.resize(m_context->frames.size());
+    m_descriptors.resize(m_device->frames.size());
 
     // GLOBAL SET
     VkDescriptorSetLayoutBinding camBufferBinding = Init::descriptorset_layout_binding(
@@ -105,28 +105,28 @@ void ShadowPass::create_descriptors()
     VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
 
-    for (size_t i = 0; i < m_context->frames.size(); i++)
+    for (size_t i = 0; i < m_device->frames.size(); i++)
     {
         // Global
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT,
                                                     &m_descriptors[i].globalDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0,
+        m_descriptorManager.set_descriptor_write(&m_device->frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0,
                                                  &m_descriptors[i].globalDescritor,
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[0], sizeof(SceneUniforms),
-                                                 Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu),
+        m_descriptorManager.set_descriptor_write(&m_device->frames[i].uniformBuffers[0], sizeof(SceneUniforms),
+                                                 Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_device->gpu),
                                                  &m_descriptors[i].globalDescritor,
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
         // Per-object
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT,
                                                     &m_descriptors[i].objectDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
+        m_descriptorManager.set_descriptor_write(&m_device->frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0,
                                                  &m_descriptors[i].objectDescritor,
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
         m_descriptorManager.set_descriptor_write(
-            &m_context->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu), &m_descriptors[i].objectDescritor,
+            &m_device->frames[i].uniformBuffers[1], sizeof(MaterialUniforms),
+            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_device->gpu), &m_descriptors[i].objectDescritor,
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
@@ -152,16 +152,16 @@ void ShadowPass::create_graphic_pipelines()
 
     ShaderPass *depthPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows/shadows_geom.glsl");
     depthPass->settings = settings;
-    ShaderPass::build_shader_stages(m_context->device, *depthPass);
-    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *depthPass);
+    ShaderPass::build_shader_stages(m_device->handle, *depthPass);
+    ShaderPass::build(m_device->handle, m_handle, m_descriptorManager, m_extent, *depthPass);
     m_shaderPasses["shadow"] = depthPass;
 
     ShaderPass *depthLinePass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/shadows/shadows_line_geom.glsl");
     depthLinePass->settings = settings;
     depthLinePass->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;
-    ShaderPass::build_shader_stages(m_context->device, *depthLinePass);
-    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *depthLinePass);
+    ShaderPass::build_shader_stages(m_device->handle, *depthLinePass);
+    ShaderPass::build(m_device->handle, m_handle, m_descriptorManager, m_extent, *depthLinePass);
     m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
@@ -169,7 +169,7 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
 {
     PROFILING_EVENT()
 
-    VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
+    VkCommandBuffer cmd = m_device->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
 
@@ -192,7 +192,7 @@ void ShadowPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presen
         {
             if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
             {
-                uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
+                uint32_t objectOffset = m_device->frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
                 uint32_t globalOffset = 0; // DEPENDENCY !!!!
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)

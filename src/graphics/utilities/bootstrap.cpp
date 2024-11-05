@@ -5,19 +5,20 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
-
-VkInstance VKBooter::create_instance()
+#pragma region INSTANCE
+VkInstance Booter::create_instance(const char *appName, const char *engineName, bool validation,
+                                   std::vector<const char *> validationLayers)
 {
-    if (m_validation && !Utils::check_validation_layer_suport(m_validationLayers))
+    if (validation && !Utils::check_validation_layer_suport(validationLayers))
     {
-        throw std::runtime_error(" validation layers requested, but not available!");
+        throw VKException(" validation layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "UserDeclare";
+    appInfo.pApplicationName = appName;
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "VK Engine";
+    appInfo.pEngineName = engineName;
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_3; // To enable the most extensions
 
@@ -25,16 +26,16 @@ VkInstance VKBooter::create_instance()
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    auto extensions = get_required_extensions();
+    auto extensions = get_required_extensions(validation);
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-    if (m_validation)
+    if (validation)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-        createInfo.ppEnabledLayerNames = m_validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
 
         Utils::populate_debug_messenger_create_info(debugCreateInfo);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
@@ -49,12 +50,12 @@ VkInstance VKBooter::create_instance()
     VkInstance instance{};
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to create instance!");
+        throw VKException("failed to create instance!");
     }
     return instance;
 }
 
-std::vector<const char *> VKBooter::get_required_extensions()
+std::vector<const char *> Booter::get_required_extensions(bool validation)
 {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
@@ -62,7 +63,7 @@ std::vector<const char *> VKBooter::get_required_extensions()
 
     std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-    if (m_validation)
+    if (validation)
     {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -75,8 +76,10 @@ std::vector<const char *> VKBooter::get_required_extensions()
 #endif
     return extensions;
 }
+#pragma region GPU
 
-VkPhysicalDevice VKBooter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface)
+VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface,
+                                                   std::vector<const char *> extensions)
 {
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
 
@@ -84,7 +87,7 @@ VkPhysicalDevice VKBooter::pick_graphics_card_device(VkInstance instance, VkSurf
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
     if (deviceCount == 0)
     {
-        throw std::runtime_error("failed to find GPUs with Vulkan support!");
+        throw VKException("failed to find GPUs with Vulkan support!");
     }
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
@@ -93,7 +96,7 @@ VkPhysicalDevice VKBooter::pick_graphics_card_device(VkInstance instance, VkSurf
 
     for (const auto &device : devices)
     {
-        int score = rate_device_suitability(device, surface);
+        int score = rate_device_suitability(device, surface, extensions);
 
         candidates.insert(std::make_pair(score, device));
     }
@@ -108,18 +111,83 @@ VkPhysicalDevice VKBooter::pick_graphics_card_device(VkInstance instance, VkSurf
     }
     else
     {
-        throw std::runtime_error("failed to find a suitable GPU!");
+        throw VKException("failed to find a suitable GPU!");
     }
 
     return gpu;
 }
-VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presentQueue, VkPhysicalDevice gpu,
-                                         VkPhysicalDeviceFeatures features, VkSurfaceKHR surface)
-{
-    QueueFamilyIndices indices = find_queue_families(gpu, surface);
 
+int Booter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface, std::vector<const char *> extensions)
+{
+    VkPhysicalDeviceProperties deviceProperties;
+
+    // VR, 64B floats and multi-viewport
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    int score = 0;
+
+    // Discrete GPUs have a significant performance advantage
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        score += 1000;
+    }
+
+    // Maximum possible size of textures affects graphics quality
+    score += deviceProperties.limits.maxImageDimension2D;
+
+    Utils::QueueFamilyIndices indices = Utils::find_queue_families(device, surface);
+
+    // Application can't function without geometry shaders
+    if (!deviceFeatures.geometryShader || !indices.isComplete())
+    {
+        return 0;
+    }
+    bool swapChainAdequate = false;
+    if (check_device_extension_support(device, extensions))
+    {
+        Utils::SwapChainSupportDetails swapChainSupport = Utils::query_swapchain_support(device, surface);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+        if (!swapChainAdequate)
+            return 0;
+    }
+    else
+    {
+        return 0;
+    }
+
+    return score;
+}
+
+bool Booter::check_device_extension_support(VkPhysicalDevice device, std::vector<const char *> extensions)
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(extensions.begin(), extensions.end());
+
+    for (const auto &extension : availableExtensions)
+    {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+}
+
+#pragma region DEVICE
+VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &queues, VkPhysicalDevice gpu,
+                                       VkPhysicalDeviceFeatures features, VkSurfaceKHR surface, bool validation,
+                                       std::vector<const char *> validationLayers)
+{
+
+    Utils::QueueFamilyIndices queueFamilies = Utils::find_queue_families(gpu,surface);
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies = {queueFamilies.graphicsFamily.value(),
+                                              queueFamilies.presentFamily.value()};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -151,15 +219,6 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
 
         physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
     }
-
-    // if (utils::is_device_extension_supported(gpu, "VK_EXT_swapchain_colorspace"))
-    // {
-    //     enabledExtensions.push_back("VK_EXT_swapchain_colorspace");
-
-    //     // Link the extended dynamic state features to the physical device features
-    //     extendedDynamicStateFeatures.pNext = physicalDeviceFeatures2.pNext;
-    //     physicalDeviceFeatures2.pNext = &extendedDynamicStateFeatures;
-    // }
 
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2Features = {};
 
@@ -235,10 +294,10 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
     createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
 
-    if (m_validation)
+    if (validation)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-        createInfo.ppEnabledLayerNames = m_validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
     }
     else
     {
@@ -249,153 +308,29 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
     {
         throw std::runtime_error("failed to create logical device!");
     }
-    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+
+    vkGetDeviceQueue(device, queueFamilies.graphicsFamily.value(), 0, &queues[QueueType::GRAPHIC]);
+    vkGetDeviceQueue(device, queueFamilies.presentFamily.value(), 0, &queues[QueueType::PRESENT]);
 
     return device;
 }
 
-int VKBooter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface)
+#pragma region DEBUG
+
+VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance)
 {
-    VkPhysicalDeviceProperties deviceProperties;
-
-    // VR, 64B floats and multi-viewport
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-    int score = 0;
-
-    // Discrete GPUs have a significant performance advantage
-    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-    {
-        score += 1000;
-    }
-
-    // Maximum possible size of textures affects graphics quality
-    score += deviceProperties.limits.maxImageDimension2D;
-
-    QueueFamilyIndices indices = find_queue_families(device, surface);
-
-    // Application can't function without geometry shaders
-    if (!deviceFeatures.geometryShader || !indices.isComplete())
-    {
-        return 0;
-    }
-    bool swapChainAdequate = false;
-    if (check_device_extension_support(device))
-    {
-        SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, surface);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        if (!swapChainAdequate)
-            return 0;
-    }
-    else
-    {
-        return 0;
-    }
-
-    return score;
-}
-
-bool VKBooter::check_device_extension_support(VkPhysicalDevice device)
-{
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-    std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
-
-    for (const auto &extension : availableExtensions)
-    {
-        requiredExtensions.erase(extension.extensionName);
-    }
-
-    return requiredExtensions.empty();
-}
-
-QueueFamilyIndices find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface)
-{
-    QueueFamilyIndices indices;
-
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-    int i = 0;
-    for (const auto &queueFamily : queueFamilies)
-    {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-        {
-            indices.graphicsFamily = i;
-        }
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        if (presentSupport)
-        {
-            indices.presentFamily = i;
-        }
-        if (indices.isComplete())
-        {
-            break;
-        }
-
-        i++;
-    }
-
-    return indices;
-}
-
-SwapChainSupportDetails query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface)
-{
-    SwapChainSupportDetails details;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-    if (formatCount != 0)
-    {
-        details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-    }
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-    if (presentModeCount != 0)
-    {
-        details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-    }
-    return details;
-}
-
-VkInstance VKBooter::boot_vulkan()
-{
-    VkInstance instance = create_instance();
-    return instance;
-}
-
-VkDebugUtilsMessengerEXT VKBooter::create_debug_messenger(VkInstance instance)
-{
-    if (!m_validation)
-        return VK_NULL_HANDLE;
-
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     Utils::populate_debug_messenger_create_info(createInfo);
 
     VkDebugUtilsMessengerEXT debugMessenger{};
     if (Utils::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to set up debug messenger!");
+        throw VKException("failed to set up debug messenger!");
     }
     return debugMessenger;
 }
-VmaAllocator VKBooter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu)
+#pragma region VMA
+VmaAllocator Booter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu)
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice = gpu;

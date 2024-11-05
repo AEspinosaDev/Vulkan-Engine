@@ -5,8 +5,11 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsage)
+void Image::init(VkDevice &_device, VmaAllocator _memory, bool useMipmaps, VmaMemoryUsage memoryUsage)
 {
+    device = _device;
+    memory = _memory;
+
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage = memoryUsage;
 
@@ -22,7 +25,7 @@ void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsag
     isInitialized = true;
 }
 
-void Image::create_view(VkDevice &device)
+void Image::create_view()
 {
     VkImageViewCreateInfo dview_info = Init::imageview_create_info(
         config.format, handle, viewConfig.viewType, viewConfig.aspectFlags, config.mipLevels, config.layers);
@@ -30,7 +33,7 @@ void Image::create_view(VkDevice &device)
 
     hasView = true;
 }
-void Image::create_sampler(VkDevice &device)
+void Image::create_sampler()
 {
     VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(
         samplerConfig.filters, VK_SAMPLER_MIPMAP_MODE_LINEAR, samplerConfig.minLod, samplerConfig.maxLod,
@@ -169,7 +172,7 @@ void Image::generate_mipmaps(VkCommandBuffer &cmd)
                          nullptr, 1, &imageBarrier_toReadable);
 }
 
-void Image::cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler)
+void Image::cleanup(bool destroySampler)
 {
     if (hasView)
     {

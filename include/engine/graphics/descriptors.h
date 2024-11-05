@@ -33,7 +33,7 @@ struct DescriptorSet
               uint32_t firstSet, const std::vector<uint32_t> offsets);
 };
 
-class DescriptorManager
+class DescriptorPool
 {
     VkDevice m_device;
     VkDescriptorPool m_pool{};

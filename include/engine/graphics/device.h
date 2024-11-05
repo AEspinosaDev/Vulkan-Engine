@@ -9,13 +9,12 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
-// #include <functional>
-
 #include <engine/common.h>
 
 #include <engine/graphics/extensions.h>
 #include <engine/graphics/frame.h>
 #include <engine/graphics/swapchain.h>
+#include <engine/graphics/command_buffer.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/utils.h>
@@ -29,21 +28,20 @@ Vulkan API graphic context related data and functionality
 */
 struct Device
 {
-    VkDevice device{VK_NULL_HANDLE};
+    VkDevice handle{VK_NULL_HANDLE};
+
     VkInstance instance{VK_NULL_HANDLE};
     VkPhysicalDevice gpu{VK_NULL_HANDLE};
     VmaAllocator memory{VK_NULL_HANDLE};
 
     Swapchain swapchain{};
+    std::vector<Frame> frames;
 
-    VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
-
-    VkQueue graphicsQueue{};
-    VkQueue presentQueue{};
+    Utils::QueueFamilyIndices queueFamilies{};
+    std::unordered_map<QueueType, VkQueue> queues;
 
     VkDescriptorPool m_guiPool{};
-
-    std::vector<Frame> frames;
+    VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
 
     Utils::UploadContext uploadContext{};
 
@@ -52,6 +50,13 @@ struct Device
 #else
     const bool enableValidationLayers{true};
 #endif
+    const std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation"};
+    std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                                    "VK_EXT_extended_dynamic_state",
+                                                    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+                                                    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+                                                    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                                    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
 
     /*
     INIT AND SHUTDOWN
@@ -65,6 +70,28 @@ struct Device
                           VkPresentModeKHR presentMode);
 
     void cleanup();
+
+    /*
+    OBJECT INITIALIZAITON
+    -----------------------------------------------
+    */
+
+    void init_buffer(Buffer &buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                       uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes = {});
+
+    void init_image(Image &image, bool useMipmaps, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
+
+    void init_command_pool(CommandPool &pool, QueueType type);
+
+    // void create_descriptor_manager();
+
+    // void create_render_pass();
+
+    // void create_graphic_pipeline();
+
+    // void create_compute_pipeline();
+
+    // void create_framebuffer();
 
     /*
     DRAWING
@@ -84,12 +111,13 @@ struct Device
                               uint32_t firstInstance = 0);
 
     static void draw_empty(VkCommandBuffer &cmd, uint32_t vertexCount = 0, uint32_t instanceCount = 1);
+
     /*
     DATA TRANSFER
     -----------------------------------------------
     */
     void upload_vertex_arrays(VertexArrays &vao, size_t vboSize, const void *vboData, size_t iboSize,
-                              const void *iboData );
+                              const void *iboData);
 
     void destroy_vertex_arrays(VertexArrays &vao);
 
@@ -101,7 +129,7 @@ struct Device
     MISC
     -----------------------------------------------
     */
-    void wait_for_device();
+    void wait();
 
     void init_gui_pool();
 };

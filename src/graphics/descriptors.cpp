@@ -5,7 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage,
+void DescriptorPool::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uint32_t numUBOStorage,
                                     uint32_t numImageCombined, uint32_t maxSets)
 {
     std::vector<VkDescriptorPoolSize> sizes = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numUBO},
@@ -22,7 +22,7 @@ void DescriptorManager::create_pool(uint32_t numUBO, uint32_t numUBODynamic, uin
 
     VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_pool));
 }
-void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings,
+void DescriptorPool::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayoutBinding *bindings,
                                    uint32_t bindingCount, VkDescriptorSetLayoutCreateFlags flags)
 {
     VkDescriptorSetLayout layout;
@@ -37,7 +37,7 @@ void DescriptorManager::set_layout(uint32_t layoutSetIndex, VkDescriptorSetLayou
 
     m_layouts[layoutSetIndex] = layout;
 }
-void DescriptorManager::allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet *descriptor)
+void DescriptorPool::allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet *descriptor)
 {
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.pNext = nullptr;
@@ -52,7 +52,7 @@ void DescriptorManager::allocate_descriptor_set(uint32_t layoutSetIndex, Descrip
 
     descriptor->allocated = true;
 }
-void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset,
+void DescriptorPool::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSize, VkDeviceSize readOffset,
                                              DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
 {
     VkDescriptorBufferInfo info;
@@ -68,7 +68,7 @@ void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSi
 
     vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
 }
-void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout,
+void DescriptorPool::set_descriptor_write(VkSampler sampler, VkImageView imageView, VkImageLayout layout,
                                              DescriptorSet *descriptor, uint32_t binding)
 {
 
@@ -84,7 +84,7 @@ void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imag
 
     vkUpdateDescriptorSets(m_device, 1, &texture1, 0, nullptr);
 }
-void DescriptorManager::cleanup()
+void DescriptorPool::cleanup()
 {
     for (auto &layout : m_layouts)
     {
@@ -93,7 +93,7 @@ void DescriptorManager::cleanup()
     vkDestroyDescriptorPool(m_device, m_pool, nullptr);
 }
 
-void DescriptorManager::bind_descriptor_sets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+void DescriptorPool::bind_descriptor_sets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                              VkPipelineLayout pipelineLayout, uint32_t firstSet,
                                              const std::vector<DescriptorSet> descriptorSets)
 {

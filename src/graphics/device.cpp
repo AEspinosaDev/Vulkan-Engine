@@ -11,58 +11,56 @@ void Device::init(void *windowHandle, WindowingSystem windowingSystem, VkExtent2
 
     // BOOT Vulkan ------>>>
 
-    VKBooter booter(enableValidationLayers);
-
-    instance = booter.boot_vulkan();
-    debugMessenger = booter.create_debug_messenger(instance);
-
+    // Instance
+    instance = Booter::create_instance("xxx", "VulkanDevice", enableValidationLayers, m_validationLayers);
+    if (enableValidationLayers)
+        debugMessenger = Booter::create_debug_messenger(instance);
+    // Surface
     Extent2D actualExtent = swapchain.create_surface(instance, windowHandle, windowingSystem);
-
     // Get gpu
-    gpu = booter.pick_graphics_card_device(instance, swapchain.get_surface());
-
+    gpu = Booter::pick_graphics_card_device(instance, swapchain.get_surface(), m_deviceExtensions);
     // Create logical device
-    device = booter.create_logical_device(graphicsQueue, presentQueue, gpu, Utils::get_gpu_features(gpu),
-                                          swapchain.get_surface());
-
+    handle = Booter::create_logical_device(queues, gpu, Utils::get_gpu_features(gpu),
+                                           swapchain.get_surface(), enableValidationLayers, m_validationLayers);
     // Setup VMA
-    memory = booter.setup_memory(instance, device, gpu);
-
-    uploadContext.init(device, gpu, swapchain.get_surface());
+    memory = Booter::setup_memory(instance, handle, gpu);
 
     // Create swapchain
-    swapchain.create(gpu, device, actualExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+    swapchain.create(gpu, handle, actualExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+
+    uploadContext.init(handle, gpu, swapchain.get_surface());
 
     // Init frames with control objects
     frames.resize(framesPerFlight);
     for (size_t i = 0; i < frames.size(); i++)
-        frames[i].init(device, gpu, swapchain.get_surface());
+        frames[i].init(handle, gpu, swapchain.get_surface());
 
     // Load extension function pointers
-    load_EXT_functions(device);
+    load_EXT_functions(handle);
+
     //------<<<
 }
 
 void Device::update_swapchain(VkExtent2D surfaceExtent, uint32_t framesPerFlight, VkFormat presentFormat,
                               VkPresentModeKHR presentMode)
 {
-    swapchain.create(gpu, device, surfaceExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+    swapchain.create(gpu, handle, surfaceExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
 }
 
 void Device::cleanup()
 {
     for (size_t i = 0; i < frames.size(); i++)
     {
-        frames[i].cleanup(device);
+        frames[i].cleanup(handle);
     }
 
-    uploadContext.cleanup(device);
+    uploadContext.cleanup(handle);
 
-    swapchain.cleanup(device);
+    swapchain.cleanup(handle);
 
     vmaDestroyAllocator(memory);
 
-    vkDestroyDevice(device, nullptr);
+    vkDestroyDevice(handle, nullptr);
 
     if (enableValidationLayers)
     {
@@ -73,17 +71,30 @@ void Device::cleanup()
     vkDestroyInstance(instance, nullptr);
 }
 
+void Device::init_buffer(Buffer &buffer, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+                         uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
+{
+    buffer.init(memory, allocSize, usage, memoryUsage, istrideSize, stridePartitionsSizes);
+}
+void Device::init_image(Image &image, bool useMipmaps, VmaMemoryUsage memoryUsage)
+{
+    image.init(handle, memory, useMipmaps, memoryUsage);
+}
+void Device::init_command_pool(CommandPool &pool, QueueType type)
+{
+    pool.init(handle, Utils::find_queue_families(gpu, swapchain.get_surface()).graphicsFamily.value());
+}
 VkResult Device::aquire_present_image(const uint32_t &currentFrame, uint32_t &imageIndex)
 {
-    VK_CHECK(vkWaitForFences(device, 1, &frames[currentFrame].renderFence, VK_TRUE, UINT64_MAX));
-    VkResult result = vkAcquireNextImageKHR(device, swapchain.get_handle(), UINT64_MAX,
+    VK_CHECK(vkWaitForFences(handle, 1, &frames[currentFrame].renderFence, VK_TRUE, UINT64_MAX));
+    VkResult result = vkAcquireNextImageKHR(handle, swapchain.get_handle(), UINT64_MAX,
                                             frames[currentFrame].presentSemaphore, VK_NULL_HANDLE, &imageIndex);
     return result;
 }
 
 void Device::begin_command_buffer(const uint32_t &currentFrame)
 {
-    VK_CHECK(vkResetFences(device, 1, &frames[currentFrame].renderFence));
+    VK_CHECK(vkResetFences(handle, 1, &frames[currentFrame].renderFence));
     VK_CHECK(vkResetCommandBuffer(frames[currentFrame].commandBuffer, 0));
 
     VkCommandBufferBeginInfo beginInfo = Init::command_buffer_begin_info();
@@ -116,7 +127,7 @@ VkResult Device::present_image(const uint32_t &currentFrame, uint32_t imageIndex
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, frames[currentFrame].renderFence) != VK_SUCCESS)
+    if (vkQueueSubmit(queues[QueueType::GRAPHIC], 1, &submitInfo, frames[currentFrame].renderFence) != VK_SUCCESS)
     {
         throw VKException("failed to submit draw command buffer!");
     }
@@ -130,7 +141,7 @@ VkResult Device::present_image(const uint32_t &currentFrame, uint32_t imageIndex
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &imageIndex;
 
-    return vkQueuePresentKHR(presentQueue, &presentInfo);
+    return vkQueuePresentKHR(queues[QueueType::PRESENT], &presentInfo);
 }
 
 void Device::draw_geometry(VkCommandBuffer &cmd, Buffer &vbo, Buffer &ibo, uint32_t vertexCount, uint32_t indexCount,
@@ -171,9 +182,9 @@ void Device::upload_vertex_arrays(VertexArrays &vao, size_t vboSize, const void 
 
     // GPU vertex buffer
     vao.vbo.init(memory, vboSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-             VMA_MEMORY_USAGE_GPU_ONLY);
+                 VMA_MEMORY_USAGE_GPU_ONLY);
 
-    uploadContext.immediate_submit(device, graphicsQueue, [=](VkCommandBuffer cmd) {
+    uploadContext.immediate_submit(handle, queues[QueueType::GRAPHIC], [=](VkCommandBuffer cmd) {
         VkBufferCopy copy;
         copy.dstOffset = 0;
         copy.srcOffset = 0;
@@ -192,9 +203,9 @@ void Device::upload_vertex_arrays(VertexArrays &vao, size_t vboSize, const void 
 
         // GPU index buffer
         vao.ibo.init(memory, iboSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                 VMA_MEMORY_USAGE_GPU_ONLY);
+                     VMA_MEMORY_USAGE_GPU_ONLY);
 
-        uploadContext.immediate_submit(device, graphicsQueue, [=](VkCommandBuffer cmd) {
+        uploadContext.immediate_submit(handle, queues[QueueType::GRAPHIC], [=](VkCommandBuffer cmd) {
             VkBufferCopy index_copy;
             index_copy.dstOffset = 0;
             index_copy.srcOffset = 0;
@@ -220,12 +231,12 @@ void Device::upload_texture_image(const void *imgCache, size_t bytesPerPixel, Im
     img->config.usageFlags =
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     img->config.samples = VK_SAMPLE_COUNT_1_BIT;
-    img->init(memory, mipmapping);
+    img->init(handle, memory, mipmapping);
 
     // CREATE VIEW
     img->viewConfig.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     // What if other type of texture
-    img->create_view(device);
+    img->create_view();
 
     Buffer stagingBuffer;
 
@@ -234,7 +245,7 @@ void Device::upload_texture_image(const void *imgCache, size_t bytesPerPixel, Im
     stagingBuffer.init(memory, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer.upload_data(imgCache, static_cast<size_t>(imageSize));
 
-    uploadContext.immediate_submit(device, graphicsQueue,
+    uploadContext.immediate_submit(handle, queues[QueueType::GRAPHIC],
                                    [&](VkCommandBuffer cmd) { img->upload_image(cmd, &stagingBuffer); });
 
     stagingBuffer.cleanup();
@@ -249,25 +260,26 @@ void Device::upload_texture_image(const void *imgCache, size_t bytesPerPixel, Im
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
 
-        uploadContext.immediate_submit(device, graphicsQueue, [&](VkCommandBuffer cmd) { img->generate_mipmaps(cmd); });
+        uploadContext.immediate_submit(handle, queues[QueueType::GRAPHIC],
+                                       [&](VkCommandBuffer cmd) { img->generate_mipmaps(cmd); });
     }
 
     // CREATE SAMPLER
     img->samplerConfig.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     img->samplerConfig.maxAnysotropy = Utils::get_gpu_properties(gpu).limits.maxSamplerAnisotropy;
-    img->create_sampler(device);
+    img->create_sampler();
 
     img->loadedOnGPU = true;
 }
 
 void Device::destroy_texture_image(Image *const img)
 {
-    img->cleanup(device, memory);
+    img->cleanup();
 }
 
-void Device::wait_for_device()
+void Device::wait()
 {
-    VK_CHECK(vkDeviceWaitIdle(device));
+    VK_CHECK(vkDeviceWaitIdle(handle));
 }
 
 void Device::init_gui_pool()
@@ -291,7 +303,7 @@ void Device::init_gui_pool()
     pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    VK_CHECK(vkCreateDescriptorPool(device, &pool_info, nullptr, &m_guiPool));
+    VK_CHECK(vkCreateDescriptorPool(handle, &pool_info, nullptr, &m_guiPool));
 }
 } // namespace Graphics
 

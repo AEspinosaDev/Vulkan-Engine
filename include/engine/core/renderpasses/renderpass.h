@@ -56,7 +56,7 @@ It can be inherited for full user control over the render pipeline.
 class RenderPass
 {
   protected:
-    Graphics::Device *m_context{nullptr};
+    Graphics::Device *m_device{nullptr};
 
     VkRenderPass m_handle;
     VkExtent2D m_extent;
@@ -70,7 +70,7 @@ class RenderPass
 
     std::unordered_map<std::string, Graphics::ShaderPass *> m_shaderPasses;
 
-    Graphics::DescriptorManager m_descriptorManager{};
+    Graphics::DescriptorPool m_descriptorManager{};
 
     // Key: Renderpass ID
     // Value: Framebuffer's image ID inside renderpass
@@ -99,7 +99,7 @@ class RenderPass
   public:
     RenderPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1,
                bool isDefault = false)
-        : m_context(ctx), m_extent(extent), m_framebufferCount(framebufferCount),
+        : m_device(ctx), m_extent(extent), m_framebufferCount(framebufferCount),
           m_framebufferImageDepth(framebufferDepth), m_isDefault(isDefault)
     {
     }

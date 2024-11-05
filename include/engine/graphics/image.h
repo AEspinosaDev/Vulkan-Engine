@@ -47,11 +47,13 @@ struct SamplerConfig
 struct Image
 {
     VkImage handle;
-
     VkExtent3D extent;
    
-
+    VkDevice device;
+     /*Memory allocation controlled by VMA*/
+    VmaAllocator memory;
     VmaAllocation allocation;
+
     ImageConfig config{};
 
     VkImageView view;
@@ -67,17 +69,17 @@ struct Image
     bool hasView{false};
     bool hasSampler{false};
 
-    void init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
+    void init(VkDevice &device, VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
 
-    void create_view(VkDevice &device);
+    void create_view();
 
-    void create_sampler(VkDevice &device);
+    void create_sampler();
 
     void upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer);
 
     void generate_mipmaps(VkCommandBuffer &cmd);
 
-    void cleanup(VkDevice &device, VmaAllocator &memory, bool destroySampler = true);
+    void cleanup(bool destroySampler = true);
 };
 
 } // namespace Graphics

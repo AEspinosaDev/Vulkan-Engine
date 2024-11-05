@@ -5,7 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &pass)
+void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorPool &descriptorManager, ShaderPass &pass)
 {
     std::vector<VkDescriptorSetLayout> descriptorLayouts;
     for (auto &layoutID : pass.settings.descriptorSetLayoutIDs)
@@ -272,7 +272,7 @@ void ShaderPass::build_shader_stages(VkDevice &device, ShaderPass &pass, shaderc
     }
 }
 
-void ShaderPass::build(VkDevice &device, VkRenderPass renderPass, DescriptorManager &descriptorManager,
+void ShaderPass::build(VkDevice &device, VkRenderPass renderPass, DescriptorPool &descriptorManager,
                        VkExtent2D &extent, ShaderPass &shaderPass)
 {
     PipelineBuilder::build_pipeline_layout(device, descriptorManager, shaderPass);

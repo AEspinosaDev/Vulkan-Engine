@@ -30,8 +30,8 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkExtent2D actua
     if (m_initialized)
         cleanup(device);
 
-    SwapChainSupportDetails swapChainSupport = query_swapchain_support(gpu, m_surface);
-    QueueFamilyIndices indices = find_queue_families(gpu, m_surface);
+    Utils::SwapChainSupportDetails swapChainSupport = Utils::query_swapchain_support(gpu, m_surface);
+    Utils::QueueFamilyIndices indices = Utils::find_queue_families(gpu, m_surface);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats, userDefinedcolorFormat);

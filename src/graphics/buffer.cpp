@@ -7,29 +7,29 @@ namespace Graphics
 
 void Buffer::upload_data(const void *bufferData, size_t size)
 {
-    if(allocation == VK_NULL_HANDLE) return;
+    if(m_allocation == VK_NULL_HANDLE) return;
     PROFILING_EVENT()
     void *data;
-    vmaMapMemory(_memory, allocation, &data);
+    vmaMapMemory(m_memory, m_allocation, &data);
     memcpy(data, bufferData, size);
-    vmaUnmapMemory(_memory, allocation);
+    vmaUnmapMemory(m_memory, m_allocation);
 }
 
 void Buffer::upload_data(const void *bufferData, size_t size, size_t offset)
 {
-    if(allocation == VK_NULL_HANDLE) return;
+    if(m_allocation == VK_NULL_HANDLE) return;
     PROFILING_EVENT()
     char *data;
-    vmaMapMemory(_memory, allocation, (void **)&data);
+    vmaMapMemory(m_memory, m_allocation, (void **)&data);
     data += offset;
     memcpy(data, bufferData, size);
-    vmaUnmapMemory(_memory, allocation);
+    vmaUnmapMemory(m_memory, m_allocation);
 }
 
 void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
                   uint32_t istrideSize)
 {
-    _memory = memory;
+    m_memory = memory;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -41,15 +41,15 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.usage = memoryUsage;
 
-    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &handle, &allocation, nullptr));
+    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &m_handle, &m_allocation, nullptr));
 
-    strideSize = istrideSize;
+    m_strideSize = istrideSize;
 }
 
 void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
                   uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
 {
-    _memory = memory;
+    m_memory = memory;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -61,16 +61,16 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.usage = memoryUsage;
 
-    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &handle, &allocation, nullptr));
+    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &m_handle, &m_allocation, nullptr));
 
-    strideSize = istrideSize;
-    partitionsSizes = stridePartitionsSizes;
+    m_strideSize = istrideSize;
+    m_partitionsSizes = stridePartitionsSizes;
 }
 
 void Buffer::cleanup()
 {
-    if(allocation != VK_NULL_HANDLE)
-    vmaDestroyBuffer(_memory, handle, allocation);
+    if(m_allocation != VK_NULL_HANDLE)
+    vmaDestroyBuffer(m_memory, m_handle, m_allocation);
 }
 
 } // namespace render

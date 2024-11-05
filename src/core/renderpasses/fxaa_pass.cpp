@@ -60,7 +60,7 @@ void FXAAPass::init()
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_device->handle, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
@@ -70,7 +70,7 @@ void FXAAPass::init()
 void FXAAPass::create_descriptors()
 {
     // Init and configure local descriptors
-    m_descriptorManager.init(m_context->device);
+    m_descriptorManager.init(m_device->handle);
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
     VkDescriptorSetLayoutBinding outputTextureBinding =
@@ -93,16 +93,16 @@ void FXAAPass::create_graphic_pipelines()
     // fxaaPass->settings.blending = false;
     // fxaaPass->settings.blendAttachments = {};
 
-    ShaderPass::build_shader_stages(m_context->device, *fxaaPass);
+    ShaderPass::build_shader_stages(m_device->handle, *fxaaPass);
 
-    ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *fxaaPass);
+    ShaderPass::build(m_device->handle, m_handle, m_descriptorManager, m_extent, *fxaaPass);
 
     m_shaderPasses["fxaa"] = fxaaPass;
 }
 
 void FXAAPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
 {
-    VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
+    VkCommandBuffer cmd = m_device->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
 

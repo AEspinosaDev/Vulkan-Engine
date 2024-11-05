@@ -4,6 +4,34 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
+void CommandPool::init(VkDevice &device, uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags)
+{
+    m_device = device;
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = queueFamilyIndex;
+    poolInfo.flags = flags;
+
+    if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_handle) != VK_SUCCESS)
+    {
+        throw VKException("Failed to create command pool!");
+    }
+}
+CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, VkCommandBufferLevel level)
+{
+    CommandBuffer commandBuffer;
+    commandBuffer.init(m_device, m_handle, level);
+    return commandBuffer;
+}
+
+void CommandPool::reset(VkCommandPoolResetFlags flags) const
+{
+    if (vkResetCommandPool(m_device, m_handle, flags) != VK_SUCCESS)
+    {
+        throw VKException("Failed to reset command pool!");
+    }
+}
 
 CommandBuffer::~CommandBuffer()
 {
@@ -86,4 +114,5 @@ void CommandBuffer::submit(VkQueue queue, VkSemaphore waitSemaphore, VkSemaphore
     }
 }
 } // namespace Graphics
+
 VULKAN_ENGINE_NAMESPACE_END

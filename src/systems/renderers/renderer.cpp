@@ -61,7 +61,7 @@ void BaseRenderer::run(Core::Scene *const scene)
 
 void BaseRenderer::shutdown(Core::Scene *const scene)
 {
-    m_device.wait_for_device();
+    m_device.wait();
 
     on_shutdown(scene);
 
@@ -206,7 +206,7 @@ void BaseRenderer::update_renderpasses()
 {
     m_window->update_framebuffer();
 
-    m_device.wait_for_device();
+    m_device.wait();
 
     m_device.update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
                                static_cast<VkFormat>(m_settings.colorFormat),
@@ -257,8 +257,8 @@ void BaseRenderer::init_gui()
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.Instance = m_device.instance;
         init_info.PhysicalDevice = m_device.gpu;
-        init_info.Device = m_device.device;
-        init_info.Queue = m_device.graphicsQueue;
+        init_info.Device = m_device.handle;
+        init_info.Queue = m_device.queues[QueueType::GRAPHIC];
         init_info.DescriptorPool = m_device.m_guiPool;
         init_info.MinImageCount = 3;
         init_info.ImageCount = 3;
@@ -269,7 +269,7 @@ void BaseRenderer::init_gui()
 
         m_deletionQueue.push_function([=]() {
             ImGui_ImplVulkan_Shutdown();
-            vkDestroyDescriptorPool(m_device.device, m_device.m_guiPool, nullptr);
+            vkDestroyDescriptorPool(m_device.handle, m_device.m_guiPool, nullptr);
         });
     }
 }

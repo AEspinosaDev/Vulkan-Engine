@@ -26,6 +26,32 @@ namespace Graphics
 namespace Utils
 {
 
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> computeFamily;
+    std::optional<uint32_t> transferFamily;
+    std::optional<uint32_t> sparseBindingFamily;
+
+    inline bool isComplete() const
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+        // && computeFamily.has_value() &&
+        //        transferFamily.has_value();
+    }
+};
+
+struct SwapChainSupportDetails
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
+QueueFamilyIndices find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);
+SwapChainSupportDetails query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
+
 struct UploadContext
 {
     VkFence uploadFence;
@@ -323,11 +349,10 @@ template <typename T, typename... Rest> void hash_combine(std::size_t &seed, con
     (hash_combine(seed, rest), ...);
 }
 
-}; // namespace utils
+}; // namespace Utils
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
-
 
 namespace std
 {

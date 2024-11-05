@@ -127,7 +127,7 @@ void ForwardPass::init()
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_device->handle, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
         new VKException("failed to create renderpass!");
     }
@@ -136,9 +136,9 @@ void ForwardPass::init()
 }
 void ForwardPass::create_descriptors()
 {
-    m_descriptorManager.init(m_context->device);
+    m_descriptorManager.init(m_device->handle);
     m_descriptorManager.create_pool(VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
-    m_descriptors.resize(m_context->frames.size());
+    m_descriptors.resize(m_device->frames.size());
 
     // GLOBAL SET
     VkDescriptorSetLayoutBinding camBufferBinding = Init::descriptorset_layout_binding(
@@ -182,17 +182,17 @@ void ForwardPass::create_descriptors()
                                                       textureBinding4, textureBinding5};
     m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, textureBindings, 5);
 
-    for (size_t i = 0; i < m_context->frames.size(); i++)
+    for (size_t i = 0; i < m_device->frames.size(); i++)
     {
         // Global
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT,
                                                     &m_descriptors[i].globalDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorManager.set_descriptor_write(&m_device->frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                                  sizeof(CameraUniforms), 0, &m_descriptors[i].globalDescritor,
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
         m_descriptorManager.set_descriptor_write(
-            &m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(SceneUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu), &m_descriptors[i].globalDescritor,
+            &m_device->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(SceneUniforms),
+            Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_device->gpu), &m_descriptors[i].globalDescritor,
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
         m_descriptorManager.set_descriptor_write(
@@ -202,12 +202,12 @@ void ForwardPass::create_descriptors()
         // Per-object
         m_descriptorManager.allocate_descriptor_set(DescriptorLayoutType::OBJECT_LAYOUT,
                                                     &m_descriptors[i].objectDescritor);
-        m_descriptorManager.set_descriptor_write(&m_context->frames[i].uniformBuffers[OBJECT_LAYOUT],
+        m_descriptorManager.set_descriptor_write(&m_device->frames[i].uniformBuffers[OBJECT_LAYOUT],
                                                  sizeof(ObjectUniforms), 0, &m_descriptors[i].objectDescritor,
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
         m_descriptorManager.set_descriptor_write(
-            &m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(MaterialUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu), &m_descriptors[i].objectDescritor,
+            &m_device->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(MaterialUniforms),
+            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_device->gpu), &m_descriptors[i].objectDescritor,
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
@@ -307,9 +307,9 @@ void ForwardPass::create_graphic_pipelines()
     {
         ShaderPass *pass = pair.second;
 
-        ShaderPass::build_shader_stages(m_context->device, *pass);
+        ShaderPass::build_shader_stages(m_device->handle, *pass);
 
-        ShaderPass::build(m_context->device, m_handle, m_descriptorManager, m_extent, *pass);
+        ShaderPass::build(m_device->handle, m_handle, m_descriptorManager, m_extent, *pass);
     }
 }
 
@@ -317,7 +317,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
 {
     PROFILING_EVENT()
 
-    VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
+    VkCommandBuffer cmd = m_device->frames[frameIndex].commandBuffer;
 
     begin(cmd, presentImageIndex);
 
@@ -344,7 +344,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                          : true)) // Check if is inside frustrum
                 {
                     // Offset calculation
-                    uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
+                    uint32_t objectOffset = m_device->frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
                     uint32_t globalOffset = 0;
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
@@ -436,7 +436,7 @@ void ForwardPass::upload_data(uint32_t frameIndex, Scene *const scene)
 }
 void ForwardPass::connect_to_previous_images(std::vector<Image> images)
 {
-    for (size_t i = 0; i < m_context->frames.size(); i++)
+    for (size_t i = 0; i < m_device->frames.size(); i++)
     {
         m_descriptorManager.set_descriptor_write(images[0].sampler, images[0].view,
                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
@@ -446,7 +446,7 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images)
 
 void ForwardPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr)
 {
-    for (size_t i = 0; i < m_context->frames.size(); i++)
+    for (size_t i = 0; i < m_device->frames.size(); i++)
     {
         m_descriptorManager.set_descriptor_write(env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                  &m_descriptors[i].globalDescritor, 3);

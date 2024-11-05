@@ -336,6 +336,12 @@ struct Extension
     {
     }
 };
+enum QueueType{
+    GRAPHIC = 0,
+    PRESENT = 1,
+    COMPUTE = 2,
+    RT = 3
+};
 
 
 VULKAN_ENGINE_NAMESPACE_END

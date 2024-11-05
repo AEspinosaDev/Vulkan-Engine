@@ -18,22 +18,22 @@ namespace Graphics
 //Vulkan buffer object
 class Buffer
 {
-    VkBuffer handle;
-    /*Memory allocation controlled by VMA*/
-    VmaAllocator _memory;
-    VmaAllocation allocation;
+    VkBuffer                m_handle;
+                            /*Memory allocation controlled by VMA*/
+    VmaAllocator            m_memory;
+    VmaAllocation           m_allocation;
 
-    uint32_t strideSize{0};
-    std::vector<uint32_t> partitionsSizes;
+    uint32_t                m_strideSize{0};
+    std::vector<uint32_t>   m_partitionsSizes;
 
   public:
     inline VkBuffer get_handle() const
     {
-        return handle;
+        return m_handle;
     }
     inline uint32_t get_stride_size() const
     {
-        return strideSize;
+        return m_strideSize;
     }
     Buffer(){}
 
