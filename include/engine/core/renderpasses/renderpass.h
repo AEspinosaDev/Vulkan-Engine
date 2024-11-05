@@ -13,7 +13,7 @@
 
 #include <engine/common.h>
 
-#include <engine/graphics/context.h>
+#include <engine/graphics/device.h>
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/frame.h>
 #include <engine/graphics/swapchain.h>
@@ -56,7 +56,7 @@ It can be inherited for full user control over the render pipeline.
 class RenderPass
 {
   protected:
-    Graphics::Context *m_context{nullptr};
+    Graphics::Device *m_context{nullptr};
 
     VkRenderPass m_handle;
     VkExtent2D m_extent;
@@ -97,7 +97,7 @@ class RenderPass
     void draw(VkCommandBuffer &cmd, Geometry *g);
 
   public:
-    RenderPass(Graphics::Context *ctx, Extent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1,
+    RenderPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount = 1, uint32_t framebufferDepth = 1,
                bool isDefault = false)
         : m_context(ctx), m_extent(extent), m_framebufferCount(framebufferCount),
           m_framebufferImageDepth(framebufferDepth), m_isDefault(isDefault)

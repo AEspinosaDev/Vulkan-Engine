@@ -34,7 +34,7 @@ void IrrandianceComputePass::init()
 
     m_attachments.push_back(_colorAttachment);
 
-    VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference colorRef = Init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
@@ -75,9 +75,9 @@ void IrrandianceComputePass::create_descriptors()
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
     VkDescriptorSetLayoutBinding panoramaTextureBinding =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     VkDescriptorSetLayoutBinding auxBufferBinding =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding bindings[] = {panoramaTextureBinding, auxBufferBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
 
@@ -108,7 +108,7 @@ void IrrandianceComputePass::render(uint32_t frameIndex, Scene *const scene, uin
 
     begin(cmd);
 
-    VkViewport viewport = init::viewport(m_extent);
+    VkViewport viewport = Init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);
     VkRect2D scissor{};
     scissor.offset = {0, 0};
@@ -142,11 +142,11 @@ void IrrandianceComputePass::upload_data(uint32_t frameIndex, Scene *const scene
 
     CaptureData capture{};
 
-    const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(CaptureData), m_context->gpu);
+    const size_t BUFFER_SIZE = Utils::pad_uniform_buffer_size(sizeof(CaptureData), m_context->gpu);
     m_captureBuffer.init(m_context->memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                          VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
 
-    m_captureBuffer.upload_data(m_context->memory, &capture, sizeof(CaptureData));
+    m_captureBuffer.upload_data( &capture, sizeof(CaptureData));
 
     m_descriptorManager.set_descriptor_write(&m_captureBuffer, BUFFER_SIZE, 0, &m_captureDescriptorSet,
                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
@@ -160,7 +160,7 @@ void IrrandianceComputePass::connect_env_cubemap(Graphics::Image env)
 void IrrandianceComputePass::cleanup()
 {
     RenderPass::cleanup();
-    m_captureBuffer.cleanup(m_context->memory);
+    m_captureBuffer.cleanup();
 }
 } // namespace Core
 

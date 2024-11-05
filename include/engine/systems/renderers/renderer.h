@@ -28,12 +28,12 @@
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
 
-#include <engine/graphics/bootstrap.h>
-#include <engine/graphics/context.h>
+#include <engine/graphics/utilities/bootstrap.h>
+#include <engine/graphics/utilities/utils.h>
+#include <engine/graphics/utilities/initializers.h>
+#include <engine/graphics/device.h>
 #include <engine/graphics/image.h>
-#include <engine/graphics/initializers.h>
 #include <engine/graphics/uniforms.h>
-#include <engine/graphics/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -117,7 +117,7 @@ class BaseRenderer
 {
 #pragma region Properties
   protected:
-    Graphics::Context m_context{};
+    Graphics::Device m_device{};
 
     Core::IWindow *m_window;
 
@@ -126,7 +126,7 @@ class BaseRenderer
 
     Core::Mesh *m_vignette{};
 
-    Graphics::utils::DeletionQueue m_deletionQueue;
+    Graphics::Utils::DeletionQueue m_deletionQueue;
 
     // Query
     uint32_t m_currentFrame{0};

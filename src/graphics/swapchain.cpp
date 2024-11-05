@@ -5,15 +5,33 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface, VkExtent2D actualExtent,
-                       VkExtent2D windowExtent, uint32_t imageCount, VkFormat userDefinedcolorFormat,
-                       VkPresentModeKHR userDefinedPresentMode)
+VkExtent2D Swapchain::create_surface(VkInstance &instance, void *windowHandle, WindowingSystem windowingSystem)
+{
+    VkExtent2D actualExtent{};
+    if (windowingSystem == WindowingSystem::GLFW)
+    {
+        GLFWwindow *glfwHandle = static_cast<GLFWwindow *>(windowHandle);
+        VK_CHECK(glfwCreateWindowSurface(instance, glfwHandle, nullptr, &m_surface));
+        int width, height;
+        glfwGetFramebufferSize(glfwHandle, &width, &height);
+        actualExtent = {static_cast<unsigned int>(width), static_cast<unsigned int>(height)};
+    }
+    else
+    {
+        // TO DO SDL ..
+    }
+
+    return actualExtent;
+}
+
+void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkExtent2D actualExtent, VkExtent2D windowExtent,
+                       uint32_t imageCount, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
 {
     if (m_initialized)
         cleanup(device);
 
-    SwapChainSupportDetails swapChainSupport = query_swapchain_support(gpu, surface);
-    QueueFamilyIndices indices = find_queue_families(gpu, surface);
+    SwapChainSupportDetails swapChainSupport = query_swapchain_support(gpu, m_surface);
+    QueueFamilyIndices indices = find_queue_families(gpu, m_surface);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(swapChainSupport.formats, userDefinedcolorFormat);
@@ -29,7 +47,7 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR sur
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface;
+    createInfo.surface = m_surface;
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -55,12 +73,12 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR sur
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
+    VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_handle));
 
     std::vector<VkImage> images;
     images.resize(imageCount);
 
-    VK_CHECK(vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, images.data()));
+    VK_CHECK(vkGetSwapchainImagesKHR(device, m_handle, &imageCount, images.data()));
 
     m_presentImages.resize(imageCount);
     for (size_t i = 0; i < imageCount; i++)
@@ -77,6 +95,10 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR sur
     m_initialized = true;
 }
 
+void Swapchain::destroy_surface(VkInstance &instance)
+{
+    vkDestroySurfaceKHR(instance, m_surface, nullptr);
+}
 void Swapchain::cleanup(VkDevice &device)
 {
     for (size_t i = 0; i < m_presentImages.size(); i++)
@@ -84,7 +106,7 @@ void Swapchain::cleanup(VkDevice &device)
         vkDestroyImageView(device, m_presentImages[i].view, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, m_swapchain, nullptr);
+    vkDestroySwapchainKHR(device, m_handle, nullptr);
 
     m_initialized = false;
 }

@@ -29,7 +29,7 @@ class ShadowPass : public RenderPass
     std::vector<FrameDescriptors> m_descriptors;
 
   public:
-    ShadowPass(Graphics::Context *ctx, Extent2D extent, uint32_t framebufferCount, uint32_t numLights,
+    ShadowPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount, uint32_t numLights,
                DepthFormatType depthFormat)
         : RenderPass(ctx, extent, framebufferCount, numLights), m_depthFormat(depthFormat)
     {

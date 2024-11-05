@@ -13,7 +13,7 @@ void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsag
     config.mipLevels =
         useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
 
-    VkImageCreateInfo img_info = init::image_create_info(
+    VkImageCreateInfo img_info = Init::image_create_info(
         config.format, config.usageFlags, extent, config.mipLevels, config.samples, config.layers,
         viewConfig.viewType == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
 
@@ -24,7 +24,7 @@ void Image::init(VmaAllocator memory, bool useMipmaps, VmaMemoryUsage memoryUsag
 
 void Image::create_view(VkDevice &device)
 {
-    VkImageViewCreateInfo dview_info = init::imageview_create_info(
+    VkImageViewCreateInfo dview_info = Init::imageview_create_info(
         config.format, handle, viewConfig.viewType, viewConfig.aspectFlags, config.mipLevels, config.layers);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 
@@ -32,7 +32,7 @@ void Image::create_view(VkDevice &device)
 }
 void Image::create_sampler(VkDevice &device)
 {
-    VkSamplerCreateInfo samplerInfo = init::sampler_create_info(
+    VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(
         samplerConfig.filters, VK_SAMPLER_MIPMAP_MODE_LINEAR, samplerConfig.minLod, samplerConfig.maxLod,
         samplerConfig.anysotropicFilter, samplerConfig.maxAnysotropy, samplerConfig.samplerAddressMode);
     samplerInfo.borderColor = samplerConfig.border;
@@ -79,7 +79,7 @@ void Image::upload_image(VkCommandBuffer &cmd, Buffer *stagingBuffer)
     copyRegion.imageExtent = extent;
 
     // copy the buffer into the image
-    vkCmdCopyBufferToImage(cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+    vkCmdCopyBufferToImage(cmd, stagingBuffer->get_handle(), handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
     if (config.mipLevels == 1)
     {

@@ -22,7 +22,7 @@ class IrrandianceComputePass : public RenderPass
     Graphics::Buffer m_captureBuffer;
 
   public:
-    IrrandianceComputePass(Graphics::Context *ctx, ColorFormatType format, Extent2D extent)
+    IrrandianceComputePass(Graphics::Device *ctx, ColorFormatType format, Extent2D extent)
         : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false),  m_format(format)
     {
     }

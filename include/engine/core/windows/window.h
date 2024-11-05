@@ -9,8 +9,8 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include <functional>
 #include <engine/common.h>
-#include <engine/graphics/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

@@ -9,7 +9,7 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include <engine/graphics/context.h>
+#include <engine/graphics/device.h>
 #include <engine/tools/widgets.h>
 
 // WIP..

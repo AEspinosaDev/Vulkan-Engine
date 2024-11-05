@@ -41,7 +41,7 @@ void ForwardPass::init()
     _colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
     m_attachments.push_back(_colorAttachment);
 
-    VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference colorRef = Init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // Resolve attachment
     if (multisampled)
@@ -66,7 +66,7 @@ void ForwardPass::init()
         _resolveAttachment.isPresentImage = true;
         m_attachments.push_back(_resolveAttachment);
     }
-    VkAttachmentReference resolveRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference resolveRef = Init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // Depth attachment
     VkAttachmentDescription depthAttachment{};
@@ -88,7 +88,7 @@ void ForwardPass::init()
         Attachment(depthAttachmentImageConfig, {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D}, {}));
 
     VkAttachmentReference depthRef =
-        init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        Init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
@@ -141,27 +141,27 @@ void ForwardPass::create_descriptors()
     m_descriptors.resize(m_context->frames.size());
 
     // GLOBAL SET
-    VkDescriptorSetLayoutBinding camBufferBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding camBufferBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding sceneBufferBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding sceneBufferBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding shadowBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding shadowBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
-    VkDescriptorSetLayoutBinding envBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding envBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // EnvMap
-    VkDescriptorSetLayoutBinding iblBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding iblBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4); // IrradianceMap
     VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding,
                                                iblBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 5);
 
     // PER-OBJECT SET
-    VkDescriptorSetLayoutBinding objectBufferBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding objectBufferBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding materialBufferBinding = init::descriptorset_layout_binding(
+    VkDescriptorSetLayoutBinding materialBufferBinding = Init::descriptorset_layout_binding(
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
@@ -169,15 +169,15 @@ void ForwardPass::create_descriptors()
 
     // MATERIAL TEXTURE SET
     VkDescriptorSetLayoutBinding textureBinding1 =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     VkDescriptorSetLayoutBinding textureBinding2 =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
     VkDescriptorSetLayoutBinding textureBinding3 =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
     VkDescriptorSetLayoutBinding textureBinding4 =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
     VkDescriptorSetLayoutBinding textureBinding5 =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
     VkDescriptorSetLayoutBinding textureBindings[] = {textureBinding1, textureBinding2, textureBinding3,
                                                       textureBinding4, textureBinding5};
     m_descriptorManager.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, textureBindings, 5);
@@ -192,7 +192,7 @@ void ForwardPass::create_descriptors()
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
         m_descriptorManager.set_descriptor_write(
             &m_context->frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(SceneUniforms),
-            utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu), &m_descriptors[i].globalDescritor,
+            Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_context->gpu), &m_descriptors[i].globalDescritor,
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
 
         m_descriptorManager.set_descriptor_write(
@@ -207,7 +207,7 @@ void ForwardPass::create_descriptors()
                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0);
         m_descriptorManager.set_descriptor_write(
             &m_context->frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(MaterialUniforms),
-            utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu), &m_descriptors[i].objectDescritor,
+            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_context->gpu), &m_descriptors[i].objectDescritor,
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1);
     }
 }
@@ -217,7 +217,7 @@ void ForwardPass::create_graphic_pipelines()
     std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
                                                  VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
                                                  VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, VK_DYNAMIC_STATE_CULL_MODE};
-    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{init::color_blend_attachment_state(true)};
+    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{Init::color_blend_attachment_state(true)};
 
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
@@ -322,7 +322,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
     begin(cmd, presentImageIndex);
 
     // Viewport setup
-    VkViewport viewport = init::viewport(m_extent);
+    VkViewport viewport = Init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);
     VkRect2D scissor{};
     scissor.offset = {0, 0};
@@ -344,7 +344,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene *const scene, uint32_t prese
                          : true)) // Check if is inside frustrum
                 {
                     // Offset calculation
-                    uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].strideSize * mesh_idx;
+                    uint32_t objectOffset = m_context->frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
                     uint32_t globalOffset = 0;
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)

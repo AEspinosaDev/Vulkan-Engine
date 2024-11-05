@@ -1,17 +1,17 @@
-#include <engine/graphics/utils.h>
+#include <engine/graphics/utilities/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
 
-std::string utils::trim(const std::string &str)
+std::string Utils::trim(const std::string &str)
 {
     size_t first = str.find_first_not_of(" \t\n\r");
     size_t last = str.find_last_not_of(" \t\n\r");
     return (first == std::string::npos || last == std::string::npos) ? "" : str.substr(first, last - first + 1);
 }
-std::string utils::read_file(const std::string &filePath)
+std::string Utils::read_file(const std::string &filePath)
 {
     std::ifstream file(filePath);
     if (!file.is_open())
@@ -25,7 +25,7 @@ std::string utils::read_file(const std::string &filePath)
     return buffer.str();
 }
 
-bool utils::check_validation_layer_suport(std::vector<const char *> validationLayers)
+bool Utils::check_validation_layer_suport(std::vector<const char *> validationLayers)
 {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -55,7 +55,7 @@ bool utils::check_validation_layer_suport(std::vector<const char *> validationLa
     return true;
 }
 
-VkPhysicalDeviceFeatures utils::get_gpu_features(VkPhysicalDevice &gpu)
+VkPhysicalDeviceFeatures Utils::get_gpu_features(VkPhysicalDevice &gpu)
 {
 
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -63,13 +63,13 @@ VkPhysicalDeviceFeatures utils::get_gpu_features(VkPhysicalDevice &gpu)
     return deviceFeatures;
 }
 
-VkPhysicalDeviceProperties utils::get_gpu_properties(VkPhysicalDevice &gpu)
+VkPhysicalDeviceProperties Utils::get_gpu_properties(VkPhysicalDevice &gpu)
 {
     VkPhysicalDeviceProperties deviceFeatures;
     vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
     return deviceFeatures;
 }
-size_t utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu)
+size_t Utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu)
 {
     VkPhysicalDeviceProperties deviceFeatures;
     vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
@@ -82,7 +82,7 @@ size_t utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu
     }
     return alignedSize;
 }
-uint32_t utils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t Utils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(gpu, &memProperties);
@@ -96,7 +96,7 @@ uint32_t utils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkM
 
     throw std::runtime_error("failed to find suitable memory type!");
 }
-void utils::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
+void Utils::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -109,7 +109,7 @@ void utils::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfo
     createInfo.pfnUserCallback = debugCallback;
 }
 
-void utils::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+void Utils::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
                                               const VkAllocationCallbacks *pAllocator)
 {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -118,7 +118,7 @@ void utils::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsM
         func(instance, debugMessenger, pAllocator);
     }
 }
-void utils::log_available_extensions(std::vector<VkExtensionProperties> ext)
+void Utils::log_available_extensions(std::vector<VkExtensionProperties> ext)
 {
     DEBUG_LOG("---------------------");
     DEBUG_LOG("Available extensions");
@@ -129,7 +129,7 @@ void utils::log_available_extensions(std::vector<VkExtensionProperties> ext)
     }
     DEBUG_LOG("---------------------");
 }
-void utils::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates)
+void Utils::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates)
 {
     DEBUG_LOG("---------------------");
     DEBUG_LOG("Suitable Devices");
@@ -142,7 +142,7 @@ void utils::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates)
     }
     DEBUG_LOG("---------------------");
 }
-VkResult utils::create_debug_utils_messenger_EXT(VkInstance instance,
+VkResult Utils::create_debug_utils_messenger_EXT(VkInstance instance,
                                                  const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator,
                                                  VkDebugUtilsMessengerEXT *pDebugMessenger)
@@ -158,7 +158,7 @@ VkResult utils::create_debug_utils_messenger_EXT(VkInstance instance,
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
-Vec3 utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3,
+Vec3 Utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1, glm::vec2 &uv2, glm::vec2 &uv3,
                                    Vec3 normal)
 {
 
@@ -178,7 +178,7 @@ Vec3 utils::get_tangent_gram_smidt(Vec3 &p1, Vec3 &p2, Vec3 &p3, glm::vec2 &uv1,
 
     // return glm::normalize(tangent);
 }
-void utils::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices)
+void Utils::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
     if (!indices.empty())
         for (size_t i = 0; i < indices.size(); i += 3)
@@ -208,41 +208,41 @@ void utils::compute_tangents_gram_smidt(std::vector<Vertex> &vertices, const std
         }
 }
 
-void utils::UploadContext::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
+void Utils::UploadContext::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
 {
-    VkFenceCreateInfo uploadFenceCreateInfo = init::fence_create_info();
+    VkFenceCreateInfo uploadFenceCreateInfo = Init::fence_create_info();
 
     VK_CHECK(vkCreateFence(device, &uploadFenceCreateInfo, nullptr, &uploadFence));
 
     VkCommandPoolCreateInfo uploadCommandPoolInfo =
-        init::command_pool_create_info(find_queue_families(gpu, surface).graphicsFamily.value());
+        Init::command_pool_create_info(find_queue_families(gpu, surface).graphicsFamily.value());
     VK_CHECK(vkCreateCommandPool(device, &uploadCommandPoolInfo, nullptr, &commandPool));
 
     // allocate the default command buffer that we will use for the instant commands
-    VkCommandBufferAllocateInfo cmdAllocInfo = init::command_buffer_allocate_info(commandPool, 1);
+    VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(commandPool, 1);
 
     VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &commandBuffer));
 }
-void utils::UploadContext::cleanup(VkDevice &device)
+void Utils::UploadContext::cleanup(VkDevice &device)
 {
     vkDestroyFence(device, uploadFence, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
 }
 
-void utils::UploadContext::immediate_submit(VkDevice &device, VkQueue &gfxQueue,
+void Utils::UploadContext::immediate_submit(VkDevice &device, VkQueue &gfxQueue,
                                             std::function<void(VkCommandBuffer cmd)> &&function)
 {
     VkCommandBuffer cmd = commandBuffer;
 
     VkCommandBufferBeginInfo cmdBeginInfo =
-        init::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        Init::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
     function(cmd);
 
     VK_CHECK(vkEndCommandBuffer(cmd));
 
-    VkSubmitInfo submit = init::submit_info(&cmd);
+    VkSubmitInfo submit = Init::submit_info(&cmd);
 
     VK_CHECK(vkQueueSubmit(gfxQueue, 1, &submit, uploadFence));
 

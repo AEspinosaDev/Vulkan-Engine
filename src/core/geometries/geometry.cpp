@@ -5,13 +5,13 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core
 {
 
-void Geometry::fill(std::vector<Graphics::utils::Vertex> vertexInfo)
+void Geometry::fill(std::vector<Graphics::Utils::Vertex> vertexInfo)
 {
     m_geometryData.vertexData = vertexInfo;
     m_geometryData.compute_statistics();
     m_geometryData.loaded = true;
 }
-void Geometry::fill(std::vector<Graphics::utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex)
+void Geometry::fill(std::vector<Graphics::Utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex)
 {
     m_geometryData.vertexData = vertexInfo;
     m_geometryData.vertexIndex = vertexIndex;
@@ -34,7 +34,7 @@ void GeometricData::compute_statistics()
     maxCoords = {0.0f, 0.0f, 0.0f};
     minCoords = {INFINITY, INFINITY, INFINITY};
 
-    for (const Graphics::utils::Vertex &v : vertexData)
+    for (const Graphics::Utils::Vertex &v : vertexData)
     {
         if (v.pos.x > maxCoords.x)
             maxCoords.x = v.pos.x;
@@ -84,9 +84,9 @@ Geometry *Geometry::create_cube()
 
     return g;
 }
-RenderData *const get_render_data(Geometry *g)
+Graphics::VertexArrays *const get_render_data(Geometry *g)
 {
-    return &g->m_renderData;
+    return &g->m_VAO;
 }
 } // namespace Core
 

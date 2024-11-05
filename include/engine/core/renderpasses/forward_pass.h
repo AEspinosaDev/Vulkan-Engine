@@ -35,7 +35,7 @@ class ForwardPass : public RenderPass
     void setup_material_descriptor(IMaterial *mat);
 
   public:
-    ForwardPass(Graphics::Context *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
+    ForwardPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
                 DepthFormatType depthFormat, MSAASamples samples, bool isDefault = true)
         : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat),
           m_depthFormat(depthFormat), m_aa(samples)

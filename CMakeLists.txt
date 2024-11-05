@@ -92,6 +92,7 @@ create_source_group("Systems\\Renderers" "engine/systems/renderers" "systems/ren
 create_source_group("Core" "engine/core" "core")
 create_source_group("Tools" "engine/tools" "tools")
 create_source_group("Graphics" "engine/graphics" "graphics")
+create_source_group("Graphics\\Utilities" "engine/graphics/utilities" "graphics/utilities")
 create_source_group("Core\\RenderPasses" "engine/core/renderpasses" "core/renderpasses")
 create_source_group("Core\\Scene Objects" "engine/core/scene" "core/scene")
 create_source_group("Core\\Materials" "engine/core/materials" "core/materials")

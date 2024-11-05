@@ -14,7 +14,7 @@ void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager 
             descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first));
     }
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = init::pipeline_layout_create_info();
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = Init::pipeline_layout_create_info();
     pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
 
@@ -29,20 +29,20 @@ void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorManager 
         throw new VKException("failed to create pipeline layout!");
     }
 }
-void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent,
+void PipelineBuilder::build_graphic_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent,
                                      ShaderPass &shaderPass)
 {
     // Vertex and geometry
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo = init::vertex_input_state_create_info();
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = Init::vertex_input_state_create_info();
     VkPipelineInputAssemblyStateCreateInfo inputAssembly =
-        init::input_assembly_create_info(shaderPass.settings.topology);
+        Init::input_assembly_create_info(shaderPass.settings.topology);
 
-    auto bindingDescription = utils::Vertex::getBindingDescription();
+    auto bindingDescription = Utils::Vertex::getBindingDescription();
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 
     auto attributeDescriptions =
-        utils::Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::POSITION],
+        Utils::Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::POSITION],
                                                 shaderPass.settings.attributes[VertexAttributeType::NORMAL],
                                                 shaderPass.settings.attributes[VertexAttributeType::TANGENT],
                                                 shaderPass.settings.attributes[VertexAttributeType::UV],
@@ -51,7 +51,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Viewport
-    VkViewport viewport = init::viewport(extent);
+    VkViewport viewport = Init::viewport(extent);
     VkRect2D scissor;
     scissor.offset = {0, 0};
     scissor.extent = extent;
@@ -65,22 +65,22 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
     viewportState.pScissors = &scissor;
 
     // Rasterizer
-    VkPipelineRasterizationStateCreateInfo rasterizer = init::rasterization_state_create_info(
+    VkPipelineRasterizationStateCreateInfo rasterizer = Init::rasterization_state_create_info(
         shaderPass.settings.poligonMode, shaderPass.settings.cullMode, shaderPass.settings.drawOrder);
 
     // Depth Setup
-    VkPipelineDepthStencilStateCreateInfo depthStencil = init::depth_stencil_create_info(
+    VkPipelineDepthStencilStateCreateInfo depthStencil = Init::depth_stencil_create_info(
         shaderPass.settings.depthTest ? VK_TRUE : VK_FALSE, shaderPass.settings.depthWrite ? VK_TRUE : VK_FALSE,
         shaderPass.settings.depthTest ? shaderPass.settings.depthOp : VK_COMPARE_OP_ALWAYS);
 
     // Multisampling
     VkPipelineMultisampleStateCreateInfo multisampling =
-        init::multisampling_state_create_info(shaderPass.settings.samples);
+        Init::multisampling_state_create_info(shaderPass.settings.samples);
     multisampling.sampleShadingEnable = shaderPass.settings.samples > VK_SAMPLE_COUNT_1_BIT && shaderPass.settings.sampleShading ? VK_TRUE : VK_FALSE;
     multisampling.minSampleShading = .2f;
 
     // Blending
-    VkPipelineColorBlendStateCreateInfo colorBlending = init::color_blend_create_info();
+    VkPipelineColorBlendStateCreateInfo colorBlending = Init::color_blend_create_info();
     colorBlending.attachmentCount = static_cast<uint32_t>(shaderPass.settings.blendAttachments.size());
     colorBlending.pAttachments = shaderPass.settings.blendAttachments.data();
 
@@ -99,7 +99,7 @@ void PipelineBuilder::build_pipeline(VkDevice &device, VkRenderPass renderPass, 
     std::vector<VkPipelineShaderStageCreateInfo> stages;
     for (auto &stage : shaderPass.stages)
     {
-        stages.push_back(init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
+        stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
     }
 
     pipelineInfo.stageCount = (uint32_t)stages.size();
@@ -190,11 +190,11 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
         else if (line.find("#include") != std::string::npos)
         {
             size_t start = line.find(" ") + 1;
-            std::string includeFile = utils::trim(line.substr(start)); // Extract the file name and trim any spaces
+            std::string includeFile = Utils::trim(line.substr(start)); // Extract the file name and trim any spaces
 
             std::string fullIncludePath = scriptsPath + includeFile;
 
-            std::string includeContent = utils::read_file(fullIncludePath);
+            std::string includeContent = Utils::read_file(fullIncludePath);
             ss[(int)type] << includeContent << '\n';
         }
         // FILL THE ACTUAL STAGE CODE
@@ -276,7 +276,7 @@ void ShaderPass::build(VkDevice &device, VkRenderPass renderPass, DescriptorMana
                        VkExtent2D &extent, ShaderPass &shaderPass)
 {
     PipelineBuilder::build_pipeline_layout(device, descriptorManager, shaderPass);
-    PipelineBuilder::build_pipeline(device, renderPass, extent, shaderPass);
+    PipelineBuilder::build_graphic_pipeline(device, renderPass, extent, shaderPass);
 }
 void ShaderPass::cleanup(VkDevice &device)
 {

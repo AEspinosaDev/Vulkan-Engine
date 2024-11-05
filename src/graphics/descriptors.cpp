@@ -56,11 +56,11 @@ void DescriptorManager::set_descriptor_write(Buffer *buffer, VkDeviceSize dataSi
                                              DescriptorSet *descriptor, VkDescriptorType type, uint32_t binding)
 {
     VkDescriptorBufferInfo info;
-    info.buffer = buffer->handle;
+    info.buffer = buffer->get_handle();
     info.offset = readOffset;
     info.range = dataSize;
 
-    VkWriteDescriptorSet writeSetting = init::write_descriptor_buffer(type, descriptor->handle, &info, binding);
+    VkWriteDescriptorSet writeSetting = Init::write_descriptor_buffer(type, descriptor->handle, &info, binding);
 
     descriptor->bindings += 1;
     descriptor->binded_buffers.push_back(buffer);
@@ -77,7 +77,7 @@ void DescriptorManager::set_descriptor_write(VkSampler sampler, VkImageView imag
     imageBufferInfo.imageView = imageView;
     imageBufferInfo.imageLayout = layout;
 
-    VkWriteDescriptorSet texture1 = init::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    VkWriteDescriptorSet texture1 = Init::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                                                  descriptor->handle, &imageBufferInfo, binding);
 
     descriptor->bindings += 1;

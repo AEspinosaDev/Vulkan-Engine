@@ -21,7 +21,7 @@ void BaseRenderer::init()
 
     void *windowHandle{nullptr};
     m_window->get_handle(windowHandle);
-    m_context.init(windowHandle, m_window->get_windowing_system(), m_window->get_extent(),
+    m_device.init(windowHandle, m_window->get_windowing_system(), m_window->get_extent(),
                    static_cast<uint32_t>(m_settings.bufferingType), static_cast<VkFormat>(m_settings.colorFormat),
                    static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
@@ -61,7 +61,7 @@ void BaseRenderer::run(Core::Scene *const scene)
 
 void BaseRenderer::shutdown(Core::Scene *const scene)
 {
-    m_context.wait_for_device();
+    m_device.wait_for_device();
 
     on_shutdown(scene);
 
@@ -99,7 +99,7 @@ void BaseRenderer::shutdown(Core::Scene *const scene)
 
         m_renderPipeline.flush_framebuffers();
 
-        m_context.cleanup();
+        m_device.cleanup();
     }
 
     m_window->destroy();
@@ -140,7 +140,7 @@ void BaseRenderer::on_after_render(VkResult &renderResult, Core::Scene *const sc
         throw VKException("failed to present swap chain image!");
     }
 
-    m_currentFrame = (m_currentFrame + 1) % m_context.frames.size();
+    m_currentFrame = (m_currentFrame + 1) % m_device.frames.size();
 }
 
 void BaseRenderer::render(Core::Scene *const scene)
@@ -152,7 +152,7 @@ void BaseRenderer::render(Core::Scene *const scene)
         init();
 
     uint32_t imageIndex;
-    VkResult imageResult = m_context.aquire_present_image(m_currentFrame, imageIndex);
+    VkResult imageResult = m_device.aquire_present_image(m_currentFrame, imageIndex);
 
     if (imageResult == VK_ERROR_OUT_OF_DATE_KHR)
     {
@@ -166,7 +166,7 @@ void BaseRenderer::render(Core::Scene *const scene)
 
     on_before_render(scene);
 
-    m_context.begin_command_buffer(m_currentFrame);
+    m_device.begin_command_buffer(m_currentFrame);
 
     if (scene->get_skybox())
         if (scene->get_skybox()->update_enviroment())
@@ -178,9 +178,9 @@ void BaseRenderer::render(Core::Scene *const scene)
 
     m_renderPipeline.render(m_currentFrame, scene, imageIndex);
 
-    m_context.end_command_buffer(m_currentFrame);
+    m_device.end_command_buffer(m_currentFrame);
 
-    VkResult renderResult = m_context.present_image(m_currentFrame, imageIndex);
+    VkResult renderResult = m_device.present_image(m_currentFrame, imageIndex);
 
     on_after_render(renderResult, scene);
 }
@@ -206,9 +206,9 @@ void BaseRenderer::update_renderpasses()
 {
     m_window->update_framebuffer();
 
-    m_context.wait_for_device();
+    m_device.wait_for_device();
 
-    m_context.update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
+    m_device.update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
                                static_cast<VkFormat>(m_settings.colorFormat),
                                static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
@@ -243,7 +243,7 @@ void BaseRenderer::init_gui()
             }
         };
 
-        m_context.init_gui_pool();
+        m_device.init_gui_pool();
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -255,11 +255,11 @@ void BaseRenderer::init_gui()
 
         // this initializes imgui for Vulkan
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = m_context.instance;
-        init_info.PhysicalDevice = m_context.gpu;
-        init_info.Device = m_context.device;
-        init_info.Queue = m_context.graphicsQueue;
-        init_info.DescriptorPool = m_context.m_guiPool;
+        init_info.Instance = m_device.instance;
+        init_info.PhysicalDevice = m_device.gpu;
+        init_info.Device = m_device.device;
+        init_info.Queue = m_device.graphicsQueue;
+        init_info.DescriptorPool = m_device.m_guiPool;
         init_info.MinImageCount = 3;
         init_info.ImageCount = 3;
         init_info.RenderPass = defaultPass->get_handle();
@@ -269,7 +269,7 @@ void BaseRenderer::init_gui()
 
         m_deletionQueue.push_function([=]() {
             ImGui_ImplVulkan_Shutdown();
-            vkDestroyDescriptorPool(m_context.device, m_context.m_guiPool, nullptr);
+            vkDestroyDescriptorPool(m_device.device, m_device.m_guiPool, nullptr);
         });
     }
 }

@@ -5,28 +5,31 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size)
+void Buffer::upload_data(const void *bufferData, size_t size)
 {
+    if(allocation == VK_NULL_HANDLE) return;
     PROFILING_EVENT()
     void *data;
-    vmaMapMemory(memory, allocation, &data);
+    vmaMapMemory(_memory, allocation, &data);
     memcpy(data, bufferData, size);
-    vmaUnmapMemory(memory, allocation);
+    vmaUnmapMemory(_memory, allocation);
 }
 
-void Buffer::upload_data(VmaAllocator &memory, const void *bufferData, size_t size, size_t offset)
+void Buffer::upload_data(const void *bufferData, size_t size, size_t offset)
 {
+    if(allocation == VK_NULL_HANDLE) return;
     PROFILING_EVENT()
     char *data;
-    vmaMapMemory(memory, allocation, (void **)&data);
+    vmaMapMemory(_memory, allocation, (void **)&data);
     data += offset;
     memcpy(data, bufferData, size);
-    vmaUnmapMemory(memory, allocation);
+    vmaUnmapMemory(_memory, allocation);
 }
 
 void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
                   uint32_t istrideSize)
 {
+    _memory = memory;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -46,6 +49,8 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
 void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
                   uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes)
 {
+    _memory = memory;
+
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.pNext = nullptr;
@@ -62,9 +67,10 @@ void Buffer::init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usa
     partitionsSizes = stridePartitionsSizes;
 }
 
-void Buffer::cleanup(VmaAllocator &memory)
+void Buffer::cleanup()
 {
-    vmaDestroyBuffer(memory, handle, allocation);
+    if(allocation != VK_NULL_HANDLE)
+    vmaDestroyBuffer(_memory, handle, allocation);
 }
 
 } // namespace render

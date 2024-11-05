@@ -11,7 +11,7 @@
 
 #include <engine/common.h>
 #include <engine/graphics/buffer.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/utilities/initializers.h>
 #include <unordered_map>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

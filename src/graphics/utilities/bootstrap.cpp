@@ -1,5 +1,5 @@
 #define VMA_IMPLEMENTATION
-#include <engine/graphics/bootstrap.h>
+#include <engine/graphics/utilities/bootstrap.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -8,7 +8,7 @@ namespace Graphics
 
 VkInstance VKBooter::create_instance()
 {
-    if (m_validation && !utils::check_validation_layer_suport(m_validationLayers))
+    if (m_validation && !Utils::check_validation_layer_suport(m_validationLayers))
     {
         throw std::runtime_error(" validation layers requested, but not available!");
     }
@@ -36,7 +36,7 @@ VkInstance VKBooter::create_instance()
         createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
         createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
-        utils::populate_debug_messenger_create_info(debugCreateInfo);
+        Utils::populate_debug_messenger_create_info(debugCreateInfo);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
     }
     else
@@ -71,7 +71,7 @@ std::vector<const char *> VKBooter::get_required_extensions()
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> supported_extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supported_extensions.data());
-    utils::log_available_extensions(supported_extensions);
+    Utils::log_available_extensions(supported_extensions);
 #endif
     return extensions;
 }
@@ -98,7 +98,7 @@ VkPhysicalDevice VKBooter::pick_graphics_card_device(VkInstance instance, VkSurf
         candidates.insert(std::make_pair(score, device));
     }
 #ifndef NDEBUG
-    utils::log_available_gpus(candidates);
+    Utils::log_available_gpus(candidates);
 #endif // !NDEBUG
 
     // Check if the best candidate is suitable at all
@@ -142,7 +142,7 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
 
-    if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
+    if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state");
 
@@ -163,7 +163,7 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
 
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2Features = {};
 
-    if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state2"))
+    if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state2"))
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state2");
 
@@ -175,7 +175,7 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
 
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3Features = {};
 
-    if (utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state3"))
+    if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state3"))
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state3");
 
@@ -192,11 +192,11 @@ VkDevice VKBooter::create_logical_device(VkQueue &graphicsQueue, VkQueue &presen
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
 
     // Check RTX extensions
-    if (utils::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        utils::is_device_extension_supported(gpu, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-        utils::is_device_extension_supported(gpu, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) &&
-        utils::is_device_extension_supported(gpu, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-        utils::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME))
+    if (Utils::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+        Utils::is_device_extension_supported(gpu, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+        Utils::is_device_extension_supported(gpu, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) &&
+        Utils::is_device_extension_supported(gpu, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+        Utils::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME))
     {
 
         enabledExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -386,10 +386,10 @@ VkDebugUtilsMessengerEXT VKBooter::create_debug_messenger(VkInstance instance)
         return VK_NULL_HANDLE;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    utils::populate_debug_messenger_create_info(createInfo);
+    Utils::populate_debug_messenger_create_info(createInfo);
 
     VkDebugUtilsMessengerEXT debugMessenger{};
-    if (utils::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+    if (Utils::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to set up debug messenger!");
     }

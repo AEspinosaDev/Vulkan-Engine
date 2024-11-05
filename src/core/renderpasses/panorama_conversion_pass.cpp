@@ -34,7 +34,7 @@ void PanoramaConverterPass::init()
 
     m_attachments.push_back(_colorAttachment);
 
-    VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference colorRef = Init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass = {};
@@ -75,7 +75,7 @@ void PanoramaConverterPass::create_descriptors()
     m_descriptorManager.create_pool(1, 1, 1, 1, 1);
 
     VkDescriptorSetLayoutBinding panoramaTextureBinding =
-        init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     VkDescriptorSetLayoutBinding bindings[] = {panoramaTextureBinding};
     m_descriptorManager.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 1);
 
@@ -106,7 +106,7 @@ void PanoramaConverterPass::render(uint32_t frameIndex, Scene *const scene, uint
 
     begin(cmd);
 
-    VkViewport viewport = init::viewport(m_extent);
+    VkViewport viewport = Init::viewport(m_extent);
     vkCmdSetViewport(cmd, 0, 1, &viewport);
     VkRect2D scissor{};
     scissor.offset = {0, 0};

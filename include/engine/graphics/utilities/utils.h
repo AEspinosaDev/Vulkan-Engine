@@ -12,15 +12,18 @@
 #include <chrono>
 #include <deque>
 #include <engine/common.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/utilities/initializers.h>
 #include <functional>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
 
-namespace utils
+namespace Utils
 {
 
 struct UploadContext
@@ -324,5 +327,20 @@ template <typename T, typename... Rest> void hash_combine(std::size_t &seed, con
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
+
+
+namespace std
+{
+template <> struct hash<VKFW::Graphics::Utils::Vertex>
+{
+    size_t operator()(VKFW::Graphics::Utils::Vertex const &vertex) const
+    {
+        size_t seed = 0;
+        VKFW::Graphics::Utils::hash_combine(seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord,
+                                            vertex.color);
+        return seed;
+    }
+};
+}; // namespace std
 
 #endif

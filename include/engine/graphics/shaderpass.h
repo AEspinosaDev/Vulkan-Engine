@@ -11,7 +11,7 @@
 
 #include <engine/common.h>
 #include <engine/graphics/descriptors.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/utilities/initializers.h>
 
 #include <unordered_map>
 
@@ -68,7 +68,7 @@ struct ShaderPassSettings
     bool sampleShading{true};
 
     // Blending
-    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{init::color_blend_attachment_state(false)};
+    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{Init::color_blend_attachment_state(false)};
     // blendingOperation{};
 
     // Depth Test
@@ -121,7 +121,7 @@ namespace PipelineBuilder
 {
 void build_pipeline_layout(VkDevice &device, DescriptorManager &descriptorManager, ShaderPass &shaderPass);
 
-void build_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent, ShaderPass &shaderPass);
+void build_graphic_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent, ShaderPass &shaderPass);
 }; // namespace PipelineBuilder
 
 } // namespace Graphics

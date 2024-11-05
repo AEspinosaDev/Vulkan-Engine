@@ -24,7 +24,7 @@ class FXAAPass : public RenderPass
     Graphics::DescriptorSet m_imageDescriptorSet;
 
   public:
-    FXAAPass(Graphics::Context *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
+    FXAAPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
              Mesh *vignette, bool isDefault = true)
         : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat), m_vignette(vignette)
     {

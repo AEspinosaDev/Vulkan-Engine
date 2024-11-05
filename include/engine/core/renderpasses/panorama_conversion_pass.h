@@ -23,7 +23,7 @@ class PanoramaConverterPass : public RenderPass
     Mesh *m_vignette;
 
   public:
-    PanoramaConverterPass(Graphics::Context *ctx, ColorFormatType format, Extent2D extent, Mesh *vignette)
+    PanoramaConverterPass(Graphics::Device *ctx, ColorFormatType format, Extent2D extent, Mesh *vignette)
         : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false), m_vignette(vignette), m_format(format)
     {
     }

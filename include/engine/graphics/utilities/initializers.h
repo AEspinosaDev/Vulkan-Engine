@@ -10,13 +10,13 @@
 #define INITIALIZERS_H
 
 #include <engine/common.h>
-#include <engine/graphics/bootstrap.h>
+#include <engine/graphics/utilities/bootstrap.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
-namespace init
+namespace Init
 {
 
 VkCommandPoolCreateInfo command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);

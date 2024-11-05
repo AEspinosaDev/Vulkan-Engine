@@ -35,7 +35,7 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     camData.position = Vec4(camera->get_position(), 0.0f);
     camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
 
-    m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(m_context.memory, &camData,
+    m_device.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(&camData,
                                                                                sizeof(Graphics::CameraUniforms), 0);
 
     /*
@@ -49,7 +49,7 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     sceneParams.emphasizeAO = false;
     sceneParams.ambientColor = Vec4(scene->get_ambient_color(), scene->get_ambient_intensity());
     sceneParams.useIBL = scene->use_IBL();
-    if (scene->get_skybox()) //If skybox
+    if (scene->get_skybox()) // If skybox
     {
         sceneParams.envRotation = scene->get_skybox()->get_rotation();
         sceneParams.envColorMultiplier = scene->get_skybox()->get_intensity();
@@ -79,9 +79,9 @@ void BaseRenderer::update_global_data(Core::Scene *const scene)
     }
     sceneParams.numLights = static_cast<int>(lights.size());
 
-    m_context.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(
-        m_context.memory, &sceneParams, sizeof(Graphics::SceneUniforms),
-        Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_context.gpu));
+    m_device.frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(
+        &sceneParams, sizeof(Graphics::SceneUniforms),
+        Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_device.gpu));
 
     /*
     SKYBOX MESH AND TEXTURE UPLOAD
@@ -135,15 +135,15 @@ void BaseRenderer::update_object_data(Core::Scene *const scene)
                 {
                     // Offset calculation
                     uint32_t objectOffset =
-                        m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
+                        m_device.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].get_stride_size() * mesh_idx;
 
                     Graphics::ObjectUniforms objectData;
                     objectData.model = m->get_model_matrix();
                     objectData.otherParams1 = {m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(),
                                                false};
                     objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
-                    m_context.frames[m_currentFrame].uniformBuffers[1].upload_data(
-                        m_context.memory, &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
+                    m_device.frames[m_currentFrame].uniformBuffers[1].upload_data(
+                        &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
@@ -167,10 +167,10 @@ void BaseRenderer::update_object_data(Core::Scene *const scene)
 
                         // ObjectUniforms materialData;
                         Graphics::MaterialUniforms materialData = mat->get_uniforms();
-                        m_context.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(
-                            m_context.memory, &materialData, sizeof(Graphics::MaterialUniforms),
-                            objectOffset + Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms),
-                                                                                    m_context.gpu));
+                        m_device.frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(
+                            &materialData, sizeof(Graphics::MaterialUniforms),
+                            objectOffset + Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms),
+                                                                                    m_device.gpu));
                     }
                 }
             }
@@ -187,7 +187,7 @@ void BaseRenderer::upload_texture_image(Core::ITexture *const t)
         {
             void *imgCache{nullptr};
             t->get_image_cache(imgCache);
-            m_context.upload_texture_image(imgCache, t->get_bytes_per_pixel(), get_image(t),
+            m_device.upload_texture_image(imgCache, t->get_bytes_per_pixel(), get_image(t),
                                            t->get_settings().useMipmaps);
         }
     }
@@ -195,25 +195,25 @@ void BaseRenderer::upload_texture_image(Core::ITexture *const t)
 void BaseRenderer::destroy_texture_image(Core::ITexture *const t)
 {
     if (t)
-        m_context.destroy_texture_image(get_image(t));
+        m_device.destroy_texture_image(get_image(t));
 }
 void BaseRenderer::upload_geometry_data(Core::Geometry *const g)
 {
     PROFILING_EVENT()
-    Core::RenderData *rd = get_render_data(g);
+    Graphics::VertexArrays *rd = get_render_data(g);
     if (!rd->loadedOnGPU)
     {
         const Core::GeometricData *gd = g->get_geometric_data();
 
         size_t vboSize = sizeof(gd->vertexData[0]) * gd->vertexData.size();
         size_t iboSize = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
-
-        m_context.upload_vertex_arrays(rd->vbo, vboSize, gd->vertexData.data(), rd->ibo, iboSize,
-                                       gd->vertexIndex.data(), g->indexed());
-
         rd->indexCount = gd->vertexIndex.size();
         rd->vertexCount = gd->vertexIndex.size();
-        rd->loadedOnGPU = true;
+
+        m_device.upload_vertex_arrays(*rd, vboSize, gd->vertexData.data(), iboSize,
+                                       gd->vertexIndex.data());
+
+       
     }
 
     /*
@@ -227,10 +227,10 @@ void BaseRenderer::upload_geometry_data(Core::Geometry *const g)
 void BaseRenderer::destroy_geometry_data(Core::Geometry *const g)
 {
 
-    Core::RenderData *rd = get_render_data(g);
+    Graphics::VertexArrays *rd = get_render_data(g);
     if (rd->loadedOnGPU)
     {
-        m_context.destroy_vertex_arrays(rd->vbo, rd->ibo, g->indexed());
+        m_device.destroy_vertex_arrays(*rd);
         rd->loadedOnGPU = false;
     }
 }
@@ -249,7 +249,7 @@ void BaseRenderer::setup_skybox(Core::Scene *const scene)
                 {
                     void *imgCache{nullptr};
                     envMap->get_image_cache(imgCache);
-                    m_context.upload_texture_image(imgCache, envMap->get_bytes_per_pixel(), get_image(envMap), false);
+                    m_device.upload_texture_image(imgCache, envMap->get_bytes_per_pixel(), get_image(envMap), false);
                 }
                 // Create Panorama converter pass
                 if (m_renderPipeline.panoramaConverterPass)
@@ -260,13 +260,13 @@ void BaseRenderer::setup_skybox(Core::Scene *const scene)
                     m_renderPipeline.irradianceComputePass->clean_framebuffer();
                 }
                 m_renderPipeline.panoramaConverterPass =
-                    new Core::PanoramaConverterPass(&m_context, envMap->get_settings().format,
+                    new Core::PanoramaConverterPass(&m_device, envMap->get_settings().format,
                                                     {envMap->get_size().height, envMap->get_size().height}, m_vignette);
                 m_renderPipeline.panoramaConverterPass->setup();
                 m_renderPipeline.panoramaConverterPass->upload_data(m_currentFrame, scene);
                 // Create Irradiance converter pass
                 m_renderPipeline.irradianceComputePass = new Core::IrrandianceComputePass(
-                    &m_context, envMap->get_settings().format,
+                    &m_device, envMap->get_settings().format,
                     {m_settings.irradianceResolution, m_settings.irradianceResolution});
                 m_renderPipeline.irradianceComputePass->setup();
                 m_renderPipeline.irradianceComputePass->upload_data(m_currentFrame, scene);
@@ -278,25 +278,25 @@ void BaseRenderer::setup_skybox(Core::Scene *const scene)
 }
 void BaseRenderer::init_resources()
 {
-    for (size_t i = 0; i < m_context.frames.size(); i++)
+    for (size_t i = 0; i < m_device.frames.size(); i++)
     {
         // Global Buffer
         Graphics::Buffer globalBuffer;
         const size_t globalStrideSize =
-            (Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_context.gpu) +
-             Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms), m_context.gpu));
-        globalBuffer.init(m_context.memory, globalStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_device.gpu) +
+             Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms), m_device.gpu));
+        globalBuffer.init(m_device.memory, globalStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
-        m_context.frames[i].uniformBuffers.push_back(globalBuffer);
+        m_device.frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
         Graphics::Buffer objectBuffer;
         const size_t objectStrideSize =
-            (Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms), m_context.gpu) +
-             Graphics::utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms), m_context.gpu));
-        objectBuffer.init(m_context.memory, VK_MAX_OBJECTS * objectStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms), m_device.gpu) +
+             Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms), m_device.gpu));
+        objectBuffer.init(m_device.memory, VK_MAX_OBJECTS * objectStrideSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
-        m_context.frames[i].uniformBuffers.push_back(objectBuffer);
+        m_device.frames[i].uniformBuffers.push_back(objectBuffer);
     }
 
     // Setup vignette
@@ -311,23 +311,23 @@ void BaseRenderer::init_resources()
 
     void *imgCache{nullptr};
     Core::Texture::DEBUG_TEXTURE->get_image_cache(imgCache);
-    m_context.upload_texture_image(imgCache, Core::Texture::DEBUG_TEXTURE->get_bytes_per_pixel(),
+    m_device.upload_texture_image(imgCache, Core::Texture::DEBUG_TEXTURE->get_bytes_per_pixel(),
                                    get_image(Core::Texture::DEBUG_TEXTURE), false);
 }
 
 void BaseRenderer::clean_Resources()
 {
-    for (size_t i = 0; i < m_context.frames.size(); i++)
+    for (size_t i = 0; i < m_device.frames.size(); i++)
     {
-        for (Graphics::Buffer &buffer : m_context.frames[i].uniformBuffers)
+        for (Graphics::Buffer &buffer : m_device.frames[i].uniformBuffers)
         {
-            buffer.cleanup(m_context.memory);
+            buffer.cleanup();
         }
     }
 
     destroy_geometry_data(m_vignette->get_geometry());
 
-    m_context.destroy_texture_image(get_image(Core::Texture::DEBUG_TEXTURE));
+    m_device.destroy_texture_image(get_image(Core::Texture::DEBUG_TEXTURE));
 }
 } // namespace Systems
 

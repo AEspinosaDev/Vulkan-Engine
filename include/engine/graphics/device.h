@@ -13,30 +13,29 @@
 
 #include <engine/common.h>
 
-#include <engine/graphics/bootstrap.h>
 #include <engine/graphics/extensions.h>
 #include <engine/graphics/frame.h>
-#include <engine/graphics/initializers.h>
 #include <engine/graphics/swapchain.h>
-#include <engine/graphics/utils.h>
+#include <engine/graphics/utilities/bootstrap.h>
+#include <engine/graphics/utilities/initializers.h>
+#include <engine/graphics/utilities/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
 /*
-Vulkan API graphic context related data abnd functionality
+Vulkan API graphic context related data and functionality
 */
-struct Context
+struct Device
 {
-    Swapchain swapchain{};
-
-    VkSurfaceKHR surface{};
-
+    VkDevice device{VK_NULL_HANDLE};
     VkInstance instance{VK_NULL_HANDLE};
     VkPhysicalDevice gpu{VK_NULL_HANDLE};
-    VkDevice device{VK_NULL_HANDLE};
     VmaAllocator memory{VK_NULL_HANDLE};
+
+    Swapchain swapchain{};
+
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
 
     VkQueue graphicsQueue{};
@@ -46,7 +45,7 @@ struct Context
 
     std::vector<Frame> frames;
 
-    utils::UploadContext uploadContext{};
+    Utils::UploadContext uploadContext{};
 
 #ifdef NDEBUG
     const bool enableValidationLayers{false};
@@ -89,10 +88,10 @@ struct Context
     DATA TRANSFER
     -----------------------------------------------
     */
-    void upload_vertex_arrays(Buffer &vbo, size_t vboSize, const void *vboData, Buffer &ibo, size_t iboSize,
-                              const void *iboData, bool indexed);
+    void upload_vertex_arrays(VertexArrays &vao, size_t vboSize, const void *vboData, size_t iboSize,
+                              const void *iboData );
 
-    void destroy_vertex_arrays(Buffer &vbo, Buffer &ibo, bool indexed);
+    void destroy_vertex_arrays(VertexArrays &vao);
 
     void upload_texture_image(const void *imgCache, size_t bytesPerPixel, Image *const img, bool mipmapping);
 

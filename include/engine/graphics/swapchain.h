@@ -10,9 +10,9 @@
 #define SWAPCHAIN_H
 
 #include <engine/common.h>
-#include <engine/graphics/bootstrap.h>
+#include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/image.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/utilities/initializers.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -20,8 +20,8 @@ namespace Graphics
 {
 class Swapchain
 {
-  private:
-    VkSwapchainKHR m_swapchain;
+    VkSwapchainKHR m_handle;
+    VkSurfaceKHR m_surface;
 
     VkFormat m_presentFormat;
     VkPresentModeKHR m_presentMode;
@@ -41,7 +41,10 @@ class Swapchain
     void create_image_views(VkDevice &device);
 
   public:
-    void create(VkPhysicalDevice &gpu, VkDevice &device, VkSurfaceKHR surface, VkExtent2D actualExtent,
+    VkExtent2D create_surface(VkInstance &instance ,void *windowHandle, WindowingSystem windowingSystem);
+    void destroy_surface(VkInstance &instance);
+    
+    void create(VkPhysicalDevice &gpu, VkDevice &device, VkExtent2D actualExtent,
                 VkExtent2D windowExtent, uint32_t imageCount = 2,
                 VkFormat userDefinedcolorFormat = VK_FORMAT_B8G8R8A8_SRGB,
                 VkPresentModeKHR userDefinedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR);
@@ -49,13 +52,17 @@ class Swapchain
 
     inline VkSwapchainKHR &get_handle()
     {
-        return m_swapchain;
+        return m_handle;
+    }
+    inline VkSurfaceKHR &get_surface()
+    {
+        return m_surface;
     }
     inline VkFormat &get_image_format()
     {
         return m_presentFormat;
     }
-    inline std::vector<Image> get_present_images()
+    inline std::vector<Image> get_present_images() const
     {
         return m_presentImages;
     }

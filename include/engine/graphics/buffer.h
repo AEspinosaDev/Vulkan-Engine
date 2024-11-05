@@ -9,37 +9,62 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include <engine/graphics/bootstrap.h>
+#include <engine/graphics/utilities/bootstrap.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics
 {
-
-/*Vulkan buffer object*/
-struct Buffer
+//Vulkan buffer object
+class Buffer
 {
     VkBuffer handle;
     /*Memory allocation controlled by VMA*/
+    VmaAllocator _memory;
     VmaAllocation allocation;
-    /*For dynamic descriptor binding operation*/
+
     uint32_t strideSize{0};
-    /*For buffer info writing operation*/
     std::vector<uint32_t> partitionsSizes;
+
+  public:
+    inline VkBuffer get_handle() const
+    {
+        return handle;
+    }
+    inline uint32_t get_stride_size() const
+    {
+        return strideSize;
+    }
+    Buffer(){}
 
     void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
               uint32_t istrideSize = 0);
     void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
               uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes);
 
-    void upload_data(VmaAllocator &memory, const void *bufferData, size_t size);
+    void upload_data(const void *bufferData, size_t size);
 
-    void upload_data(VmaAllocator &memory, const void *bufferData, size_t size, size_t offset);
+    void upload_data(const void *bufferData, size_t size, size_t offset);
 
-    void cleanup(VmaAllocator &memory);
+    void cleanup();
 };
 
-} // namespace render
+/*
+Geometric Render Data
+*/
+struct VertexArrays
+{
+    bool loadedOnGPU{false};
+
+    Buffer vbo{};
+    Buffer ibo{};
+
+    uint32_t vertexCount{0};
+    uint32_t indexCount{0};
+};
+typedef VertexArrays VAO;
+
+} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 

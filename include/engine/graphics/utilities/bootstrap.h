@@ -10,7 +10,7 @@
 #define BOOTSTRAP_H
 
 #include <engine/common.h>
-#include <engine/graphics/utils.h>
+#include <engine/graphics/utilities/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

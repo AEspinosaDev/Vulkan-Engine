@@ -10,7 +10,7 @@
 #define IMAGE_H
 
 #include <engine/graphics/buffer.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/utilities/initializers.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

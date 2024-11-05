@@ -17,7 +17,7 @@ void RenderPass::setup()
 void RenderPass::begin(VkCommandBuffer &cmd, uint32_t framebufferId, VkSubpassContents subpassContents)
 {
     VkRenderPassBeginInfo renderPassInfo =
-        init::renderpass_begin_info(m_handle, m_extent, m_framebuffer_handles[framebufferId]);
+        Init::renderpass_begin_info(m_handle, m_extent, m_framebuffer_handles[framebufferId]);
 
     std::vector<VkClearValue> clearValues;
     clearValues.reserve(m_attachments.size());
@@ -39,9 +39,9 @@ void RenderPass::end(VkCommandBuffer &cmd)
 void RenderPass::draw(VkCommandBuffer &cmd, Geometry *g)
 {
     PROFILING_EVENT()
-    RenderData *rd = get_render_data(g);
+    VertexArrays *rd = get_render_data(g);
     if (rd->loadedOnGPU)
-        Context::draw_geometry(cmd, rd->vbo, rd->ibo, rd->vertexCount, rd->indexCount, g->indexed());
+        Device::draw_geometry(cmd, rd->vbo, rd->ibo, rd->vertexCount, rd->indexCount, g->indexed());
 }
 void RenderPass::cleanup()
 {
@@ -97,7 +97,7 @@ void RenderPass::create_framebuffer()
         if (m_isDefault) // If its default need swapchain PRESENT images
             viewAttachments[presentViewIndex] = m_context->swapchain.get_present_images()[fb].view;
 
-        VkFramebufferCreateInfo fbInfo = init::framebuffer_create_info(m_handle, m_extent);
+        VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(m_handle, m_extent);
         fbInfo.pAttachments = viewAttachments.data();
         fbInfo.attachmentCount = (uint32_t)viewAttachments.size();
         fbInfo.layers = m_framebufferImageDepth;

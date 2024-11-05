@@ -9,10 +9,10 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <engine/graphics/bootstrap.h>
+#include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/buffer.h>
 #include <engine/graphics/descriptors.h>
-#include <engine/graphics/initializers.h>
+#include <engine/graphics/utilities/initializers.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
