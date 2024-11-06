@@ -114,6 +114,7 @@ void main() {
 #include scene.glsl
 #include camera.glsl
 #include object.glsl
+#include utils.glsl
 #include shadow_mapping.glsl
 #include reindhart.glsl
 #include BRDFs/marschner_LUT_BSDF.glsl

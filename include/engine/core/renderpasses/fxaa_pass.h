@@ -12,22 +12,26 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 /*
 Postprocess pass for antialasing final image using FXAA technique
 */
 class FXAAPass : public RenderPass
 {
-    ColorFormatType m_colorFormat;
-    Mesh *m_vignette;
+    ColorFormatType         m_colorFormat;
+    Mesh*                   m_vignette;
     Graphics::DescriptorSet m_imageDescriptorSet;
 
   public:
-    FXAAPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
-             Mesh *vignette, bool isDefault = true)
-        : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat), m_vignette(vignette)
-    {
+    FXAAPass(Graphics::Device* ctx,
+             Extent2D          extent,
+             uint32_t          framebufferCount,
+             ColorFormatType   colorFormat,
+             Mesh*             vignette,
+             bool              isDefault = true)
+        : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
+        , m_colorFormat(colorFormat)
+        , m_vignette(vignette) {
     }
 
     void setup_attachments();
@@ -36,7 +40,7 @@ class FXAAPass : public RenderPass
 
     void setup_shader_passes();
 
-    void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+    void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0);
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 };

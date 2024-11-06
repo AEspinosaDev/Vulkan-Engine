@@ -27,7 +27,10 @@ void ForwardRenderer::setup_renderpasses() {
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
     // Shadow Pass
-    Core::ShadowPass* shadowPass = new Core::ShadowPass(
+    // Core::ShadowPass* shadowPass = new Core::ShadowPass(
+    //     &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
+    // m_renderPipeline.push_renderpass(shadowPass);
+    Core::VarianceShadowPass* shadowPass = new Core::VarianceShadowPass(
         &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
     m_renderPipeline.push_renderpass(shadowPass);
 

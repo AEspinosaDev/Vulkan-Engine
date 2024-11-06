@@ -13,19 +13,19 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 
 class PanoramaConverterPass : public RenderPass
 {
-    ColorFormatType m_format;
+    ColorFormatType         m_format;
     Graphics::DescriptorSet m_panoramaDescriptorSet;
-    Mesh *m_vignette;
+    Mesh*                   m_vignette;
 
   public:
-    PanoramaConverterPass(Graphics::Device *ctx, ColorFormatType format, Extent2D extent, Mesh *vignette)
-        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false), m_vignette(vignette), m_format(format)
-    {
+    PanoramaConverterPass(Graphics::Device* ctx, ColorFormatType format, Extent2D extent, Mesh* vignette)
+        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false)
+        , m_vignette(vignette)
+        , m_format(format) {
     }
 
     void setup_attachments();
@@ -34,9 +34,9 @@ class PanoramaConverterPass : public RenderPass
 
     void setup_shader_passes();
 
-    void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+    void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void update_uniforms(uint32_t frameIndex, Scene *const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 };

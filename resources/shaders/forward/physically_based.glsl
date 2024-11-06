@@ -78,9 +78,9 @@ void main() {
 #include light.glsl
 #include scene.glsl
 #include object.glsl
+#include utils.glsl
 #include shadow_mapping.glsl
 #include fresnel.glsl
-#include utils.glsl
 #include ssao.glsl
 #include IBL.glsl
 #include reindhart.glsl
@@ -193,7 +193,7 @@ void main() {
 
 
             if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-                lighting *= (1.0 - computeShadow(shadowMap,scene.lights[i],i,v_modelPos));
+                lighting *= (1.0 - computeVarianceShadow(shadowMap,scene.lights[i],i,v_modelPos));
 
             }
 

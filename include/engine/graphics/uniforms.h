@@ -23,6 +23,8 @@ struct CameraUniforms
     Mat4 viewProj;
     Vec4 position;
     Vec2 screenExtent;
+    float nearPlane;
+    float farPlane;
 };
 
 struct LightUniforms

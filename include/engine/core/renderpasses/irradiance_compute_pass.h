@@ -12,19 +12,18 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 
 class IrrandianceComputePass : public RenderPass
 {
-    ColorFormatType m_format;
+    ColorFormatType         m_format;
     Graphics::DescriptorSet m_captureDescriptorSet;
-    Graphics::Buffer m_captureBuffer;
+    Graphics::Buffer        m_captureBuffer;
 
   public:
-    IrrandianceComputePass(Graphics::Device *ctx, ColorFormatType format, Extent2D extent)
-        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false),  m_format(format)
-    {
+    IrrandianceComputePass(Graphics::Device* ctx, ColorFormatType format, Extent2D extent)
+        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false)
+        , m_format(format) {
     }
 
     void setup_attachments();
@@ -33,9 +32,9 @@ class IrrandianceComputePass : public RenderPass
 
     void setup_shader_passes();
 
-    void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+    void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void update_uniforms(uint32_t frameIndex, Scene *const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void connect_env_cubemap(Graphics::Image env);
 

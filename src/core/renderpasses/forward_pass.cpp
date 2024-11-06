@@ -485,7 +485,8 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
     {
         m_descriptorPool.set_descriptor_write(images[0].sampler,
                                               images[0].view,
-                                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                            //   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               2);
     }

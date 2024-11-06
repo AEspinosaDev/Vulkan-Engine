@@ -32,6 +32,8 @@ void BaseRenderer::update_global_data(Core::Scene* const scene) {
     camData.viewProj     = camera->get_projection() * camera->get_view();
     camData.position     = Vec4(camera->get_position(), 0.0f);
     camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
+    camData.nearPlane = camera->get_near();
+    camData.farPlane = camera->get_far();
 
     m_frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(&camData, sizeof(Graphics::CameraUniforms), 0);
 

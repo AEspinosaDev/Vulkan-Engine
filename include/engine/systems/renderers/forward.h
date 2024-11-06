@@ -5,6 +5,7 @@
 #include <engine/core/renderpasses/fxaa_pass.h>
 #include <engine/core/renderpasses/panorama_conversion_pass.h>
 #include <engine/core/renderpasses/shadow_pass.h>
+#include <engine/core/renderpasses/variance_shadow_pass.h>
 #include <engine/systems/renderers/renderer.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

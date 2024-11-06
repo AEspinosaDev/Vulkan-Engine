@@ -6,17 +6,18 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef SHADOW_PASS_H
-#define SHADOW_PASS_H
+#ifndef VSM_PASS_H
+#define VSM_PASS_H
 #include <engine/core/renderpasses/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-class ShadowPass : public RenderPass
+class VarianceShadowPass : public RenderPass
 {
     /* Config  */
+    ColorFormatType m_format{SRG_16F};
     DepthFormatType m_depthFormat;
 
     /*Descriptors*/
@@ -27,11 +28,11 @@ class ShadowPass : public RenderPass
     std::vector<FrameDescriptors> m_descriptors;
 
   public:
-    ShadowPass(Graphics::Device* ctx,
-               Extent2D          extent,
-               uint32_t          framebufferCount,
-               uint32_t          numLights,
-               DepthFormatType   depthFormat)
+    VarianceShadowPass(Graphics::Device* ctx,
+                       Extent2D          extent,
+                       uint32_t          framebufferCount,
+                       uint32_t          numLights,
+                       DepthFormatType   depthFormat)
         : RenderPass(ctx, extent, framebufferCount, numLights)
         , m_depthFormat(depthFormat) {
     }

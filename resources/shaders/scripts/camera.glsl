@@ -4,4 +4,6 @@ layout(set = 0, binding = 0) uniform CameraUniforms {
     mat4 viewProj;
     vec4 position;
     vec2 screenExtent;
+    float nearPlane;
+    float farPlane;
 } camera;
