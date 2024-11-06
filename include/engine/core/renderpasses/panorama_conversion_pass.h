@@ -28,15 +28,15 @@ class PanoramaConverterPass : public RenderPass
     {
     }
 
-    void init();
+    void setup_attachments();
 
-    void create_descriptors();
+    void setup_uniforms();
 
-    void create_graphic_pipelines();
+    void setup_shader_passes();
 
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 
-    void upload_data(uint32_t frameIndex, Scene *const scene);
+    void update_uniforms(uint32_t frameIndex, Scene *const scene);
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 };

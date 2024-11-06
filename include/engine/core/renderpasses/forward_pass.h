@@ -14,43 +14,47 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 
 class ForwardPass : public RenderPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
     DepthFormatType m_depthFormat;
-    MSAASamples m_aa;
+    MSAASamples     m_aa;
 
     /*Descriptors*/
-    struct FrameDescriptors
-    {
+    struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
         Graphics::DescriptorSet objectDescritor;
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-    void setup_material_descriptor(IMaterial *mat);
+    void setup_material_descriptor(IMaterial* mat);
 
   public:
-    ForwardPass(Graphics::Device *ctx, Extent2D extent, uint32_t framebufferCount, ColorFormatType colorFormat,
-                DepthFormatType depthFormat, MSAASamples samples, bool isDefault = true)
-        : RenderPass(ctx, extent, framebufferCount, 1, isDefault), m_colorFormat(colorFormat),
-          m_depthFormat(depthFormat), m_aa(samples)
-    {
+    ForwardPass(Graphics::Device* ctx,
+                Extent2D          extent,
+                uint32_t          framebufferCount,
+                ColorFormatType   colorFormat,
+                DepthFormatType   depthFormat,
+                MSAASamples       samples,
+                bool              isDefault = true)
+        : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
+        , m_colorFormat(colorFormat)
+        , m_depthFormat(depthFormat)
+        , m_aa(samples) {
     }
 
-    void init();
+    void setup_attachments();
 
-    void create_descriptors();
+    void setup_uniforms();
 
-    void create_graphic_pipelines();
+    void setup_shader_passes();
 
-    void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+    void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void upload_data(uint32_t frameIndex, Scene *const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 

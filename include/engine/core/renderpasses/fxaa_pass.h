@@ -30,11 +30,11 @@ class FXAAPass : public RenderPass
     {
     }
 
-    void init();
+    void setup_attachments();
 
-    void create_descriptors();
+    void setup_uniforms();
 
-    void create_graphic_pipelines();
+    void setup_shader_passes();
 
     void render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
 

@@ -9,27 +9,22 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <engine/common.h>
-#include <engine/graphics/descriptors.h>
-#include <engine/graphics/utilities/initializers.h>
+#include <engine/graphics/pipeline.h>
 
 #include <unordered_map>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Graphics
-{
+namespace Graphics {
 
-struct ShaderStage
-{
-    VkShaderModule shaderModule;
+struct ShaderStage {
+    VkShaderModule        shaderModule;
     VkShaderStageFlagBits stage;
 };
 /*
 /Shader useful info
 */
-struct ShaderSource
-{
+struct ShaderSource {
     std::string name;
 
     std::string vertSource;
@@ -38,91 +33,49 @@ struct ShaderSource
     std::string tessControlSource;
     std::string tessEvalSource;
 
-    static ShaderSource read_file(const std::string &filePath);
+    static ShaderSource read_file(const std::string& filePath);
 
-    static std::vector<uint32_t> compile_shader(const std::string src, const std::string shaderName,
-                                                shaderc_shader_kind kind, shaderc_optimization_level optimization);
+    static std::vector<uint32_t> compile_shader(const std::string          src,
+                                                const std::string          shaderName,
+                                                shaderc_shader_kind        kind,
+                                                shaderc_optimization_level optimization);
 
-    static ShaderStage create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType,
-                                           const std::vector<uint32_t> code);
+    static ShaderStage
+    create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code);
 };
 
-struct ShaderPassSettings
+class ShaderPass
 {
-    // Input attributes read
-    std::unordered_map<int, bool> attributes;
+    const std::string        SHADER_FILE;
+    std::vector<ShaderStage> m_shaderStages;
 
-    // Geometry type
-    VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
+    VkDevice         m_device;
+    VkPipeline       m_pipeline       = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-    // Descriptor layouts state
-    std::unordered_map<int, bool> descriptorSetLayoutIDs;
+  public:
+    PipelineSettings settings{};
 
-    // Rasterizer
-    VkPolygonMode poligonMode{VK_POLYGON_MODE_FILL};
-    VkCullModeFlagBits cullMode{VK_CULL_MODE_NONE};
-    VkFrontFace drawOrder{VK_FRONT_FACE_CLOCKWISE};
-
-    // Samples per pixel
-    VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
-    bool sampleShading{true};
-
-    // Blending
-    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{Init::color_blend_attachment_state(false)};
-    // blendingOperation{};
-
-    // Depth Test
-    bool depthTest{true};
-    bool depthWrite{true};
-    VkCompareOp depthOp{VK_COMPARE_OP_LESS_OR_EQUAL};
-
-    // Dynamic states
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-    };
-
-    // Push Constants
-    std::vector<VkPushConstantRange> pushConstants = {};
-};
-
-struct ShaderPass
-{
-
-    const std::string SHADER_FILE;
-
-    VkPipeline pipeline{VK_NULL_HANDLE};
-    VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
-
-    std::vector<ShaderStage> stages;
-
-    ShaderPassSettings settings{};
-
-    ShaderPass(const std::string shaderFile) : SHADER_FILE(shaderFile)
-    {
+    ShaderPass(VkDevice device, const std::string shaderFile)
+        : SHADER_FILE(shaderFile)
+        , m_device(device) {
     }
-    ShaderPass(const std::string shaderFile, ShaderPassSettings sett) : SHADER_FILE(shaderFile), settings(sett)
-    {
+    ShaderPass(VkDevice device, const std::string shaderFile, PipelineSettings sett)
+        : SHADER_FILE(shaderFile)
+        , settings(sett)
+        , m_device(device) {
     }
 
-    static void build_shader_stages(VkDevice &device, ShaderPass &pass,
-                                    shaderc_optimization_level optimization = shaderc_optimization_level_performance);
-
-    static void build(VkDevice &device, VkRenderPass renderPass, DescriptorPool &descriptorManager,
-                      VkExtent2D &extent, ShaderPass &shaderPass);
-
-    void cleanup(VkDevice &device);
+    inline VkPipeline get_pipeline() const {
+        return m_pipeline;
+    }
+    inline VkPipelineLayout get_layout() const {
+        return m_pipelineLayout;
+    }
+    void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
+    void build(VkRenderPass renderPass, DescriptorPool& descriptorManager, Extent2D& extent);
+    void cleanup();
 };
-
-/*
-/Pipeline data and creation wrapper
-*/
-namespace PipelineBuilder
-{
-void build_pipeline_layout(VkDevice &device, DescriptorPool &descriptorManager, ShaderPass &shaderPass);
-
-void build_graphic_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent, ShaderPass &shaderPass);
-}; // namespace PipelineBuilder
 
 } // namespace Graphics
 

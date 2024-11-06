@@ -22,8 +22,8 @@ DECLARATION OF FUNCTION POINTERS RELATED TO VULKAN EXTENSIONS
 
 // Global function pointers
 extern PFN_vkCmdSetRasterizationSamplesEXT vkCmdSetRasterizationSamples;
-extern PFN_vkCmdSetPolygonModeEXT vkCmdSetPolygonMode;
+extern PFN_vkCmdSetPolygonModeEXT          vkCmdSetPolygonMode;
 
-void load_EXT_functions(VkDevice &device);
+void load_EXT_functions(VkDevice& device);
 
 #endif

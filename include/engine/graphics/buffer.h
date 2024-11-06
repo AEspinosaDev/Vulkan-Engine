@@ -13,38 +13,35 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Graphics
-{
-//Vulkan buffer object
+namespace Graphics {
+// Vulkan buffer object
 class Buffer
 {
-    VkBuffer                m_handle;
-                            /*Memory allocation controlled by VMA*/
-    VmaAllocator            m_memory;
-    VmaAllocation           m_allocation;
+    VkBuffer m_handle;
+    /*Memory allocation controlled by VMA*/
+    VmaAllocator  m_memory;
+    VmaAllocation m_allocation;
 
-    uint32_t                m_strideSize{0};
-    std::vector<uint32_t>   m_partitionsSizes;
+    uint32_t              m_strideSize{0};
+    std::vector<uint32_t> m_partitionsSizes;
 
   public:
-    inline VkBuffer get_handle() const
-    {
+    inline VkBuffer get_handle() const {
         return m_handle;
     }
-    inline uint32_t get_stride_size() const
-    {
+    inline uint32_t get_stride_size() const {
         return m_strideSize;
     }
-    Buffer(){}
+    Buffer() {}
 
-    void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+    void init(VmaAllocator& memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
               uint32_t istrideSize = 0);
-    void init(VmaAllocator &memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+    void init(VmaAllocator& memory, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
               uint32_t istrideSize, std::vector<uint32_t> stridePartitionsSizes);
 
-    void upload_data(const void *bufferData, size_t size);
+    void upload_data(const void* bufferData, size_t size);
 
-    void upload_data(const void *bufferData, size_t size, size_t offset);
+    void upload_data(const void* bufferData, size_t size, size_t offset);
 
     void cleanup();
 };
@@ -52,8 +49,7 @@ class Buffer
 /*
 Geometric Render Data
 */
-struct VertexArrays
-{
+struct VertexArrays {
     bool loadedOnGPU{false};
 
     Buffer vbo{};

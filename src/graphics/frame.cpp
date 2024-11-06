@@ -7,8 +7,9 @@ namespace Graphics
 
 bool Frame::guiEnabled = false;
 
-void Frame::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
+void Frame::init(VkDevice _device, VkPhysicalDevice gpu, VkSurfaceKHR surface)
 {
+    device = _device;
     // create a command pool for commands submitted to the graphics queue.
     // we also want the pool to allow for resetting of individual command buffers
     VkCommandPoolCreateInfo commandPoolInfo = Init::command_pool_create_info(
@@ -33,7 +34,7 @@ void Frame::init(VkDevice &device, VkPhysicalDevice &gpu, VkSurfaceKHR surface)
     VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore));
 }
 
-void Frame::cleanup(VkDevice &device)
+void Frame::cleanup()
 {
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFence(device, renderFence, nullptr);

@@ -113,7 +113,7 @@ bool Utils::check_validation_layer_suport(std::vector<const char *> validationLa
     return true;
 }
 
-VkPhysicalDeviceFeatures Utils::get_gpu_features(VkPhysicalDevice &gpu)
+VkPhysicalDeviceFeatures Utils::get_gpu_features(VkPhysicalDevice gpu)
 {
 
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -121,13 +121,13 @@ VkPhysicalDeviceFeatures Utils::get_gpu_features(VkPhysicalDevice &gpu)
     return deviceFeatures;
 }
 
-VkPhysicalDeviceProperties Utils::get_gpu_properties(VkPhysicalDevice &gpu)
+VkPhysicalDeviceProperties Utils::get_gpu_properties(VkPhysicalDevice gpu)
 {
     VkPhysicalDeviceProperties deviceFeatures;
     vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
     return deviceFeatures;
 }
-size_t Utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu)
+size_t Utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice gpu)
 {
     VkPhysicalDeviceProperties deviceFeatures;
     vkGetPhysicalDeviceProperties(gpu, &deviceFeatures);
@@ -140,7 +140,7 @@ size_t Utils::pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice &gpu
     }
     return alignedSize;
 }
-uint32_t Utils::find_memory_type(VkPhysicalDevice &gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t Utils::find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(gpu, &memProperties);

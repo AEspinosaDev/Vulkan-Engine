@@ -1,0 +1,36 @@
+# Align consecutive declarations and assignments
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+
+# Aligns function parameters and arguments when wrapping to a new line
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+
+# Column limit to trigger line wrapping
+ColumnLimit: 120  # Adjust as needed; lower value ensures more wrapping
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never  # Ensures spaces are used instead of tabs
+
+# Break function declarations and calls over multiple lines if they exceed the ColumnLimit
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakAfterReturnType: None
+BreakConstructorInitializers: BeforeComma
+PenaltyBreakBeforeFirstCallParameter: 0
+
+# Formatting and alignment for readability
+PointerAlignment: Left
+AlignTrailingComments: true
+SpaceBeforeParens: ControlStatements
+
+# Brace wrapping options
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterClass: true
+    AfterControlStatement: true
+    AfterEnum: true
+    SplitEmptyFunction: true
+    SplitEmptyRecord: true

@@ -11,24 +11,26 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Systems
-{
-void BaseRenderer::init()
-{
+namespace Systems {
+void BaseRenderer::init() {
 
     if (!m_window->initialized())
         m_window->init();
 
-    void *windowHandle{nullptr};
+    //Init Vulkan Device
+    void* windowHandle{nullptr};
     m_window->get_handle(windowHandle);
-    m_device.init(windowHandle, m_window->get_windowing_system(), m_window->get_extent(),
-                   static_cast<uint32_t>(m_settings.bufferingType), static_cast<VkFormat>(m_settings.colorFormat),
-                   static_cast<VkPresentModeKHR>(m_settings.screenSync));
-
+    m_device.init(windowHandle,
+                  m_window->get_windowing_system(),
+                  m_window->get_extent(),
+                  static_cast<uint32_t>(m_settings.bufferingType),
+                  static_cast<VkFormat>(m_settings.colorFormat),
+                  static_cast<VkPresentModeKHR>(m_settings.screenSync));
+    //Init resources
     init_resources();
-    setup_renderpasses();
 
-    for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
+    setup_renderpasses();
+    for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
         {
@@ -46,8 +48,7 @@ void BaseRenderer::init()
 
     m_initialized = true;
 }
-void BaseRenderer::run(Core::Scene *const scene)
-{
+void BaseRenderer::run(Core::Scene* const scene) {
     ASSERT_PTR(m_window);
     while (!m_window->get_window_should_close())
     {
@@ -59,8 +60,7 @@ void BaseRenderer::run(Core::Scene *const scene)
     shutdown(scene);
 }
 
-void BaseRenderer::shutdown(Core::Scene *const scene)
-{
+void BaseRenderer::shutdown(Core::Scene* const scene) {
     m_device.wait();
 
     on_shutdown(scene);
@@ -72,19 +72,19 @@ void BaseRenderer::shutdown(Core::Scene *const scene)
         clean_Resources();
 
         if (scene)
-            for (Core::Mesh *m : scene->get_meshes())
+            for (Core::Mesh* m : scene->get_meshes())
             {
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
-                    Core::Geometry *g = m->get_geometry(i);
+                    Core::Geometry* g = m->get_geometry(i);
                     destroy_geometry_data(g);
-                    Core::IMaterial *mat = m->get_material(g->get_material_ID());
+                    Core::IMaterial* mat = m->get_material(g->get_material_ID());
                     if (mat)
                     {
                         auto textures = mat->get_textures();
                         for (auto pair : textures)
                         {
-                            Core::ITexture *texture = pair.second;
+                            Core::ITexture* texture = pair.second;
                             destroy_texture_image(texture);
                         }
                     }
@@ -98,7 +98,10 @@ void BaseRenderer::shutdown(Core::Scene *const scene)
         }
 
         m_renderPipeline.flush_framebuffers();
-
+        for (size_t i = 0; i < m_frames.size(); i++)
+        {
+            m_frames[i].cleanup();
+        }
         m_device.cleanup();
     }
 
@@ -106,26 +109,23 @@ void BaseRenderer::shutdown(Core::Scene *const scene)
 
     glfwTerminate();
 }
-void BaseRenderer::setup_renderpasses()
-{
+void BaseRenderer::setup_renderpasses() {
     throw VKException("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
 }
-void BaseRenderer::on_before_render(Core::Scene *const scene)
-{
+void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
 
     update_global_data(scene);
     update_object_data(scene);
 
-    for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
+    for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
-            pass->upload_data(m_currentFrame, scene);
+            pass->update_uniforms(m_currentFrame, scene);
     }
 }
 
-void BaseRenderer::on_after_render(VkResult &renderResult, Core::Scene *const scene)
-{
+void BaseRenderer::on_after_render(VkResult& renderResult, Core::Scene* const scene) {
     PROFILING_EVENT()
 
     if (renderResult == VK_ERROR_OUT_OF_DATE_KHR || renderResult == VK_SUBOPTIMAL_KHR || m_window->is_resized() ||
@@ -134,17 +134,13 @@ void BaseRenderer::on_after_render(VkResult &renderResult, Core::Scene *const sc
         m_window->set_resized(false);
         update_renderpasses();
         scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
-    }
-    else if (renderResult != VK_SUCCESS)
-    {
-        throw VKException("failed to present swap chain image!");
-    }
+    } else if (renderResult != VK_SUCCESS)
+    { throw VKException("failed to present swap chain image!"); }
 
-    m_currentFrame = (m_currentFrame + 1) % m_device.frames.size();
+    m_currentFrame = (m_currentFrame + 1) % m_frames.size();
 }
 
-void BaseRenderer::render(Core::Scene *const scene)
-{
+void BaseRenderer::render(Core::Scene* const scene) {
     PROFILING_FRAME();
     PROFILING_EVENT()
 
@@ -152,21 +148,18 @@ void BaseRenderer::render(Core::Scene *const scene)
         init();
 
     uint32_t imageIndex;
-    VkResult imageResult = m_device.aquire_present_image(m_currentFrame, imageIndex);
+    VkResult imageResult = m_device.aquire_present_image(m_frames[m_currentFrame], imageIndex);
 
     if (imageResult == VK_ERROR_OUT_OF_DATE_KHR)
     {
         update_renderpasses();
         return;
-    }
-    else if (imageResult != VK_SUCCESS && imageResult != VK_SUBOPTIMAL_KHR)
-    {
-        throw VKException("failed to acquire swap chain image!");
-    }
+    } else if (imageResult != VK_SUCCESS && imageResult != VK_SUBOPTIMAL_KHR)
+    { throw VKException("failed to acquire swap chain image!"); }
 
     on_before_render(scene);
 
-    m_device.begin_command_buffer(m_currentFrame);
+    m_device.begin_command_buffer(m_frames[m_currentFrame]);
 
     if (scene->get_skybox())
         if (scene->get_skybox()->update_enviroment())
@@ -178,15 +171,14 @@ void BaseRenderer::render(Core::Scene *const scene)
 
     m_renderPipeline.render(m_currentFrame, scene, imageIndex);
 
-    m_device.end_command_buffer(m_currentFrame);
+    m_device.end_command_buffer(m_frames[m_currentFrame]);
 
-    VkResult renderResult = m_device.present_image(m_currentFrame, imageIndex);
+    VkResult renderResult = m_device.present_image(m_frames[m_currentFrame], imageIndex);
 
     on_after_render(renderResult, scene);
 }
 
-void BaseRenderer::connect_renderpass(Core::RenderPass *const currentPass)
-{
+void BaseRenderer::connect_renderpass(Core::RenderPass* const currentPass) {
     if (currentPass->get_image_dependace_table().empty())
         return;
 
@@ -202,18 +194,18 @@ void BaseRenderer::connect_renderpass(Core::RenderPass *const currentPass)
     currentPass->connect_to_previous_images(images);
 }
 
-void BaseRenderer::update_renderpasses()
-{
+void BaseRenderer::update_renderpasses() {
     m_window->update_framebuffer();
 
     m_device.wait();
 
-    m_device.update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType),
-                               static_cast<VkFormat>(m_settings.colorFormat),
-                               static_cast<VkPresentModeKHR>(m_settings.screenSync));
+    m_device.update_swapchain(m_window->get_extent(),
+                              static_cast<uint32_t>(m_settings.bufferingType),
+                              static_cast<VkFormat>(m_settings.colorFormat),
+                              static_cast<VkPresentModeKHR>(m_settings.screenSync));
 
     // Renderpass framebuffer updating
-    for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
+    for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
         {
@@ -229,13 +221,12 @@ void BaseRenderer::update_renderpasses()
     m_updateFramebuffers = false;
 }
 
-void BaseRenderer::init_gui()
-{
+void BaseRenderer::init_gui() {
     if (m_settings.enableUI)
     {
         // Look for default pass
-        Core::RenderPass *defaultPass = nullptr;
-        for (Core::RenderPass *pass : m_renderPipeline.renderpasses)
+        Core::RenderPass* defaultPass = nullptr;
+        for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
         {
             if (pass->is_active() && pass->default_pass())
             {
@@ -243,34 +234,14 @@ void BaseRenderer::init_gui()
             }
         };
 
-        m_device.init_gui_pool();
-
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-
-        // this initializes imgui for SDL
-        void *windowHandle{nullptr};
+        void* windowHandle;
         m_window->get_handle(windowHandle);
-        ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow *>(windowHandle), true);
+        m_device.init_imgui(windowHandle,
+                            m_window->get_windowing_system(),
+                            defaultPass->get_handle(),
+                            static_cast<VkSampleCountFlagBits>(m_settings.samplesMSAA));
 
-        // this initializes imgui for Vulkan
-        ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = m_device.instance;
-        init_info.PhysicalDevice = m_device.gpu;
-        init_info.Device = m_device.handle;
-        init_info.Queue = m_device.queues[QueueType::GRAPHIC];
-        init_info.DescriptorPool = m_device.m_guiPool;
-        init_info.MinImageCount = 3;
-        init_info.ImageCount = 3;
-        init_info.RenderPass = defaultPass->get_handle();
-        init_info.MSAASamples = static_cast<VkSampleCountFlagBits>(m_settings.samplesMSAA);
-
-        ImGui_ImplVulkan_Init(&init_info);
-
-        m_deletionQueue.push_function([=]() {
-            ImGui_ImplVulkan_Shutdown();
-            vkDestroyDescriptorPool(m_device.handle, m_device.m_guiPool, nullptr);
-        });
+        m_deletionQueue.push_function([=]() { m_device.destroy_imgui(); });
     }
 }
 

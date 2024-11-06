@@ -5,130 +5,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-void PipelineBuilder::build_pipeline_layout(VkDevice &device, DescriptorPool &descriptorManager, ShaderPass &pass)
-{
-    std::vector<VkDescriptorSetLayout> descriptorLayouts;
-    for (auto &layoutID : pass.settings.descriptorSetLayoutIDs)
-    {
-        if (layoutID.second)
-            descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first));
-    }
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = Init::pipeline_layout_create_info();
-    pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = descriptorLayouts.data();
-
-    if (!pass.settings.pushConstants.empty())
-    {
-        pipelineLayoutInfo.pushConstantRangeCount = pass.settings.pushConstants.size();
-        pipelineLayoutInfo.pPushConstantRanges = pass.settings.pushConstants.data();
-    }
-
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pass.pipelineLayout) != VK_SUCCESS)
-    {
-        throw new VKException("failed to create pipeline layout!");
-    }
-}
-void PipelineBuilder::build_graphic_pipeline(VkDevice &device, VkRenderPass renderPass, VkExtent2D &extent,
-                                     ShaderPass &shaderPass)
-{
-    // Vertex and geometry
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo = Init::vertex_input_state_create_info();
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly =
-        Init::input_assembly_create_info(shaderPass.settings.topology);
-
-    auto bindingDescription = Utils::Vertex::getBindingDescription();
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    auto attributeDescriptions =
-        Utils::Vertex::getAttributeDescriptions(shaderPass.settings.attributes[VertexAttributeType::POSITION],
-                                                shaderPass.settings.attributes[VertexAttributeType::NORMAL],
-                                                shaderPass.settings.attributes[VertexAttributeType::TANGENT],
-                                                shaderPass.settings.attributes[VertexAttributeType::UV],
-                                                shaderPass.settings.attributes[VertexAttributeType::COLOR]);
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-    // Viewport
-    VkViewport viewport = Init::viewport(extent);
-    VkRect2D scissor;
-    scissor.offset = {0, 0};
-    scissor.extent = extent;
-    // Viewport setup (JUST ONE FOR NOW)
-    VkPipelineViewportStateCreateInfo viewportState = {};
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.pNext = nullptr;
-    viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
-    viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
-
-    // Rasterizer
-    VkPipelineRasterizationStateCreateInfo rasterizer = Init::rasterization_state_create_info(
-        shaderPass.settings.poligonMode, shaderPass.settings.cullMode, shaderPass.settings.drawOrder);
-
-    // Depth Setup
-    VkPipelineDepthStencilStateCreateInfo depthStencil = Init::depth_stencil_create_info(
-        shaderPass.settings.depthTest ? VK_TRUE : VK_FALSE, shaderPass.settings.depthWrite ? VK_TRUE : VK_FALSE,
-        shaderPass.settings.depthTest ? shaderPass.settings.depthOp : VK_COMPARE_OP_ALWAYS);
-
-    // Multisampling
-    VkPipelineMultisampleStateCreateInfo multisampling =
-        Init::multisampling_state_create_info(shaderPass.settings.samples);
-    multisampling.sampleShadingEnable = shaderPass.settings.samples > VK_SAMPLE_COUNT_1_BIT && shaderPass.settings.sampleShading ? VK_TRUE : VK_FALSE;
-    multisampling.minSampleShading = .2f;
-
-    // Blending
-    VkPipelineColorBlendStateCreateInfo colorBlending = Init::color_blend_create_info();
-    colorBlending.attachmentCount = static_cast<uint32_t>(shaderPass.settings.blendAttachments.size());
-    colorBlending.pAttachments = shaderPass.settings.blendAttachments.data();
-
-    // Dynamic states
-    VkPipelineDynamicStateCreateInfo dynamicState{};
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(shaderPass.settings.dynamicStates.size());
-    dynamicState.pDynamicStates = shaderPass.settings.dynamicStates.data();
-
-    // build the actual pipeline
-    // we now use all of the info structs we have been writing into into this one to create the pipeline
-    VkGraphicsPipelineCreateInfo pipelineInfo = {};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.pNext = nullptr;
-
-    std::vector<VkPipelineShaderStageCreateInfo> stages;
-    for (auto &stage : shaderPass.stages)
-    {
-        stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
-    }
-
-    pipelineInfo.stageCount = (uint32_t)stages.size();
-    pipelineInfo.pStages = stages.data();
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = &dynamicState;
-
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.layout = shaderPass.pipelineLayout;
-    pipelineInfo.renderPass = renderPass;
-    pipelineInfo.subpass = 0;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-    VkPipeline newPipeline;
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
-    {
-        throw VKException("Failed to create Grahic Pipeline");
-    }
-    else
-    {
-        shaderPass.pipeline = newPipeline;
-    }
-}
-
 ShaderStage ShaderSource::create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType,
                                               const std::vector<uint32_t> code)
 {
@@ -225,67 +101,72 @@ std::vector<uint32_t> ShaderSource::compile_shader(const std::string src, const 
     return spirv;
 }
 
-void ShaderPass::build_shader_stages(VkDevice &device, ShaderPass &pass, shaderc_optimization_level optimization)
+void ShaderPass::build_shader_stages(shaderc_optimization_level optimization)
 {
-    if (pass.SHADER_FILE == "")
+    if (SHADER_FILE == "")
         return;
-    auto shader = ShaderSource::read_file(pass.SHADER_FILE);
+    auto shader = ShaderSource::read_file(SHADER_FILE);
 
     if (shader.vertSource != "")
     {
         ShaderStage vertShaderStage = ShaderSource::create_shader_stage(
-            device, VK_SHADER_STAGE_VERTEX_BIT,
+            m_device, VK_SHADER_STAGE_VERTEX_BIT,
             ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, optimization));
-        pass.stages.push_back(vertShaderStage);
+        m_shaderStages.push_back(vertShaderStage);
     }
     if (shader.fragSource != "")
     {
         ShaderStage fragShaderStage =
-            ShaderSource::create_shader_stage(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+            ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                               ShaderSource::compile_shader(shader.fragSource, shader.name + "frag",
                                                                            shaderc_fragment_shader, optimization));
-        pass.stages.push_back(fragShaderStage);
+        m_shaderStages.push_back(fragShaderStage);
     }
     if (shader.geomSource != "")
     {
         ShaderStage geomShaderStage =
-            ShaderSource::create_shader_stage(device, VK_SHADER_STAGE_GEOMETRY_BIT,
+            ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_GEOMETRY_BIT,
                                               ShaderSource::compile_shader(shader.geomSource, shader.name + "geom",
                                                                            shaderc_geometry_shader, optimization));
-        pass.stages.push_back(geomShaderStage);
+        m_shaderStages.push_back(geomShaderStage);
     }
     if (shader.tessControlSource != "")
     {
         ShaderStage tessControlShaderStage = ShaderSource::create_shader_stage(
-            device, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+            m_device, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
             ShaderSource::compile_shader(shader.tessControlSource, shader.name + "control", shaderc_tess_control_shader,
                                          optimization));
-        pass.stages.push_back(tessControlShaderStage);
+        m_shaderStages.push_back(tessControlShaderStage);
     }
     if (shader.tessEvalSource != "")
     {
         ShaderStage tessEvalShaderStage = ShaderSource::create_shader_stage(
-            device, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+            m_device, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
             ShaderSource::compile_shader(shader.tessEvalSource, shader.name + "eval", shaderc_tess_evaluation_shader,
                                          optimization));
-        pass.stages.push_back(tessEvalShaderStage);
+        m_shaderStages.push_back(tessEvalShaderStage);
     }
 }
 
-void ShaderPass::build(VkDevice &device, VkRenderPass renderPass, DescriptorPool &descriptorManager,
-                       VkExtent2D &extent, ShaderPass &shaderPass)
+void ShaderPass::build(VkRenderPass renderPass, DescriptorPool &descriptorManager, Extent2D &extent)
 {
-    PipelineBuilder::build_pipeline_layout(device, descriptorManager, shaderPass);
-    PipelineBuilder::build_graphic_pipeline(device, renderPass, extent, shaderPass);
-}
-void ShaderPass::cleanup(VkDevice &device)
-{
-    for (auto &stage : stages)
+    PipelineBuilder::build_pipeline_layout(m_pipelineLayout, m_device, descriptorManager, settings);
+
+    std::vector<VkPipelineShaderStageCreateInfo> stages;
+    for (auto &stage : m_shaderStages)
     {
-        vkDestroyShaderModule(device, stage.shaderModule, nullptr);
+        stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
     }
-    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-    vkDestroyPipeline(device, pipeline, nullptr);
+    PipelineBuilder::build_graphic_pipeline(m_pipeline, m_pipelineLayout, m_device, renderPass, extent, settings, stages);
+}
+void ShaderPass::cleanup()
+{
+    for (auto &stage : m_shaderStages)
+    {
+        vkDestroyShaderModule(m_device, stage.shaderModule, nullptr);
+    }
+    vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+    vkDestroyPipeline(m_device, m_pipeline, nullptr);
 }
 
 } // namespace Graphics
