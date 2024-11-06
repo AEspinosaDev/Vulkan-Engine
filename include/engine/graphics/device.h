@@ -139,9 +139,7 @@ class Device
     */
     void
     upload_vertex_arrays(VertexArrays& vao, size_t vboSize, const void* vboData, size_t iboSize, const void* iboData);
-    void destroy_vertex_arrays(VertexArrays& vao);
     void upload_texture_image(const void* imgCache, size_t bytesPerPixel, Image* const img, bool mipmapping);
-    void destroy_texture_image(Image* const img);
 
     /*
     MISC

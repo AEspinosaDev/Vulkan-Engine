@@ -26,7 +26,7 @@ class TextureLDR : public ITexture
     unsigned char *m_tmpCache{nullptr};
 
   public:
-    static Texture *DEBUG_TEXTURE;
+    static Texture *FALLBACK_TEX;
 
     TextureLDR() : ITexture()
     {

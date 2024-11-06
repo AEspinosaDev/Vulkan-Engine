@@ -42,17 +42,17 @@ struct SamplerConfig {
 
 struct Image {
 
-    VkImage    handle;
-    VkExtent3D extent;
-    VkDevice   device;
-    /*Memory allocation controlled by VMA*/
-    VmaAllocator  memory;
-    VmaAllocation allocation;
-    ImageConfig   config{};
-    VkImageView   view;
-    ViewConfig    viewConfig{};
-    VkSampler     sampler;
-    SamplerConfig samplerConfig{};
+    VkImage         handle;
+    VkExtent3D      extent;
+    VkDevice        device;
+    VmaAllocator    memory; /*Memory allocation controlled by VMA*/
+    VmaAllocation   allocation;
+    ImageConfig     config{};
+    VkImageView     view;
+    ViewConfig      viewConfig{};
+    VkSampler       sampler;
+    SamplerConfig   samplerConfig{};
+    VkDescriptorSet GUIReadHandle{VK_NULL_HANDLE};
 
     bool loadedOnCPU{false};
     bool loadedOnGPU{false};
@@ -69,6 +69,8 @@ struct Image {
     void create_view();
 
     void create_sampler();
+
+    void create_GUI_handle();
 
     void upload_image(VkCommandBuffer& cmd, Buffer* stagingBuffer);
 

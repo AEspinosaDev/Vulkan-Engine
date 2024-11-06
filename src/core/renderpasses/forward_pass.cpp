@@ -190,11 +190,11 @@ void ForwardPass::setup_uniforms() {
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                                 sizeof(CameraUniforms),
-                                                 0,
-                                                 &m_descriptors[i].globalDescritor,
-                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                                                 0);
+                                              sizeof(CameraUniforms),
+                                              0,
+                                              &m_descriptors[i].globalDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              0);
         m_descriptorPool.set_descriptor_write(
             &RenderPass::frames[i].uniformBuffers[GLOBAL_LAYOUT],
             sizeof(SceneUniforms),
@@ -203,21 +203,21 @@ void ForwardPass::setup_uniforms() {
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
             1);
 
-        m_descriptorPool.set_descriptor_write(get_image(Texture::DEBUG_TEXTURE)->sampler,
-                                                 get_image(Texture::DEBUG_TEXTURE)->view,
-                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                 &m_descriptors[i].globalDescritor,
-                                                 3);
+        m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX)->sampler,
+                                              get_image(Texture::FALLBACK_TEX)->view,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              3);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[OBJECT_LAYOUT],
-                                                 sizeof(ObjectUniforms),
-                                                 0,
-                                                 &m_descriptors[i].objectDescritor,
-                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                                                 0);
+                                              sizeof(ObjectUniforms),
+                                              0,
+                                              &m_descriptors[i].objectDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              0);
         m_descriptorPool.set_descriptor_write(
             &RenderPass::frames[i].uniformBuffers[OBJECT_LAYOUT],
             sizeof(MaterialUniforms),
@@ -484,10 +484,10 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
     for (size_t i = 0; i < RenderPass::frames.size(); i++)
     {
         m_descriptorPool.set_descriptor_write(images[0].sampler,
-                                                 images[0].view,
-                                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                                 &m_descriptors[i].globalDescritor,
-                                                 2);
+                                              images[0].view,
+                                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              2);
     }
 }
 
@@ -516,10 +516,10 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
             if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
             {
                 m_descriptorPool.set_descriptor_write(get_image(texture)->sampler,
-                                                         get_image(texture)->view,
-                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                         &mat->get_texture_descriptor(),
-                                                         pair.first);
+                                                      get_image(texture)->view,
+                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                      &mat->get_texture_descriptor(),
+                                                      pair.first);
                 mat->set_texture_binding_state(pair.first, true);
                 texture->set_dirty(false);
             }
@@ -527,11 +527,11 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
         {
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorPool.set_descriptor_write(get_image(Texture::DEBUG_TEXTURE)->sampler,
-                                                         get_image(Texture::DEBUG_TEXTURE)->view,
-                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                         &mat->get_texture_descriptor(),
-                                                         pair.first);
+                m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX)->sampler,
+                                                      get_image(Texture::FALLBACK_TEX)->view,
+                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                      &mat->get_texture_descriptor(),
+                                                      pair.first);
             mat->set_texture_binding_state(pair.first, true);
         }
     }

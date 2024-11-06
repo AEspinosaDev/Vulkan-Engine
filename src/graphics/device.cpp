@@ -251,11 +251,6 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
     }
     vao.loadedOnGPU = true;
 }
-void Device::destroy_vertex_arrays(VertexArrays& vao) {
-    vao.vbo.cleanup();
-    if (vao.indexCount > 0)
-        vao.ibo.cleanup();
-}
 void Device::upload_texture_image(const void* imgCache, size_t bytesPerPixel, Image* const img, bool mipmapping) {
     PROFILING_EVENT()
 
@@ -301,13 +296,11 @@ void Device::upload_texture_image(const void* imgCache, size_t bytesPerPixel, Im
     img->samplerConfig.maxAnysotropy = Utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy;
     img->create_sampler();
 
+    if (ImGui::GetCurrentContext())
+        img->create_GUI_handle();
+
     img->loadedOnGPU = true;
 }
-
-void Device::destroy_texture_image(Image* const img) {
-    img->cleanup();
-}
-
 void Device::wait() {
     VK_CHECK(vkDeviceWaitIdle(m_handle));
 }
@@ -353,7 +346,7 @@ void Device::init_imgui(void*                 windowHandle,
 }
 void Device::destroy_imgui() {
     ImGui_ImplVulkan_Shutdown();
-    vkDestroyDescriptorPool(m_handle, m_guiPool.get_handle(), nullptr);
+    m_guiPool.cleanup();
 } // namespace Graphics
 
 } // namespace Graphics

@@ -17,7 +17,7 @@ void BaseRenderer::init() {
     if (!m_window->initialized())
         m_window->init();
 
-    //Init Vulkan Device
+    // Init Vulkan Device
     void* windowHandle{nullptr};
     m_window->get_handle(windowHandle);
     m_device.init(windowHandle,
@@ -26,7 +26,7 @@ void BaseRenderer::init() {
                   static_cast<uint32_t>(m_settings.bufferingType),
                   static_cast<VkFormat>(m_settings.colorFormat),
                   static_cast<VkPresentModeKHR>(m_settings.screenSync));
-    //Init resources
+    // Init resources
     init_resources();
 
     setup_renderpasses();
@@ -96,6 +96,9 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
             destroy_geometry_data(scene->get_skybox()->get_box());
             destroy_texture_image(scene->get_skybox()->get_enviroment_map());
         }
+
+        if (m_settings.enableUI)
+            m_device.destroy_imgui();
 
         m_renderPipeline.flush_framebuffers();
         for (size_t i = 0; i < m_frames.size(); i++)
@@ -240,8 +243,6 @@ void BaseRenderer::init_gui() {
                             m_window->get_windowing_system(),
                             defaultPass->get_handle(),
                             static_cast<VkSampleCountFlagBits>(m_settings.samplesMSAA));
-
-        m_deletionQueue.push_function([=]() { m_device.destroy_imgui(); });
     }
 }
 

@@ -191,7 +191,7 @@ void BaseRenderer::upload_texture_image(Core::ITexture* const t) {
 }
 void BaseRenderer::destroy_texture_image(Core::ITexture* const t) {
     if (t)
-        m_device.destroy_texture_image(get_image(t));
+        get_image(t)->cleanup();
 }
 void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
     PROFILING_EVENT()
@@ -221,7 +221,10 @@ void BaseRenderer::destroy_geometry_data(Core::Geometry* const g) {
     Graphics::VertexArrays* rd = get_render_data(g);
     if (rd->loadedOnGPU)
     {
-        m_device.destroy_vertex_arrays(*rd);
+        rd->vbo.cleanup();
+        if (rd->indexCount > 0)
+            rd->ibo.cleanup();
+
         rd->loadedOnGPU = false;
     }
 }
@@ -271,7 +274,7 @@ void BaseRenderer::setup_skybox(Core::Scene* const scene) {
 }
 void BaseRenderer::init_resources() {
 
-    //Setup frames
+    // Setup frames
     m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
     for (size_t i = 0; i < m_frames.size(); i++)
         m_device.create_frame(m_frames[i]);
@@ -283,10 +286,10 @@ void BaseRenderer::init_resources() {
             (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_device.get_GPU()) +
              Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms), m_device.get_GPU()));
         m_device.create_buffer(globalBuffer,
-                             globalStrideSize,
-                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VMA_MEMORY_USAGE_CPU_TO_GPU,
-                             (uint32_t)globalStrideSize);
+                               globalStrideSize,
+                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                               VMA_MEMORY_USAGE_CPU_TO_GPU,
+                               (uint32_t)globalStrideSize);
         m_frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
@@ -295,10 +298,10 @@ void BaseRenderer::init_resources() {
             (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms), m_device.get_GPU()) +
              Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms), m_device.get_GPU()));
         m_device.create_buffer(objectBuffer,
-                             VK_MAX_OBJECTS * objectStrideSize,
-                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VMA_MEMORY_USAGE_CPU_TO_GPU,
-                             (uint32_t)objectStrideSize);
+                               VK_MAX_OBJECTS * objectStrideSize,
+                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                               VMA_MEMORY_USAGE_CPU_TO_GPU,
+                               (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);
     }
     Core::RenderPass::frames = m_frames;
@@ -308,16 +311,14 @@ void BaseRenderer::init_resources() {
     m_vignette->push_geometry(Core::Geometry::create_quad());
     upload_geometry_data(m_vignette->get_geometry());
 
-    // Setup dummy texture in case materials dont have textures
-    unsigned char texture_data[4] = {0, 0, 0, 0};
-    Core::Texture::DEBUG_TEXTURE  = new Core::Texture(texture_data, {2, 2, 1}, 4);
-    Core::Texture::DEBUG_TEXTURE->set_use_mipmaps(false);
-
+    // Setup fallback texture
+    unsigned char texture_data[1] = {0};
+    Core::Texture::FALLBACK_TEX  = new Core::Texture(texture_data, {1, 1, 1}, 4);
+    Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
     void* imgCache{nullptr};
-    Core::Texture::DEBUG_TEXTURE->get_image_cache(imgCache);
+    Core::Texture::FALLBACK_TEX->get_image_cache(imgCache);
     m_device.upload_texture_image(
-        imgCache, Core::Texture::DEBUG_TEXTURE->get_bytes_per_pixel(), get_image(Core::Texture::DEBUG_TEXTURE), false);
-        
+        imgCache, Core::Texture::FALLBACK_TEX->get_bytes_per_pixel(), get_image(Core::Texture::FALLBACK_TEX), false);
 }
 
 void BaseRenderer::clean_Resources() {
@@ -331,7 +332,7 @@ void BaseRenderer::clean_Resources() {
 
     destroy_geometry_data(m_vignette->get_geometry());
 
-    m_device.destroy_texture_image(get_image(Core::Texture::DEBUG_TEXTURE));
+    get_image(Core::Texture::FALLBACK_TEX)->cleanup();
 }
 } // namespace Systems
 

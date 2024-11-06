@@ -62,11 +62,6 @@ class PhysicallyBasedMaterial : public IMaterial
 
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, ITexture *> get_textures() const
-    {
-        return m_textures;
-    }
 
     virtual std::unordered_map<int, bool> get_texture_binding_state() const
     {
@@ -78,6 +73,11 @@ class PhysicallyBasedMaterial : public IMaterial
     }
 
   public:
+    virtual Graphics::MaterialUniforms get_uniforms() const;
+    virtual inline std::unordered_map<int, ITexture *> get_textures() const
+    {
+        return m_textures;
+    }
     PhysicallyBasedMaterial(Vec4 albedo = Vec4(1.0f, 1.0f, 0.5f, 1.0f)) : IMaterial("physical"), m_albedo(albedo)
     {
     }

@@ -263,7 +263,7 @@ void VulkanRenderer::setup()
     Texture *templeText2 = new Texture();
     Tools::Loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
     Texture *templeRText2 = new Texture();
-    Tools::Loaders::load_texture(templeRText, TEXTURE_PATH + "shrine_rough.png");
+    Tools::Loaders::load_texture(templeRText2, TEXTURE_PATH + "shrine_rough.png");
     Texture *templeMText2 = new Texture();
     Tools::Loaders::load_texture(templeMText2, TEXTURE_PATH + "shrine_metal.png");
     templeMat2->set_albedo_texture(templeText2);

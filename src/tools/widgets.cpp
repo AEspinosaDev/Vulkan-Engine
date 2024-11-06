@@ -474,6 +474,7 @@ void ObjectExplorerWidget::render() {
             //     }
             // };
             ImGui::Separator();
+            ImVec2 texSize = {160, 160};
             if (model->get_material(i)->get_shaderpass_ID() == "physical")
             {
                 PhysicallyBasedMaterial* mat    = static_cast<PhysicallyBasedMaterial*>(model->get_material(i));
@@ -489,6 +490,7 @@ void ObjectExplorerWidget::render() {
                     {
                         mat->set_albedo_weight(albedoWeight);
                     }
+                    ImGui::Image(get_image(mat->get_albedo_texture())->GUIReadHandle, texSize);
                 }
                 float opacity = mat->get_opacity();
                 if (ImGui::DragFloat("Opacity", &opacity, 0.05f, 0.0f, 1.0f))
@@ -504,6 +506,10 @@ void ObjectExplorerWidget::render() {
                     }
                 }
                 ImGui::Spacing();
+                if (mat->get_normal_texture())
+                {
+                    ImGui::Image(get_image(mat->get_normal_texture())->GUIReadHandle, texSize);
+                }
                 ImGui::Spacing();
 
                 float metallic  = mat->get_metalness();
@@ -523,6 +529,7 @@ void ObjectExplorerWidget::render() {
                         {
                             mat->set_metalness_weight(weight);
                         }
+                        ImGui::Image(get_image(mat->get_metallic_texture())->GUIReadHandle, texSize);
                     }
                     if (ImGui::DragFloat("Roughness", &roughness, 0.05f, 0.0f, 1.0f))
                     {
@@ -535,6 +542,7 @@ void ObjectExplorerWidget::render() {
                         {
                             mat->set_roughness_weight(weight);
                         }
+                        ImGui::Image(get_image(mat->get_roughness_texture())->GUIReadHandle, texSize);
                     }
                     if (ImGui::DragFloat("Occlusion", &ao, 0.05f, 0.0f, 1.0f))
                     {
@@ -547,6 +555,7 @@ void ObjectExplorerWidget::render() {
                         {
                             mat->set_occlusion_weight(weight);
                         }
+                        ImGui::Image(get_image(mat->get_occlusion_texture())->GUIReadHandle, texSize);
                     }
                 } else
                 {
@@ -591,6 +600,7 @@ void ObjectExplorerWidget::render() {
                         {
                             mat->set_occlusion_weight(oweight);
                         }
+                        ImGui::Image(get_image(mat->get_mask_texture())->GUIReadHandle, texSize);
                     }
                 }
 
