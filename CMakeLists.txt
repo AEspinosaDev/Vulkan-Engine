@@ -49,6 +49,8 @@ add_subdirectory(thirdparty/stb_image)
 add_subdirectory(thirdparty/tiny_obj_loader)	
 add_subdirectory(thirdparty/tinyply)	
 add_subdirectory(thirdparty/optick-1.4.0)	
+add_subdirectory(thirdparty/ImGuiFileDialog)	
+target_link_libraries(ImGuiFileDialog PUBLIC imgui )
 
 # Setup sources
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/add_module_files.cmake)
@@ -80,10 +82,11 @@ target_link_libraries(VulkanEngine PUBLIC
     imgui 
     tiny_obj_loader 
     tinyply
-    optick)
+    optick
+    ImGuiFileDialog)
 
 # Set dependencies inside folder
-set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply optick PROPERTY FOLDER "thirdparty")
+set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply optick ImGuiFileDialog PROPERTY FOLDER "thirdparty")
 
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

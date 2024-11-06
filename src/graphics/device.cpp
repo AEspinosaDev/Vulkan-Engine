@@ -53,7 +53,7 @@ void Device::cleanup() {
 
     m_uploadContext.cleanup(m_handle);
 
-    m_swapchain.cleanup(m_handle);
+    m_swapchain.cleanup();
 
     vmaDestroyAllocator(m_memory);
 

@@ -5,7 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics
 {
 
-VkExtent2D Swapchain::create_surface(VkInstance &instance, void *windowHandle, WindowingSystem windowingSystem)
+VkExtent2D Swapchain::create_surface(VkInstance instance, void *windowHandle, WindowingSystem windowingSystem)
 {
     VkExtent2D actualExtent{};
     if (windowingSystem == WindowingSystem::GLFW)
@@ -27,8 +27,9 @@ VkExtent2D Swapchain::create_surface(VkInstance &instance, void *windowHandle, W
 void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkExtent2D actualExtent, VkExtent2D windowExtent,
                        uint32_t imageCount, VkFormat userDefinedcolorFormat, VkPresentModeKHR userDefinedPresentMode)
 {
+    m_device = device;
     if (m_initialized)
-        cleanup(device);
+        cleanup();
 
     Utils::SwapChainSupportDetails swapChainSupport = Utils::query_swapchain_support(gpu, m_surface);
     Utils::QueueFamilyIndices indices = Utils::find_queue_families(gpu, m_surface);
@@ -95,18 +96,18 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkExtent2D actua
     m_initialized = true;
 }
 
-void Swapchain::destroy_surface(VkInstance &instance)
+void Swapchain::destroy_surface(VkInstance instance)
 {
     vkDestroySurfaceKHR(instance, m_surface, nullptr);
 }
-void Swapchain::cleanup(VkDevice &device)
+void Swapchain::cleanup()
 {
     for (size_t i = 0; i < m_presentImages.size(); i++)
     {
-        vkDestroyImageView(device, m_presentImages[i].view, nullptr);
+        vkDestroyImageView(m_device, m_presentImages[i].view, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, m_handle, nullptr);
+    vkDestroySwapchainKHR(m_device, m_handle, nullptr);
 
     m_initialized = false;
 }

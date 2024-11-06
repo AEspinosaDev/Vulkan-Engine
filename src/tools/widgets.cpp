@@ -2,11 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Core;
-namespace Tools
-{
+namespace Tools {
 
-void Panel::render(ImVec2 extent)
-{
+void Panel::render(ImVec2 extent) {
     m_pixelExtent = {m_extent.x * extent.x, m_extent.y * extent.y};
     ImGui::SetNextWindowPos({m_position.x * extent.x, m_position.y * extent.y},
                             (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
@@ -22,7 +20,8 @@ void Panel::render(ImVec2 extent)
 
     if (m_open)
     {
-        if (ImGui::Begin(m_title, m_closable ? &m_open : NULL,
+        if (ImGui::Begin(m_title,
+                         m_closable ? &m_open : NULL,
                          m_collapsable
                              ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar
                              : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
@@ -44,8 +43,7 @@ void Panel::render(ImVec2 extent)
         ImGui::PopStyleColor();
     ImGui::PopStyleVar(4);
 }
-void TextLine::render()
-{
+void TextLine::render() {
     switch (m_type)
     {
     case SIMPLE:
@@ -63,16 +61,15 @@ void TextLine::render()
     }
 }
 #pragma region SCENE EXPLORER
-void SceneExplorerWidget::render()
-{
+void SceneExplorerWidget::render() {
 
     if (ImGui::BeginMenuBar())
     {
-        if (ImGui::BeginMenu("+"))
+        if (ImGui::BeginMenu("Add"))
         {
             if (ImGui::MenuItem("Plane"))
             {
-                Mesh *plane = new Mesh();
+                Mesh* plane = new Mesh();
                 plane->push_geometry(Geometry::create_quad());
                 auto mat = new PhysicallyBasedMaterial();
                 plane->push_material(mat);
@@ -81,7 +78,7 @@ void SceneExplorerWidget::render()
             }
             if (ImGui::MenuItem("Cube"))
             {
-                Mesh *cube = new Mesh();
+                Mesh* cube = new Mesh();
                 Loaders::load_3D_file(cube, ENGINE_RESOURCES_PATH "meshes/cube.obj", false);
                 auto mat = new PhysicallyBasedMaterial();
                 cube->push_material(mat);
@@ -90,7 +87,7 @@ void SceneExplorerWidget::render()
             }
             if (ImGui::MenuItem("Sphere"))
             {
-                Mesh *sph = new Mesh();
+                Mesh* sph = new Mesh();
                 Loaders::load_3D_file(sph, ENGINE_RESOURCES_PATH "meshes/sphere.obj", false);
                 auto mat = new PhysicallyBasedMaterial();
                 sph->push_material(mat);
@@ -100,25 +97,42 @@ void SceneExplorerWidget::render()
 
             if (ImGui::MenuItem("Directional Light"))
             {
-                DirectionalLight *light = new DirectionalLight(Vec3(0.0, 5.0, 5.0));
+                DirectionalLight* light = new DirectionalLight(Vec3(0.0, 5.0, 5.0));
                 light->set_cast_shadows(false);
                 m_scene->add(light);
             }
             if (ImGui::MenuItem("Point Light"))
             {
-                PointLight *light = new PointLight();
+                PointLight* light = new PointLight();
                 light->set_cast_shadows(false);
                 m_scene->add(light);
             }
             ImGui::Separator();
+
             if (ImGui::MenuItem("Import from Disk"))
             {
+                ImGuiFileDialog::Instance()->OpenDialog("ChooseMeshFile", "Choose a file", ".obj,.ply,.gltf");
             }
-
             ImGui::EndMenu();
         }
 
         ImGui::EndMenuBar();
+    }
+    if (ImGuiFileDialog::Instance()->Display("ChooseMeshFile", 32, {800.0f, 400.0f}, {1400.0f, 1000.0f}))
+    {
+        if (ImGuiFileDialog::Instance()->IsOk())
+        {
+            std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+
+            Mesh* mesh = new Mesh();
+            Loaders::load_3D_file(mesh, filePath, true);
+            auto mat = new PhysicallyBasedMaterial();
+            mesh->push_material(mat);
+            mesh->set_name(std::filesystem::path(filePath).filename().string());
+            m_scene->add(mesh);
+        }
+
+        ImGuiFileDialog::Instance()->Close();
     }
     ImGui::Spacing();
 
@@ -127,30 +141,28 @@ void SceneExplorerWidget::render()
     static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
                                    ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;
 
-    if (ImGui::BeginTable("2ways", 2, flags,
-                          ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
+    if (ImGui::BeginTable(
+            "2ways", 2, flags, ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
     {
         ImGui::TableSetupColumn(" Name", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, 3 * 18.0f);
         ImGui::TableHeadersRow();
 
         // Simple storage to output a dummy file-system.
-        struct MyTreeNode
-        {
-            Object3D *obj;
-            const char *Name;
-            const char *Type;
-            int ChildIdx;
-            int ChildCount;
-            bool selected;
-            static void DisplayNode(MyTreeNode *node, std::vector<MyTreeNode> all_nodes)
-            {
+        struct MyTreeNode {
+            Object3D*   obj;
+            const char* Name;
+            const char* Type;
+            int         ChildIdx;
+            int         ChildCount;
+            bool        selected;
+            static void DisplayNode(MyTreeNode* node, std::vector<MyTreeNode> all_nodes) {
             }
         };
 
-        auto objs = m_scene->get_children();
+        auto                    objs = m_scene->get_children();
         std::vector<MyTreeNode> nodes;
-        int counter = 0;
+        int                     counter = 0;
 
         for (auto obj : objs)
         {
@@ -161,8 +173,8 @@ void SceneExplorerWidget::render()
     }
     ImGui::Spacing();
     ImGui::SeparatorText("Ambient Light");
-    const char *ambientType[] = {"CONSTANT", "ENVIROMENT"};
-    static int currentAmbient = static_cast<int>(m_scene->use_IBL());
+    const char* ambientType[]  = {"CONSTANT", "ENVIROMENT"};
+    static int  currentAmbient = static_cast<int>(m_scene->use_IBL());
     if (ImGui::Combo("Ambient Type", &currentAmbient, ambientType, IM_ARRAYSIZE(ambientType)))
     {
         switch (currentAmbient)
@@ -178,7 +190,7 @@ void SceneExplorerWidget::render()
     if (currentAmbient == 0)
     {
         Vec3 ambientColor = m_scene->get_ambient_color();
-        if (ImGui::ColorEdit3("Ambient Color", (float *)&ambientColor))
+        if (ImGui::ColorEdit3("Ambient Color", (float*)&ambientColor))
         {
             m_scene->set_ambient_color(ambientColor);
         }
@@ -191,7 +203,7 @@ void SceneExplorerWidget::render()
     ImGui::Spacing();
     if (m_scene->get_skybox())
     {
-        Skybox *sky = m_scene->get_skybox();
+        Skybox* sky = m_scene->get_skybox();
         ImGui::SeparatorText("Skybox");
         bool skyboxActive = sky->is_active();
         if (ImGui::Checkbox("Active", &skyboxActive))
@@ -221,7 +233,7 @@ void SceneExplorerWidget::render()
     if (useFog)
     {
         Vec3 fogColor = m_scene->get_fog_color();
-        if (ImGui::ColorEdit3("Fog Color", (float *)&fogColor))
+        if (ImGui::ColorEdit3("Fog Color", (float*)&fogColor))
         {
             m_scene->set_fog_color(fogColor);
         }
@@ -235,8 +247,7 @@ void SceneExplorerWidget::render()
     ImGui::Spacing();
     ImGui::Separator();
 }
-void SceneExplorerWidget::displayObject(Object3D *const obj, int &counter)
-{
+void SceneExplorerWidget::displayObject(Object3D* const obj, int& counter) {
     auto tpe = obj->get_type();
 
     ImGui::PushID(counter);
@@ -244,8 +255,9 @@ void SceneExplorerWidget::displayObject(Object3D *const obj, int &counter)
     ImGui::TableNextColumn();
     std::string name = obj->get_name();
 
-    if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet |
-                                            ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth))
+    if (ImGui::TreeNodeEx(name.c_str(),
+                          ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                              ImGuiTreeNodeFlags_SpanFullWidth))
     {
         // node->selected = ImGui::IsItemClicked();
         if (ImGui::IsItemClicked())
@@ -271,22 +283,18 @@ void SceneExplorerWidget::displayObject(Object3D *const obj, int &counter)
         displayObject(child, counter);
     ImGui::Unindent();
 }
-void Profiler::render()
-{
+void Profiler::render() {
     ImGui::Text(" %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 }
-void Space::render()
-{
+void Space::render() {
     ImGui::Spacing();
 }
-void Separator::render()
-{
+void Separator::render() {
     !m_text ? ImGui::Separator() : ImGui::SeparatorText(m_text);
 }
 #pragma region OBJECT EXPLORER
 
-void ObjectExplorerWidget::render()
-{
+void ObjectExplorerWidget::render() {
     if (!m_object)
     {
         ImGui::Text("Select an object in the scene explorer");
@@ -318,9 +326,9 @@ void ObjectExplorerWidget::render()
     if (m_object->get_type() == ObjectType::MESH)
     {
         ImGui::SeparatorText("Mesh");
-        Mesh *model = static_cast<Mesh *>(m_object);
+        Mesh* model = static_cast<Mesh*>(m_object);
 
-        int faceCount = 0;
+        int faceCount   = 0;
         int vertexCount = 0;
         for (size_t i = 0; i < model->get_num_geometries(); i++)
         {
@@ -328,8 +336,8 @@ void ObjectExplorerWidget::render()
             faceCount += (int)get_render_data(model->get_geometry(i))->indexCount / 3;
         }
 
-        ImGui::BeginTable("Mesh Details", 2,
-                          ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable(
+            "Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
 
         ImGui::TableSetupColumn("Mesh", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, m_parent->get_pixel_extent().x * 0.5f);
@@ -390,8 +398,8 @@ void ObjectExplorerWidget::render()
         ImGui::EndTable();
 
         ImGui::SeparatorText("Material");
-        ImGui::BeginTable("Mesh Details", 1,
-                          ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable(
+            "Mesh Details", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
         ImGui::TableSetupColumn("Material", ImGuiTableColumnFlags_NoHide);
 
         for (size_t i = 0; i < model->get_num_materials(); i++)
@@ -421,8 +429,8 @@ void ObjectExplorerWidget::render()
             }
             if (culling)
             {
-                const char *faceVisibility[] = {"FRONT", "BACK"};
-                static int currentFaceVisibility = model->get_material(i)->get_parameters().culling;
+                const char* faceVisibility[]      = {"FRONT", "BACK"};
+                static int  currentFaceVisibility = model->get_material(i)->get_parameters().culling;
                 if (ImGui::Combo("Face", &currentFaceVisibility, faceVisibility, IM_ARRAYSIZE(faceVisibility)))
                 {
                     MaterialSettings parameters = model->get_material(i)->get_parameters();
@@ -468,9 +476,9 @@ void ObjectExplorerWidget::render()
             ImGui::Separator();
             if (model->get_material(i)->get_shaderpass_ID() == "physical")
             {
-                PhysicallyBasedMaterial *mat = static_cast<PhysicallyBasedMaterial *>(model->get_material(i));
-                Vec3 albedo = mat->get_albedo();
-                if (ImGui::ColorEdit3("Albedo", (float *)&albedo))
+                PhysicallyBasedMaterial* mat    = static_cast<PhysicallyBasedMaterial*>(model->get_material(i));
+                Vec3                     albedo = mat->get_albedo();
+                if (ImGui::ColorEdit3("Albedo", (float*)&albedo))
                 {
                     mat->set_albedo(Vec4{albedo, 1.0f});
                 };
@@ -498,9 +506,9 @@ void ObjectExplorerWidget::render()
                 ImGui::Spacing();
                 ImGui::Spacing();
 
-                float metallic = mat->get_metalness();
+                float metallic  = mat->get_metalness();
                 float roughness = mat->get_roughness();
-                float ao = mat->get_occlusion();
+                float ao        = mat->get_occlusion();
                 if (mat->get_mask_type() == NO_MASK)
                 {
 
@@ -540,8 +548,7 @@ void ObjectExplorerWidget::render()
                             mat->set_occlusion_weight(weight);
                         }
                     }
-                }
-                else
+                } else
                 {
                     switch (mat->get_mask_type())
                     {
@@ -604,10 +611,10 @@ void ObjectExplorerWidget::render()
             if (model->get_material(i)->get_shaderpass_ID() == "hairstr" ||
                 model->get_material(i)->get_shaderpass_ID() == "hairstr2")
             {
-                HairStrandMaterial *mat = static_cast<HairStrandMaterial *>(model->get_material(i));
+                HairStrandMaterial* mat = static_cast<HairStrandMaterial*>(model->get_material(i));
                 // ImGui UI code
                 Vec3 baseColor = mat->get_base_color();
-                if (ImGui::ColorEdit3("Base Color (RGBA)", (float *)&baseColor))
+                if (ImGui::ColorEdit3("Base Color (RGBA)", (float*)&baseColor))
                 {
                     mat->set_base_color(baseColor);
                 }
@@ -704,9 +711,9 @@ void ObjectExplorerWidget::render()
 
             if (model->get_material(i)->get_shaderpass_ID() == "unlit")
             {
-                UnlitMaterial *mat = static_cast<UnlitMaterial *>(model->get_material(i));
-                Vec3 albedo = mat->get_color();
-                if (ImGui::ColorEdit3("Color", (float *)&albedo))
+                UnlitMaterial* mat    = static_cast<UnlitMaterial*>(model->get_material(i));
+                Vec3           albedo = mat->get_color();
+                if (ImGui::ColorEdit3("Color", (float*)&albedo))
                 {
                     mat->set_color(Vec4{albedo, mat->get_color().a});
                 };
@@ -742,15 +749,15 @@ void ObjectExplorerWidget::render()
     {
         ImGui::SeparatorText("Light");
 
-        Light *light = static_cast<Light *>(m_object);
+        Light* light = static_cast<Light*>(m_object);
 
         if (light->get_light_type() == DIRECTIONAL)
         {
-            DirectionalLight *dirL = static_cast<DirectionalLight *>(light);
-            float dir[3] = {dirL->get_direction().x, dirL->get_direction().y, dirL->get_direction().z};
+            DirectionalLight* dirL   = static_cast<DirectionalLight*>(light);
+            float             dir[3] = {dirL->get_direction().x, dirL->get_direction().y, dirL->get_direction().z};
             if (ImGui::DragFloat3("Direction", dir, 0.1f))
             {
-                static_cast<DirectionalLight *>(light)->set_direction(Vec3(dir[0], dir[1], dir[2]));
+                static_cast<DirectionalLight*>(light)->set_direction(Vec3(dir[0], dir[1], dir[2]));
             };
         }
 
@@ -758,16 +765,16 @@ void ObjectExplorerWidget::render()
         if (ImGui::DragFloat("Intensity", &intensity, 0.005f, 0.0f, 10.0f))
             light->set_intensity(intensity);
         Vec3 color = light->get_color();
-        if (ImGui::ColorEdit3("Color", (float *)&color))
+        if (ImGui::ColorEdit3("Color", (float*)&color))
         {
             light->set_color(color);
         };
 
         if (light->get_light_type() == LightType::POINT)
         {
-            float att = static_cast<PointLight *>(light)->get_area_of_effect();
+            float att = static_cast<PointLight*>(light)->get_area_of_effect();
             if (ImGui::DragFloat("Area of Influence", &att, 0.005f, 0.0f, 50.0f))
-                static_cast<PointLight *>(light)->set_area_of_effect(att);
+                static_cast<PointLight*>(light)->set_area_of_effect(att);
         }
         bool castShadows = light->get_cast_shadows();
 
@@ -786,8 +793,8 @@ void ObjectExplorerWidget::render()
             float shadowFov = light->get_shadow_fov();
             if (ImGui::DragFloat("Shadow FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
                 light->set_shadow_fov(shadowFov);
-            float position[3] = {light->get_shadow_target().x, light->get_shadow_target().y,
-                                 light->get_shadow_target().z};
+            float position[3] = {
+                light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
             if (ImGui::DragFloat3("Shadow Target", position, 0.1f))
             {
                 light->set_shadow_target(Vec3(position[0], position[1], position[2]));
@@ -810,11 +817,11 @@ void ObjectExplorerWidget::render()
     {
         ImGui::SeparatorText("Camera");
 
-        Camera *cam = static_cast<Camera *>(m_object);
-        float _far = cam->get_far();
-        float _near = cam->get_near();
-        float fov = cam->get_field_of_view();
-        bool culling = cam->get_frustrum_culling();
+        Camera* cam     = static_cast<Camera*>(m_object);
+        float   _far    = cam->get_far();
+        float   _near   = cam->get_near();
+        float   fov     = cam->get_field_of_view();
+        bool    culling = cam->get_frustrum_culling();
 
         if (ImGui::DragFloat("Near", &_near, 0.05f, 0.0f, 10.0))
             cam->set_near(_near);
