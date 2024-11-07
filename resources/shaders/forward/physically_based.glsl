@@ -193,7 +193,7 @@ void main() {
 
 
             if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-                lighting *= (1.0 - computeVarianceShadow(shadowMap,scene.lights[i],i,v_modelPos));
+                lighting *= (1.0 - computeShadow(shadowMap,scene.lights[i],i,v_modelPos));
 
             }
 

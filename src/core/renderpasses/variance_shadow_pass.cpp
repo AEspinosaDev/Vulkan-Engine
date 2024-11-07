@@ -44,8 +44,7 @@ void VarianceShadowPass::setup_attachments() {
     m_attachments.push_back(
         Attachment(depthAttachmentImageConfig, {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY}, {}));
 
-    VkAttachmentReference depthRef =
-        Init::attachment_reference(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VkAttachmentReference depthRef = Init::attachment_reference(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     // Subpass
     VkSubpassDescription subpass    = {};
@@ -192,14 +191,14 @@ void VarianceShadowPass::setup_shader_passes() {
     depthPass->build(m_handle, m_descriptorPool, m_extent);
     m_shaderPasses["shadowTri"] = depthPass;
 
-    // ShaderPass* depthLinePass =
-    //     new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/vsm_line_geom.glsl");
-    // depthLinePass->settings             = settings;
-    // depthLinePass->settings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    // depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;
-    // depthLinePass->build_shader_stages();
-    // depthLinePass->build(m_handle, m_descriptorPool, m_extent);
-    // m_shaderPasses["shadowLine"] = depthLinePass;
+    ShaderPass* depthLinePass =
+        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/vsm_line_geom.glsl");
+    depthLinePass->settings             = settings;
+    depthLinePass->settings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;
+    depthLinePass->build_shader_stages();
+    depthLinePass->build(m_handle, m_descriptorPool, m_extent);
+    m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
 void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {

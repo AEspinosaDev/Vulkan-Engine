@@ -13,8 +13,8 @@ void main() {
 
 #define MAX_LIGHTS 50
 
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 150) out;
+layout(lines) in;
+layout(line_strip, max_vertices = 100) out;
 
 struct LightUniform{
    vec3 position;
@@ -60,8 +60,6 @@ void main() {
         gl_Position = scene.lights[i].viewProj * object.model*gl_in[1].gl_Position;
         EmitVertex();
         
-        gl_Position = scene.lights[i].viewProj * object.model*gl_in[2].gl_Position;
-        EmitVertex();
 
         EndPrimitive();
         
@@ -79,11 +77,5 @@ layout(location = 0) out vec2 outVSM;
 
 void main() {
 
-    float depth = gl_FragCoord.z;
-
-    // float dx = dFdx(depth);
-    // float dy = dFdy(depth);
-    // float moment2 = depth*depth * 0.25 * (dx*dx+dy*dy); 
-
-    outVSM = vec2(depth, depth*depth);
+    outVSM = vec2(gl_FragCoord.z, gl_FragCoord.z * gl_FragCoord.z);
 }

@@ -17,7 +17,7 @@ namespace Core {
 class VarianceShadowPass : public RenderPass
 {
     /* Config  */
-    ColorFormatType m_format{SRG_16F};
+    ColorFormatType m_format = SRG_32F;
     DepthFormatType m_depthFormat;
 
     /*Descriptors*/
