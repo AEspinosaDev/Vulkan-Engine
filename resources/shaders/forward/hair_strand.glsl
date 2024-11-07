@@ -174,12 +174,12 @@ float computeShadow(LightUniform light, int lightId) {
     projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
-        return 0.0;
+        return 1.0;
 
     vec3 lightDir = normalize(light.position.xyz - g_pos);
     float bias = max(light.shadowBias * 5.0 * (1.0 - dot(g_dir, lightDir)), light.shadowBias);  //Modulate by angle of incidence
 
-    return filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
+    return 1.0 - filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
 
 }
 
@@ -242,10 +242,11 @@ void main() {
                 material.tt, 
                 material.trt);
 
-            if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-                lighting *= (1.0 - computeShadow(scene.lights[i], i));
-                //     // if(material.useScatter && material.coloredScatter)
-                //     //     color+= multipleScattering(n2);
+            if(int(object.otherParams.y) == 1 && scene.lights[i].shadowCast == 1) {
+                if(scene.lights[i].shadowType == 0) //Classic
+                    lighting *= computeShadow(scene.lights[i], i);
+                if(scene.lights[i].shadowType == 1) //VSM   
+                    lighting *= computeVarianceShadow(shadowMap,scene.lights[i],i,g_modelPos);
             }
 
             color += lighting;

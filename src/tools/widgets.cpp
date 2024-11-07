@@ -794,12 +794,26 @@ void ObjectExplorerWidget::render() {
         };
         if (castShadows)
         {
-            float shadowNear = light->get_shadow_near();
-            if (ImGui::DragFloat("Shadow Near Plane", &shadowNear, 0.005f, 0.0f, 10.0f))
-                light->set_shadow_near(shadowNear);
-            float shadowFar = light->get_shadow_far();
-            if (ImGui::DragFloat("Shadow Far Plane", &shadowFar, 1.0f, 10.0f, 1000.0f))
-                light->set_shadow_far(shadowFar);
+            ImGui::Spacing();
+            const char* shadowTypes[] = {"CLASSIC", "VSM", "RAYTRACED"};
+            static int  currentShadow = static_cast<int>(light->get_shadow_type());
+            if (ImGui::Combo("Shadow Type", &currentShadow, shadowTypes, IM_ARRAYSIZE(shadowTypes)))
+            {
+                switch (currentShadow)
+                {
+                case 0:
+                    light->set_shadow_type(ShadowType::BASIC);
+                    break;
+                case 1:
+                    light->set_shadow_type(ShadowType::VSM);
+                    break;
+                case 2:
+                    light->set_shadow_type(ShadowType::RAYTRACED);
+                    break;
+                }
+            }
+            ImGui::Separator();
+            ImGui::Spacing();
             float shadowFov = light->get_shadow_fov();
             if (ImGui::DragFloat("Shadow FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
                 light->set_shadow_fov(shadowFov);
@@ -810,16 +824,25 @@ void ObjectExplorerWidget::render() {
                 light->set_shadow_target(Vec3(position[0], position[1], position[2]));
             };
             ImGui::Text("Advanced Shadow Settings:");
-            float bias = light->get_shadow_bias();
-            if (ImGui::DragFloat("Shadow Bias", &bias, 0.0001f, 0.0f, 1.0f))
-                light->set_shadow_bias(bias);
+            if (currentShadow == 0)
+            {
+                float shadowNear = light->get_shadow_near();
+                if (ImGui::DragFloat("Shadow Near Plane", &shadowNear, 0.005f, 0.0f, 10.0f))
+                    light->set_shadow_near(shadowNear);
+                float shadowFar = light->get_shadow_far();
+                if (ImGui::DragFloat("Shadow Far Plane", &shadowFar, 1.0f, 10.0f, 1000.0f))
+                    light->set_shadow_far(shadowFar);
+                float bias = light->get_shadow_bias();
+                if (ImGui::DragFloat("Shadow Bias", &bias, 0.0001f, 0.0f, 1.0f))
+                    light->set_shadow_bias(bias);
+            }
 
-            int kernel = light->get_shadow_pcf_kernel();
-            if (ImGui::DragInt("PCF Size", &kernel, 2, 3, 15))
-                light->set_shadow_pcf_kernel(kernel);
+            int kernel = light->get_shadow_softness();
+            if (ImGui::DragInt("Softness", &kernel, 2, 3, 15))
+                light->set_shadow_softness(kernel);
 
             float kernelRad = light->get_shadow_kernel_radius();
-            if (ImGui::DragFloat("PCF Magnifier", &kernelRad, 0.1f, 1.0f, 100.0f))
+            if (ImGui::DragFloat("Softness Magnifier", &kernelRad, 0.1f, 1.0f, 100.0f))
                 light->set_shadow_kernel_radius(kernelRad);
         }
     }

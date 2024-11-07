@@ -58,11 +58,17 @@
 #endif
 
 #define _LOG(msg)                                                                                                      \
-    { std::cout << "VKEngine log: " << msg << std::endl; }
+    {                                                                                                                  \
+        std::cout << "VKEngine log: " << msg << std::endl;                                                             \
+    }
 #define DEBUG_LOG(msg)                                                                                                 \
-    { std::cout << "VKEngine debug: " << msg << std::endl; }
+    {                                                                                                                  \
+        std::cout << "VKEngine debug: " << msg << std::endl;                                                           \
+    }
 #define ERR_LOG(msg)                                                                                                   \
-    { std::cerr << "VKEngine error: " << msg << std::endl; }
+    {                                                                                                                  \
+        std::cerr << "VKEngine error: " << msg << std::endl;                                                           \
+    }
 #define VK_CHECK(x)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -207,8 +213,8 @@ typedef enum ColorFormatType
     SRGB_8    = VK_FORMAT_R8G8B8_SRGB,   // RGB
     SRGBA_8   = VK_FORMAT_R8G8B8A8_SRGB, // RGB with Alpha
     SBGRA_8   = VK_FORMAT_B8G8R8A8_SRGB, // Other order
-    SRG_16F    = VK_FORMAT_R16G16_SFLOAT, 
-    SRG_32F    = VK_FORMAT_R32G32_SFLOAT, 
+    SRG_16F   = VK_FORMAT_R16G16_SFLOAT,
+    SRG_32F   = VK_FORMAT_R32G32_SFLOAT,
     SRGBA_16F = VK_FORMAT_R16G16B16A16_SFLOAT, // HDR precission 16
     SRGBA_32F = VK_FORMAT_R32G32B32A32_SFLOAT, // HDR precission 32
 } ColorFormatType;
@@ -274,6 +280,13 @@ typedef enum LightType
     SPOT        = 2,
     AREA        = 3
 } LightType;
+
+typedef enum ShadowType
+{
+    BASIC = 0, //Classic shadow mapping
+    VSM     = 1, //Variance shadow mapping
+    RAYTRACED     = 2, //Raytraced shadow
+} ShadowType;
 
 typedef enum GuiColorProfileType
 {

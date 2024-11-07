@@ -26,10 +26,9 @@ float computeShadow(sampler2DArray shadowMap ,LightUniform light, int lightId, v
     projCoords.xy  = projCoords.xy * 0.5 + 0.5;
 
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
-        return 0.0;
-
+        return 1.0;
     
-    return filterPCF(shadowMap, lightId,int(light.pcfKernel), light.kernelRadius, projCoords, light.shadowBias);
+    return 1.0 - filterPCF(shadowMap, lightId,int(light.pcfKernel), light.kernelRadius, projCoords, light.shadowBias);
 
 }
 
@@ -57,9 +56,9 @@ float computeVarianceShadow(sampler2DArray VSM ,LightUniform light, int lightId,
     //}
 
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
-        return 0.0;
+        return 1.0;
 
-    return 1.0 - min(max(p,pMax),1.0);
+    return min(max(p,pMax),1.0);
 
 }
 

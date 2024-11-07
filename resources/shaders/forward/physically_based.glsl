@@ -185,16 +185,20 @@ void main() {
         if(isInAreaOfInfluence(scene.lights[i], v_pos)){
 
             vec3 lighting =evalSchlickSmithBRDF( 
-                scene.lights[i].type != 1 ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].data.xyz), //wi
+                scene.lights[i].type != 1 ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].position.xyz), //wi
                 normalize(-v_pos),                                                                                           //wo
                 scene.lights[i].color * computeAttenuation( scene.lights[i], v_pos) *  scene.lights[i].intensity,              //radiance
                 brdf
                 );
 
 
-            if(int(object.otherParams.y) == 1 && scene.lights[i].data.w == 1) {
-                lighting *= (1.0 - computeShadow(shadowMap,scene.lights[i],i,v_modelPos));
-
+            if(int(object.otherParams.y) == 1 && scene.lights[i].shadowCast == 1) {
+                if(scene.lights[i].shadowType == 0) //Classic
+                    lighting *= computeShadow(shadowMap,scene.lights[i],i,v_modelPos);
+                if(scene.lights[i].shadowType == 1) //VSM   
+                    lighting *= computeVarianceShadow(shadowMap,scene.lights[i],i,v_modelPos);
+                // if(scene.lights[i].shadowType == 1) //Raytraced  
+                    // lighting *= (1.0 - computeRaytracedShadow(shadowMap,scene.lights[i],i,v_modelPos));
             }
 
         color += lighting;
