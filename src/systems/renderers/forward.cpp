@@ -7,10 +7,12 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
     BaseRenderer::on_before_render(scene);
 
     if (scene->get_skybox())
+    {
         if (scene->get_skybox()->update_enviroment())
             static_cast<Core::ForwardPass*>(m_renderPipeline.renderpasses[FORWARD])
                 ->set_envmap_descriptor(m_renderPipeline.panoramaConverterPass->get_attachments()[0].image,
                                         m_renderPipeline.irradianceComputePass->get_attachments()[0].image);
+    }
 
     m_renderPipeline.renderpasses[FORWARD]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});

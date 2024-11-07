@@ -17,34 +17,13 @@
 #include <engine/graphics/device.h>
 #include <engine/graphics/frame.h>
 #include <engine/graphics/swapchain.h>
+#include <engine/graphics/vk_renderpass.h>
 
 #include <engine/core/scene/scene.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
-
-/*
-Attachment infor needed for using a renderpasses and its framebuffers.
-*/
-struct Attachment {
-    Graphics::Image image{};
-
-    VkClearValue clearValue{};
-
-    bool isPresentImage{false};
-
-    Attachment(Graphics::ImageConfig   config,
-               Graphics::ViewConfig    viewConfig,
-               Graphics::SamplerConfig samplerConfig,
-               VkClearValue            clearVal = {{{0.0, 0.0, 0.0, 1.0}}})
-        : clearValue(clearVal) {
-        image.config                  = config;
-        image.viewConfig              = viewConfig;
-        image.samplerConfig           = samplerConfig;
-        clearValue.depthStencil.depth = 1.0f;
-    };
-};
 
 /*
 Core abstract class needed for rendering.
@@ -55,18 +34,17 @@ It can be inherited for full user control over the render pipeline.
 class RenderPass
 {
   protected:
-    VkRenderPass m_handle;
-
-    Graphics::Device*            m_device{nullptr};
-    std::vector<Graphics::Frame> m_frames;
-    Graphics::DescriptorPool     m_descriptorPool{};
-
-    Extent2D                   m_extent;
-    uint32_t                   m_framebufferCount;      // How many framebuffers will be attached to this
-    uint32_t                   m_framebufferImageDepth; // The depth of the framebuffer image layers.
-    std::vector<VkFramebuffer> m_framebuffer_handles;
-    std::vector<Attachment>    m_attachments;
+    Graphics::VulkanRenderPass                             m_handle;
+    Graphics::Device*                                      m_device{nullptr};
+    Graphics::DescriptorPool                               m_descriptorPool{};
+    std::vector<Graphics::Attachment>                      m_attachments;
+    std::vector<Graphics::SubPassDependency>               m_dependencies;
     std::unordered_map<std::string, Graphics::ShaderPass*> m_shaderPasses;
+    std::vector<VkFramebuffer>                             m_framebuffer_handles;
+
+    Extent2D m_extent;
+    uint32_t m_framebufferCount;      // How many framebuffers will be attached to this
+    uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
     // Key: Renderpass ID
     // Value: Framebuffer's image ID inside renderpass
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
@@ -123,14 +101,14 @@ class RenderPass
         m_extent = extent;
     }
 
-    inline VkRenderPass get_handle() const {
+    inline Graphics::VulkanRenderPass get_handle() const {
         return m_handle;
     }
     inline std::vector<VkFramebuffer> const get_framebuffers_handle() const {
         return m_framebuffer_handles;
     }
 
-    inline std::vector<Attachment> get_attachments() {
+    inline std::vector<Graphics::Attachment> get_attachments() {
         return m_attachments;
     }
     inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) {

@@ -5,132 +5,62 @@ using namespace Graphics;
 namespace Core {
 
 void ForwardPass::setup_attachments() {
-
     VkSampleCountFlagBits samples      = static_cast<VkSampleCountFlagBits>(m_aa);
     bool                  multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
 
-    std::vector<VkAttachmentDescription> attachmentsInfo;
-
-    // Color attachment
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format         = static_cast<VkFormat>(m_colorFormat);
-    colorAttachment.samples        = samples;
-    colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout =
+    Graphics::Attachment colorAttachment = Graphics::Attachment(
+        static_cast<VkFormat>(m_colorFormat),
+        samples,
         m_isDefault ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-                    : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    attachmentsInfo.push_back(colorAttachment);
-
-    ImageConfig colorAttachmentImageConfig{};
-    colorAttachmentImageConfig.format = static_cast<VkFormat>(m_colorFormat);
-    colorAttachmentImageConfig.usageFlags =
+                    : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         !m_isDefault ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                     : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    colorAttachmentImageConfig.samples = samples;
-    SamplerConfig colorAttachmentSamplerConfig{};
-    colorAttachmentSamplerConfig.filters            = VK_FILTER_LINEAR;
-    colorAttachmentSamplerConfig.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    Attachment _colorAttachment(
-        colorAttachmentImageConfig, {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D}, colorAttachmentSamplerConfig);
-    _colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
-    m_attachments.push_back(_colorAttachment);
+                     : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        AttachmentType::COLOR_ATTACHMENT,
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        VK_IMAGE_VIEW_TYPE_2D,
+        VK_FILTER_LINEAR,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
+    m_attachments.push_back(colorAttachment);
 
-    VkAttachmentReference colorRef = Init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-    // Resolve attachment
+    Graphics::Attachment resolveAttachment;
     if (multisampled)
     {
-        VkAttachmentDescription resolveAttachment{};
-        resolveAttachment.format         = static_cast<VkFormat>(m_colorFormat);
-        resolveAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-        resolveAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        resolveAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-        resolveAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        resolveAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-        resolveAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        attachmentsInfo.push_back(resolveAttachment);
-
-        ImageConfig resolveAttachmentImageConfig{};
-        resolveAttachmentImageConfig.format = static_cast<VkFormat>(m_colorFormat);
-        resolveAttachmentImageConfig.usageFlags =
-            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        Attachment _resolveAttachment(
-            resolveAttachmentImageConfig, {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D}, {});
-        _resolveAttachment.isPresentImage = true;
-        m_attachments.push_back(_resolveAttachment);
+        resolveAttachment =
+            Graphics::Attachment(static_cast<VkFormat>(m_colorFormat),
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                 AttachmentType::RESOLVE_ATTACHMENT,
+                                 VK_IMAGE_ASPECT_COLOR_BIT,
+                                 VK_IMAGE_VIEW_TYPE_2D);
+        resolveAttachment.isPresentImage =  multisampled ? true : false;
+        m_attachments.push_back(resolveAttachment);
     }
-    VkAttachmentReference resolveRef = Init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    // Depth attachment
-    VkAttachmentDescription depthAttachment{};
-    depthAttachment.format         = static_cast<VkFormat>(m_depthFormat);
-    depthAttachment.samples        = samples;
-    depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-    depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    attachmentsInfo.push_back(depthAttachment);
-
-    ImageConfig depthAttachmentImageConfig{};
-    depthAttachmentImageConfig.format     = static_cast<VkFormat>(m_depthFormat);
-    depthAttachmentImageConfig.usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    depthAttachmentImageConfig.samples    = samples;
-    m_attachments.push_back(
-        Attachment(depthAttachmentImageConfig, {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D}, {}));
-
-    VkAttachmentReference depthRef =
-        Init::attachment_reference(attachmentsInfo.size() - 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-    // Subpass
-    VkSubpassDescription subpass    = {};
-    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount    = 1;
-    subpass.pColorAttachments       = &colorRef;
-    subpass.pDepthStencilAttachment = &depthRef;
-    subpass.pResolveAttachments     = multisampled ? &resolveRef : nullptr;
+    Graphics::Attachment depthAttachment = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
+                                                                samples,
+                                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                                                AttachmentType::DEPTH_ATTACHMENT,
+                                                                VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                                VK_IMAGE_VIEW_TYPE_2D);
+    m_attachments.push_back(depthAttachment);
 
     // Depdencies
-    std::array<VkSubpassDependency, 2> dependencies = {};
+    m_dependencies.resize(2);
 
-    dependencies[0].srcSubpass      = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass      = 0;
-    dependencies[0].srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask   = 0;
-    dependencies[0].dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    m_dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+    m_dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
-    dependencies[1].srcSubpass      = VK_SUBPASS_EXTERNAL;
-    dependencies[1].dstSubpass      = 0;
-    dependencies[1].srcStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependencies[1].dstStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependencies[1].srcAccessMask   = 0;
-    dependencies[1].dstAccessMask   = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    // Creation
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentsInfo.size());
-    renderPassInfo.pAttachments    = attachmentsInfo.data();
-    renderPassInfo.subpassCount    = 1;
-    renderPassInfo.pSubpasses      = &subpass;
-    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-    renderPassInfo.pDependencies   = dependencies.data();
-
-    if (vkCreateRenderPass(m_device->get_handle(), &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
-    {
-        new VKException("failed to create renderpass!");
-    }
-
-    m_initiatized = true;
+  
 }
 void ForwardPass::setup_uniforms() {
 
@@ -485,8 +415,8 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
     {
         m_descriptorPool.set_descriptor_write(images[0].sampler,
                                               images[0].view,
-                                            //   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              //   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               2);
     }

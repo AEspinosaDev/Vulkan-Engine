@@ -6,64 +6,28 @@ namespace Core {
 
 void FXAAPass::setup_attachments() {
 
-    std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
+    m_attachments.resize(1);
 
-    // Color attachment
-    attachmentsInfo[0].format         = static_cast<VkFormat>(m_colorFormat);
-    attachmentsInfo[0].samples        = VK_SAMPLE_COUNT_1_BIT;
-    attachmentsInfo[0].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachmentsInfo[0].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-    attachmentsInfo[0].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachmentsInfo[0].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[0].finalLayout =
-        m_isDefault ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    ImageConfig colorAttachmentImageConfig{};
-    colorAttachmentImageConfig.format = static_cast<VkFormat>(m_colorFormat);
-    colorAttachmentImageConfig.usageFlags =
-        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    SamplerConfig colorAttachmentSamplerConfig{};
-    colorAttachmentSamplerConfig.filters            = VK_FILTER_LINEAR;
-    colorAttachmentSamplerConfig.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    Attachment _colorAttachment(
-        colorAttachmentImageConfig, {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D}, colorAttachmentSamplerConfig);
-    _colorAttachment.isPresentImage = m_isDefault ? true : false;
-    m_attachments.push_back(_colorAttachment);
-
-    VkAttachmentReference colorRef = Init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-    // Subpass
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments    = &colorRef;
+    m_attachments[0] =
+        Graphics::Attachment(static_cast<VkFormat>(m_colorFormat),
+                             VK_SAMPLE_COUNT_1_BIT,
+                             m_isDefault ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                             AttachmentType::COLOR_ATTACHMENT,
+                             VK_IMAGE_ASPECT_COLOR_BIT,
+                             VK_IMAGE_VIEW_TYPE_2D,
+                             VK_FILTER_LINEAR,
+                             VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    m_attachments[0].isPresentImage = m_isDefault ? true : false;
 
     // Depdencies
-    std::array<VkSubpassDependency, 1> dependencies = {{}};
+    m_dependencies.resize(1);
 
-    dependencies[0].srcSubpass    = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass    = 0;
-    dependencies[0].srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask = 0;
+    m_dependencies[0] = Graphics::SubPassDependency(
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 
-    // Creation
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentsInfo.size());
-    renderPassInfo.pAttachments    = attachmentsInfo.data();
-    renderPassInfo.subpassCount    = 1;
-    renderPassInfo.pSubpasses      = &subpass;
-    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-    renderPassInfo.pDependencies   = dependencies.data();
-
-    if (vkCreateRenderPass(m_device->get_handle(), &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
-    {
-        new VKException("failed to create renderpass!");
-    }
-
-    m_initiatized = true;
+  
 }
 void FXAAPass::setup_uniforms() {
     // Init and configure local descriptors

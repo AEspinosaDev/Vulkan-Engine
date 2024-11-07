@@ -8,6 +8,8 @@ std::vector<Graphics::Frame> RenderPass::frames = {};
 
 void RenderPass::setup() {
     setup_attachments();
+    m_device->create_render_pass(m_handle, m_attachments, m_dependencies);
+    m_initiatized = true;
     create_framebuffer();
     setup_uniforms();
     setup_shader_passes();
@@ -15,7 +17,7 @@ void RenderPass::setup() {
 
 void RenderPass::begin(VkCommandBuffer& cmd, uint32_t framebufferId, VkSubpassContents subpassContents) {
     VkRenderPassBeginInfo renderPassInfo =
-        Init::renderpass_begin_info(m_handle, m_extent, m_framebuffer_handles[framebufferId]);
+        Init::renderpass_begin_info(m_handle.get_handle(), m_extent, m_framebuffer_handles[framebufferId]);
 
     std::vector<VkClearValue> clearValues;
     clearValues.reserve(m_attachments.size());
@@ -42,7 +44,7 @@ void RenderPass::draw(VkCommandBuffer& cmd, Geometry* g) {
 void RenderPass::cleanup() {
     if (!m_initiatized)
         return;
-    vkDestroyRenderPass(m_device->get_handle(), m_handle, nullptr);
+    m_handle.cleanup();
     for (auto pair : m_shaderPasses)
     {
         ShaderPass* pass = pair.second;
@@ -90,7 +92,7 @@ void RenderPass::create_framebuffer() {
         if (m_isDefault) // If its default need swapchain PRESENT images
             viewAttachments[presentViewIndex] = m_device->get_swapchain().get_present_images()[fb].view;
 
-        VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(m_handle, m_extent);
+        VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(m_handle.get_handle(), m_extent);
         fbInfo.pAttachments            = viewAttachments.data();
         fbInfo.attachmentCount         = (uint32_t)viewAttachments.size();
         fbInfo.layers                  = m_framebufferImageDepth;

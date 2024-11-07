@@ -18,6 +18,7 @@
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/utils.h>
+#include <engine/graphics/vk_renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -111,7 +112,9 @@ class Device
                                 uint32_t        numStrgTexel         = 0,
                                 uint32_t        numUBOStorageDynamic = 0,
                                 uint32_t        numIAttachment       = 0);
-    // void create_render_pass();
+    void create_render_pass(VulkanRenderPass&               rp,
+                            std::vector<Attachment>&        attachments,
+                            std::vector<SubPassDependency>& dependencies);
     // void create_graphic_pipeline();
     // void create_compute_pipeline();
     // void create_framebuffer();
@@ -148,7 +151,7 @@ class Device
     void wait();
     void init_imgui(void*                 windowHandle,
                     WindowingSystem       windowingSystem,
-                    VkRenderPass          renderPass,
+                    VulkanRenderPass      renderPass,
                     VkSampleCountFlagBits samples);
     void destroy_imgui();
 };

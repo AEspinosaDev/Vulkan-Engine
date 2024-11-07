@@ -283,9 +283,9 @@ typedef enum LightType
 
 typedef enum ShadowType
 {
-    BASIC = 0, //Classic shadow mapping
-    VSM     = 1, //Variance shadow mapping
-    RAYTRACED     = 2, //Raytraced shadow
+    BASIC     = 0, // Classic shadow mapping
+    VSM       = 1, // Variance shadow mapping
+    RAYTRACED = 2, // Raytraced shadow
 } ShadowType;
 
 typedef enum GuiColorProfileType
@@ -305,7 +305,7 @@ typedef enum VolumeType
 
 typedef enum SyncType
 {
-    NONE           = VK_PRESENT_MODE_IMMEDIATE_KHR, // No framerate cap (POTENTIAL TEARING)
+    NONE_SYNC           = VK_PRESENT_MODE_IMMEDIATE_KHR, // No framerate cap (POTENTIAL TEARING)
     MAILBOX_SYNC   = VK_PRESENT_MODE_MAILBOX_KHR,   // Triple buffering (Better V-Sync)
     V_SYNC         = VK_PRESENT_MODE_FIFO_KHR,      // Classic V-Sync
     RELAXED_V_SYNC = VK_PRESENT_MODE_FIFO_RELAXED_KHR,
@@ -314,8 +314,8 @@ typedef enum SyncType
 
 typedef enum RendererType
 {
-    TFORWARD  = 0,
-    TDEFERRED = 1,
+    FORWARD_RENDERER  = 0,
+    DEFERRED_RENDERER = 1,
 } RendererType;
 
 typedef enum AmbientOcclusionType
@@ -336,6 +336,148 @@ enum QueueType
     PRESENT = 1,
     COMPUTE = 2,
     RT      = 3
+};
+enum AttachmentType
+{
+    COLOR_ATTACHMENT   = 0,
+    DEPTH_ATTACHMENT   = 1,
+    RESOLVE_ATTACHMENT = 2,
+};
+
+enum ShaderStageType
+{
+    NONE_STAGE            = -1,
+    VERTEX          = 0,
+    FRAGMENT        = 1,
+    GEOMETRY        = 2,
+    TESS_CONTROL    = 3,
+    TESS_EVALUATION = 4
+};
+
+enum UniformDataType
+{
+    UNIFORM_BUFFER         = 0,
+    DYNAMIC_UNIFORM_BUFFER = 1,
+    COMBINED_IMAGE_SAMPLER = 2
+};
+
+
+// Sample count enum: to represent sample counts in a clearer way
+enum class SampleCount
+{
+    SAMPLE_COUNT_1 = 0,
+    SAMPLE_COUNT_2,
+    SAMPLE_COUNT_4,
+    SAMPLE_COUNT_8,
+    SAMPLE_COUNT_16,
+    SAMPLE_COUNT_32,
+    SAMPLE_COUNT_64,
+    MAX_SAMPLE_COUNT
+};
+
+// ImageUsageFlags enum: to represent image usage flags in a more readable way
+enum class ImageUsageFlags
+{
+    COLOR_ATTACHMENT = 0,
+    DEPTH_STENCIL_ATTACHMENT,
+    SAMPLED,
+    STORAGE,
+    TRANSFER_SRC,
+    TRANSFER_DST,
+    SHADER_READ_ONLY,
+    TRANSFER,
+    MAX_IMAGE_USAGE
+};
+
+// ImageLayout enum: representing possible image layouts in Vulkan
+enum class ImageLayoutType
+{
+    UNDEFINED = 0,
+    COLOR_ATTACHMENT_OPTIMAL,
+    DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    SHADER_READ_ONLY_OPTIMAL,
+    TRANSFER_SRC_OPTIMAL,
+    TRANSFER_DST_OPTIMAL,
+    GENERAL,
+    MAX_IMAGE_LAYOUT
+};
+
+// ImageViewType enum: representing image view types
+enum class ImageViewType
+{
+    TYPE_1D = 0,
+    TYPE_2D,
+    TYPE_3D,
+    TYPE_CUBE,
+    TYPE_1D_ARRAY,
+    TYPE_2D_ARRAY,
+    TYPE_CUBE_ARRAY,
+    MAX_IMAGE_VIEW_TYPE
+};
+
+// FilterType enum: for Vulkan texture filters
+enum class FilterType
+{
+    NEAREST = 0,
+    LINEAR,
+    CUBIC,
+    MAX_FILTER_TYPE
+};
+
+// AddressMode enum: for sampler address modes in Vulkan
+enum class AddressMode
+{
+    REPEAT = 0,
+    MIRROR_REPEAT,
+    CLAMP_TO_EDGE,
+    CLAMP_TO_BORDER,
+    MIRROR_CLAMP_TO_EDGE,
+    MAX_ADDRESS_MODE
+};
+
+// ClearValue enum: to set clear values for attachments
+enum class ClearValueType
+{
+    COLOR = 0,
+    DEPTH_STENCIL,
+    MAX_CLEAR_VALUE
+};
+
+// SubPassDependencyFlags enum: for Vulkan subpass dependency flags
+enum class SubPassDependencyFlags
+{
+    BY_REGION = 0,
+    MAX_SUBPASS_DEPENDENCY_FLAGS
+};
+
+// PipelineStageFlags enum: for pipeline stages in Vulkan
+enum class PipelineStageFlags
+{
+    TOP_OF_PIPE = 0,
+    BOTTOM_OF_PIPE,
+    COLOR_ATTACHMENT_OUTPUT,
+    EARLY_FRAGMENT_TESTS,
+    LATE_FRAGMENT_TESTS,
+    ALL_GRAPHICS,
+    TRANSFER,
+    COMPUTE_SHADER,
+    ALL_COMMANDS,
+    MAX_PIPELINE_STAGE_FLAGS
+};
+
+// AccessFlags enum: to represent access types for Vulkan resources
+enum class AccessFlags
+{
+    ACCESS_NONE = 0,
+    COLOR_ATTACHMENT_READ,
+    COLOR_ATTACHMENT_WRITE,
+    DEPTH_STENCIL_ATTACHMENT_READ,
+    DEPTH_STENCIL_ATTACHMENT_WRITE,
+    TRANSFER_READ,
+    TRANSFER_WRITE,
+    SHADER_READ,
+    SHADER_WRITE,
+    MAX_ACCESS_FLAGS
 };
 
 VULKAN_ENGINE_NAMESPACE_END

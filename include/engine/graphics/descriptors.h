@@ -28,6 +28,14 @@ struct DescriptorSet {
     bool                 allocated{false};
 };
 
+// struct LayoutBinding{
+//     VkDescriptorSetLayoutBinding handle{};
+
+//     LayoutBinding() {
+
+//     }
+// }
+
 class DescriptorPool
 {
     VkDescriptorPool                                    m_handle = VK_NULL_HANDLE;

@@ -43,15 +43,15 @@ struct PipelineSettings {
 */
 namespace PipelineBuilder {
 void build_pipeline_layout(VkPipelineLayout& layout,
-                           VkDevice&         device,
-                           DescriptorPool&   descriptorManager,
+                           VkDevice         device,
+                           DescriptorPool   descriptorManager,
                            PipelineSettings& settings);
 
 void build_graphic_pipeline(VkPipeline&                                  pipeline,
                             VkPipelineLayout&                            layout,
-                            VkDevice&                                    device,
-                            VkRenderPass&                                renderPass,
-                            VkExtent2D&                                  extent,
+                            VkDevice                                    device,
+                            VkRenderPass                                renderPass,
+                            VkExtent2D                                  extent,
                             PipelineSettings&                            settings,
                             std::vector<VkPipelineShaderStageCreateInfo> shaderStages);
 }; // namespace PipelineBuilder

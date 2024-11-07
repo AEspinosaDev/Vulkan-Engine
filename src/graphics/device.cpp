@@ -109,6 +109,11 @@ void Device::create_descriptor_pool(DescriptorPool& pool,
               numUBOStorageDynamic,
               numIAttachment);
 }
+void Device::create_render_pass(VulkanRenderPass&               rp,
+                                std::vector<Attachment>&        attachments,
+                                std::vector<SubPassDependency>& dependencies) {
+    rp.init(m_handle, attachments, dependencies);
+}
 void Device::create_frame(Frame& frame) {
     frame.init(m_handle, m_gpu, m_swapchain.get_surface());
 }
@@ -307,7 +312,7 @@ void Device::wait() {
 
 void Device::init_imgui(void*                 windowHandle,
                         WindowingSystem       windowingSystem,
-                        VkRenderPass          renderPass,
+                        VulkanRenderPass      renderPass,
                         VkSampleCountFlagBits samples) {
 
     m_guiPool.init(m_handle,
@@ -339,7 +344,7 @@ void Device::init_imgui(void*                 windowHandle,
     init_info.DescriptorPool            = m_guiPool.get_handle();
     init_info.MinImageCount             = 3;
     init_info.ImageCount                = 3;
-    init_info.RenderPass                = renderPass;
+    init_info.RenderPass                = renderPass.get_handle();
     init_info.MSAASamples               = samples;
 
     ImGui_ImplVulkan_Init(&init_info);

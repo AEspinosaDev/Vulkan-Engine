@@ -5,72 +5,41 @@ using namespace Graphics;
 namespace Core {
 
 void ShadowPass::setup_attachments() {
-    std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
 
-    attachmentsInfo[0].format         = static_cast<VkFormat>(m_depthFormat);
-    attachmentsInfo[0].samples        = VK_SAMPLE_COUNT_1_BIT;
-    attachmentsInfo[0].loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachmentsInfo[0].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-    attachmentsInfo[0].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachmentsInfo[0].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsInfo[0].finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    m_attachments.resize(1);
 
-    ImageConfig depthAttachmentImageConfig{};
-    depthAttachmentImageConfig.format     = static_cast<VkFormat>(m_depthFormat);
-    depthAttachmentImageConfig.usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    SamplerConfig depthAttachmentSamplereConfig{};
-    depthAttachmentSamplereConfig.filters            = VK_FILTER_LINEAR;
-    depthAttachmentSamplereConfig.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    m_attachments.push_back(Attachment(depthAttachmentImageConfig,
-                                       {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY},
-                                       depthAttachmentSamplereConfig));
-
-    VkAttachmentReference depthRef = Init::attachment_reference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-    // Subpass
-    VkSubpassDescription subpass    = {};
-    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount    = 0;
-    subpass.pDepthStencilAttachment = &depthRef;
+    m_attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
+                                            VK_SAMPLE_COUNT_1_BIT,
+                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                            AttachmentType::DEPTH_ATTACHMENT,
+                                            VK_IMAGE_ASPECT_DEPTH_BIT,
+                                            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                                            VK_FILTER_LINEAR,
+                                            VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
-    std::array<VkSubpassDependency, 2> dependencies = {};
+    
+    m_dependencies.resize(2);
 
-    dependencies[0].srcSubpass      = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass      = 0;
-    dependencies[0].srcStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[0].dstStageMask    = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependencies[0].srcAccessMask   = VK_ACCESS_SHADER_READ_BIT;
-    dependencies[0].dstAccessMask   = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    m_dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
-    dependencies[1].srcSubpass      = 0;
-    dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask    = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[1].dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[1].srcAccessMask   = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[1].dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
-    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    m_dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-    // Creation
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentsInfo.size());
-    renderPassInfo.pAttachments    = attachmentsInfo.data();
-    renderPassInfo.subpassCount    = 1;
-    renderPassInfo.pSubpasses      = &subpass;
-    renderPassInfo.dependencyCount = 2;
-    renderPassInfo.pDependencies   = dependencies.data();
+    m_dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
-    if (vkCreateRenderPass(m_device->get_handle(), &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
-    {
-        new VKException("failed to create renderpass!");
-    }
+    m_dependencies[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    m_dependencies[1].srcSubpass    = 0;
+    m_dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
 
+   
     m_isResizeable = false;
-
-    m_initiatized = true;
+  
 }
 void ShadowPass::setup_uniforms() {
 
@@ -112,11 +81,11 @@ void ShadowPass::setup_uniforms() {
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[0],
-                                                 sizeof(CameraUniforms),
-                                                 0,
-                                                 &m_descriptors[i].globalDescritor,
-                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                                                 0);
+                                              sizeof(CameraUniforms),
+                                              0,
+                                              &m_descriptors[i].globalDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              0);
         m_descriptorPool.set_descriptor_write(
             &RenderPass::frames[i].uniformBuffers[0],
             sizeof(SceneUniforms),
@@ -129,11 +98,11 @@ void ShadowPass::setup_uniforms() {
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[1],
-                                                 sizeof(ObjectUniforms),
-                                                 0,
-                                                 &m_descriptors[i].objectDescritor,
-                                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                                                 0);
+                                              sizeof(ObjectUniforms),
+                                              0,
+                                              &m_descriptors[i].objectDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              0);
         m_descriptorPool.set_descriptor_write(
             &RenderPass::frames[i].uniformBuffers[1],
             sizeof(MaterialUniforms),

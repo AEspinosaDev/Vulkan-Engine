@@ -32,19 +32,10 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
     std::ifstream stream(filePath);
     std::string scriptsPath(ENGINE_RESOURCES_PATH "shaders/scripts/");
 
-    enum class ShaderType
-    {
-        NONE = -1,
-        VERTEX = 0,
-        FRAGMENT = 1,
-        GEOMETRY = 2,
-        TESS_CONTROL = 3,
-        TESS_EVALUATION = 4
-    };
 
     std::string line;
     std::stringstream ss[4];
-    ShaderType type = ShaderType::NONE;
+    ShaderStageType type = ShaderStageType::NONE_STAGE;
 
     while (getline(stream, line))
     {
@@ -52,15 +43,15 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
         if (line.find("#shader") != std::string::npos)
         {
             if (line.find("vertex") != std::string::npos)
-                type = ShaderType::VERTEX;
+                type = ShaderStageType::VERTEX;
             else if (line.find("fragment") != std::string::npos)
-                type = ShaderType::FRAGMENT;
+                type = ShaderStageType::FRAGMENT;
             else if (line.find("geometry") != std::string::npos)
-                type = ShaderType::GEOMETRY;
+                type = ShaderStageType::GEOMETRY;
             else if (line.find("tesscontrol") != std::string::npos)
-                type = ShaderType::TESS_CONTROL;
+                type = ShaderStageType::TESS_CONTROL;
             else if (line.find("tesseval") != std::string::npos)
-                type = ShaderType::TESS_EVALUATION;
+                type = ShaderStageType::TESS_EVALUATION;
         }
         // CHECK MODULES INCLUDED
         else if (line.find("#include") != std::string::npos)
@@ -148,7 +139,7 @@ void ShaderPass::build_shader_stages(shaderc_optimization_level optimization)
     }
 }
 
-void ShaderPass::build(VkRenderPass renderPass, DescriptorPool &descriptorManager, Extent2D &extent)
+void ShaderPass::build(VulkanRenderPass renderPass, DescriptorPool &descriptorManager, Extent2D &extent)
 {
     PipelineBuilder::build_pipeline_layout(m_pipelineLayout, m_device, descriptorManager, settings);
 
@@ -157,7 +148,7 @@ void ShaderPass::build(VkRenderPass renderPass, DescriptorPool &descriptorManage
     {
         stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
     }
-    PipelineBuilder::build_graphic_pipeline(m_pipeline, m_pipelineLayout, m_device, renderPass, extent, settings, stages);
+    PipelineBuilder::build_graphic_pipeline(m_pipeline, m_pipelineLayout, m_device, renderPass.get_handle(), extent, settings, stages);
 }
 void ShaderPass::cleanup()
 {

@@ -188,7 +188,7 @@ void BaseRenderer::connect_renderpass(Core::RenderPass* const currentPass) {
     std::vector<Graphics::Image> images;
     for (auto pair : currentPass->get_image_dependace_table())
     {
-        std::vector<Core::Attachment> attachments = m_renderPipeline.renderpasses[pair.first]->get_attachments();
+        std::vector<Graphics::Attachment> attachments = m_renderPipeline.renderpasses[pair.first]->get_attachments();
         for (size_t i = 0; i < pair.second.size(); i++)
         {
             images.push_back(attachments[pair.second[i]].image);

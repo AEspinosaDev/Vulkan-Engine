@@ -10,6 +10,7 @@
 #define SHADER_H
 
 #include <engine/graphics/pipeline.h>
+#include <engine/graphics/vk_renderpass.h>
 
 #include <unordered_map>
 
@@ -73,7 +74,7 @@ class ShaderPass
         return m_pipelineLayout;
     }
     void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
-    void build(VkRenderPass renderPass, DescriptorPool& descriptorManager, Extent2D& extent);
+    void build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager, Extent2D& extent);
     void cleanup();
 };
 

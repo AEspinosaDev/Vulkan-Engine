@@ -96,7 +96,7 @@ void RendererSettingsWidget::render()
         switch (sync_current)
         {
         case 0:
-            m_renderer->set_sync_type(SyncType::NONE);
+            m_renderer->set_sync_type(SyncType::NONE_SYNC);
             break;
         case 1:
             m_renderer->set_sync_type(SyncType::MAILBOX_SYNC);
