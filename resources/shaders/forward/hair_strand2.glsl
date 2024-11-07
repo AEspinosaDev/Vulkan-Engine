@@ -155,7 +155,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 
 layout(set = 2, binding = 0) uniform sampler2D mTex;
 layout(set = 2, binding = 1) uniform sampler2D nTex1;
-layout(set = 2, binding = 1) uniform sampler2D nTex2;
+layout(set = 2, binding = 2) uniform sampler2D nTex2;
 
 MarschnerLookupBSDF bsdf;
 

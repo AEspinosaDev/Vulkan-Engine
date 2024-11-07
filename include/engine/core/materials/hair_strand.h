@@ -26,17 +26,17 @@ class HairStrandMaterial : public IMaterial
     float m_thickness{0.003f};
 
     bool  m_R{true}; // Reflection
-    float m_Rpower{0.6f};
+    float m_Rpower{4.0f};
 
     bool  m_TT{true}; // Transmitance
-    float m_TTpower{1.0f};
+    float m_TTpower{5.0f};
 
     bool  m_TRT{true}; // Second reflection
-    float m_TRTpower{5.0f};
+    float m_TRTpower{10.0f};
 
     float m_roughness{0.4f};
     float m_scatter{500.0f};
-    float m_shift{0.12f}; // In radians (-5º to -10º) => 0.088 to 0.17 //Not with epic 0.02 does fine
+    float m_shift{5.2f}; // In radians (-5º to -10º) => 0.088 to 0.17 //Not with epic 0.02 does fine
     float m_ior{1.55f};
 
     bool m_glints{false};

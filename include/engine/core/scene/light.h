@@ -31,9 +31,10 @@ class Light : public Object3D
         float      fov                 = 45.0f;
         Vec3       target              = {0.0f, 0.0f, 0.0f};
         float      bias                = 0.005f;
+        float      bleeding            = 0.75f;
         bool       angleDependableBias = false;
         float      kernelRadius        = 1.0;
-        int        softness            = 7;
+        int        softness            = 3;
     };
 
     Shadow          m_shadow;
@@ -106,6 +107,12 @@ class Light : public Object3D
     }
     virtual inline void set_shadow_bias(float b) {
         m_shadow.bias = b;
+    }
+    virtual inline float get_shadow_bleeding() const {
+        return m_shadow.bleeding;
+    }
+    virtual inline void set_shadow_bleeding(float b) {
+        m_shadow.bleeding = b;
     }
 
     virtual inline int get_shadow_softness() const {

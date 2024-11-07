@@ -6,7 +6,7 @@
 #define ONE_OVER_PI      (1.0 / PI)
 #define ONE_OVER_PI_HALF (2.0 / PI)
 #define DEG2RAD(x) ((x) / 180.0 * PI)
-#define R_SHIFT      DEG2RAD(-5.0)
+#define R_SHIFT      DEG2RAD(-7.0)
 #define TT_SHIFT     (-R_SHIFT*0.5)
 #define TRT_SHIFT    (-R_SHIFT*1.5)
 #define R_DEV        DEG2RAD(10.0)
@@ -17,6 +17,8 @@
 #define SCALE_N_R      0.25
 #define SCALE_N_TT     0.5
 #define SCALE_N_TRT    0.25
+
+#define GLOBAL_SCALE    5.0
 
 
 struct                          MarschnerLookupBSDF{
@@ -71,13 +73,19 @@ vec3 evalMarschnerLookupBSDF(
     float cos_phiH      = dot(vPerp,wiPerp)*inversesqrt(dot(vPerp,vPerp)*dot(wiPerp,wiPerp));
     float phiH          = cos((asin(sin_thI)-asin(sin_thR))*0.5);
 
+    float randVal = rand( 2, 3 );
+	float phi_shift = ECCEN_SHIFT*(randVal-0.5f);
+	float phiTRT = abs( phiH + phi_shift );
+	if ( phiTRT > 2.0*PI ) phiTRT -= 2.0*PI;
+	if ( phiTRT > PI ) phiTRT = 2.0*PI - phiTRT;
+
     //////////////////////////////////////////////////////////////////////////
 	// Direct Illumination
 	//////////////////////////////////////////////////////////////////////////
 
     // N
-    vec2 index1         = vec2( phiH * ONE_OVER_PI, ix_th );
-	vec2 index2         = vec2( phiH * ONE_OVER_PI, ix_th );
+    vec2 index1         = vec2( phiH * ONE_OVER_PI, 1.0-ix_th );
+	vec2 index2         = vec2( phiTRT * ONE_OVER_PI, 1.0-ix_th );
 
     vec4  N             = texture(texN, index1);
 	float NR            = SCALE_N_R   * N.a;
@@ -89,15 +97,17 @@ vec3 evalMarschnerLookupBSDF(
 	float MTT           = M(thH - TT_SHIFT  ,TT_DEV);
 	float MTRT          = M(thH - TRT_SHIFT ,TRT_DEV);
 
-    float R             = r ?   MR   * NR   : 0.0; 
-    vec3 TT             = tt ?  MTT  * NTT  : vec3(0.0); 
-    vec3 TRT            = trt ? MTRT * NTRT : vec3(0.0); 
+    float R             = r ?   MR   * NR   * bsdf.Rpower  : 0.0; 
+    vec3 TT             = tt ?  MTT  * NTT  *  bsdf.TTpower  : vec3(0.0); 
+    vec3 TRT            = trt ? MTRT * NTRT * bsdf.TRTpower: vec3(0.0); 
 
+    vec3 specular       = R+TT+TRT;
+    vec3 albedo         = bsdf.baseColor;
 
     //////////////////////////////////////////////////////////////////////////
 	// Local Scattering
 	//////////////////////////////////////////////////////////////////////////
 
 
-    return              (R+TT+TRT) * irradiance;
+    return              (specular) * irradiance * GLOBAL_SCALE;
 }

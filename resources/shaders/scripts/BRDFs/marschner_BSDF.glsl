@@ -94,6 +94,11 @@ vec3 evalMarschnerBSDF(
     float betaTT      = 0.5 * betaR;
     float betaTRT     = 2.0 * betaR;
 
+  //Shift
+    float shiftR      = DEG2RAD(-bsdf.shift);
+    float shiftTT     = -shiftR*0.5;
+    float shiftTRT    = -shiftR*1.5;
+
 
   //Theta & Phi
     vec3 u            = bsdf.tangent;
@@ -108,9 +113,9 @@ vec3 evalMarschnerBSDF(
     float cosThetaD   = cos(thetaD);
     float sinThetaD   = sin(thetaD);
 
-    float R           = r ?   M(sinThetaWi + sinThetaV - DEG2RAD(bsdf.shift) * 2.0, betaR) *   NR(wi, v, cosPhiD, bsdf.ior) / 0.25 : 0.0;
-    vec3 TT           = tt ?  M(sinThetaWi + sinThetaV +  DEG2RAD(bsdf.shift), betaTT) *        NTT(sinThetaD, cosThetaD, cosPhiD, bsdf.ior, bsdf.baseColor) : vec3(0.0);
-    vec3 TRT          = trt ? M(sinThetaWi + sinThetaV +  DEG2RAD(bsdf.shift) * 4.0, betaTRT) * (NTRT(sinThetaD, cosThetaD, cosPhiD,bsdf.ior, bsdf.baseColor)/TRT_NORMALIZING_FACTOR) : vec3(0.0);
+    float R           = r ?   M(sinThetaWi + sinThetaV +  shiftR, betaR) *   NR(wi, v, cosPhiD, bsdf.ior) / 0.25 : 0.0;
+    vec3 TT           = tt ?  M(sinThetaWi + sinThetaV +  shiftTT, betaTT) *        NTT(sinThetaD, cosThetaD, cosPhiD, bsdf.ior, bsdf.baseColor) : vec3(0.0);
+    vec3 TRT          = trt ? M(sinThetaWi + sinThetaV +  shiftTRT, betaTRT) * (NTRT(sinThetaD, cosThetaD, cosPhiD,bsdf.ior, bsdf.baseColor)/TRT_NORMALIZING_FACTOR) : vec3(0.0);
 
     vec3 albedo       = bsdf.baseColor;
     vec3 specular     = (R * bsdf.Rpower + TT * bsdf.TTpower + TRT * bsdf.TRTpower) / max(0.2, cosThetaD * cosThetaD);

@@ -52,7 +52,7 @@ float computeVarianceShadow(sampler2DArray VSM ,LightUniform light, int lightId,
     float variance = max(moments.y-moments.x*moments.x,0.00002);
 
     float d = projCoords.z - moments.x;
-    float pMax = linstep(0.08,1.0,variance / (variance + d*d));
+    float pMax = linstep(light.shadowBias,1.0,variance / (variance + d*d));
     //}
 
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
