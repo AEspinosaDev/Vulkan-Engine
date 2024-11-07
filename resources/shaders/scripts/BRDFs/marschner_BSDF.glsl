@@ -7,7 +7,10 @@
 #define R_NORMALIZING_FACTOR    1.5
 #define TT_NORMALIZING_FACTOR   1.0
 #define TRT_NORMALIZING_FACTOR  0.01
-const float PI =                3.14159265359;
+#define PI 3.1415926535897932384626433832795
+#define ONE_OVER_PI      (1.0 / PI)
+#define ONE_OVER_PI_HALF (2.0 / PI)
+#define DEG2RAD(x) ((x) / 180.0 * PI)
 
 
 struct                          MarschnerBSDF{
@@ -105,9 +108,9 @@ vec3 evalMarschnerBSDF(
     float cosThetaD   = cos(thetaD);
     float sinThetaD   = sin(thetaD);
 
-    float R           = r ?   M(sinThetaWi + sinThetaV - bsdf.shift * 2.0, betaR) *   NR(wi, v, cosPhiD, bsdf.ior) / 0.25 : 0.0;
-    vec3 TT           = tt ?  M(sinThetaWi + sinThetaV + bsdf.shift, betaTT) *        NTT(sinThetaD, cosThetaD, cosPhiD, bsdf.ior, bsdf.baseColor) : vec3(0.0);
-    vec3 TRT          = trt ? M(sinThetaWi + sinThetaV + bsdf.shift * 4.0, betaTRT) * (NTRT(sinThetaD, cosThetaD, cosPhiD,bsdf.ior, bsdf.baseColor)/TRT_NORMALIZING_FACTOR) : vec3(0.0);
+    float R           = r ?   M(sinThetaWi + sinThetaV - DEG2RAD(bsdf.shift) * 2.0, betaR) *   NR(wi, v, cosPhiD, bsdf.ior) / 0.25 : 0.0;
+    vec3 TT           = tt ?  M(sinThetaWi + sinThetaV +  DEG2RAD(bsdf.shift), betaTT) *        NTT(sinThetaD, cosThetaD, cosPhiD, bsdf.ior, bsdf.baseColor) : vec3(0.0);
+    vec3 TRT          = trt ? M(sinThetaWi + sinThetaV +  DEG2RAD(bsdf.shift) * 4.0, betaTRT) * (NTRT(sinThetaD, cosThetaD, cosPhiD,bsdf.ior, bsdf.baseColor)/TRT_NORMALIZING_FACTOR) : vec3(0.0);
 
     vec3 albedo       = bsdf.baseColor;
     vec3 specular     = (R * bsdf.Rpower + TT * bsdf.TTpower + TRT * bsdf.TRTpower) / max(0.2, cosThetaD * cosThetaD);

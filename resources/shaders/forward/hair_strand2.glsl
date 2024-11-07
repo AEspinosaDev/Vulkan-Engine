@@ -51,7 +51,6 @@ layout(location = 6) out vec3 g_modelDir;
 layout(location = 7) out vec3 g_color;
 layout(location = 8) out vec3 g_origin;
 
-float thickness = 0.02;
 
 void emitQuadPoint(
     vec4 origin,
@@ -154,8 +153,9 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool occlusion;
 } material;
 
-layout(set = 2, binding = 0) uniform sampler2D mTexture;
-layout(set = 2, binding = 1) uniform sampler2D nTexture;
+layout(set = 2, binding = 0) uniform sampler2D mTex;
+layout(set = 2, binding = 1) uniform sampler2D nTex1;
+layout(set = 2, binding = 1) uniform sampler2D nTex2;
 
 MarschnerLookupBSDF bsdf;
 
@@ -198,8 +198,9 @@ vec3 computeAmbient(vec3 n) {
                 normalize(-g_pos),
                 texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity,
                 bsdf, 
-                mTexture,
-                nTexture,
+                mTex,
+                nTex1,
+                nTex2,
                 material.r, 
                 false,  //Take oput transmitance
                 material.trt);
@@ -232,8 +233,9 @@ void main() {
                 normalize(-g_pos),
                 scene.lights[i].color * scene.lights[i].intensity,
                 bsdf, 
-                mTexture,
-                nTexture,
+                mTex,
+                nTex1,
+                nTex2,
                 material.r, 
                 material.tt, 
                 material.trt);

@@ -683,7 +683,7 @@ void ObjectExplorerWidget::render() {
                 }
 
                 float shift = mat->get_shift();
-                if (ImGui::DragFloat("Shift (radians)", &shift, 0.01f, 0.088f, 0.17f))
+                if (ImGui::DragFloat("Shift (degrees)", &shift, 0.1f, 1.0f, 20.0f))
                 {
                     mat->set_shift(shift); // Update shift
                 }
