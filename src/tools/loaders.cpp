@@ -1,16 +1,18 @@
 #include <engine/tools/loaders.h>
 
-void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fileName, bool importMaterials,
-                                    bool calculateTangents, bool overrideGeometry)
-{
+void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
+                                    const std::string fileName,
+                                    bool              importMaterials,
+                                    bool              calculateTangents,
+                                    bool              overrideGeometry) {
     // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
 
     // Preparing output
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
+    tinyobj::attrib_t                attrib;
+    std::vector<tinyobj::shape_t>    shapes;
     std::vector<tinyobj::material_t> materials;
-    std::string warn;
-    std::string err;
+    std::string                      warn;
+    std::string                      err;
 
     tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, fileName.c_str(), importMaterials ? nullptr : nullptr);
 
@@ -26,17 +28,17 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fi
         return;
     }
 
-    std::vector<Graphics::Utils::Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<Graphics::Utils::Vertex>                  vertices;
+    std::vector<uint32_t>                                 indices;
     std::unordered_map<Graphics::Utils::Vertex, uint32_t> uniqueVertices;
 
     size_t shape_id = 0;
-    for (const tinyobj::shape_t &shape : shapes)
+    for (const tinyobj::shape_t& shape : shapes)
     {
         if (!shape.mesh.indices.empty())
         {
             // IS INDEXED
-            for (const tinyobj::index_t &index : shape.mesh.indices)
+            for (const tinyobj::index_t& index : shape.mesh.indices)
             {
                 Graphics::Utils::Vertex vertex = {};
 
@@ -78,8 +80,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fi
 
                 indices.push_back(uniqueVertices[vertex]);
             }
-        }
-        else
+        } else
             // NOT INDEXED
             for (size_t i = 0; i < shape.mesh.num_face_vertices.size(); i++)
             {
@@ -130,7 +131,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fi
 
         if (overrideGeometry)
         {
-            Core::Geometry *oldGeom = mesh->get_geometry(shape_id);
+            Core::Geometry* oldGeom = mesh->get_geometry(shape_id);
             if (oldGeom)
             {
                 oldGeom->fill(vertices, indices);
@@ -138,7 +139,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fi
             }
         }
 
-        Core::Geometry *g = new Core::Geometry();
+        Core::Geometry* g = new Core::Geometry();
         g->fill(vertices, indices);
         mesh->push_geometry(g);
 
@@ -148,12 +149,15 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh *const mesh, const std::string fi
     return;
 }
 
-void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fileName, bool preload, bool verbose,
-                                    bool calculateTangents, bool overrideGeometry)
-{
+void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh,
+                                    const std::string fileName,
+                                    bool              preload,
+                                    bool              verbose,
+                                    bool              calculateTangents,
+                                    bool              overrideGeometry) {
 
     std::unique_ptr<std::istream> file_stream;
-    std::vector<uint8_t> byte_buffer;
+    std::vector<uint8_t>          byte_buffer;
     try
     {
         // For most files < 1gb, pre-loading the entire file upfront and wrapping it into a
@@ -161,9 +165,8 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         if (preload)
         {
             byte_buffer = Graphics::Utils::read_file_binary(fileName);
-            file_stream.reset(new Graphics::Utils::memory_stream((char *)byte_buffer.data(), byte_buffer.size()));
-        }
-        else
+            file_stream.reset(new Graphics::Utils::memory_stream((char*)byte_buffer.data(), byte_buffer.size()));
+        } else
         {
             file_stream.reset(new std::ifstream(fileName, std::ios::binary));
         }
@@ -181,15 +184,15 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         if (verbose)
         {
             std::cout << "\t[ply_header] Type: " << (file.is_binary_file() ? "binary" : "ascii") << std::endl;
-            for (const auto &c : file.get_comments())
+            for (const auto& c : file.get_comments())
                 std::cout << "\t[ply_header] Comment: " << c << std::endl;
-            for (const auto &c : file.get_info())
+            for (const auto& c : file.get_info())
                 std::cout << "\t[ply_header] Info: " << c << std::endl;
 
-            for (const auto &e : file.get_elements())
+            for (const auto& e : file.get_elements())
             {
                 std::cout << "\t[ply_header] element: " << e.name << " (" << e.size << ")" << std::endl;
-                for (const auto &p : e.properties)
+                for (const auto& p : e.properties)
                 {
                     std::cout << "\t[ply_header] \tproperty: " << p.name
                               << " (type=" << tinyply::PropertyTable[p.propertyType].str << ")";
@@ -206,19 +209,13 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         // // known to exist in the header prior to reading the data. For brevity of this sample, properties
         // // like vertex position are hard-coded:
         try
-        {
-            positions = file.request_properties_from_element("vertex", {"x", "y", "z"});
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "tinyply exception: " << e.what() << std::endl;
-        }
+        { positions = file.request_properties_from_element("vertex", {"x", "y", "z"}); } catch (const std::exception& e)
+        { std::cerr << "tinyply exception: " << e.what() << std::endl; }
 
         try
         {
             normals = file.request_properties_from_element("vertex", {"nx", "ny", "nz"});
-        }
-        catch (const std::exception &e)
+        } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
@@ -227,8 +224,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         try
         {
             colors = file.request_properties_from_element("vertex", {"red", "green", "blue", "alpha"});
-        }
-        catch (const std::exception &e)
+        } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
@@ -237,28 +233,21 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         try
         {
             colors = file.request_properties_from_element("vertex", {"r", "g", "b", "a"});
-        }
-        catch (const std::exception &e)
+        } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
         }
 
         try
-        {
-            texcoords = file.request_properties_from_element("vertex", {"u", "v"});
-        }
-        catch (const std::exception &e)
+        { texcoords = file.request_properties_from_element("vertex", {"u", "v"}); } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
         }
 
         try
-        {
-            texcoords = file.request_properties_from_element("vertex", {"s", "t"});
-        }
-        catch (const std::exception &e)
+        { texcoords = file.request_properties_from_element("vertex", {"s", "t"}); } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
@@ -267,10 +256,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         // Providing a list size hint (the last argument) is a 2x performance improvement. If you have
         // arbitrary ply files, it is best to leave this 0.
         try
-        {
-            faces = file.request_properties_from_element("face", {"vertex_indices"}, 3);
-        }
-        catch (const std::exception &e)
+        { faces = file.request_properties_from_element("face", {"vertex_indices"}, 3); } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
@@ -281,8 +267,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         try
         {
             tripstrip = file.request_properties_from_element("tristrips", {"vertex_indices"}, 0);
-        }
-        catch (const std::exception &e)
+        } catch (const std::exception& e)
         {
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
@@ -316,20 +301,20 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
         }
 
         std::vector<Graphics::Utils::Vertex> vertices;
-        std::vector<uint32_t> indices;
+        std::vector<uint32_t>                indices;
 
         if (positions)
         {
-            const float *posData = reinterpret_cast<const float *>(positions->buffer.get());
-            const float *normalData;
-            const float *colorData;
-            const float *uvData;
+            const float* posData = reinterpret_cast<const float*>(positions->buffer.get());
+            const float* normalData;
+            const float* colorData;
+            const float* uvData;
             if (normals)
-                normalData = reinterpret_cast<const float *>(normals->buffer.get());
+                normalData = reinterpret_cast<const float*>(normals->buffer.get());
             if (colors)
-                colorData = reinterpret_cast<const float *>(colors->buffer.get());
+                colorData = reinterpret_cast<const float*>(colors->buffer.get());
             if (texcoords)
-                uvData = reinterpret_cast<const float *>(texcoords->buffer.get());
+                uvData = reinterpret_cast<const float*>(texcoords->buffer.get());
 
             for (size_t i = 0; i < positions->count; i++)
             {
@@ -338,12 +323,12 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
                 Vec3 normal =
                     normals ? Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]) : Vec3(0.0f);
                 Vec3 color = colors ? Vec3(colorData[i * 3], colorData[i * 3 + 1], colorData[i * 3 + 2]) : Vec3(1.0f);
-                Vec2 uv = texcoords ? Vec2(uvData[i * 2], uvData[i * 2 + 1]) : Vec2(0.0f);
+                Vec2 uv    = texcoords ? Vec2(uvData[i * 2], uvData[i * 2 + 1]) : Vec2(0.0f);
 
                 vertices.push_back({position, normal, {0.0f, 0.0f, 0.0f}, uv, color});
             }
         }
-        unsigned *facesData = reinterpret_cast<unsigned *>(faces->buffer.get());
+        unsigned* facesData = reinterpret_cast<unsigned*>(faces->buffer.get());
         for (size_t i = 0; i < faces->count; ++i)
         {
             unsigned int vertexIndex1 = static_cast<unsigned int>(facesData[i]);
@@ -362,7 +347,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
 
         if (overrideGeometry)
         {
-            Core::Geometry *oldGeom = mesh->get_geometry();
+            Core::Geometry* oldGeom = mesh->get_geometry();
             if (oldGeom)
             {
                 oldGeom->fill(vertices, indices);
@@ -370,19 +355,17 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh *const mesh, const std::string fi
             return;
         }
 
-        Core::Geometry *g = new Core::Geometry();
+        Core::Geometry* g = new Core::Geometry();
         g->fill(vertices, indices);
         mesh->push_geometry(g);
         mesh->set_file_route(fileName);
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Caught tinyply exception: " << e.what() << std::endl;
-    }
+    } catch (const std::exception& e)
+    { std::cerr << "Caught tinyply exception: " << e.what() << std::endl; }
 }
-void VKFW::Tools::Loaders::load_3D_file(Core::Mesh *const mesh, const std::string fileName, bool asynCall,
-                                        bool overrideGeometry)
-{
+void VKFW::Tools::Loaders::load_3D_file(Core::Mesh* const mesh,
+                                        const std::string fileName,
+                                        bool              asynCall,
+                                        bool              overrideGeometry) {
     size_t dotPosition = fileName.find_last_of(".");
 
     if (dotPosition != std::string::npos)
@@ -396,8 +379,7 @@ void VKFW::Tools::Loaders::load_3D_file(Core::Mesh *const mesh, const std::strin
             {
                 std::thread loadThread(Loaders::load_OBJ, mesh, fileName, false, true, overrideGeometry);
                 loadThread.detach();
-            }
-            else
+            } else
                 Loaders::load_OBJ(mesh, fileName, false, true, overrideGeometry);
 
             return;
@@ -408,8 +390,7 @@ void VKFW::Tools::Loaders::load_3D_file(Core::Mesh *const mesh, const std::strin
             {
                 std::thread loadThread(Loaders::load_PLY, mesh, fileName, true, false, true, overrideGeometry);
                 loadThread.detach();
-            }
-            else
+            } else
                 Loaders::load_PLY(mesh, fileName, true, false, true, overrideGeometry);
 
             return;
@@ -420,22 +401,19 @@ void VKFW::Tools::Loaders::load_3D_file(Core::Mesh *const mesh, const std::strin
             {
                 std::thread loadThread(Loaders::load_hair, mesh, fileName.c_str());
                 loadThread.detach();
-            }
-            else
+            } else
                 Loaders::load_hair(mesh, fileName.c_str());
 
             return;
         }
 
         std::cerr << "Unsupported file format: " << fileExtension << std::endl;
-    }
-    else
+    } else
     {
         std::cerr << "Invalid file name: " << fileName << std::endl;
     }
 }
-void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileName)
-{
+void VKFW::Tools::Loaders::load_hair(Core::Mesh* const mesh, const char* fileName) {
 
 #define HAIR_FILE_SEGMENTS_BIT 1
 #define HAIR_FILE_POINTS_BIT 2
@@ -444,46 +422,45 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
 #define HAIR_FILE_COLORS_BIT 16
 #define HAIR_FILE_INFO_SIZE 88
 
-    unsigned short *segments;
-    float *points;
-    float *dirs;
-    float *thickness;
-    float *transparency;
-    float *colors;
+    unsigned short* segments;
+    float*          points;
+    float*          dirs;
+    float*          thickness;
+    float*          transparency;
+    float*          colors;
 
-    struct Header
-    {
-        char signature[4];        //!< This should be "HAIR"
-        unsigned int hair_count;  //!< number of hair strands
-        unsigned int point_count; //!< total number of points of all strands
-        unsigned int arrays;      //!< bit array of data in the file
+    struct Header {
+        char         signature[4]; //!< This should be "HAIR"
+        unsigned int hair_count;   //!< number of hair strands
+        unsigned int point_count;  //!< total number of points of all strands
+        unsigned int arrays;       //!< bit array of data in the file
 
-        unsigned int d_segments; //!< default number of segments of each strand
-        float d_thickness;       //!< default thickness of hair strands
-        float d_transparency;    //!< default transparency of hair strands
-        float d_color[3];        //!< default color of hair strands
+        unsigned int d_segments;     //!< default number of segments of each strand
+        float        d_thickness;    //!< default thickness of hair strands
+        float        d_transparency; //!< default transparency of hair strands
+        float        d_color[3];     //!< default color of hair strands
 
         char info[HAIR_FILE_INFO_SIZE]; //!< information about the file
     };
 
     Header header;
 
-    header.signature[0] = 'H';
-    header.signature[1] = 'A';
-    header.signature[2] = 'I';
-    header.signature[3] = 'R';
-    header.hair_count = 0;
-    header.point_count = 0;
-    header.arrays = 0; // no arrays
-    header.d_segments = 0;
-    header.d_thickness = 1.0f;
+    header.signature[0]   = 'H';
+    header.signature[1]   = 'A';
+    header.signature[2]   = 'I';
+    header.signature[3]   = 'R';
+    header.hair_count     = 0;
+    header.point_count    = 0;
+    header.arrays         = 0; // no arrays
+    header.d_segments     = 0;
+    header.d_thickness    = 1.0f;
     header.d_transparency = 0.0f;
-    header.d_color[0] = 1.0f;
-    header.d_color[1] = 1.0f;
-    header.d_color[2] = 1.0f;
+    header.d_color[0]     = 1.0f;
+    header.d_color[1]     = 1.0f;
+    header.d_color[2]     = 1.0f;
     memset(header.info, '\0', HAIR_FILE_INFO_SIZE);
 
-    FILE *fp;
+    FILE* fp;
     fp = fopen(fileName, "rb");
     if (fp == nullptr)
         return;
@@ -502,7 +479,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     // Read segments array
     if (header.arrays & HAIR_FILE_SEGMENTS_BIT)
     {
-        segments = new unsigned short[header.hair_count];
+        segments         = new unsigned short[header.hair_count];
         size_t readcount = fread(segments, sizeof(unsigned short), header.hair_count, fp);
         if (readcount < header.hair_count)
         {
@@ -514,7 +491,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     // Read points array
     if (header.arrays & HAIR_FILE_POINTS_BIT)
     {
-        points = new float[header.point_count * 3];
+        points           = new float[header.point_count * 3];
         size_t readcount = fread(points, sizeof(float), header.point_count * 3, fp);
         if (readcount < header.point_count * 3)
         {
@@ -526,7 +503,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     // Read thickness array
     if (header.arrays & HAIR_FILE_THICKNESS_BIT)
     {
-        thickness = new float[header.point_count];
+        thickness        = new float[header.point_count];
         size_t readcount = fread(thickness, sizeof(float), header.point_count, fp);
         if (readcount < header.point_count)
         {
@@ -538,7 +515,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     // Read thickness array
     if (header.arrays & HAIR_FILE_TRANSPARENCY_BIT)
     {
-        transparency = new float[header.point_count];
+        transparency     = new float[header.point_count];
         size_t readcount = fread(transparency, sizeof(float), header.point_count, fp);
         if (readcount < header.point_count)
         {
@@ -550,7 +527,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     // Read colors array
     if (header.arrays & HAIR_FILE_COLORS_BIT)
     {
-        colors = new float[header.point_count * 3];
+        colors           = new float[header.point_count * 3];
         size_t readcount = fread(colors, sizeof(float), header.point_count * 3, fp);
         if (readcount < header.point_count * 3)
         {
@@ -561,43 +538,43 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
 
     fclose(fp);
 
-    auto computeDirection = [](float *d, float &d0len, float &d1len, float const *p0, float const *p1,
-                               float const *p2) {
-        // line from p0 to p1
-        float d0[3];
-        d0[0] = p1[0] - p0[0];
-        d0[1] = p1[1] - p0[1];
-        d0[2] = p1[2] - p0[2];
-        float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
-        d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+    auto computeDirection =
+        [](float* d, float& d0len, float& d1len, float const* p0, float const* p1, float const* p2) {
+            // line from p0 to p1
+            float d0[3];
+            d0[0]         = p1[0] - p0[0];
+            d0[1]         = p1[1] - p0[1];
+            d0[2]         = p1[2] - p0[2];
+            float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+            d0len         = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
 
-        // line from p1 to p2
-        float d1[3];
-        d1[0] = p2[0] - p1[0];
-        d1[1] = p2[1] - p1[1];
-        d1[2] = p2[2] - p1[2];
-        float d1lensq = d1[0] * d1[0] + d1[1] * d1[1] + d1[2] * d1[2];
-        d1len = (d1lensq > 0) ? (float)sqrt(d1lensq) : 1.0f;
+            // line from p1 to p2
+            float d1[3];
+            d1[0]         = p2[0] - p1[0];
+            d1[1]         = p2[1] - p1[1];
+            d1[2]         = p2[2] - p1[2];
+            float d1lensq = d1[0] * d1[0] + d1[1] * d1[1] + d1[2] * d1[2];
+            d1len         = (d1lensq > 0) ? (float)sqrt(d1lensq) : 1.0f;
 
-        // make sure that d0 and d1 has the same length
-        d0[0] *= d1len / d0len;
-        d0[1] *= d1len / d0len;
-        d0[2] *= d1len / d0len;
+            // make sure that d0 and d1 has the same length
+            d0[0] *= d1len / d0len;
+            d0[1] *= d1len / d0len;
+            d0[2] *= d1len / d0len;
 
-        // direction at p1
-        d[0] = d0[0] + d1[0];
-        d[1] = d0[1] + d1[1];
-        d[2] = d0[2] + d1[2];
-        float dlensq = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
-        float dlen = (dlensq > 0) ? (float)sqrt(dlensq) : 1.0f;
-        d[0] /= dlen;
-        d[1] /= dlen;
-        d[2] /= dlen;
+            // direction at p1
+            d[0]         = d0[0] + d1[0];
+            d[1]         = d0[1] + d1[1];
+            d[2]         = d0[2] + d1[2];
+            float dlensq = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+            float dlen   = (dlensq > 0) ? (float)sqrt(dlensq) : 1.0f;
+            d[0] /= dlen;
+            d[1] /= dlen;
+            d[2] /= dlen;
 
-        // return d0len;
-    };
+            // return d0len;
+        };
 
-    auto fillDirectionArray = [=](float *dir) {
+    auto fillDirectionArray = [=](float* dir) {
         if (dir == nullptr || header.point_count <= 0 || points == nullptr)
             return;
 
@@ -609,17 +586,17 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
             {
                 // direction at point1
                 float len0, len1;
-                computeDirection(&dir[(p + 1) * 3], len0, len1, &points[p * 3], &points[(p + 1) * 3],
-                                 &points[(p + 2) * 3]);
+                computeDirection(
+                    &dir[(p + 1) * 3], len0, len1, &points[p * 3], &points[(p + 1) * 3], &points[(p + 2) * 3]);
 
                 // direction at point0
                 float d0[3];
-                d0[0] = points[(p + 1) * 3] - dir[(p + 1) * 3] * len0 * 0.3333f - points[p * 3];
-                d0[1] = points[(p + 1) * 3 + 1] - dir[(p + 1) * 3 + 1] * len0 * 0.3333f - points[p * 3 + 1];
-                d0[2] = points[(p + 1) * 3 + 2] - dir[(p + 1) * 3 + 2] * len0 * 0.3333f - points[p * 3 + 2];
-                float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
-                float d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
-                dir[p * 3] = d0[0] / d0len;
+                d0[0]          = points[(p + 1) * 3] - dir[(p + 1) * 3] * len0 * 0.3333f - points[p * 3];
+                d0[1]          = points[(p + 1) * 3 + 1] - dir[(p + 1) * 3 + 1] * len0 * 0.3333f - points[p * 3 + 1];
+                d0[2]          = points[(p + 1) * 3 + 2] - dir[(p + 1) * 3 + 2] * len0 * 0.3333f - points[p * 3 + 2];
+                float d0lensq  = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+                float d0len    = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+                dir[p * 3]     = d0[0] / d0len;
                 dir[p * 3 + 1] = d0[1] / d0len;
                 dir[p * 3 + 2] = d0[2] / d0len;
 
@@ -629,34 +606,33 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
                 // Compute the direction for the rest
                 for (int t = 2; t < s; t++, p++)
                 {
-                    computeDirection(&dir[p * 3], len0, len1, &points[(p - 1) * 3], &points[p * 3],
-                                     &points[(p + 1) * 3]);
+                    computeDirection(
+                        &dir[p * 3], len0, len1, &points[(p - 1) * 3], &points[p * 3], &points[(p + 1) * 3]);
                 }
 
                 // direction at the last point
-                d0[0] = -points[(p - 1) * 3] + dir[(p - 1) * 3] * len1 * 0.3333f + points[p * 3];
-                d0[1] = -points[(p - 1) * 3 + 1] + dir[(p - 1) * 3 + 1] * len1 * 0.3333f + points[p * 3 + 1];
-                d0[2] = -points[(p - 1) * 3 + 2] + dir[(p - 1) * 3 + 2] * len1 * 0.3333f + points[p * 3 + 2];
-                d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
-                d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
-                dir[p * 3] = d0[0] / d0len;
+                d0[0]          = -points[(p - 1) * 3] + dir[(p - 1) * 3] * len1 * 0.3333f + points[p * 3];
+                d0[1]          = -points[(p - 1) * 3 + 1] + dir[(p - 1) * 3 + 1] * len1 * 0.3333f + points[p * 3 + 1];
+                d0[2]          = -points[(p - 1) * 3 + 2] + dir[(p - 1) * 3 + 2] * len1 * 0.3333f + points[p * 3 + 2];
+                d0lensq        = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+                d0len          = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+                dir[p * 3]     = d0[0] / d0len;
                 dir[p * 3 + 1] = d0[1] / d0len;
                 dir[p * 3 + 2] = d0[2] / d0len;
                 p++;
-            }
-            else if (s > 0)
+            } else if (s > 0)
             {
                 // if it has a single segment
                 float d0[3];
-                d0[0] = points[(p + 1) * 3] - points[p * 3];
-                d0[1] = points[(p + 1) * 3 + 1] - points[p * 3 + 1];
-                d0[2] = points[(p + 1) * 3 + 2] - points[p * 3 + 2];
-                float d0lensq = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
-                float d0len = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
-                dir[p * 3] = d0[0] / d0len;
-                dir[p * 3 + 1] = d0[1] / d0len;
-                dir[p * 3 + 2] = d0[2] / d0len;
-                dir[(p + 1) * 3] = dir[p * 3];
+                d0[0]                = points[(p + 1) * 3] - points[p * 3];
+                d0[1]                = points[(p + 1) * 3 + 1] - points[p * 3 + 1];
+                d0[2]                = points[(p + 1) * 3 + 2] - points[p * 3 + 2];
+                float d0lensq        = d0[0] * d0[0] + d0[1] * d0[1] + d0[2] * d0[2];
+                float d0len          = (d0lensq > 0) ? (float)sqrt(d0lensq) : 1.0f;
+                dir[p * 3]           = d0[0] / d0len;
+                dir[p * 3 + 1]       = d0[1] / d0len;
+                dir[p * 3 + 2]       = d0[2] / d0len;
+                dir[(p + 1) * 3]     = dir[p * 3];
                 dir[(p + 1) * 3 + 1] = dir[p * 3 + 1];
                 dir[(p + 1) * 3 + 2] = dir[p * 3 + 2];
                 p += 2;
@@ -672,12 +648,12 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
     vertices.reserve(header.point_count * 3);
     std::vector<uint32_t> indices;
 
-    size_t index = 0;
+    size_t index   = 0;
     size_t pointId = 0;
     for (size_t hair = 0; hair < header.hair_count; hair++)
     {
-        glm::vec3 color = {((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX};
-        size_t max_segments = segments ? segments[hair] : header.d_segments;
+        glm::vec3 color        = {((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX, ((float)rand()) / RAND_MAX};
+        size_t    max_segments = segments ? segments[hair] : header.d_segments;
         for (size_t i = 0; i < max_segments; i++)
         {
             vertices.push_back({{points[pointId], points[pointId + 1], points[pointId + 2]},
@@ -699,14 +675,16 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh *const mesh, const char *fileNam
         index++;
     }
 
-    Core::Geometry *g = new Core::Geometry();
+    Core::Geometry* g = new Core::Geometry();
     g->fill(vertices, indices);
     mesh->push_geometry(g);
     mesh->set_file_route(std::string(fileName));
 }
 
-void VKFW::Tools::Loaders::load_texture(Core::ITexture *const texture, const std::string fileName, bool asyncCall)
-{
+void VKFW::Tools::Loaders::load_texture(Core::ITexture* const texture,
+                                        const std::string     fileName,
+                                        TextureFormatType     textureFormat,
+                                        bool                  asyncCall) {
     size_t dotPosition = fileName.find_last_of(".");
 
     if (dotPosition != std::string::npos)
@@ -718,11 +696,11 @@ void VKFW::Tools::Loaders::load_texture(Core::ITexture *const texture, const std
         {
             if (asyncCall)
             {
-                std::thread loadThread(Loaders::load_PNG, static_cast<Core::Texture*>(texture), fileName);
+                std::thread loadThread(
+                    Loaders::load_PNG, static_cast<Core::Texture*>(texture), fileName, textureFormat);
                 loadThread.detach();
-            }
-            else
-                Loaders::load_PNG(static_cast<Core::Texture*>(texture), fileName);
+            } else
+                Loaders::load_PNG(static_cast<Core::Texture*>(texture), fileName, textureFormat);
 
             return;
         }
@@ -732,32 +710,43 @@ void VKFW::Tools::Loaders::load_texture(Core::ITexture *const texture, const std
             {
                 std::thread loadThread(Loaders::load_HDRi, static_cast<Core::TextureHDR*>(texture), fileName);
                 loadThread.detach();
-            }
-            else
+            } else
                 Loaders::load_HDRi(static_cast<Core::TextureHDR*>(texture), fileName);
 
             return;
         }
 
         std::cerr << "Unsupported file format: " << fileExtension << std::endl;
-    }
-    else
+    } else
     {
         std::cerr << "Invalid file name: " << fileName << std::endl;
     }
 }
 
-void VKFW::Tools::Loaders::load_PNG(Core::Texture *const texture, const std::string fileName)
-{
-    int w, h, ch;
-    unsigned char *imgCache = nullptr;
-    imgCache = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
+void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
+                                    const std::string    fileName,
+                                    TextureFormatType    textureFormat) {
+    int            w, h, ch;
+    unsigned char* imgCache = nullptr;
+    imgCache                = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
     if (imgCache)
     {
         texture->set_image_cache(imgCache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
-        texture->set_format(SRGBA_8);
-    }
-    else
+        // Set automatically teh best format for each type.
+        // User can override it after, I he need some other more specific format ...
+        switch (textureFormat)
+        {
+        case TextureFormatType::COLOR_FORMAT:
+            texture->set_format(SRGBA_8);
+            break;
+        case TextureFormatType::NORMAL_FORMAT:
+            texture->set_format(RGBA_8U);
+            break;
+        case TextureFormatType::HDR_FORMAT:
+            texture->set_format(SRGBA_16F);
+            break;
+        }
+    } else
     {
 #ifndef NDEBUG
         DEBUG_LOG("Failed to load texture PNG file" + fileName);
@@ -769,17 +758,15 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture *const texture, const std::str
 #endif // DEBUG
 }
 
-void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR *const texture, const std::string fileName)
-{
-    int w, h, ch;
-    float *HDRcache = nullptr;
-    HDRcache = stbi_loadf(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
+void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std::string fileName) {
+    int    w, h, ch;
+    float* HDRcache = nullptr;
+    HDRcache        = stbi_loadf(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
     if (HDRcache)
     {
         texture->set_image_cache(HDRcache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
         texture->set_format(SRGBA_32F);
-    }
-    else
+    } else
     {
 #ifndef NDEBUG
         DEBUG_LOG("Failed to load texture HDRi file" + fileName);

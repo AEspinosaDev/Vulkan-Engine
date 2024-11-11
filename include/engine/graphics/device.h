@@ -14,6 +14,7 @@
 #include <engine/graphics/command_buffer.h>
 #include <engine/graphics/extensions.h>
 #include <engine/graphics/frame.h>
+#include <engine/graphics/framebuffer.h>
 #include <engine/graphics/swapchain.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
@@ -68,6 +69,9 @@ class Device
     inline Swapchain get_swapchain() const {
         return m_swapchain;
     }
+    inline std::unordered_map<QueueType, VkQueue> get_queues() const {
+        return m_queues;
+    }
 
     /*
     INIT AND SHUTDOWN
@@ -115,26 +119,19 @@ class Device
     void create_render_pass(VulkanRenderPass&               rp,
                             std::vector<Attachment>&        attachments,
                             std::vector<SubPassDependency>& dependencies);
-    // void create_graphic_pipeline();
-    // void create_compute_pipeline();
-    // void create_framebuffer();
+
+    void create_framebuffer(Framebuffer&             fbo,
+                            VulkanRenderPass&        renderpass,
+                            std::vector<Attachment>& attachments,
+                            uint32_t                 layers = 1);
 
     /*
     DRAWING
     -----------------------------------------------
     */
 
-    VkResult    aquire_present_image(Frame& currentFrame, uint32_t& imageIndex);
-    void        begin_command_buffer(Frame& currentFrame);
-    void        end_command_buffer(Frame& currentFrame);
-    VkResult    present_image(Frame& currentFrame, uint32_t imageIndex);
-    static void draw_geometry(VkCommandBuffer& cmd,
-                              VertexArrays&    vao,
-                              uint32_t         instanceCount  = 1,
-                              uint32_t         firstOcurrence = 0,
-                              int32_t          offset         = 0,
-                              uint32_t         firstInstance  = 0);
-    static void draw_empty(VkCommandBuffer& cmd, uint32_t vertexCount = 0, uint32_t instanceCount = 1);
+    VkResult aquire_present_image(Frame& currentFrame, uint32_t& imageIndex);
+    VkResult present_image(VkSemaphore signalSemaphore, uint32_t imageIndex);
 
     /*
     DATA TRANSFER

@@ -58,17 +58,11 @@
 #endif
 
 #define _LOG(msg)                                                                                                      \
-    {                                                                                                                  \
-        std::cout << "VKEngine log: " << msg << std::endl;                                                             \
-    }
+    { std::cout << "VKEngine log: " << msg << std::endl; }
 #define DEBUG_LOG(msg)                                                                                                 \
-    {                                                                                                                  \
-        std::cout << "VKEngine debug: " << msg << std::endl;                                                           \
-    }
+    { std::cout << "VKEngine debug: " << msg << std::endl; }
 #define ERR_LOG(msg)                                                                                                   \
-    {                                                                                                                  \
-        std::cerr << "VKEngine error: " << msg << std::endl;                                                           \
-    }
+    { std::cerr << "VKEngine error: " << msg << std::endl; }
 #define VK_CHECK(x)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -121,6 +115,7 @@ typedef math::mat3 Mat3;
 
 typedef VkExtent3D Extent3D;
 typedef VkExtent2D Extent2D;
+typedef VkOffset2D Offset2D;
 
 typedef enum ObjectType
 {
@@ -147,7 +142,8 @@ typedef enum MaskType
 typedef enum CullingMode
 {
     _FRONT = VK_CULL_MODE_FRONT_BIT,
-    _BACK  = VK_CULL_MODE_BACK_BIT
+    _BACK  = VK_CULL_MODE_BACK_BIT,
+    _NO_CULLING = VK_CULL_MODE_NONE,
 } CullingMode;
 
 typedef enum BufferingType
@@ -215,8 +211,11 @@ typedef enum ColorFormatType
     SBGRA_8   = VK_FORMAT_B8G8R8A8_SRGB, // Other order
     SRG_16F   = VK_FORMAT_R16G16_SFLOAT,
     SRG_32F   = VK_FORMAT_R32G32_SFLOAT,
+    SRGB_16F  = VK_FORMAT_R16G16B16_SFLOAT,
+    SRGB_32F  = VK_FORMAT_R32G32B32_SFLOAT,
     SRGBA_16F = VK_FORMAT_R16G16B16A16_SFLOAT, // HDR precission 16
     SRGBA_32F = VK_FORMAT_R32G32B32A32_SFLOAT, // HDR precission 32
+    RGBA_8U   = VK_FORMAT_R8G8B8A8_UNORM,
 } ColorFormatType;
 typedef enum DepthFormatType
 {
@@ -305,7 +304,7 @@ typedef enum VolumeType
 
 typedef enum SyncType
 {
-    NONE_SYNC           = VK_PRESENT_MODE_IMMEDIATE_KHR, // No framerate cap (POTENTIAL TEARING)
+    NONE_SYNC      = VK_PRESENT_MODE_IMMEDIATE_KHR, // No framerate cap (POTENTIAL TEARING)
     MAILBOX_SYNC   = VK_PRESENT_MODE_MAILBOX_KHR,   // Triple buffering (Better V-Sync)
     V_SYNC         = VK_PRESENT_MODE_FIFO_KHR,      // Classic V-Sync
     RELAXED_V_SYNC = VK_PRESENT_MODE_FIFO_RELAXED_KHR,
@@ -346,7 +345,7 @@ enum AttachmentType
 
 enum ShaderStageType
 {
-    NONE_STAGE            = -1,
+    NONE_STAGE      = -1,
     VERTEX          = 0,
     FRAGMENT        = 1,
     GEOMETRY        = 2,
@@ -360,7 +359,6 @@ enum UniformDataType
     DYNAMIC_UNIFORM_BUFFER = 1,
     COMBINED_IMAGE_SAMPLER = 2
 };
-
 
 // Sample count enum: to represent sample counts in a clearer way
 enum class SampleCount
@@ -478,6 +476,21 @@ enum class AccessFlags
     SHADER_READ,
     SHADER_WRITE,
     MAX_ACCESS_FLAGS
+};
+
+enum class TextureFormatType
+{
+    COLOR_FORMAT  = 0,
+    NORMAL_FORMAT = 1,
+    DEPTH_FORMAT  = 2,
+    HDR_FORMAT    = 3,
+};
+
+enum class BindingType
+{
+    GRAPHIC_BINDING    = VK_PIPELINE_BIND_POINT_GRAPHICS,
+    COMPUTE_BINDING    = VK_PIPELINE_BIND_POINT_COMPUTE,
+    RAYTRACING_BINDING = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
 };
 
 VULKAN_ENGINE_NAMESPACE_END

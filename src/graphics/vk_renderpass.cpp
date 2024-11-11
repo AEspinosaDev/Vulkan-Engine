@@ -88,8 +88,10 @@ void VulkanRenderPass::init(VkDevice                        device,
 }
 void VulkanRenderPass::cleanup() {
     if (m_handle != VK_NULL_HANDLE)
+    {
         vkDestroyRenderPass(m_device, m_handle, nullptr);
-    m_handle = VK_NULL_HANDLE;
+        m_handle = VK_NULL_HANDLE;
+    }
 }
 } // namespace Graphics
 VULKAN_ENGINE_NAMESPACE_END

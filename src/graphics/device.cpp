@@ -114,6 +114,12 @@ void Device::create_render_pass(VulkanRenderPass&               rp,
                                 std::vector<SubPassDependency>& dependencies) {
     rp.init(m_handle, attachments, dependencies);
 }
+void Device::create_framebuffer(Framebuffer&             fbo,
+                                VulkanRenderPass&        renderpass,
+                                std::vector<Attachment>& attachments,
+                                uint32_t                 layers) {
+    fbo.init(renderpass, attachments, layers);
+}
 void Device::create_frame(Frame& frame) {
     frame.init(m_handle, m_gpu, m_swapchain.get_surface());
 }
@@ -124,85 +130,21 @@ VkResult Device::aquire_present_image(Frame& currentFrame, uint32_t& imageIndex)
     return result;
 }
 
-void Device::begin_command_buffer(Frame& currentFrame) {
-    VK_CHECK(vkResetFences(m_handle, 1, &currentFrame.renderFence));
-    VK_CHECK(vkResetCommandBuffer(currentFrame.commandBuffer, 0));
+VkResult Device::present_image(VkSemaphore signalSemaphore, uint32_t imageIndex) {
 
-    VkCommandBufferBeginInfo beginInfo = Init::command_buffer_begin_info();
-
-    if (vkBeginCommandBuffer(currentFrame.commandBuffer, &beginInfo) != VK_SUCCESS)
-    {
-        throw VKException("failed to begin recording command buffer!");
-    }
-}
-
-void Device::end_command_buffer(Frame& currentFrame) {
-    if (vkEndCommandBuffer(currentFrame.commandBuffer) != VK_SUCCESS)
-    {
-        throw VKException("failed to record command buffer!");
-    }
-}
-
-VkResult Device::present_image(Frame& currentFrame, uint32_t imageIndex) {
-    VkSubmitInfo submitInfo               = {};
-    submitInfo.pNext                      = nullptr;
-    submitInfo.commandBufferCount         = 1;
-    VkCommandBuffer commandBuffers[]      = {currentFrame.commandBuffer};
-    submitInfo.pCommandBuffers            = commandBuffers;
-    submitInfo.sType                      = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    VkSemaphore          waitSemaphores[] = {currentFrame.presentSemaphore};
-    VkPipelineStageFlags waitStages[]     = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount         = 1;
-    submitInfo.pWaitSemaphores            = waitSemaphores;
-    submitInfo.pWaitDstStageMask          = waitStages;
-    submitInfo.commandBufferCount         = 1;
-    VkSemaphore signalSemaphores[]        = {currentFrame.renderSemaphore};
-    submitInfo.signalSemaphoreCount       = 1;
-    submitInfo.pSignalSemaphores          = signalSemaphores;
-
-    if (vkQueueSubmit(m_queues[QueueType::GRAPHIC], 1, &submitInfo, currentFrame.renderFence) != VK_SUCCESS)
-    {
-        throw VKException("failed to submit draw command buffer!");
-    }
-
-    VkPresentInfoKHR presentInfo   = Init::present_info();
-    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = signalSemaphores;
-    VkSwapchainKHR swapChains[]    = {m_swapchain.get_handle()};
-    presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = swapChains;
-    presentInfo.pImageIndices      = &imageIndex;
+    VkSemaphore      signalSemaphores[] = {signalSemaphore};
+    VkPresentInfoKHR presentInfo        = Init::present_info();
+    presentInfo.sType                   = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount      = 1;
+    presentInfo.pWaitSemaphores         = signalSemaphores;
+    VkSwapchainKHR swapChains[]         = {m_swapchain.get_handle()};
+    presentInfo.swapchainCount          = 1;
+    presentInfo.pSwapchains             = swapChains;
+    presentInfo.pImageIndices           = &imageIndex;
 
     return vkQueuePresentKHR(m_queues[QueueType::PRESENT], &presentInfo);
 }
 
-void Device::draw_geometry(VkCommandBuffer& cmd,
-                           VertexArrays&    vao,
-                           uint32_t         instanceCount,
-                           uint32_t         firstOcurrence,
-                           int32_t          offset,
-                           uint32_t         firstInstance) {
-    PROFILING_EVENT()
-
-    VkBuffer     vertexBuffers[] = {vao.vbo.get_handle()};
-    VkDeviceSize offsets[]       = {0};
-    vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-
-    if (vao.indexCount > 0)
-    {
-        vkCmdBindIndexBuffer(cmd, vao.ibo.get_handle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(cmd, vao.indexCount, instanceCount, firstOcurrence, offset, firstInstance);
-    } else
-    {
-        vkCmdDraw(cmd, vao.vertexCount, instanceCount, firstOcurrence, firstInstance);
-    }
-}
-
-void Device::draw_empty(VkCommandBuffer& cmd, uint32_t vertexCount, uint32_t instanceCount) {
-    PROFILING_EVENT()
-    vkCmdDraw(cmd, vertexCount, instanceCount, 0, 0);
-}
 void Device::upload_vertex_arrays(VertexArrays& vao,
                                   size_t        vboSize,
                                   const void*   vboData,

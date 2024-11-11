@@ -80,20 +80,26 @@ struct SubPassDependency {
 
 class VulkanRenderPass
 {
-    VkRenderPass m_handle = VK_NULL_HANDLE;
-    VkDevice     m_device = VK_NULL_HANDLE;
+    VkRenderPass                   m_handle = VK_NULL_HANDLE;
+    VkDevice                       m_device = VK_NULL_HANDLE;
+  
 
   public:
     VulkanRenderPass() {
     }
 
-    inline VkRenderPass get_handle() const{
+    inline VkRenderPass get_handle() const {
         return m_handle;
     }
+    inline VkDevice get_device_handle() const {
+        return m_device;
+    };
+   
 
-    void init(VkDevice device, std::vector<Attachment>& attachments, std::vector<SubPassDependency>& dependencies);
+    void init(VkDevice device, std::vector<Attachment> &attachments, std::vector<SubPassDependency> &dependencies);
 
     void cleanup();
+    
 };
 
 } // namespace Graphics

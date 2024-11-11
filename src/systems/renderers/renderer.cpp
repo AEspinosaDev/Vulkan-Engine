@@ -162,7 +162,8 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     on_before_render(scene);
 
-    m_device.begin_command_buffer(m_frames[m_currentFrame]);
+    Graphics::CommandBuffer* cmd = m_frames[m_currentFrame].commandBuffer;
+    cmd->begin(m_frames[m_currentFrame].renderFence);
 
     if (scene->get_skybox())
         if (scene->get_skybox()->update_enviroment())
@@ -174,9 +175,13 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     m_renderPipeline.render(m_currentFrame, scene, imageIndex);
 
-    m_device.end_command_buffer(m_frames[m_currentFrame]);
+    cmd->end();
+    cmd->submit(m_device.get_queues()[QueueType::GRAPHIC],
+                m_frames[m_currentFrame].presentSemaphore,
+                m_frames[m_currentFrame].renderSemaphore,
+                m_frames[m_currentFrame].renderFence);
 
-    VkResult renderResult = m_device.present_image(m_frames[m_currentFrame], imageIndex);
+    VkResult renderResult = m_device.present_image(m_frames[m_currentFrame].renderSemaphore, imageIndex);
 
     on_after_render(renderResult, scene);
 }

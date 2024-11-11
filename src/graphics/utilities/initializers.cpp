@@ -15,7 +15,7 @@ VkCommandPoolCreateInfo Init::command_pool_create_info(uint32_t                 
 }
 
 VkCommandBufferAllocateInfo
-Init::command_buffer_allocate_info(VkCommandPool&       pool,
+Init::command_buffer_allocate_info(VkCommandPool       pool,
                                    uint32_t             count /*= 1*/,
                                    VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/) {
     VkCommandBufferAllocateInfo info = {};
@@ -38,7 +38,7 @@ VkCommandBufferBeginInfo Init::command_buffer_begin_info(VkCommandBufferUsageFla
     return info;
 }
 
-VkFramebufferCreateInfo Init::framebuffer_create_info(VkRenderPass renderPass, VkExtent2D& extent) {
+VkFramebufferCreateInfo Init::framebuffer_create_info(VkRenderPass renderPass, VkExtent2D extent) {
     VkFramebufferCreateInfo info = {};
     info.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     info.pNext                   = nullptr;

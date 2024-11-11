@@ -26,8 +26,6 @@ void FXAAPass::setup_attachments() {
 
     m_dependencies[0] = Graphics::SubPassDependency(
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
-
-  
 }
 void FXAAPass::setup_uniforms() {
     // Init and configure local descriptors
@@ -59,39 +57,24 @@ void FXAAPass::setup_shader_passes() {
 }
 
 void FXAAPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
-    VkCommandBuffer cmd = RenderPass::frames[frameIndex].commandBuffer;
 
-    begin(cmd, presentImageIndex);
-
-    VkViewport viewport = Init::viewport(m_extent);
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = m_extent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    CommandBuffer* cmd = RenderPass::frames[frameIndex].commandBuffer;
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
+    cmd->set_viewport(m_extent);
 
     ShaderPass* shaderPass = m_shaderPasses["fxaa"];
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->get_pipeline());
-    vkCmdBindDescriptorSets(cmd,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            shaderPass->get_layout(),
-                            0,
-                            1,
-                            &m_imageDescriptorSet.handle,
-                            0,
-                            VK_NULL_HANDLE);
+    cmd->bind_shaderpass(*shaderPass);
+    cmd->bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
     Geometry* g = m_vignette->get_geometry();
-    draw(cmd, g);
+    cmd->draw_geometry(*get_render_data(g));
 
     // Draw gui contents
-    if (m_isDefault && Frame::guiEnabled && ImGui::GetDrawData())
-    {
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-    }
+    if (m_isDefault && Frame::guiEnabled)
+        cmd->draw_gui_data();
 
-    end(cmd);
+    cmd->end_renderpass();
 }
 
 void FXAAPass::connect_to_previous_images(std::vector<Image> images) {

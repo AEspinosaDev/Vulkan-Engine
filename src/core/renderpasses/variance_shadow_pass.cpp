@@ -32,15 +32,13 @@ void VarianceShadowPass::setup_attachments() {
     m_dependencies.resize(2);
 
     m_dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
     m_dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
-   
     m_isResizeable = false;
-   
 }
 void VarianceShadowPass::setup_uniforms() {
 
@@ -155,21 +153,14 @@ void VarianceShadowPass::setup_shader_passes() {
 void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
-    VkCommandBuffer cmd = RenderPass::frames[frameIndex].commandBuffer;
+    CommandBuffer *cmd = RenderPass::frames[frameIndex].commandBuffer;
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
+    cmd->set_viewport(m_extent);
 
-    begin(cmd, presentImageIndex);
-
-    VkViewport viewport = Init::viewport(m_extent);
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = m_extent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-    vkCmdSetDepthBiasEnable(cmd, true);
+    cmd->set_depth_bias_enable(true);
     float depthBiasConstant = 0.0;
     float depthBiasSlope    = 0.0f;
-    vkCmdSetDepthBias(cmd, depthBiasConstant, 0.0f, depthBiasSlope);
+    cmd->set_depth_bias(depthBiasConstant, 0.0f, depthBiasSlope);
 
     int mesh_idx = 0;
     for (Mesh* m : scene->get_meshes())
@@ -179,7 +170,6 @@ void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_
             if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
             {
                 uint32_t objectOffset = RenderPass::frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
-                uint32_t globalOffset = 0; // DEPENDENCY !!!!
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
@@ -192,45 +182,28 @@ void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_
                             ? m_shaderPasses["shadowTri"]
                             : m_shaderPasses["shadowLine"];
 
-                    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->get_pipeline());
+                    cmd->set_depth_test_enable(mat->get_parameters().depthTest);
+                    cmd->set_depth_write_enable(mat->get_parameters().depthWrite);
+                    cmd->set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
+                                                                        : CullingMode::_NO_CULLING);
 
-                    vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
-                    vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
-                    vkCmdSetCullMode(cmd,
-                                     mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling
-                                                                       : VK_CULL_MODE_NONE);
-
+                    cmd->bind_shaderpass(*shaderPass);
                     // GLOBAL LAYOUT BINDING
-                    uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                    vkCmdBindDescriptorSets(cmd,
-                                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            shaderPass->get_layout(),
-                                            0,
-                                            1,
-                                            &m_descriptors[frameIndex].globalDescritor.handle,
-                                            2,
-                                            globalOffsets);
-
+                    cmd->bind_descriptor_set(m_descriptors[frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
                     // PER OBJECT LAYOUT BINDING
-                    uint32_t objectOffsets[] = {objectOffset, objectOffset};
-                    vkCmdBindDescriptorSets(cmd,
-                                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            shaderPass->get_layout(),
-                                            1,
-                                            1,
-                                            &m_descriptors[frameIndex].objectDescritor.handle,
-                                            2,
-                                            objectOffsets);
+                    cmd->bind_descriptor_set(
+                        m_descriptors[frameIndex].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
 
+                    // DRAW
                     Geometry* g = m->get_geometry(i);
-                    draw(cmd, g);
+                    cmd->draw_geometry(*get_render_data(g));
                 }
             }
             mesh_idx++;
         }
     }
 
-    end(cmd);
+    cmd->end_renderpass();
 }
 
 } // namespace Core

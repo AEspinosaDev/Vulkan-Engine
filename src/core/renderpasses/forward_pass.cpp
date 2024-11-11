@@ -36,7 +36,7 @@ void ForwardPass::setup_attachments() {
                                  AttachmentType::RESOLVE_ATTACHMENT,
                                  VK_IMAGE_ASPECT_COLOR_BIT,
                                  VK_IMAGE_VIEW_TYPE_2D);
-        resolveAttachment.isPresentImage =  multisampled ? true : false;
+        resolveAttachment.isPresentImage = multisampled ? true : false;
         m_attachments.push_back(resolveAttachment);
     }
 
@@ -54,13 +54,11 @@ void ForwardPass::setup_attachments() {
     m_dependencies.resize(2);
 
     m_dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
     m_dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-
-  
+                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 }
 void ForwardPass::setup_uniforms() {
 
@@ -268,17 +266,9 @@ void ForwardPass::setup_shader_passes() {
 void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
-    VkCommandBuffer cmd = RenderPass::frames[frameIndex].commandBuffer;
-
-    begin(cmd, presentImageIndex);
-
-    // Viewport setup
-    VkViewport viewport = Init::viewport(m_extent);
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = m_extent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    CommandBuffer* cmd = RenderPass::frames[frameIndex].commandBuffer;
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
+    cmd->set_viewport(m_extent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -297,61 +287,32 @@ void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t prese
                     // Offset calculation
                     uint32_t objectOffset =
                         RenderPass::frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
-                    uint32_t globalOffset = 0;
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
                         Geometry*  g   = m->get_geometry(i);
                         IMaterial* mat = m->get_material(g->get_material_ID());
 
-                        // Setup per object render state
-
-                        vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
-                        vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
-                        vkCmdSetCullMode(cmd,
-                                         mat->get_parameters().faceCulling
-                                             ? (VkCullModeFlags)mat->get_parameters().culling
-                                             : VK_CULL_MODE_NONE);
+                        cmd->set_depth_test_enable(mat->get_parameters().depthTest);
+                        cmd->set_depth_write_enable(mat->get_parameters().depthWrite);
+                        cmd->set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
+                                                                             : CullingMode::_NO_CULLING);
 
                         ShaderPass* shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
                         // Bind pipeline
-                        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->get_pipeline());
-
+                        cmd->bind_shaderpass(*shaderPass);
                         // GLOBAL LAYOUT BINDING
-                        uint32_t globalOffsets[] = {globalOffset, globalOffset};
-                        vkCmdBindDescriptorSets(cmd,
-                                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                shaderPass->get_layout(),
-                                                0,
-                                                1,
-                                                &m_descriptors[frameIndex].globalDescritor.handle,
-                                                2,
-                                                globalOffsets);
-
+                        cmd->bind_descriptor_set(m_descriptors[frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
                         // PER OBJECT LAYOUT BINDING
-                        uint32_t objectOffsets[] = {objectOffset, objectOffset};
-                        vkCmdBindDescriptorSets(cmd,
-                                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                shaderPass->get_layout(),
-                                                1,
-                                                1,
-                                                &m_descriptors[frameIndex].objectDescritor.handle,
-                                                2,
-                                                objectOffsets);
-
+                        cmd->bind_descriptor_set(
+                            m_descriptors[frameIndex].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
-                            vkCmdBindDescriptorSets(cmd,
-                                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                    shaderPass->get_layout(),
-                                                    2,
-                                                    1,
-                                                    &mat->get_texture_descriptor().handle,
-                                                    0,
-                                                    nullptr);
+                            cmd->bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
 
-                        draw(cmd, g);
+                        // DRAW
+                        cmd->draw_geometry(*get_render_data(g));
                     }
                 }
             }
@@ -362,38 +323,29 @@ void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t prese
         {
             if (scene->get_skybox()->is_active())
             {
-                vkCmdSetDepthTestEnable(cmd, VK_TRUE);
-                vkCmdSetDepthWriteEnable(cmd, VK_TRUE);
-                vkCmdSetCullMode(cmd, VK_CULL_MODE_NONE);
+
+                cmd->set_depth_test_enable(true);
+                cmd->set_depth_write_enable(true);
+                cmd->set_cull_mode(CullingMode::_NO_CULLING);
 
                 ShaderPass* shaderPass = m_shaderPasses["skybox"];
 
                 // Bind pipeline
-                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->get_pipeline());
+                cmd->bind_shaderpass(*shaderPass);
 
                 // GLOBAL LAYOUT BINDING
-                uint32_t globalOffsets[] = {0, 0};
-                vkCmdBindDescriptorSets(cmd,
-                                        VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        shaderPass->get_layout(),
-                                        0,
-                                        1,
-                                        &m_descriptors[frameIndex].globalDescritor.handle,
-                                        2,
-                                        globalOffsets);
+                cmd->bind_descriptor_set(m_descriptors[frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
 
-                draw(cmd, scene->get_skybox()->get_box());
+                cmd->draw_geometry(*get_render_data(scene->get_skybox()->get_box()));
             }
         }
     }
 
     // Draw gui contents
-    if (m_isDefault && Frame::guiEnabled && ImGui::GetDrawData())
-    {
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-    }
+    if (m_isDefault && Frame::guiEnabled)
+        cmd->draw_gui_data();
 
-    end(cmd);
+    cmd->end_renderpass();
 }
 
 void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

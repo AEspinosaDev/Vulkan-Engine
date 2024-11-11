@@ -15,32 +15,32 @@ void RenderPass::setup() {
     setup_shader_passes();
 }
 
-void RenderPass::begin(VkCommandBuffer& cmd, uint32_t framebufferId, VkSubpassContents subpassContents) {
-    VkRenderPassBeginInfo renderPassInfo =
-        Init::renderpass_begin_info(m_handle.get_handle(), m_extent, m_framebuffer_handles[framebufferId]);
+// void RenderPass::begin(VkCommandBuffer& cmd, uint32_t framebufferId, VkSubpassContents subpassContents) {
+//     VkRenderPassBeginInfo renderPassInfo =
+//         Init::renderpass_begin_info(m_handle.get_handle(), m_extent, m_framebuffers[framebufferId].get_handle());
 
-    std::vector<VkClearValue> clearValues;
-    clearValues.reserve(m_attachments.size());
-    for (size_t i = 0; i < m_attachments.size(); i++)
-    {
-        clearValues.push_back(m_attachments[i].clearValue);
-    }
+//     std::vector<VkClearValue> clearValues;
+//     clearValues.reserve(m_attachments.size());
+//     for (size_t i = 0; i < m_attachments.size(); i++)
+//     {
+//         clearValues.push_back(m_attachments[i].clearValue);
+//     }
 
-    renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
-    renderPassInfo.pClearValues    = clearValues.data();
+//     renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
+//     renderPassInfo.pClearValues    = clearValues.data();
 
-    vkCmdBeginRenderPass(cmd, &renderPassInfo, subpassContents);
-}
+//     vkCmdBeginRenderPass(cmd, &renderPassInfo, subpassContents);
+// }
 
-void RenderPass::end(VkCommandBuffer& cmd) {
-    vkCmdEndRenderPass(cmd);
-}
-void RenderPass::draw(VkCommandBuffer& cmd, Geometry* g) {
-    PROFILING_EVENT()
-    VertexArrays* rd = get_render_data(g);
-    if (rd->loadedOnGPU)
-        Device::draw_geometry(cmd, *rd);
-}
+// void RenderPass::end(VkCommandBuffer& cmd) {
+//     vkCmdEndRenderPass(cmd);
+// }
+// void RenderPass::draw(VkCommandBuffer& cmd, Geometry* g) {
+//     PROFILING_EVENT()
+//     VertexArrays* rd = get_render_data(g);
+//     if (rd->loadedOnGPU)
+//         Device::draw_geometry(cmd, *rd);
+// }
 void RenderPass::cleanup() {
     if (!m_initiatized)
         return;
@@ -56,59 +56,44 @@ void RenderPass::cleanup() {
 void RenderPass::create_framebuffer() {
     if (!m_initiatized)
         return;
-    // Prepare data structures
-    m_framebuffer_handles.resize(m_framebufferCount);
 
-    uint32_t                 attachmentCount = m_attachments.size();
-    std::vector<VkImageView> viewAttachments;
-    viewAttachments.resize(attachmentCount);
-
-    // If default
+    const uint32_t          ATTACHMENT_COUNT = m_attachments.size();
+    std::vector<Attachment> framebufferAttachments;
+    framebufferAttachments.resize(ATTACHMENT_COUNT);
     size_t presentViewIndex{0};
 
-    for (size_t i = 0; i < attachmentCount; i++)
+    for (size_t i = 0; i < ATTACHMENT_COUNT; i++)
     {
         // Create image and image view for framebuffer
         if (!m_attachments[i].isPresentImage) // If its not default renderpass
         {
             m_attachments[i].image.extent        = {m_extent.width, m_extent.height, 1};
             m_attachments[i].image.config.layers = m_framebufferImageDepth;
-
             m_device->create_image(m_attachments[i].image, false);
-
             m_attachments[i].image.create_view();
-
             m_attachments[i].image.create_sampler();
 
-            viewAttachments[i] = m_attachments[i].image.view;
+            framebufferAttachments[i] = m_attachments[i];
         } else
         {
             presentViewIndex = i;
         }
     }
 
-    for (size_t fb = 0; fb < m_framebufferCount; fb++)
+    for (size_t fb = 0; fb < m_framebuffers.size(); fb++)
     {
         if (m_isDefault) // If its default need swapchain PRESENT images
-            viewAttachments[presentViewIndex] = m_device->get_swapchain().get_present_images()[fb].view;
+            framebufferAttachments[presentViewIndex].image = m_device->get_swapchain().get_present_images()[fb];
 
-        VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(m_handle.get_handle(), m_extent);
-        fbInfo.pAttachments            = viewAttachments.data();
-        fbInfo.attachmentCount         = (uint32_t)viewAttachments.size();
-        fbInfo.layers                  = m_framebufferImageDepth;
-
-        if (vkCreateFramebuffer(m_device->get_handle(), &fbInfo, nullptr, &m_framebuffer_handles[fb]) != VK_SUCCESS)
-        {
-            throw VKException("failed to create framebuffer!");
-        }
+        m_device->create_framebuffer(m_framebuffers[fb], m_handle, framebufferAttachments, m_framebufferImageDepth);
     }
 }
 
 void RenderPass::clean_framebuffer() {
     if (!m_initiatized)
         return;
-    for (VkFramebuffer& fb : m_framebuffer_handles)
-        vkDestroyFramebuffer(m_device->get_handle(), fb, nullptr);
+    for (Framebuffer& fb : m_framebuffers)
+        fb.cleanup();
 
     for (size_t i = 0; i < m_attachments.size(); i++)
     {

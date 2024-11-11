@@ -16,6 +16,7 @@
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/device.h>
 #include <engine/graphics/frame.h>
+#include <engine/graphics/framebuffer.h>
 #include <engine/graphics/swapchain.h>
 #include <engine/graphics/vk_renderpass.h>
 
@@ -39,12 +40,12 @@ class RenderPass
     Graphics::DescriptorPool                               m_descriptorPool{};
     std::vector<Graphics::Attachment>                      m_attachments;
     std::vector<Graphics::SubPassDependency>               m_dependencies;
+    std::vector<Graphics::Framebuffer>                     m_framebuffers;
     std::unordered_map<std::string, Graphics::ShaderPass*> m_shaderPasses;
-    std::vector<VkFramebuffer>                             m_framebuffer_handles;
 
     Extent2D m_extent;
-    uint32_t m_framebufferCount;      // How many framebuffers will be attached to this
     uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
+
     // Key: Renderpass ID
     // Value: Framebuffer's image ID inside renderpass
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
@@ -54,21 +55,6 @@ class RenderPass
     bool m_enabled{true};
     bool m_isDefault;
 
-    /**
-     * Begin render pass. Should be called at the start of the render function
-     */
-    void begin(VkCommandBuffer&  cmd,
-               uint32_t          framebufferId   = 0,
-               VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
-    /**
-     * End render pass.  Should be called at the end of the render function
-     */
-    void end(VkCommandBuffer& cmd);
-
-    /**
-     * Draw given geometry
-     */
-    void draw(VkCommandBuffer& cmd, Geometry* g);
 
   public:
     static std::vector<Graphics::Frame> frames;
@@ -80,9 +66,9 @@ class RenderPass
                bool              isDefault        = false)
         : m_device(ctx)
         , m_extent(extent)
-        , m_framebufferCount(framebufferCount)
         , m_framebufferImageDepth(framebufferDepth)
         , m_isDefault(isDefault) {
+        m_framebuffers.resize(framebufferCount);
     }
 
 #pragma region Getters & Setters
@@ -104,8 +90,8 @@ class RenderPass
     inline Graphics::VulkanRenderPass get_handle() const {
         return m_handle;
     }
-    inline std::vector<VkFramebuffer> const get_framebuffers_handle() const {
-        return m_framebuffer_handles;
+    inline std::vector<Graphics::Framebuffer> const get_framebuffers() const {
+        return m_framebuffers;
     }
 
     inline std::vector<Graphics::Attachment> get_attachments() {

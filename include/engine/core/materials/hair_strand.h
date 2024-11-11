@@ -243,9 +243,15 @@ class HairStrandMaterial2 : public HairStrandMaterial
         m_textures[M]       = new Texture(settings);
         m_textures[N1]      = new Texture(settings);
         m_textures[N2]      = new Texture(settings);
-        Tools::Loaders::load_texture(m_textures[M], ENGINE_RESOURCES_PATH "textures/m.png", false);
-        Tools::Loaders::load_texture(m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", false);
-        Tools::Loaders::load_texture(m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", false);
+        Tools::Loaders::load_texture(
+            m_textures[M], ENGINE_RESOURCES_PATH "textures/m.png", TextureFormatType::COLOR_FORMAT, false);
+        Tools::Loaders::load_texture(
+            m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TextureFormatType::COLOR_FORMAT, false);
+        Tools::Loaders::load_texture(
+            m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TextureFormatType::COLOR_FORMAT, false);
+        m_textures[M]->set_format(RGBA_8U);
+        m_textures[N1]->set_format(RGBA_8U);
+        m_textures[N2]->set_format(RGBA_8U);
         m_textureBindingState[M]  = false;
         m_textureBindingState[N1] = false;
         m_textureBindingState[N2] = false;

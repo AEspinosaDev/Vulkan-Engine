@@ -25,8 +25,6 @@ void PanoramaConverterPass::setup_attachments() {
 
     m_dependencies[0] = Graphics::SubPassDependency(
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
-
-   
 }
 void PanoramaConverterPass::setup_uniforms() {
     // Init and configure local descriptors
@@ -58,33 +56,17 @@ void PanoramaConverterPass::setup_shader_passes() {
 
 void PanoramaConverterPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
 
-    VkCommandBuffer cmd = RenderPass::frames[frameIndex].commandBuffer;
-
-    begin(cmd);
-
-    VkViewport viewport = Init::viewport(m_extent);
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = m_extent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    CommandBuffer *cmd = RenderPass::frames[frameIndex].commandBuffer;
+    cmd->begin_renderpass(m_handle, m_framebuffers[0], m_attachments);
+    cmd->set_viewport(m_extent);
 
     ShaderPass* shaderPass = m_shaderPasses["converter"];
-
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->get_pipeline());
-    vkCmdBindDescriptorSets(cmd,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            shaderPass->get_layout(),
-                            0,
-                            1,
-                            &m_panoramaDescriptorSet.handle,
-                            0,
-                            VK_NULL_HANDLE);
+    cmd->bind_shaderpass(*shaderPass);
+    cmd->bind_descriptor_set(m_panoramaDescriptorSet, 0, *shaderPass);
 
     Geometry* g = m_vignette->get_geometry();
-    draw(cmd, g);
-
-    end(cmd);
+    cmd->draw_geometry(*get_render_data(g));
+    cmd->end_renderpass();
 }
 
 void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

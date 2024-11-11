@@ -9,8 +9,7 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include <engine/graphics/buffer.h>
-#include <engine/graphics/descriptors.h>
+#include <engine/graphics/command_buffer.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 
@@ -26,8 +25,8 @@ struct Frame {
     VkFence     renderFence;
 
     // Command
-    VkCommandPool   commandPool;
-    VkCommandBuffer commandBuffer;
+    CommandPool* commandPool;
+    CommandBuffer* commandBuffer;
 
     // Uniforms
     std::vector<Buffer> uniformBuffers;
