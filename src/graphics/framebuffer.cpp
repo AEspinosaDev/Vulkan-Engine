@@ -26,7 +26,7 @@ void Framebuffer::init(VulkanRenderPass& renderpass, std::vector<Attachment>& at
 
     if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
-        throw VKException("failed to create framebuffer!");
+        throw VKFW_Exception("failed to create framebuffer!");
     }
 }
 void Framebuffer::cleanup() {

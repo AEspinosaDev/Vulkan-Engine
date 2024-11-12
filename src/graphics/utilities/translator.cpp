@@ -112,6 +112,8 @@ VkShaderStageFlagBits get(ShaderStageType stageType) {
         return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     case ShaderStageType::NONE_STAGE:
         return static_cast<VkShaderStageFlagBits>(0);
+    // case ShaderStageType::ALL_STAGES:
+    //     return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     default:
         throw std::invalid_argument("Unknown ShaderStageType");
     }

@@ -49,16 +49,23 @@ void DescriptorPool::init(VkDevice                       dvc,
     VK_CHECK(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_handle));
 }
 void DescriptorPool::set_layout(uint32_t                         layoutSetIndex,
-                                VkDescriptorSetLayoutBinding*    bindings,
-                                uint32_t                         bindingCount,
+                                std::vector<LayoutBinding>       bindings,
                                 VkDescriptorSetLayoutCreateFlags flags) {
+
+    std::vector<VkDescriptorSetLayoutBinding> bindingHandles;
+    bindingHandles.resize(bindings.size());
+    for (size_t i = 0; i < bindings.size(); i++)
+    {
+        bindingHandles[i] = bindings[i].handle;
+    }
+
     VkDescriptorSetLayout           layout;
     VkDescriptorSetLayoutCreateInfo setinfo = {};
-    setinfo.bindingCount                    = bindingCount;
+    setinfo.bindingCount                    = static_cast<uint32_t>(bindingHandles.size());
     setinfo.flags                           = flags;
     setinfo.pNext                           = nullptr;
     setinfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    setinfo.pBindings                       = bindings;
+    setinfo.pBindings                       = bindingHandles.data();
 
     VK_CHECK(vkCreateDescriptorSetLayout(m_device, &setinfo, nullptr, &layout));
 

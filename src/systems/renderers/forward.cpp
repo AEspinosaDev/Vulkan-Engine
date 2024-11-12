@@ -18,7 +18,7 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 }
 
-void ForwardRenderer::on_after_render(VkResult& renderResult, Core::Scene* const scene) {
+void ForwardRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
     BaseRenderer::on_after_render(renderResult, scene);
 
     if (m_updateShadows)
@@ -29,9 +29,6 @@ void ForwardRenderer::setup_renderpasses() {
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
     // Shadow Pass
-    // Core::ShadowPass* shadowPass = new Core::ShadowPass(
-    //     &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
-    // m_renderPipeline.push_renderpass(shadowPass);
     Core::VarianceShadowPass* shadowPass = new Core::VarianceShadowPass(
         &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, VK_MAX_LIGHTS, m_settings.depthFormat);
     m_renderPipeline.push_renderpass(shadowPass);

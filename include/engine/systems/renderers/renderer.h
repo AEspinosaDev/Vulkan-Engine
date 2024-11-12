@@ -72,11 +72,11 @@ struct RenderPipeline {
     void push_renderpass(Core::RenderPass* pass) {
         renderpasses.push_back(pass);
     };
-    void render(uint32_t frameIndex, VKFW::Core::Scene* scene, uint32_t presentImageIndex = 0U) {
+    void render(Graphics::Frame & currentFrame, VKFW::Core::Scene* scene, uint32_t presentImageIndex = 0U) {
         for (Core::RenderPass* pass : renderpasses)
         {
             if (pass->is_active())
-                pass->render(frameIndex, scene, presentImageIndex);
+                pass->render(currentFrame, scene, presentImageIndex);
         }
     }
     void flush() {
@@ -221,7 +221,7 @@ class BaseRenderer
     /*
     What to do just before rendering
     */
-    virtual void on_after_render(VkResult& renderResult, Core::Scene* const scene);
+    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
     /*
     What to do when shutting down the renderer
     */

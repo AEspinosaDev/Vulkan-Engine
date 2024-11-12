@@ -34,7 +34,7 @@ void BaseRenderer::init() {
     {
         if (pass->is_active())
         {
-            pass->setup();
+            pass->setup(m_frames);
             connect_renderpass(pass);
         }
     };
@@ -113,7 +113,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     glfwTerminate();
 }
 void BaseRenderer::setup_renderpasses() {
-    throw VKException("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
+    throw VKFW_Exception("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
 }
 void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
@@ -128,17 +128,17 @@ void BaseRenderer::on_before_render(Core::Scene* const scene) {
     }
 }
 
-void BaseRenderer::on_after_render(VkResult& renderResult, Core::Scene* const scene) {
+void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
     PROFILING_EVENT()
 
-    if (renderResult == VK_ERROR_OUT_OF_DATE_KHR || renderResult == VK_SUBOPTIMAL_KHR || m_window->is_resized() ||
-        m_updateFramebuffers)
+    if (renderResult == RenderResult::ERROR_OUT_OF_DATE_KHR || renderResult == RenderResult::SUBOPTIMAL_KHR ||
+        m_window->is_resized() || m_updateFramebuffers)
     {
         m_window->set_resized(false);
         update_renderpasses();
         scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
-    } else if (renderResult != VK_SUCCESS)
-    { throw VKException("failed to present swap chain image!"); }
+    } else if (renderResult != RenderResult::SUCCESS)
+    { throw VKFW_Exception("failed to present swap chain image!"); }
 
     m_currentFrame = (m_currentFrame + 1) % m_frames.size();
 }
@@ -150,38 +150,41 @@ void BaseRenderer::render(Core::Scene* const scene) {
     if (!m_initialized)
         init();
 
-    uint32_t imageIndex;
-    VkResult imageResult = m_device.aquire_present_image(m_frames[m_currentFrame], imageIndex);
+    Graphics::Frame fr = m_frames[m_currentFrame];
+    fr.renderFence.wait();
+    uint32_t     imageIndex;
+    RenderResult imageResult = m_device.aquire_present_image(fr.presentSemaphore, imageIndex);
 
-    if (imageResult == VK_ERROR_OUT_OF_DATE_KHR)
+    if (imageResult == RenderResult::ERROR_OUT_OF_DATE_KHR)
     {
         update_renderpasses();
         return;
-    } else if (imageResult != VK_SUCCESS && imageResult != VK_SUBOPTIMAL_KHR)
-    { throw VKException("failed to acquire swap chain image!"); }
+    } else if (imageResult != RenderResult::SUCCESS && imageResult != RenderResult::SUBOPTIMAL_KHR)
+    { throw VKFW_Exception("failed to acquire swap chain image!"); }
 
     on_before_render(scene);
 
-    Graphics::CommandBuffer* cmd = m_frames[m_currentFrame].commandBuffer;
-    cmd->begin(m_frames[m_currentFrame].renderFence);
+    fr.renderFence.reset();
+    fr.commandBuffer->reset();
+    fr.commandBuffer->begin();
 
     if (scene->get_skybox())
         if (scene->get_skybox()->update_enviroment())
         {
-            m_renderPipeline.panoramaConverterPass->render(m_currentFrame, scene, imageIndex);
-            m_renderPipeline.irradianceComputePass->render(m_currentFrame, scene, imageIndex);
+            m_renderPipeline.panoramaConverterPass->render(fr, scene, imageIndex);
+            m_renderPipeline.irradianceComputePass->render(fr, scene, imageIndex);
             scene->get_skybox()->set_update_enviroment(false);
         }
 
-    m_renderPipeline.render(m_currentFrame, scene, imageIndex);
+    m_renderPipeline.render(fr, scene, imageIndex);
 
-    cmd->end();
-    cmd->submit(m_device.get_queues()[QueueType::GRAPHIC],
-                m_frames[m_currentFrame].presentSemaphore,
-                m_frames[m_currentFrame].renderSemaphore,
-                m_frames[m_currentFrame].renderFence);
+    fr.commandBuffer->end();
+    fr.commandBuffer->submit(m_device.get_queues()[QueueType::GRAPHIC],
+                fr.renderFence,
+                {fr.presentSemaphore},
+                {fr.renderSemaphore});
 
-    VkResult renderResult = m_device.present_image(m_frames[m_currentFrame].renderSemaphore, imageIndex);
+    RenderResult renderResult = m_device.present_image(fr.renderSemaphore, imageIndex);
 
     on_after_render(renderResult, scene);
 }

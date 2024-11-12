@@ -40,53 +40,51 @@ void VarianceShadowPass::setup_attachments() {
 
     m_isResizeable = false;
 }
-void VarianceShadowPass::setup_uniforms() {
+void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_device->create_descriptor_pool(
         m_descriptorPool, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
-    m_descriptors.resize(RenderPass::frames.size());
+    m_descriptors.resize(frames.size());
 
     // GLOBAL SET
-    VkDescriptorSetLayoutBinding camBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding camBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0);
-    VkDescriptorSetLayoutBinding sceneBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding sceneBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         1);
-    VkDescriptorSetLayoutBinding shadowBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
-    VkDescriptorSetLayoutBinding ssaoBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // SSAO
-    VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBufferBinding, shadowBinding, ssaoBinding};
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 4);
+    LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+    LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT,
+                                {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
 
     // PER-OBJECT SET
-    VkDescriptorSetLayoutBinding objectBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding objectBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0);
-    VkDescriptorSetLayoutBinding materialBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding materialBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         1);
-    VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
-    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
+    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
-    for (size_t i = 0; i < RenderPass::frames.size(); i++)
+    for (size_t i = 0; i < frames.size(); i++)
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[0],
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[0],
                                               sizeof(CameraUniforms),
                                               0,
                                               &m_descriptors[i].globalDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
         m_descriptorPool.set_descriptor_write(
-            &RenderPass::frames[i].uniformBuffers[0],
+            &frames[i].uniformBuffers[0],
             sizeof(SceneUniforms),
             Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_device->get_GPU()),
             &m_descriptors[i].globalDescritor,
@@ -96,14 +94,14 @@ void VarianceShadowPass::setup_uniforms() {
         // Per-object
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[1],
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[1],
                                               sizeof(ObjectUniforms),
                                               0,
                                               &m_descriptors[i].objectDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
         m_descriptorPool.set_descriptor_write(
-            &RenderPass::frames[i].uniformBuffers[1],
+            &frames[i].uniformBuffers[1],
             sizeof(MaterialUniforms),
             Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_device->get_GPU()),
             &m_descriptors[i].objectDescritor,
@@ -150,10 +148,10 @@ void VarianceShadowPass::setup_shader_passes() {
     m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
-void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
+void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
-    CommandBuffer *cmd = RenderPass::frames[frameIndex].commandBuffer;
+    CommandBuffer* cmd = currentFrame.commandBuffer;
     cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
     cmd->set_viewport(m_extent);
 
@@ -169,7 +167,7 @@ void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_
         {
             if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
             {
-                uint32_t objectOffset = RenderPass::frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
+                uint32_t objectOffset = currentFrame.uniformBuffers[1].get_stride_size() * mesh_idx;
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
@@ -185,14 +183,16 @@ void VarianceShadowPass::render(uint32_t frameIndex, Scene* const scene, uint32_
                     cmd->set_depth_test_enable(mat->get_parameters().depthTest);
                     cmd->set_depth_write_enable(mat->get_parameters().depthWrite);
                     cmd->set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                        : CullingMode::_NO_CULLING);
+                                                                         : CullingMode::_NO_CULLING);
 
                     cmd->bind_shaderpass(*shaderPass);
                     // GLOBAL LAYOUT BINDING
-                    cmd->bind_descriptor_set(m_descriptors[frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
+                    cmd->bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
                     // PER OBJECT LAYOUT BINDING
-                    cmd->bind_descriptor_set(
-                        m_descriptors[frameIndex].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
+                    cmd->bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
+                                             1,
+                                             *shaderPass,
+                                             {objectOffset, objectOffset});
 
                     // DRAW
                     Geometry* g = m->get_geometry(i);

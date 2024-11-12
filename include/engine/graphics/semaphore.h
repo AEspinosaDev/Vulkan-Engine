@@ -26,9 +26,6 @@ class Semaphore
   public:
     Semaphore() {
     }
-    ~Semaphore() {
-        cleanup();
-    }
 
     inline VkSemaphore get_handle() const {
         return m_handle;
@@ -46,9 +43,6 @@ class Fence
   public:
     Fence() {
     }
-    ~Fence() {
-        cleanup();
-    }
 
     inline VkFence get_handle() const {
         return m_handle;
@@ -57,6 +51,7 @@ class Fence
     void init(VkDevice device);
     void cleanup();
     void reset();
+    void wait(uint64_t timeout = UINT64_MAX);
 };
 
 } // namespace Graphics

@@ -52,7 +52,7 @@ class ForwardRenderer : public BaseRenderer
   protected:
     virtual void on_before_render(Core::Scene* const scene);
 
-    virtual void on_after_render(VkResult& renderResult, Core::Scene* const scene);
+    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
 
     virtual void setup_renderpasses();
 

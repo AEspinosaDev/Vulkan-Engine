@@ -25,16 +25,13 @@ void IrrandianceComputePass::setup_attachments() {
     m_dependencies[0] = Graphics::SubPassDependency(
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 }
-void IrrandianceComputePass::setup_uniforms() {
+void IrrandianceComputePass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_device->create_descriptor_pool(m_descriptorPool, 1, 1, 1, 1, 1);
 
-    VkDescriptorSetLayoutBinding panoramaTextureBinding =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding auxBufferBinding =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding bindings[] = {panoramaTextureBinding, auxBufferBinding};
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 2);
+    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    LayoutBinding auxBufferBinding(UniformDataType::UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, {panoramaTextureBinding, auxBufferBinding});
 
     m_descriptorPool.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_captureDescriptorSet);
 }
@@ -55,9 +52,9 @@ void IrrandianceComputePass::setup_shader_passes() {
     m_shaderPasses["irr"] = converterPass;
 }
 
-void IrrandianceComputePass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
+void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
-    CommandBuffer* cmd = RenderPass::frames[frameIndex].commandBuffer;
+    CommandBuffer* cmd = currentFrame.commandBuffer;
     cmd->begin_renderpass(m_handle, m_framebuffers[0], m_attachments);
     cmd->set_viewport(m_extent);
 

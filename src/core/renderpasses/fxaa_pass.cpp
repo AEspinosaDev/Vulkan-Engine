@@ -27,14 +27,12 @@ void FXAAPass::setup_attachments() {
     m_dependencies[0] = Graphics::SubPassDependency(
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 }
-void FXAAPass::setup_uniforms() {
+void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_device->create_descriptor_pool(m_descriptorPool, 1, 1, 1, 1, 1);
 
-    VkDescriptorSetLayoutBinding outputTextureBinding =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding bindings[] = {outputTextureBinding};
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 1);
+    LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT,  {outputTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_imageDescriptorSet);
 }
@@ -56,9 +54,9 @@ void FXAAPass::setup_shader_passes() {
     m_shaderPasses["fxaa"] = fxaaPass;
 }
 
-void FXAAPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
+void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
-    CommandBuffer* cmd = RenderPass::frames[frameIndex].commandBuffer;
+    CommandBuffer* cmd = currentFrame.commandBuffer;
     cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
     cmd->set_viewport(m_extent);
 

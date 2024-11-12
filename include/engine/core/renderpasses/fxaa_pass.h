@@ -36,11 +36,11 @@ class FXAAPass : public RenderPass
 
     void setup_attachments();
 
-    void setup_uniforms();
+    void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0);
+    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 };

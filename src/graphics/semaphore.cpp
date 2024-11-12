@@ -1,5 +1,6 @@
 #include <engine/graphics/semaphore.h>
 
+
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
@@ -30,6 +31,9 @@ void Fence::cleanup() {
 void Fence::reset() {
     if (m_handle != VK_NULL_HANDLE)
         VK_CHECK(vkResetFences(m_device, 1, &m_handle));
+}
+void Fence::wait(uint64_t timeout) {
+    VK_CHECK(vkWaitForFences(m_device, 1, &m_handle, VK_TRUE, timeout));
 }
 } // namespace Graphics
 VULKAN_ENGINE_NAMESPACE_END

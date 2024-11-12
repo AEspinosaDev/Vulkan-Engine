@@ -32,8 +32,8 @@ void BaseRenderer::update_global_data(Core::Scene* const scene) {
     camData.viewProj     = camera->get_projection() * camera->get_view();
     camData.position     = Vec4(camera->get_position(), 0.0f);
     camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
-    camData.nearPlane = camera->get_near();
-    camData.farPlane = camera->get_far();
+    camData.nearPlane    = camera->get_near();
+    camData.farPlane     = camera->get_far();
 
     m_frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(&camData, sizeof(Graphics::CameraUniforms), 0);
 
@@ -259,14 +259,14 @@ void BaseRenderer::setup_skybox(Core::Scene* const scene) {
                                                     envMap->get_settings().format,
                                                     {envMap->get_size().height, envMap->get_size().height},
                                                     m_vignette);
-                m_renderPipeline.panoramaConverterPass->setup();
+                m_renderPipeline.panoramaConverterPass->setup(m_frames);
                 m_renderPipeline.panoramaConverterPass->update_uniforms(m_currentFrame, scene);
                 // Create Irradiance converter pass
                 m_renderPipeline.irradianceComputePass = new Core::IrrandianceComputePass(
                     &m_device,
                     envMap->get_settings().format,
                     {m_settings.irradianceResolution, m_settings.irradianceResolution});
-                m_renderPipeline.irradianceComputePass->setup();
+                m_renderPipeline.irradianceComputePass->setup(m_frames);
                 m_renderPipeline.irradianceComputePass->update_uniforms(m_currentFrame, scene);
                 m_renderPipeline.irradianceComputePass->connect_env_cubemap(
                     m_renderPipeline.panoramaConverterPass->get_attachments()[0].image);
@@ -279,7 +279,7 @@ void BaseRenderer::init_resources() {
     // Setup frames
     m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
     for (size_t i = 0; i < m_frames.size(); i++)
-        m_device.create_frame(m_frames[i]);
+        m_frames[i].init(m_device.get_handle(), m_device.get_GPU(), m_device.get_swapchain().get_surface(), i);
     for (size_t i = 0; i < m_frames.size(); i++)
     {
         // Global Buffer
@@ -306,7 +306,6 @@ void BaseRenderer::init_resources() {
                                (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);
     }
-    Core::RenderPass::frames = m_frames;
 
     // Setup vignette
     m_vignette = new Core::Mesh();
@@ -315,7 +314,7 @@ void BaseRenderer::init_resources() {
 
     // Setup fallback texture
     unsigned char texture_data[1] = {0};
-    Core::Texture::FALLBACK_TEX  = new Core::Texture(texture_data, {1, 1, 1}, 4);
+    Core::Texture::FALLBACK_TEX   = new Core::Texture(texture_data, {1, 1, 1}, 4);
     Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
     void* imgCache{nullptr};
     Core::Texture::FALLBACK_TEX->get_image_cache(imgCache);

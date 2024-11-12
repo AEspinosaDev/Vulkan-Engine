@@ -55,9 +55,8 @@ class RenderPass
     bool m_enabled{true};
     bool m_isDefault;
 
-
   public:
-    static std::vector<Graphics::Frame> frames;
+    // static std::vector<Graphics::Frame> frames;
 
     RenderPass(Graphics::Device* ctx,
                Extent2D          extent,
@@ -138,12 +137,12 @@ class RenderPass
     /*
     Setups de renderpass. Init, create framebuffers, pipelines and resources ...
     */
-    void setup();
+    void setup(std::vector<Graphics::Frame>& frames);
 
-    virtual void setup_attachments()                                                             = 0;
-    virtual void setup_uniforms()                                                                = 0;
-    virtual void setup_shader_passes()                                                           = 0;
-    virtual void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0) = 0;
+    virtual void setup_attachments()                                                                       = 0;
+    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames)                                      = 0;
+    virtual void setup_shader_passes()                                                                     = 0;
+    virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) = 0;
 
     virtual void update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }

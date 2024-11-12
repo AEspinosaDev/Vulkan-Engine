@@ -60,71 +60,60 @@ void ForwardPass::setup_attachments() {
                                                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
                                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 }
-void ForwardPass::setup_uniforms() {
+void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_device->create_descriptor_pool(
         m_descriptorPool, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
-    m_descriptors.resize(RenderPass::frames.size());
+    m_descriptors.resize(frames.size());
 
     // GLOBAL SET
-    VkDescriptorSetLayoutBinding camBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding camBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0);
-    VkDescriptorSetLayoutBinding sceneBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding sceneBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         1);
-    VkDescriptorSetLayoutBinding shadowBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2); // ShadowMaps
-    VkDescriptorSetLayoutBinding envBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3); // EnvMap
-    VkDescriptorSetLayoutBinding iblBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4); // IrradianceMap
-    VkDescriptorSetLayoutBinding bindings[] = {
-        camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding};
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, bindings, 5);
+    LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+    LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT,
+                                {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
 
     // PER-OBJECT SET
-    VkDescriptorSetLayoutBinding objectBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding objectBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0);
-    VkDescriptorSetLayoutBinding materialBufferBinding = Init::descriptorset_layout_binding(
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+    LayoutBinding materialBufferBinding(
+        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         1);
-    VkDescriptorSetLayoutBinding objectBindings[] = {objectBufferBinding, materialBufferBinding};
-    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, objectBindings, 2);
+    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     // MATERIAL TEXTURE SET
-    VkDescriptorSetLayoutBinding textureBinding1 =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    VkDescriptorSetLayoutBinding textureBinding2 =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-    VkDescriptorSetLayoutBinding textureBinding3 =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
-    VkDescriptorSetLayoutBinding textureBinding4 =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
-    VkDescriptorSetLayoutBinding textureBinding5 =
-        Init::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    VkDescriptorSetLayoutBinding textureBindings[] = {
-        textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5};
-    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, textureBindings, 5);
+    LayoutBinding textureBinding1(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    LayoutBinding textureBinding2(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    LayoutBinding textureBinding3(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
+    LayoutBinding textureBinding4(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
+    LayoutBinding textureBinding5(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT,
+                                {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5});
 
-    for (size_t i = 0; i < RenderPass::frames.size(); i++)
+    for (size_t i = 0; i < frames.size(); i++)
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(CameraUniforms),
                                               0,
                                               &m_descriptors[i].globalDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
         m_descriptorPool.set_descriptor_write(
-            &RenderPass::frames[i].uniformBuffers[GLOBAL_LAYOUT],
+            &frames[i].uniformBuffers[GLOBAL_LAYOUT],
             sizeof(SceneUniforms),
             Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_device->get_GPU()),
             &m_descriptors[i].globalDescritor,
@@ -140,14 +129,14 @@ void ForwardPass::setup_uniforms() {
         // Per-object
         m_descriptorPool.allocate_descriptor_set(
             DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.set_descriptor_write(&RenderPass::frames[i].uniformBuffers[OBJECT_LAYOUT],
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
                                               sizeof(ObjectUniforms),
                                               0,
                                               &m_descriptors[i].objectDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
         m_descriptorPool.set_descriptor_write(
-            &RenderPass::frames[i].uniformBuffers[OBJECT_LAYOUT],
+            &frames[i].uniformBuffers[OBJECT_LAYOUT],
             sizeof(MaterialUniforms),
             Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_device->get_GPU()),
             &m_descriptors[i].objectDescritor,
@@ -263,10 +252,10 @@ void ForwardPass::setup_shader_passes() {
     }
 }
 
-void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex) {
+void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
-    CommandBuffer* cmd = RenderPass::frames[frameIndex].commandBuffer;
+    CommandBuffer* cmd = currentFrame.commandBuffer;
     cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
     cmd->set_viewport(m_extent);
 
@@ -285,8 +274,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t prese
                          : true)) // Check if is inside frustrum
                 {
                     // Offset calculation
-                    uint32_t objectOffset =
-                        RenderPass::frames[frameIndex].uniformBuffers[1].get_stride_size() * mesh_idx;
+                    uint32_t objectOffset = currentFrame.uniformBuffers[1].get_stride_size() * mesh_idx;
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
@@ -303,10 +291,13 @@ void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t prese
                         // Bind pipeline
                         cmd->bind_shaderpass(*shaderPass);
                         // GLOBAL LAYOUT BINDING
-                        cmd->bind_descriptor_set(m_descriptors[frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
-                        // PER OBJECT LAYOUT BINDING
                         cmd->bind_descriptor_set(
-                            m_descriptors[frameIndex].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
+                            m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                        // PER OBJECT LAYOUT BINDING
+                        cmd->bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
+                                                 1,
+                                                 *shaderPass,
+                                                 {objectOffset, objectOffset});
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
                             cmd->bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
@@ -334,7 +325,7 @@ void ForwardPass::render(uint32_t frameIndex, Scene* const scene, uint32_t prese
                 cmd->bind_shaderpass(*shaderPass);
 
                 // GLOBAL LAYOUT BINDING
-                cmd->bind_descriptor_set(m_descriptors[frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
+                cmd->bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
                 cmd->draw_geometry(*get_render_data(scene->get_skybox()->get_box()));
             }
@@ -363,7 +354,7 @@ void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
 }
 void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
-    for (size_t i = 0; i < RenderPass::frames.size(); i++)
+    for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         m_descriptorPool.set_descriptor_write(images[0].sampler,
                                               images[0].view,
@@ -375,7 +366,7 @@ void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
 }
 
 void ForwardPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr) {
-    for (size_t i = 0; i < RenderPass::frames.size(); i++)
+    for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         m_descriptorPool.set_descriptor_write(
             env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);

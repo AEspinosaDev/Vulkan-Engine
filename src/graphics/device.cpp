@@ -120,19 +120,16 @@ void Device::create_framebuffer(Framebuffer&             fbo,
                                 uint32_t                 layers) {
     fbo.init(renderpass, attachments, layers);
 }
-void Device::create_frame(Frame& frame) {
-    frame.init(m_handle, m_gpu, m_swapchain.get_surface());
-}
-VkResult Device::aquire_present_image(Frame& currentFrame, uint32_t& imageIndex) {
-    VK_CHECK(vkWaitForFences(m_handle, 1, &currentFrame.renderFence, VK_TRUE, UINT64_MAX));
+
+RenderResult Device::aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex) {
     VkResult result = vkAcquireNextImageKHR(
-        m_handle, m_swapchain.get_handle(), UINT64_MAX, currentFrame.presentSemaphore, VK_NULL_HANDLE, &imageIndex);
-    return result;
+        m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.get_handle(), VK_NULL_HANDLE, &imageIndex);
+    return static_cast<RenderResult>(result);
 }
 
-VkResult Device::present_image(VkSemaphore signalSemaphore, uint32_t imageIndex) {
+RenderResult Device::present_image(Semaphore& signalSemaphore, uint32_t imageIndex) {
 
-    VkSemaphore      signalSemaphores[] = {signalSemaphore};
+    VkSemaphore      signalSemaphores[] = {signalSemaphore.get_handle()};
     VkPresentInfoKHR presentInfo        = Init::present_info();
     presentInfo.sType                   = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount      = 1;
@@ -142,7 +139,8 @@ VkResult Device::present_image(VkSemaphore signalSemaphore, uint32_t imageIndex)
     presentInfo.pSwapchains             = swapChains;
     presentInfo.pImageIndices           = &imageIndex;
 
-    return vkQueuePresentKHR(m_queues[QueueType::PRESENT], &presentInfo);
+    VkResult result = vkQueuePresentKHR(m_queues[QueueType::PRESENT], &presentInfo);
+    return static_cast<RenderResult>(result);
 }
 
 void Device::upload_vertex_arrays(VertexArrays& vao,

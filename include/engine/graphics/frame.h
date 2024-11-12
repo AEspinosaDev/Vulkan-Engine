@@ -10,6 +10,7 @@
 #define FRAME_H
 
 #include <engine/graphics/command_buffer.h>
+#include <engine/graphics/semaphore.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 
@@ -18,22 +19,27 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 struct Frame {
-    VkDevice device;
     // Control
-    VkSemaphore presentSemaphore;
-    VkSemaphore renderSemaphore;
-    VkFence     renderFence;
+    Semaphore presentSemaphore;
+    Semaphore renderSemaphore;
+    Fence     renderFence;
 
     // Command
-    CommandPool* commandPool;
+    CommandPool*   commandPool;
     CommandBuffer* commandBuffer;
 
     // Uniforms
     std::vector<Buffer> uniformBuffers;
 
-    void init(VkDevice _device, VkPhysicalDevice gpu, VkSurfaceKHR surface);
+    uint32_t index = 0;
 
+    void init(VkDevice _device, VkPhysicalDevice gpu, VkSurfaceKHR surface, uint32_t id);
     void cleanup();
+
+    // VkResult aquire_next_image(uint32_t& imageIndex);
+    // void     begin_render();
+    // void     end_render();
+    // void     present_image(uint32_t imageIndex);
 
     static bool guiEnabled;
 };

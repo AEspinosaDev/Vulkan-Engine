@@ -28,11 +28,11 @@ class IrrandianceComputePass : public RenderPass
 
     void setup_attachments();
 
-    void setup_uniforms();
+    void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(uint32_t frameIndex, Scene* const scene, uint32_t presentImageIndex = 0);
+    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 

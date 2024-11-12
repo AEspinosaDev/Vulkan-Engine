@@ -15,6 +15,7 @@
 #include <engine/graphics/shaderpass.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/semaphore.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -38,14 +39,14 @@ class CommandBuffer
 
     void init(VkDevice device, CommandPool commandPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    void begin(VkFence& renderFence, VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    void begin(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     void end();
     void reset();
 
-    void submit(VkQueue     queue,
-                VkSemaphore waitSemaphore   = VK_NULL_HANDLE,
-                VkSemaphore signalSemaphore = VK_NULL_HANDLE,
-                VkFence     fence           = VK_NULL_HANDLE);
+    void submit(VkQueue                queue,
+                Fence                  fence,
+                std::vector<Semaphore> waitSemaphores   = {},
+                std::vector<Semaphore> signalSemaphores = {});
 
     VkCommandBuffer get_handle() const {
         return m_handle;
@@ -92,7 +93,7 @@ class CommandPool
         return m_handle;
     }
 
-    void init(VkDevice&                device,
+    void init(VkDevice                device,
               uint32_t                 queueFamilyIndex,
               VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 

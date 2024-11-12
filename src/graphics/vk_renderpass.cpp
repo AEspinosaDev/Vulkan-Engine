@@ -83,7 +83,7 @@ void VulkanRenderPass::init(VkDevice                        device,
 
     if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
-        new VKException("failed to create renderpass!");
+        new VKFW_Exception("failed to create renderpass!");
     }
 }
 void VulkanRenderPass::cleanup() {

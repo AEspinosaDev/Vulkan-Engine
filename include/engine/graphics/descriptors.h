@@ -12,6 +12,7 @@
 #include <engine/common.h>
 #include <engine/graphics/buffer.h>
 #include <engine/graphics/utilities/initializers.h>
+#include <engine/graphics/utilities/translator.h>
 #include <unordered_map>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -28,13 +29,17 @@ struct DescriptorSet {
     bool                 allocated{false};
 };
 
-// struct LayoutBinding{
-//     VkDescriptorSetLayoutBinding handle{};
+struct LayoutBinding {
 
-//     LayoutBinding() {
+    VkDescriptorSetLayoutBinding handle{};
 
-//     }
-// }
+    LayoutBinding(UniformDataType    type,
+                  VkShaderStageFlags stageFlags,
+                  uint32_t           binding,
+                  uint32_t           descriptorCount = 1U) {
+        handle = Init::descriptorset_layout_binding(Translator::get(type), stageFlags, binding, descriptorCount);
+    }
+};
 
 class DescriptorPool
 {
@@ -62,8 +67,7 @@ class DescriptorPool
               VkDescriptorPoolCreateFlagBits flag                 = {});
 
     void set_layout(uint32_t                         layoutSetIndex,
-                    VkDescriptorSetLayoutBinding*    bindings,
-                    uint32_t                         bindingCount,
+                    std::vector<LayoutBinding>       bindings,
                     VkDescriptorSetLayoutCreateFlags flags = 0);
 
     inline VkDescriptorSetLayout get_layout(uint32_t layoutSetIndex) {

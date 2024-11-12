@@ -3,7 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
-void CommandPool::init(VkDevice& device, uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags) {
+void CommandPool::init(VkDevice device, uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags) {
     m_device = device;
 
     VkCommandPoolCreateInfo poolInfo{};
@@ -13,7 +13,7 @@ void CommandPool::init(VkDevice& device, uint32_t queueFamilyIndex, VkCommandPoo
 
     if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_handle) != VK_SUCCESS)
     {
-        throw VKException("Failed to create command pool!");
+        throw VKFW_Exception("Failed to create command pool!");
     }
 }
 CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, VkCommandBufferLevel level) {
@@ -25,7 +25,7 @@ CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, VkCommandBuff
 void CommandPool::reset(VkCommandPoolResetFlags flags) const {
     if (vkResetCommandPool(m_device, m_handle, flags) != VK_SUCCESS)
     {
-        throw VKException("Failed to reset command pool!");
+        throw VKFW_Exception("Failed to reset command pool!");
     }
 }
 
@@ -53,20 +53,18 @@ void CommandBuffer::init(VkDevice device, CommandPool commandPool, VkCommandBuff
     VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &m_handle));
 }
 
-void CommandBuffer::begin(VkFence& renderFence, VkCommandBufferUsageFlags flags) {
+void CommandBuffer::begin(VkCommandBufferUsageFlags flags) {
     if (m_isRecording)
     {
-        throw VKException("Command buffer is already recording!");
+        throw VKFW_Exception("Command buffer is already recording!");
     }
 
-    VK_CHECK(vkResetFences(m_device, 1, &renderFence));
-    VK_CHECK(vkResetCommandBuffer(m_handle, 0));
 
     VkCommandBufferBeginInfo beginInfo = Init::command_buffer_begin_info();
 
     if (vkBeginCommandBuffer(m_handle, &beginInfo) != VK_SUCCESS)
     {
-        throw VKException("Failed to begin recording command buffer!");
+        throw VKFW_Exception("Failed to begin recording command buffer!");
     }
     m_isRecording = true;
 }
@@ -74,12 +72,12 @@ void CommandBuffer::begin(VkFence& renderFence, VkCommandBufferUsageFlags flags)
 void CommandBuffer::end() {
     if (!m_isRecording)
     {
-        throw VKException("Command buffer is not recording!");
+        throw VKFW_Exception("Command buffer is not recording!");
     }
 
     if (vkEndCommandBuffer(m_handle) != VK_SUCCESS)
     {
-        throw VKException("Failed to end recording command buffer!");
+        throw VKFW_Exception("Failed to end recording command buffer!");
     }
     m_isRecording = false;
 }
@@ -92,26 +90,44 @@ void CommandBuffer::reset() {
     m_isRecording = false;
 }
 
-void CommandBuffer::submit(VkQueue queue, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore, VkFence fence) {
+void CommandBuffer::submit(VkQueue                queue,
+                           Fence                  fence,
+                           std::vector<Semaphore> waitSemaphores,
+                           std::vector<Semaphore> signalSemaphores) {
+
+    std::vector<VkSemaphore> signalSemaphoreHandles;
+    signalSemaphoreHandles.resize(signalSemaphores.size());
+    for (size_t i = 0; i < signalSemaphores.size(); i++)
+    {
+        signalSemaphoreHandles[i] = signalSemaphores[i].get_handle();
+    }
+    std::vector<VkSemaphore> waitSemaphoreHandles;
+    waitSemaphoreHandles.resize(waitSemaphores.size());
+    for (size_t i = 0; i < waitSemaphores.size(); i++)
+    {
+        waitSemaphoreHandles[i] = waitSemaphores[i].get_handle();
+    }
+
     VkSubmitInfo submitInfo = Init::submit_info(&m_handle);
 
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    if (waitSemaphore != VK_NULL_HANDLE)
+
+    if (!waitSemaphoreHandles.empty())
     {
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores    = &waitSemaphore;
+        submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphoreHandles.size());
+        submitInfo.pWaitSemaphores    = waitSemaphoreHandles.data();
         submitInfo.pWaitDstStageMask  = waitStages;
     }
 
-    if (signalSemaphore != VK_NULL_HANDLE)
+    if (!signalSemaphoreHandles.empty())
     {
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores    = &signalSemaphore;
+        submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphoreHandles.size());
+        submitInfo.pSignalSemaphores    = signalSemaphoreHandles.data();
     }
 
-    if (vkQueueSubmit(queue, 1, &submitInfo, fence) != VK_SUCCESS)
+    if (vkQueueSubmit(queue, 1, &submitInfo, fence.get_handle()) != VK_SUCCESS)
     {
-        throw VKException("Failed to submit command buffer!");
+        throw VKFW_Exception("Failed to submit command buffer!");
     }
 }
 

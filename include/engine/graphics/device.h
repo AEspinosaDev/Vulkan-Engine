@@ -101,7 +101,6 @@ class Device
                        uint32_t              istrideSize,
                        std::vector<uint32_t> stridePartitionsSizes = {});
     void create_image(Image& image, bool useMipmaps, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
-    void create_frame(Frame& frame);
     void create_command_pool(CommandPool& pool, QueueType type);
     void create_descriptor_pool(DescriptorPool& pool,
                                 uint32_t        maxSets,
@@ -130,8 +129,8 @@ class Device
     -----------------------------------------------
     */
 
-    VkResult aquire_present_image(Frame& currentFrame, uint32_t& imageIndex);
-    VkResult present_image(VkSemaphore signalSemaphore, uint32_t imageIndex);
+    RenderResult aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex);
+    RenderResult present_image(Semaphore& signalSemaphore, uint32_t imageIndex);
 
     /*
     DATA TRANSFER

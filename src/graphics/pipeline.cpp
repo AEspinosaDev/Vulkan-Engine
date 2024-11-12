@@ -27,7 +27,7 @@ void PipelineBuilder::build_pipeline_layout(VkPipelineLayout& layout,
 
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
     {
-        throw new VKException("failed to create pipeline "
+        throw new VKFW_Exception("failed to create pipeline "
                               "layout!");
     }
 }
@@ -122,7 +122,7 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
 
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     {
-        throw VKException("Failed to create Grahic "
+        throw VKFW_Exception("Failed to create Grahic "
                           "Pipeline");
     }
 }

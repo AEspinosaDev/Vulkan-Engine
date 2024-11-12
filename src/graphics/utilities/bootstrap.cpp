@@ -11,7 +11,7 @@ VkInstance Booter::create_instance(const char *appName, const char *engineName, 
 {
     if (validation && !Utils::check_validation_layer_suport(validationLayers))
     {
-        throw VKException(" validation layers requested, but not available!");
+        throw VKFW_Exception(" validation layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
@@ -50,7 +50,7 @@ VkInstance Booter::create_instance(const char *appName, const char *engineName, 
     VkInstance instance{};
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
     {
-        throw VKException("failed to create instance!");
+        throw VKFW_Exception("failed to create instance!");
     }
     return instance;
 }
@@ -87,7 +87,7 @@ VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfac
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
     if (deviceCount == 0)
     {
-        throw VKException("failed to find GPUs with Vulkan support!");
+        throw VKFW_Exception("failed to find GPUs with Vulkan support!");
     }
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
@@ -111,7 +111,7 @@ VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfac
     }
     else
     {
-        throw VKException("failed to find a suitable GPU!");
+        throw VKFW_Exception("failed to find a suitable GPU!");
     }
 
     return gpu;
@@ -325,7 +325,7 @@ VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance)
     VkDebugUtilsMessengerEXT debugMessenger{};
     if (Utils::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     {
-        throw VKException("failed to set up debug messenger!");
+        throw VKFW_Exception("failed to set up debug messenger!");
     }
     return debugMessenger;
 }

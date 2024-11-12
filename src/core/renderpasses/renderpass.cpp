@@ -4,43 +4,16 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-std::vector<Graphics::Frame> RenderPass::frames = {};
 
-void RenderPass::setup() {
+void RenderPass::setup( std::vector<Graphics::Frame>& frames) {
     setup_attachments();
     m_device->create_render_pass(m_handle, m_attachments, m_dependencies);
     m_initiatized = true;
     create_framebuffer();
-    setup_uniforms();
+    setup_uniforms(frames);
     setup_shader_passes();
 }
 
-// void RenderPass::begin(VkCommandBuffer& cmd, uint32_t framebufferId, VkSubpassContents subpassContents) {
-//     VkRenderPassBeginInfo renderPassInfo =
-//         Init::renderpass_begin_info(m_handle.get_handle(), m_extent, m_framebuffers[framebufferId].get_handle());
-
-//     std::vector<VkClearValue> clearValues;
-//     clearValues.reserve(m_attachments.size());
-//     for (size_t i = 0; i < m_attachments.size(); i++)
-//     {
-//         clearValues.push_back(m_attachments[i].clearValue);
-//     }
-
-//     renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
-//     renderPassInfo.pClearValues    = clearValues.data();
-
-//     vkCmdBeginRenderPass(cmd, &renderPassInfo, subpassContents);
-// }
-
-// void RenderPass::end(VkCommandBuffer& cmd) {
-//     vkCmdEndRenderPass(cmd);
-// }
-// void RenderPass::draw(VkCommandBuffer& cmd, Geometry* g) {
-//     PROFILING_EVENT()
-//     VertexArrays* rd = get_render_data(g);
-//     if (rd->loadedOnGPU)
-//         Device::draw_geometry(cmd, *rd);
-// }
 void RenderPass::cleanup() {
     if (!m_initiatized)
         return;
