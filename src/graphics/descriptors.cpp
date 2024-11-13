@@ -92,7 +92,7 @@ void DescriptorPool::set_descriptor_write(Buffer*          buffer,
                                           VkDescriptorType type,
                                           uint32_t         binding) {
     VkDescriptorBufferInfo info;
-    info.buffer = buffer->get_handle();
+    info.buffer = buffer->handle;
     info.offset = readOffset;
     info.range  = dataSize;
 

@@ -84,7 +84,7 @@ Geometry *Geometry::create_cube()
 
     return g;
 }
-Graphics::VertexArrays *const get_render_data(Geometry *g)
+Graphics::VertexArrays *const get_VAO(Geometry *g)
 {
     return &g->m_VAO;
 }

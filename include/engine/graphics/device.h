@@ -11,6 +11,7 @@
 
 #include <engine/common.h>
 
+#include <engine/graphics/accel.h>
 #include <engine/graphics/command_buffer.h>
 #include <engine/graphics/extensions.h>
 #include <engine/graphics/frame.h>
@@ -57,19 +58,19 @@ class Device
     GETTERS
     -----------------------------------------------
     */
-    inline VkDevice get_handle() const {
+    inline VkDevice& get_handle() {
         return m_handle;
     };
-    inline VmaAllocator get_memory_allocator() const {
+    inline VmaAllocator& get_memory_allocator() {
         return m_memory;
     }
-    inline VkPhysicalDevice get_GPU() const {
+    inline VkPhysicalDevice& get_GPU() {
         return m_gpu;
     }
     inline Swapchain get_swapchain() const {
         return m_swapchain;
     }
-    inline std::unordered_map<QueueType, VkQueue> get_queues() const {
+    inline std::unordered_map<QueueType, VkQueue>& get_queues() {
         return m_queues;
     }
 
@@ -123,6 +124,9 @@ class Device
                             VulkanRenderPass&        renderpass,
                             std::vector<Attachment>& attachments,
                             uint32_t                 layers = 1);
+
+    void create_BLAS(BLAS& accel, VertexArrays& vao);
+    void create_TLAS(TLAS& accel, std::vector<BLAS>& blases);
 
     /*
     DRAWING

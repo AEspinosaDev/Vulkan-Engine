@@ -21,9 +21,15 @@ DECLARATION OF FUNCTION POINTERS RELATED TO VULKAN EXTENSIONS
 #include <engine/common.h>
 
 // Global function pointers
-extern PFN_vkCmdSetRasterizationSamplesEXT vkCmdSetRasterizationSamples;
-extern PFN_vkCmdSetPolygonModeEXT          vkCmdSetPolygonMode;
+extern PFN_vkCmdSetRasterizationSamplesEXT            vkCmdSetRasterizationSamples;
+extern PFN_vkCmdSetPolygonModeEXT                     vkCmdSetPolygonMode;
+extern PFN_vkCreateAccelerationStructureKHR           vkCreateAccelerationStructure;
+extern PFN_vkDestroyAccelerationStructureKHR          vkDestroyAccelerationStructure;
+extern PFN_vkGetAccelerationStructureBuildSizesKHR    vkGetAccelerationStructureBuildSizes;
+extern PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddress;
+extern PFN_vkCmdBuildAccelerationStructuresKHR        vkCmdBuildAccelerationStructures;
+extern PFN_vkBuildAccelerationStructuresKHR           vkBuildAccelerationStructures;
 
-void load_EXT_functions(VkDevice& device);
+void load_extensions(VkDevice& device);
 
 #endif

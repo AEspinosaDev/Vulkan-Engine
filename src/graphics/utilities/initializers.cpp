@@ -15,7 +15,7 @@ VkCommandPoolCreateInfo Init::command_pool_create_info(uint32_t                 
 }
 
 VkCommandBufferAllocateInfo
-Init::command_buffer_allocate_info(VkCommandPool       pool,
+Init::command_buffer_allocate_info(VkCommandPool        pool,
                                    uint32_t             count /*= 1*/,
                                    VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/) {
     VkCommandBufferAllocateInfo info = {};
@@ -388,6 +388,24 @@ VkViewport Init::viewport(VkExtent2D extent, float minDepth, float maxDepth, flo
     viewport.minDepth = minDepth;
     viewport.maxDepth = maxDepth;
     return viewport;
+}
+
+VkAccelerationStructureGeometryKHR Init::acceleration_structure_geometry() {
+    VkAccelerationStructureGeometryKHR accelerationStructureGeometryKHR{};
+    accelerationStructureGeometryKHR.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    return accelerationStructureGeometryKHR;
+}
+
+VkAccelerationStructureBuildGeometryInfoKHR Init::acceleration_structure_build_geometry_info() {
+    VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfoKHR{};
+    accelerationStructureBuildGeometryInfoKHR.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    return accelerationStructureBuildGeometryInfoKHR;
+}
+
+VkAccelerationStructureBuildSizesInfoKHR Init::acceleration_structure_build_sizes_info() {
+    VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfoKHR{};
+    accelerationStructureBuildSizesInfoKHR.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+    return accelerationStructureBuildSizesInfoKHR;
 }
 
 } // namespace Graphics

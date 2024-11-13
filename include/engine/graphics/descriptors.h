@@ -48,7 +48,7 @@ class DescriptorPool
     std::unordered_map<uint32_t, VkDescriptorSetLayout> m_layouts;
 
   public:
-    inline VkDescriptorPool get_handle() const {
+    inline VkDescriptorPool& get_handle()  {
         return m_handle;
     }
     void init(VkDevice                       dvc,

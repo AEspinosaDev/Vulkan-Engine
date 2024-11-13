@@ -16,6 +16,7 @@
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/vk_renderpass.h>
 #include <engine/graphics/semaphore.h>
+#include <engine/graphics/vao.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -48,7 +49,7 @@ class CommandBuffer
                 std::vector<Semaphore> waitSemaphores   = {},
                 std::vector<Semaphore> signalSemaphores = {});
 
-    VkCommandBuffer get_handle() const {
+    VkCommandBuffer& get_handle()  {
         return m_handle;
     }
 
@@ -89,7 +90,7 @@ class CommandPool
     CommandPool() {
     }
 
-    inline VkCommandPool get_handle() const {
+    inline VkCommandPool& get_handle() {
         return m_handle;
     }
 

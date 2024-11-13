@@ -167,7 +167,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
         {
             if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
             {
-                uint32_t objectOffset = currentFrame.uniformBuffers[1].get_stride_size() * mesh_idx;
+                uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
@@ -196,7 +196,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
 
                     // DRAW
                     Geometry* g = m->get_geometry(i);
-                    cmd->draw_geometry(*get_render_data(g));
+                    cmd->draw_geometry(*get_VAO(g));
                 }
             }
             mesh_idx++;

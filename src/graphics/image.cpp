@@ -100,7 +100,7 @@ void Image::upload_image(VkCommandBuffer& cmd, Buffer* stagingBuffer) {
 
     // copy the buffer into the image
     vkCmdCopyBufferToImage(
-        cmd, stagingBuffer->get_handle(), handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+        cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
     if (config.mipLevels == 1)
     {

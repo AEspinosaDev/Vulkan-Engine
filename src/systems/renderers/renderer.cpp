@@ -161,11 +161,12 @@ void BaseRenderer::render(Core::Scene* const scene) {
         return;
     } else if (imageResult != RenderResult::SUCCESS && imageResult != RenderResult::SUBOPTIMAL_KHR)
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
+    
+    fr.renderFence.reset();
+    fr.commandBuffer->reset();
 
     on_before_render(scene);
 
-    fr.renderFence.reset();
-    fr.commandBuffer->reset();
     fr.commandBuffer->begin();
 
     if (scene->get_skybox())

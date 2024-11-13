@@ -88,7 +88,7 @@ class VulkanRenderPass
     VulkanRenderPass() {
     }
 
-    inline VkRenderPass get_handle() const {
+    inline VkRenderPass& get_handle()  {
         return m_handle;
     }
     inline VkDevice get_device_handle() const {

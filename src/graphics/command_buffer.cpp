@@ -166,13 +166,13 @@ void CommandBuffer::draw_geometry(VertexArrays& vao,
         return;
     PROFILING_EVENT()
 
-    VkBuffer     vertexBuffers[] = {vao.vbo.get_handle()};
+    VkBuffer     vertexBuffers[] = {vao.vbo.handle};
     VkDeviceSize offsets[]       = {0};
     vkCmdBindVertexBuffers(m_handle, 0, 1, vertexBuffers, offsets);
 
     if (vao.indexCount > 0)
     {
-        vkCmdBindIndexBuffer(m_handle, vao.ibo.get_handle(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(m_handle, vao.ibo.handle, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(m_handle, vao.indexCount, instanceCount, firstOcurrence, offset, firstInstance);
     } else
     {

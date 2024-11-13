@@ -66,7 +66,7 @@ void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_
     cmd->bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
     Geometry* g = m_vignette->get_geometry();
-    cmd->draw_geometry(*get_render_data(g));
+    cmd->draw_geometry(*get_VAO(g));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)

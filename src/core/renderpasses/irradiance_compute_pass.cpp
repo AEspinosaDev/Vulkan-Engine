@@ -63,7 +63,7 @@ void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const 
     cmd->bind_descriptor_set(m_captureDescriptorSet, 0, *shaderPass);
 
     Geometry* g = scene->get_skybox()->get_box();
-    cmd->draw_geometry(*get_render_data(g));
+    cmd->draw_geometry(*get_VAO(g));
 
     cmd->end_renderpass();
 }

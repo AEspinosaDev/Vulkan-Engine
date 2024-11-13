@@ -27,7 +27,7 @@ class Semaphore
     Semaphore() {
     }
 
-    inline VkSemaphore get_handle() const {
+    inline VkSemaphore& get_handle() {
         return m_handle;
     }
 
@@ -44,7 +44,7 @@ class Fence
     Fence() {
     }
 
-    inline VkFence get_handle() const {
+    inline VkFence& get_handle() {
         return m_handle;
     }
 

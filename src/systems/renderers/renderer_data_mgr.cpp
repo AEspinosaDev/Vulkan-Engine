@@ -134,7 +134,7 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                 {
                     // Offset calculation
                     uint32_t objectOffset =
-                        m_frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].get_stride_size() * mesh_idx;
+                        m_frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
 
                     Graphics::ObjectUniforms objectData;
                     objectData.model        = m->get_model_matrix();
@@ -197,7 +197,7 @@ void BaseRenderer::destroy_texture_image(Core::ITexture* const t) {
 }
 void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
     PROFILING_EVENT()
-    Graphics::VertexArrays* rd = get_render_data(g);
+    Graphics::VertexArrays* rd = get_VAO(g);
     if (!rd->loadedOnGPU)
     {
         const Core::GeometricData* gd = g->get_geometric_data();
@@ -220,7 +220,7 @@ void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
 
 void BaseRenderer::destroy_geometry_data(Core::Geometry* const g) {
 
-    Graphics::VertexArrays* rd = get_render_data(g);
+    Graphics::VertexArrays* rd = get_VAO(g);
     if (rd->loadedOnGPU)
     {
         rd->vbo.cleanup();

@@ -11,18 +11,17 @@
 #define GEOMETRY_H
 
 #include <engine/common.h>
-#include <engine/graphics/buffer.h>
+#include <engine/graphics/accel.h>
+#include <engine/graphics/vao.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 
 class Geometry;
 
-struct GeometricData
-{
-    std::vector<uint32_t> vertexIndex;
+struct GeometricData {
+    std::vector<uint32_t>                vertexIndex;
     std::vector<Graphics::Utils::Vertex> vertexData;
 
     // Stats
@@ -35,7 +34,6 @@ struct GeometricData
     void compute_statistics();
 };
 
-
 /*
 Class that defines the mesh geometry. Can be setup by filling it with a canonical vertex type array.
 */
@@ -44,55 +42,49 @@ class Geometry
 
   private:
     Graphics::VertexArrays m_VAO{};
-    GeometricData m_geometryData{};
+    Graphics::BLAS         m_BLAS{};
+    GeometricData          m_geometryData{};
 
     size_t m_materialID{0};
 
-    friend  Graphics::VertexArrays *const get_render_data(Geometry *g);
+    friend Graphics::VertexArrays* const get_VAO(Geometry* g);
+    friend Graphics::BLAS* const get_BLAS(Geometry* g);
 
   public:
-    Geometry()
-    {
+    Geometry() {
     }
 
-    inline size_t get_material_ID() const
-    {
+    inline size_t get_material_ID() const {
         return m_materialID;
     }
-    inline void set_material_ID(size_t id)
-    {
+    inline void set_material_ID(size_t id) {
         m_materialID = id;
     }
 
-    inline bool data_loaded() const
-    {
+    inline bool data_loaded() const {
         return m_geometryData.loaded;
     }
-    inline bool indexed() const
-    {
+    inline bool indexed() const {
         return !m_geometryData.vertexIndex.empty();
     }
 
-    inline const GeometricData *get_geometric_data() const
-    {
+    inline const GeometricData* get_geometric_data() const {
         return &m_geometryData;
     }
-    ~Geometry()
-    {
+    ~Geometry() {
     }
 
-    void fill(std::vector<Graphics::Utils::Vertex> vertexInfo);
-    void fill(std::vector<Graphics::Utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
-    void fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber);
-    static Geometry *create_quad();
-    static Geometry *create_cube();
+    void             fill(std::vector<Graphics::Utils::Vertex> vertexInfo);
+    void             fill(std::vector<Graphics::Utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
+    void             fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber);
+    static Geometry* create_quad();
+    static Geometry* create_cube();
 };
 
- Graphics::VertexArrays *const get_render_data(Geometry *g);
+Graphics::VertexArrays* const get_VAO(Geometry* g);
 
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END;
-
 
 #endif // VK_GEOMETRY_H

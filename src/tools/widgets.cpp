@@ -332,8 +332,8 @@ void ObjectExplorerWidget::render() {
         int vertexCount = 0;
         for (size_t i = 0; i < model->get_num_geometries(); i++)
         {
-            vertexCount += (int)get_render_data(model->get_geometry(i))->vertexCount;
-            faceCount += (int)get_render_data(model->get_geometry(i))->indexCount / 3;
+            vertexCount += (int)get_VAO(model->get_geometry(i))->vertexCount;
+            faceCount += (int)get_VAO(model->get_geometry(i))->indexCount / 3;
         }
 
         ImGui::BeginTable(

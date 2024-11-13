@@ -27,7 +27,7 @@ class Framebuffer
     Framebuffer() {
     }
 
-    inline VkFramebuffer get_handle() const {
+    inline VkFramebuffer& get_handle()  {
         return m_handle;
     }
 

@@ -18,7 +18,7 @@ namespace Graphics {
 namespace Init {
 
 VkCommandPoolCreateInfo     command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
-VkCommandBufferAllocateInfo command_buffer_allocate_info(VkCommandPool       pool,
+VkCommandBufferAllocateInfo command_buffer_allocate_info(VkCommandPool        pool,
                                                          uint32_t             count = 1,
                                                          VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 VkCommandBufferBeginInfo    command_buffer_begin_info(VkCommandBufferUsageFlags flags = 0);
@@ -77,6 +77,15 @@ VkWriteDescriptorSet         write_descriptor_image(VkDescriptorType       type,
                                                     uint32_t               binding);
 VkAttachmentReference        attachment_reference(uint32_t slot, VkImageLayout layout);
 VkViewport viewport(VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1.0f, float x = 0.0f, float y = 0.0f);
+
+// RAYTRACING RELATED
+
+VkAccelerationStructureGeometryKHR           acceleration_structure_geometry();
+VkAccelerationStructureBuildGeometryInfoKHR  acceleration_structure_build_geometry_info();
+VkAccelerationStructureBuildSizesInfoKHR     acceleration_structure_build_sizes_info();
+// VkRayTracingShaderGroupCreateInfoKHR         ray_tracing_shader_group_create_info();
+// VkRayTracingPipelineCreateInfoKHR            rayTracingPipelineCreateInfo();
+// VkWriteDescriptorSetAccelerationStructureKHR writeDescriptorSetAccelerationStructure();
 
 } // namespace Init
 
