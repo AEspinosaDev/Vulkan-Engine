@@ -202,7 +202,7 @@ void BaseRenderer::destroy_texture_image(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
+void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
     PROFILING_EVENT()
     /*
     VERTEX ARRAYS
