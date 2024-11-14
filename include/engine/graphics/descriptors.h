@@ -10,7 +10,8 @@
 #define DESCRIPTORS_H
 
 #include <engine/common.h>
-#include <engine/graphics/buffer.h>
+#include <engine/graphics/accel.h>
+#include <engine/graphics/image.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/translator.h>
 #include <unordered_map>
@@ -48,7 +49,7 @@ class DescriptorPool
     std::unordered_map<uint32_t, VkDescriptorSetLayout> m_layouts;
 
   public:
-    inline VkDescriptorPool& get_handle()  {
+    inline VkDescriptorPool& get_handle() {
         return m_handle;
     }
     void init(VkDevice                       dvc,
@@ -76,6 +77,9 @@ class DescriptorPool
 
     void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor);
 
+    /*
+    Set writes for Uniform Buffers
+    */
     void set_descriptor_write(Buffer*          buffer,
                               VkDeviceSize     dataSize,
                               VkDeviceSize     readOffset,
@@ -83,11 +87,14 @@ class DescriptorPool
                               VkDescriptorType type,
                               uint32_t         binding);
 
-    void set_descriptor_write(VkSampler      sampler,
-                              VkImageView    imageView,
-                              VkImageLayout  layout,
-                              DescriptorSet* descriptor,
-                              uint32_t       binding);
+    /*
+    Set writes for Images
+    */
+    void set_descriptor_write(Image* image, VkImageLayout layout, DescriptorSet* descriptor, uint32_t binding);
+    /*
+    Set writes for Acceleration Structures
+    */
+    void set_descriptor_write(TLAS* accel, DescriptorSet* descriptor, uint32_t binding);
 
     void cleanup();
 };

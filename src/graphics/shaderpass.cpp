@@ -2,16 +2,14 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Graphics
-{
+namespace Graphics {
 
-ShaderStage ShaderSource::create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType,
-                                              const std::vector<uint32_t> code)
-{
+ShaderStage
+ShaderSource::create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code) {
     VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size() * sizeof(unsigned int);
-    createInfo.pCode = code.data();
+    createInfo.pCode    = code.data();
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
@@ -21,21 +19,19 @@ ShaderStage ShaderSource::create_shader_stage(VkDevice device, VkShaderStageFlag
 
     ShaderStage stage;
     stage.shaderModule = shaderModule;
-    stage.stage = stageType;
+    stage.stage        = stageType;
 
     return stage;
 }
 
-ShaderSource ShaderSource::read_file(const std::string &filePath)
-{
+ShaderSource ShaderSource::read_file(const std::string& filePath) {
 
     std::ifstream stream(filePath);
-    std::string scriptsPath(ENGINE_RESOURCES_PATH "shaders/scripts/");
+    std::string   scriptsPath(ENGINE_RESOURCES_PATH "shaders/scripts/");
 
-
-    std::string line;
+    std::string       line;
     std::stringstream ss[4];
-    ShaderStageType type = ShaderStageType::NONE_STAGE;
+    ShaderStageType   type = ShaderStageType::NONE_STAGE;
 
     while (getline(stream, line))
     {
@@ -56,7 +52,7 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
         // CHECK MODULES INCLUDED
         else if (line.find("#include") != std::string::npos)
         {
-            size_t start = line.find(" ") + 1;
+            size_t      start       = line.find(" ") + 1;
             std::string includeFile = Utils::trim(line.substr(start)); // Extract the file name and trim any spaces
 
             std::string fullIncludePath = scriptsPath + includeFile;
@@ -73,11 +69,14 @@ ShaderSource ShaderSource::read_file(const std::string &filePath)
     return {filePath, ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str()};
 }
 
-std::vector<uint32_t> ShaderSource::compile_shader(const std::string src, const std::string shaderName,
-                                                   shaderc_shader_kind kind, shaderc_optimization_level optimization)
-{
-    shaderc::Compiler compiler;
+std::vector<uint32_t> ShaderSource::compile_shader(const std::string          src,
+                                                   const std::string          shaderName,
+                                                   shaderc_shader_kind        kind,
+                                                   shaderc_optimization_level optimization) {
+    shaderc::Compiler       compiler;
     shaderc::CompileOptions options;
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+    options.SetTargetSpirv(shaderc_spirv_version_1_4);
 
     options.SetOptimizationLevel(optimization);
 
@@ -92,8 +91,7 @@ std::vector<uint32_t> ShaderSource::compile_shader(const std::string src, const 
     return spirv;
 }
 
-void ShaderPass::build_shader_stages(shaderc_optimization_level optimization)
-{
+void ShaderPass::build_shader_stages(shaderc_optimization_level optimization) {
     if (SHADER_FILE == "")
         return;
     auto shader = ShaderSource::read_file(SHADER_FILE);
@@ -101,58 +99,62 @@ void ShaderPass::build_shader_stages(shaderc_optimization_level optimization)
     if (shader.vertSource != "")
     {
         ShaderStage vertShaderStage = ShaderSource::create_shader_stage(
-            m_device, VK_SHADER_STAGE_VERTEX_BIT,
+            m_device,
+            VK_SHADER_STAGE_VERTEX_BIT,
             ShaderSource::compile_shader(shader.vertSource, shader.name + "vert", shaderc_vertex_shader, optimization));
         m_shaderStages.push_back(vertShaderStage);
     }
     if (shader.fragSource != "")
     {
-        ShaderStage fragShaderStage =
-            ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                              ShaderSource::compile_shader(shader.fragSource, shader.name + "frag",
-                                                                           shaderc_fragment_shader, optimization));
+        ShaderStage fragShaderStage = ShaderSource::create_shader_stage(
+            m_device,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            ShaderSource::compile_shader(
+                shader.fragSource, shader.name + "frag", shaderc_fragment_shader, optimization));
         m_shaderStages.push_back(fragShaderStage);
     }
     if (shader.geomSource != "")
     {
-        ShaderStage geomShaderStage =
-            ShaderSource::create_shader_stage(m_device, VK_SHADER_STAGE_GEOMETRY_BIT,
-                                              ShaderSource::compile_shader(shader.geomSource, shader.name + "geom",
-                                                                           shaderc_geometry_shader, optimization));
+        ShaderStage geomShaderStage = ShaderSource::create_shader_stage(
+            m_device,
+            VK_SHADER_STAGE_GEOMETRY_BIT,
+            ShaderSource::compile_shader(
+                shader.geomSource, shader.name + "geom", shaderc_geometry_shader, optimization));
         m_shaderStages.push_back(geomShaderStage);
     }
     if (shader.tessControlSource != "")
     {
         ShaderStage tessControlShaderStage = ShaderSource::create_shader_stage(
-            m_device, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-            ShaderSource::compile_shader(shader.tessControlSource, shader.name + "control", shaderc_tess_control_shader,
-                                         optimization));
+            m_device,
+            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+            ShaderSource::compile_shader(
+                shader.tessControlSource, shader.name + "control", shaderc_tess_control_shader, optimization));
         m_shaderStages.push_back(tessControlShaderStage);
     }
     if (shader.tessEvalSource != "")
     {
         ShaderStage tessEvalShaderStage = ShaderSource::create_shader_stage(
-            m_device, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-            ShaderSource::compile_shader(shader.tessEvalSource, shader.name + "eval", shaderc_tess_evaluation_shader,
-                                         optimization));
+            m_device,
+            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+            ShaderSource::compile_shader(
+                shader.tessEvalSource, shader.name + "eval", shaderc_tess_evaluation_shader, optimization));
         m_shaderStages.push_back(tessEvalShaderStage);
     }
 }
 
-void ShaderPass::build(VulkanRenderPass renderPass, DescriptorPool &descriptorManager, Extent2D &extent)
-{
+void ShaderPass::build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager, Extent2D& extent) {
     PipelineBuilder::build_pipeline_layout(m_pipelineLayout, m_device, descriptorManager, settings);
 
     std::vector<VkPipelineShaderStageCreateInfo> stages;
-    for (auto &stage : m_shaderStages)
+    for (auto& stage : m_shaderStages)
     {
         stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
     }
-    PipelineBuilder::build_graphic_pipeline(m_pipeline, m_pipelineLayout, m_device, renderPass.get_handle(), extent, settings, stages);
+    PipelineBuilder::build_graphic_pipeline(
+        m_pipeline, m_pipelineLayout, m_device, renderPass.get_handle(), extent, settings, stages);
 }
-void ShaderPass::cleanup()
-{
-    for (auto &stage : m_shaderStages)
+void ShaderPass::cleanup() {
+    for (auto& stage : m_shaderStages)
     {
         vkDestroyShaderModule(m_device, stage.shaderModule, nullptr);
     }

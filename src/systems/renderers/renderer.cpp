@@ -184,7 +184,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     fr.commandBuffer->end();
     fr.commandBuffer->submit(
-        m_device.get_queues()[QueueType::GRAPHIC], fr.renderFence, {fr.presentSemaphore}, {fr.renderSemaphore});
+        m_device.get_queues()[QueueType::GRAPHIC_QUEUE], fr.renderFence, {fr.presentSemaphore}, {fr.renderSemaphore});
 
     RenderResult renderResult = m_device.present_image(fr.renderSemaphore, imageIndex);
 

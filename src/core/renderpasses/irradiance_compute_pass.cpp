@@ -93,7 +93,7 @@ void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const s
 }
 void IrrandianceComputePass::connect_env_cubemap(Graphics::Image env) {
     m_descriptorPool.set_descriptor_write(
-        env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_captureDescriptorSet, 0);
+        &env, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_captureDescriptorSet, 0);
 }
 
 void IrrandianceComputePass::cleanup() {

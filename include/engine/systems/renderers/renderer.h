@@ -45,7 +45,7 @@ Renderer Global Settings Data
 struct RendererSettings {
 
     MSAASamples     samplesMSAA          = MSAA_x4;
-    BufferingType   bufferingType        = _DOUBLE;
+    BufferingType   bufferingType        = DOUBLE_BUFFER;
     SyncType        screenSync           = MAILBOX_SYNC;
     ColorFormatType colorFormat          = SBGRA_8;
     DepthFormatType depthFormat          = D32F;
@@ -270,7 +270,7 @@ class BaseRenderer
     /*
     Upload geometry vertex buffers to the GPU
     */
-    void upload_geometry_data(Core::Geometry* const g);
+    void upload_geometry_data(Core::Geometry* const g, bool createAccelStructure = true);
     void destroy_geometry_data(Core::Geometry* const g);
     /*
     Setup skybox

@@ -379,20 +379,20 @@ void ObjectExplorerWidget::render() {
         ImGui::TableNextColumn();
         ImGui::Text("Cast shadows");
         ImGui::TableNextColumn();
-        bool shadows = model->get_cast_shadows();
+        bool shadows = model->cast_shadows();
         if (ImGui::Checkbox("", &shadows))
         {
-            model->set_cast_shadows(shadows);
+            model->cast_shadows(shadows);
         };
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::Text("Affected by fog");
         ImGui::TableNextColumn();
-        bool fog = model->is_affected_by_fog();
+        bool fog = model->affected_by_fog();
         if (ImGui::Checkbox("", &fog))
         {
-            model->set_affected_by_fog(fog);
+            model->affected_by_fog(fog);
         };
 
         ImGui::EndTable();
@@ -437,10 +437,10 @@ void ObjectExplorerWidget::render() {
                     switch (currentFaceVisibility)
                     {
                     case 0:
-                        model->get_material(i)->set_culling_type(_FRONT);
+                        model->get_material(i)->set_culling_type(FRONT_CULLING);
                         break;
                     case 1:
-                        model->get_material(i)->set_culling_type(_BACK);
+                        model->get_material(i)->set_culling_type(BACK_CULLING);
                         break;
                     }
                 };
@@ -802,13 +802,13 @@ void ObjectExplorerWidget::render() {
                 switch (currentShadow)
                 {
                 case 0:
-                    light->set_shadow_type(ShadowType::BASIC);
+                    light->set_shadow_type(ShadowType::BASIC_SHADOW);
                     break;
                 case 1:
-                    light->set_shadow_type(ShadowType::VSM);
+                    light->set_shadow_type(ShadowType::VSM_SHADOW);
                     break;
                 case 2:
-                    light->set_shadow_type(ShadowType::RAYTRACED);
+                    light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
                     break;
                 }
             }

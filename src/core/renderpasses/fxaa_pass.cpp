@@ -32,7 +32,7 @@ void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_device->create_descriptor_pool(m_descriptorPool, 1, 1, 1, 1, 1);
 
     LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT,  {outputTextureBinding});
+    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, {outputTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_imageDescriptorSet);
 }
@@ -57,7 +57,7 @@ void FXAAPass::setup_shader_passes() {
 void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex],m_extent, m_attachments);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_extent, m_attachments);
     cmd->set_viewport(m_extent);
 
     ShaderPass* shaderPass = m_shaderPasses["fxaa"];
@@ -77,7 +77,7 @@ void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_
 
 void FXAAPass::connect_to_previous_images(std::vector<Image> images) {
     m_descriptorPool.set_descriptor_write(
-        images[0].sampler, images[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+        &images[0], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
 
 } // namespace Core

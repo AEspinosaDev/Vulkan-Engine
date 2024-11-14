@@ -78,8 +78,10 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
     LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
     LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT,
-                                {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
+    LayoutBinding accelBinding(UniformDataType::ACCELERATION_STRUCTURE, VK_SHADER_STAGE_FRAGMENT_BIT, 5);
+    m_descriptorPool.set_layout(
+        DescriptorLayoutType::GLOBAL_LAYOUT,
+        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding});
 
     // PER-OBJECT SET
     LayoutBinding objectBufferBinding(
@@ -120,8 +122,7 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
             1);
 
-        m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX)->sampler,
-                                              get_image(Texture::FALLBACK_TEX)->view,
+        m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX),
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
@@ -256,7 +257,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
     PROFILING_EVENT()
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex],m_extent, m_attachments);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_extent, m_attachments);
     cmd->set_viewport(m_extent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
@@ -284,7 +285,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
                         cmd->set_depth_test_enable(mat->get_parameters().depthTest);
                         cmd->set_depth_write_enable(mat->get_parameters().depthWrite);
                         cmd->set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                             : CullingMode::_NO_CULLING);
+                                                                             : CullingMode::NO_CULLING);
 
                         ShaderPass* shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
@@ -317,7 +318,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
 
                 cmd->set_depth_test_enable(true);
                 cmd->set_depth_write_enable(true);
-                cmd->set_cull_mode(CullingMode::_NO_CULLING);
+                cmd->set_cull_mode(CullingMode::NO_CULLING);
 
                 ShaderPass* shaderPass = m_shaderPasses["skybox"];
 
@@ -352,12 +353,21 @@ void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
             }
         }
     }
+    if (!get_TLAS(scene)->binded)
+    {
+
+        for (size_t i = 0; i < m_descriptors.size(); i++)
+        {
+            m_descriptorPool.set_descriptor_write(get_TLAS(scene), &m_descriptors[i].globalDescritor, 5);
+        }
+        get_TLAS(scene)->binded = true;
+    }
 }
 void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
-        m_descriptorPool.set_descriptor_write(images[0].sampler,
-                                              images[0].view,
+        m_descriptorPool.set_descriptor_write(&images[0],
+
                                               //   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
@@ -369,9 +379,9 @@ void ForwardPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         m_descriptorPool.set_descriptor_write(
-            env.sampler, env.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+            &env, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
         m_descriptorPool.set_descriptor_write(
-            irr.sampler, irr.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+            &irr, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
     }
 }
 void ForwardPass::setup_material_descriptor(IMaterial* mat) {
@@ -389,8 +399,7 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
             // Set texture write
             if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
             {
-                m_descriptorPool.set_descriptor_write(get_image(texture)->sampler,
-                                                      get_image(texture)->view,
+                m_descriptorPool.set_descriptor_write(get_image(texture),
                                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                       &mat->get_texture_descriptor(),
                                                       pair.first);
@@ -401,8 +410,7 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
         {
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX)->sampler,
-                                                      get_image(Texture::FALLBACK_TEX)->view,
+                m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX),
                                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                       &mat->get_texture_descriptor(),
                                                       pair.first);

@@ -1,5 +1,5 @@
 #shader vertex
-#version 450
+#version 460
 #include camera.glsl
 #include object.glsl
 
@@ -73,7 +73,9 @@ void main() {
 }
 
 #shader fragment
-#version 450
+#version 460
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
 #include camera.glsl
 #include light.glsl
 #include scene.glsl
@@ -85,6 +87,7 @@ void main() {
 #include IBL.glsl
 #include reindhart.glsl
 #include BRDFs/schlick_smith_BRDF.glsl
+#include raytraced_shadows.glsl
 
 //Input
 layout(location = 0) in vec3 v_pos;
@@ -101,6 +104,7 @@ layout(location = 0) out vec4 outColor;
 
 layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
 layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
+layout (set = 0,  binding = 5) uniform accelerationStructureEXT TLAS;
 
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -194,11 +198,11 @@ void main() {
 
             if(int(object.otherParams.y) == 1 && scene.lights[i].shadowCast == 1) {
                 if(scene.lights[i].shadowType == 0) //Classic
-                    lighting *= computeShadow(shadowMap,scene.lights[i],i,v_modelPos);
+                    lighting *= computeShadow(shadowMap, scene.lights[i], i, v_modelPos);
                 if(scene.lights[i].shadowType == 1) //VSM   
-                    lighting *= computeVarianceShadow(shadowMap,scene.lights[i],i,v_modelPos);
-                // if(scene.lights[i].shadowType == 1) //Raytraced  
-                    // lighting *= (1.0 - computeRaytracedShadow(shadowMap,scene.lights[i],i,v_modelPos));
+                    lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, v_modelPos);
+                if(scene.lights[i].shadowType == 2) //Raytraced  
+                    lighting *= computeRaytracedShadow(TLAS, v_modelPos, normalize(scene.lights[i].shadowData.xyz - v_modelPos), 1000);
             }
 
         color += lighting;

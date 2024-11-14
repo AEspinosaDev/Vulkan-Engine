@@ -96,11 +96,11 @@ void Mesh::set_volume_type(VolumeType t)
 
     switch (m_volumeType)
     {
-    case SPHERE:
+    case SPHERE_VOLUME:
         m_volume = new Sphere();
         break;
    
-    case OBB:
+    case OBB_VOLUME:
         /* code */
         break;
     }

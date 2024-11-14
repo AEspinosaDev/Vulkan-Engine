@@ -143,17 +143,17 @@ typedef enum MaskType
 
 typedef enum CullingMode
 {
-    _FRONT      = VK_CULL_MODE_FRONT_BIT,
-    _BACK       = VK_CULL_MODE_BACK_BIT,
-    _NO_CULLING = VK_CULL_MODE_NONE,
+    FRONT_CULLING      = VK_CULL_MODE_FRONT_BIT,
+    BACK_CULLING       = VK_CULL_MODE_BACK_BIT,
+    NO_CULLING = VK_CULL_MODE_NONE,
 } CullingMode;
 
 typedef enum BufferingType
 {
-    _UNIQUE    = 1,
-    _DOUBLE    = 2,
-    _TRIPLE    = 3,
-    _QUADRUPLE = 4
+    UNIQUE_BUFFER    = 1,
+    DOUBLE_BUFFER    = 2,
+    TRIPLE_BUFFER    = 3,
+    QUAD_BUFFER = 4
 } BufferingType;
 
 typedef enum MSAASamples
@@ -284,9 +284,9 @@ typedef enum LightType
 
 typedef enum ShadowType
 {
-    BASIC     = 0, // Classic shadow mapping
-    VSM       = 1, // Variance shadow mapping
-    RAYTRACED = 2, // Raytraced shadow
+    BASIC_SHADOW     = 0, // Classic shadow mapping
+    VSM_SHADOW       = 1, // Variance shadow mapping
+    RAYTRACED_SHADOW = 2, // Raytraced shadow
 } ShadowType;
 
 typedef enum GuiColorProfileType
@@ -299,9 +299,9 @@ typedef enum GuiColorProfileType
 
 typedef enum VolumeType
 {
-    SPHERE = 0,
-    AABB   = 1,
-    OBB    = 2,
+    SPHERE_VOLUME = 0,
+    AABB_VOLUME   = 1,
+    OBB_VOLUME    = 2,
 } VolumeType;
 
 typedef enum SyncType
@@ -319,13 +319,6 @@ typedef enum RendererType
     DEFERRED_RENDERER = 1,
 } RendererType;
 
-typedef enum AmbientOcclusionType
-{
-    SSAO  = 0,
-    USSAO = 1,
-    DSSAO = 2
-} AmbientOcclusionType;
-
 typedef enum WindowingSystem
 {
     GLFW = 0,
@@ -333,10 +326,10 @@ typedef enum WindowingSystem
 } WindowingSystem;
 enum QueueType
 {
-    GRAPHIC = 0,
-    PRESENT = 1,
-    COMPUTE = 2,
-    RT      = 3
+    GRAPHIC_QUEUE = 0,
+    PRESENT_QUEUE = 1,
+    COMPUTE_QUEUE = 2,
+    RT_QUEUE      = 3
 };
 enum AttachmentType
 {
@@ -360,7 +353,8 @@ enum UniformDataType
 {
     UNIFORM_BUFFER         = 0,
     DYNAMIC_UNIFORM_BUFFER = 1,
-    COMBINED_IMAGE_SAMPLER = 2
+    COMBINED_IMAGE_SAMPLER = 2,
+    ACCELERATION_STRUCTURE = 3,
 };
 
 // Sample count enum: to represent sample counts in a clearer way

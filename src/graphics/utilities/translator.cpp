@@ -129,6 +129,8 @@ VkDescriptorType get(UniformDataType uniformDataType) {
         return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     case UniformDataType::COMBINED_IMAGE_SAMPLER:
         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    case UniformDataType::ACCELERATION_STRUCTURE:
+        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     default:
         throw std::invalid_argument("Unknown UniformDataType");
     }

@@ -52,7 +52,7 @@ void Application::setup() {
     const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH "meshes/");
 
     camera = new Camera();
-    camera->set_position(Vec3(0.0f, 0.0f, -5.0f));
+    camera->set_position(Vec3(0.0f, 0.0f, -7.2f));
     camera->set_far(100.0f);
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
@@ -60,15 +60,18 @@ void Application::setup() {
     m_scene = new Scene(camera);
 
     Mesh* lightDummy = new Mesh();
-    Tools::Loaders::load_3D_file(lightDummy, ENGINE_MESH_PATH + "sphere.obj");
+    Tools::Loaders::load_3D_file(lightDummy, ENGINE_MESH_PATH + "sphere.obj", false);
     lightDummy->push_material(new UnlitMaterial());
     lightDummy->set_scale(0.5f);
+    lightDummy->ray_hittable(false);
+    lightDummy->cast_shadows(false);
     lightDummy->set_name("Gizmo");
 
     PointLight* light = new PointLight();
     light->set_position({-3.0f, 3.0f, 0.0f});
     light->set_area_of_effect(20.0f);
     light->set_shadow_fov(115.0f);
+    light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
     light->add_child(lightDummy);
     light->set_name("Light");
 
@@ -118,6 +121,24 @@ void Application::setup() {
     plane->set_position({0.0, -2.3, 0.0});
     plane->set_rotation({-90.0f, 0.0f, 0.0f});
     plane->set_scale(5.0f);
+
+    Mesh* stoneMesh = new Mesh();
+    Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
+    auto     stoneMat      = new PhysicallyBasedMaterial();
+    Texture* stonelanternT = new Texture();
+    Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
+    stoneMat->set_albedo_texture(stonelanternT);
+    Texture* stonelanternN = new Texture();
+    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "stone_normal.png", TextureFormatType::NORMAL_FORMAT);
+    stoneMat->set_normal_texture(stonelanternN);
+    stoneMesh->push_material(stoneMat);
+    stoneMesh->set_name("Lantern");
+    stoneMesh->set_position({2.0f, -2.3f, -2.3f});
+    stoneMesh->set_rotation({0.0, 126.0f, 0.0f});
+    stoneMesh->set_scale(1.5);
+    stoneMat->set_roughness(0.5f);
+    stoneMat->set_metalness(0.0f);
+    m_scene->add(stoneMesh);
 
     m_scene->add(plane);
 

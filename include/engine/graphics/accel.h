@@ -10,8 +10,8 @@
 #define ACCEL_H
 
 #include <engine/common.h>
-#include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/extensions.h>
+#include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/vao.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -25,13 +25,16 @@ struct BLAS {
     VkDevice                   device       = VK_NULL_HANDLE;
     VkDeviceAddress            deviceAdress = 0;
 
-    Buffer                     buffer       = {};
-
-  public:
-    BLAS() {
-    }
+    Buffer buffer = {};
 
     void cleanup();
+};
+/*
+Instance of a Bottom Level Acceleration Structure. Has a unique transform.
+*/
+struct BLASInstance {
+    BLAS accel     = {};
+    Mat4 transform = {};
 };
 /*
 Top Level Acceleration structure
@@ -41,11 +44,8 @@ struct TLAS {
     VkDevice                   device       = VK_NULL_HANDLE;
     VkDeviceAddress            deviceAdress = 0;
 
-    Buffer                     buffer       = {};
-
-  public:
-    TLAS() {
-    }
+    Buffer buffer = {};
+    bool binded = false;
 
     void cleanup();
 };

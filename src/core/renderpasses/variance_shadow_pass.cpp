@@ -165,7 +165,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
     {
         if (m)
         {
-            if (m->is_active() && m->get_cast_shadows() && m->get_num_geometries() > 0)
+            if (m->is_active() && m->cast_shadows() && m->get_num_geometries() > 0)
             {
                 uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
@@ -183,7 +183,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
                     cmd->set_depth_test_enable(mat->get_parameters().depthTest);
                     cmd->set_depth_write_enable(mat->get_parameters().depthWrite);
                     cmd->set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                         : CullingMode::_NO_CULLING);
+                                                                         : CullingMode::NO_CULLING);
 
                     cmd->bind_shaderpass(*shaderPass);
                     // GLOBAL LAYOUT BINDING

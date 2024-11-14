@@ -28,7 +28,7 @@ float computeShadow(sampler2DArray shadowMap ,LightUniform light, int lightId, v
     if(projCoords.z > 1.0 || projCoords.z < 0.0)
         return 1.0;
     
-    return 1.0 - filterPCF(shadowMap, lightId,int(light.pcfKernel), light.kernelRadius, projCoords, light.shadowBias);
+    return 1.0 - filterPCF(shadowMap, lightId,int(light.shadowData.w), light.shadowData.y, projCoords, light.shadowData.x);
 
 }
 
@@ -52,7 +52,7 @@ float computeVarianceShadow(sampler2DArray VSM ,LightUniform light, int lightId,
     float variance = max(moments.y-moments.x*moments.x,0.00002);
 
     float d = projCoords.z - moments.x;
-    float pMax = linstep(light.shadowBias,1.0,variance / (variance + d*d));
+    float pMax = linstep(light.shadowData.x,1.0,variance / (variance + d*d));
     //}
 
     if(projCoords.z > 1.0 || projCoords.z < 0.0)

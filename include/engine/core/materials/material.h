@@ -23,7 +23,7 @@ struct MaterialSettings
 {
     bool blending{false};
     bool faceCulling{false};
-    CullingMode culling{_BACK};
+    CullingMode culling{BACK_CULLING};
     bool depthTest{true};
     bool depthWrite{true};
     bool alphaTest{false};

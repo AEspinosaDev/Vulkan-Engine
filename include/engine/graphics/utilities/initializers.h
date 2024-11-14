@@ -83,9 +83,9 @@ VkViewport viewport(VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1
 VkAccelerationStructureGeometryKHR           acceleration_structure_geometry();
 VkAccelerationStructureBuildGeometryInfoKHR  acceleration_structure_build_geometry_info();
 VkAccelerationStructureBuildSizesInfoKHR     acceleration_structure_build_sizes_info();
+VkWriteDescriptorSetAccelerationStructureKHR write_descriptor_set_acceleration_structure();
 // VkRayTracingShaderGroupCreateInfoKHR         ray_tracing_shader_group_create_info();
 // VkRayTracingPipelineCreateInfoKHR            rayTracingPipelineCreateInfo();
-// VkWriteDescriptorSetAccelerationStructureKHR writeDescriptorSetAccelerationStructure();
 
 } // namespace Init
 

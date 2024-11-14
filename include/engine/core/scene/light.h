@@ -24,7 +24,7 @@ class Light : public Object3D
 
     // Shadow
     struct Shadow {
-        ShadowType type                = ShadowType::BASIC;
+        ShadowType type                = ShadowType::BASIC_SHADOW;
         bool       cast                = true;
         float      nearPlane           = .5f;
         float      farPlane            = 96.0f;

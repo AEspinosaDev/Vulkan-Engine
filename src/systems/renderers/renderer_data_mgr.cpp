@@ -122,6 +122,8 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
             Core::set_meshes(scene, meshes);
         }
 
+        std::vector<Graphics::BLASInstance> BLASInstances; // RT Acceleration Structures per instanced mesh
+        BLASInstances.reserve(scene->get_meshes().size());
         unsigned int mesh_idx = 0;
         for (Core::Mesh* m : scene->get_meshes())
         {
@@ -139,7 +141,7 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                     Graphics::ObjectUniforms objectData;
                     objectData.model        = m->get_model_matrix();
                     objectData.otherParams1 = {
-                        m->is_affected_by_fog(), m->get_recive_shadows(), m->get_cast_shadows(), false};
+                        m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), false};
                     objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
                     m_frames[m_currentFrame].uniformBuffers[1].upload_data(
                         &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
@@ -148,7 +150,9 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                     {
                         // Object vertex buffer setup
                         Core::Geometry* g = m->get_geometry(i);
-                        upload_geometry_data(g);
+                        upload_geometry_data(g, m_settings.enableRaytracing && m->ray_hittable());
+                        if (m_settings.enableRaytracing && m->ray_hittable())
+                            BLASInstances.push_back({*get_BLAS(g), m->get_model_matrix()});
 
                         // Object material setup
                         Core::IMaterial* mat = m->get_material(g->get_material_ID());
@@ -178,10 +182,9 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
         }
         if (m_settings.enableRaytracing)
         {
-            std::vector<Graphics::BLAS> blases = {*get_BLAS(meshes[0]->get_geometry()),*get_BLAS(meshes[1]->get_geometry())};
-            Graphics::TLAS*             accel  = get_TLAS(scene);
+            Graphics::TLAS* accel = get_TLAS(scene);
             if (!accel->handle)
-                m_device.create_TLAS(*accel, blases);
+                m_device.create_TLAS(*accel, BLASInstances);
         }
     }
 }
@@ -202,7 +205,7 @@ void BaseRenderer::destroy_texture_image(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
+void BaseRenderer::upload_geometry_data(Core::Geometry* const g, bool createAccelStructure) {
     PROFILING_EVENT()
     /*
     VERTEX ARRAYS
@@ -221,7 +224,7 @@ void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
     /*
     ACCELERATION STRUCTURE
     */
-    if (m_settings.enableRaytracing)
+    if (createAccelStructure)
     {
         Graphics::BLAS* accel = get_BLAS(g);
         if (!accel->handle)

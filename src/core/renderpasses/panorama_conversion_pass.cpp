@@ -77,8 +77,7 @@ void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const sc
 
         if (m_panoramaDescriptorSet.bindings == 0 || envMap->is_dirty())
         {
-            m_descriptorPool.set_descriptor_write(get_image(envMap)->sampler,
-                                                  get_image(envMap)->view,
+            m_descriptorPool.set_descriptor_write(get_image(envMap),
                                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                   &m_panoramaDescriptorSet,
                                                   0);

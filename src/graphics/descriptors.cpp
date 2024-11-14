@@ -104,15 +104,14 @@ void DescriptorPool::set_descriptor_write(Buffer*          buffer,
 
     vkUpdateDescriptorSets(m_device, 1, &writeSetting, 0, nullptr);
 }
-void DescriptorPool::set_descriptor_write(VkSampler      sampler,
-                                          VkImageView    imageView,
+void DescriptorPool::set_descriptor_write(Image*         image,
                                           VkImageLayout  layout,
                                           DescriptorSet* descriptor,
                                           uint32_t       binding) {
 
     VkDescriptorImageInfo imageBufferInfo;
-    imageBufferInfo.sampler     = sampler;
-    imageBufferInfo.imageView   = imageView;
+    imageBufferInfo.sampler     = image->sampler;
+    imageBufferInfo.imageView   = image->view;
     imageBufferInfo.imageLayout = layout;
 
     VkWriteDescriptorSet texture1 = Init::write_descriptor_image(
@@ -122,7 +121,27 @@ void DescriptorPool::set_descriptor_write(VkSampler      sampler,
 
     vkUpdateDescriptorSets(m_device, 1, &texture1, 0, nullptr);
 }
+void DescriptorPool::set_descriptor_write(TLAS* accel, DescriptorSet* descriptor, uint32_t binding) {
+
+    VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo =
+        Init::write_descriptor_set_acceleration_structure();
+    descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
+    descriptorAccelerationStructureInfo.pAccelerationStructures    = &accel->handle;
+
+    VkWriteDescriptorSet accelerationStructureWrite{};
+    accelerationStructureWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    accelerationStructureWrite.pNext           = &descriptorAccelerationStructureInfo;
+    accelerationStructureWrite.dstSet          = descriptor->handle;
+    accelerationStructureWrite.dstBinding      = binding;
+    accelerationStructureWrite.descriptorCount = 1;
+    accelerationStructureWrite.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+
+    descriptor->bindings += 1;
+
+    vkUpdateDescriptorSets(m_device, 1, &accelerationStructureWrite, 0, nullptr);
+}
 void DescriptorPool::cleanup() {
+
     for (auto& layout : m_layouts)
     {
         vkDestroyDescriptorSetLayout(m_device, layout.second, nullptr);

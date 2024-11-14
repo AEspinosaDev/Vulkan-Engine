@@ -13,52 +13,48 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Graphics
-{
+namespace Graphics {
 
-struct CameraUniforms
-{
-    Mat4 view;
-    Mat4 proj;
-    Mat4 viewProj;
-    Vec4 position;
-    Vec2 screenExtent;
+struct CameraUniforms {
+    Mat4  view;
+    Mat4  proj;
+    Mat4  viewProj;
+    Vec4  position;
+    Vec2  screenExtent;
     float nearPlane;
     float farPlane;
 };
 
-struct LightUniforms
-{
-    Vec4 position = {0.0f, 0.0f, 0.0f, 0.0f}; // w for type
-    Vec4 color = {0.0f, 0.0f, 0.0f, 0.0f};
+struct LightUniforms {
+    
+    Vec4 position  = {0.0f, 0.0f, 0.0f, 0.0f}; // w for type
+    Vec4 color     = {0.0f, 0.0f, 0.0f, 0.0f};
     Vec4 dataSlot1 = {0.0f, 0.0f, 0.0f, 0.0f};
     Mat4 viewProj;
     Vec4 dataSlot2 = {0.0f, 0.0f, 0.0f, 0.0f};
+   
 };
 
-struct SceneUniforms
-{
-    Vec4 fogColorAndSSAO; // w is for enabling SSAO
-    Vec4 fogParams;       // x for near, y for far, z for intensity, w enable.
-    Vec4 ambientColor;    // w intensity
+struct SceneUniforms {
+    Vec4          fogColorAndSSAO; // w is for enabling SSAO
+    Vec4          fogParams;       // x for near, y for far, z for intensity, w enable.
+    Vec4          ambientColor;    // w intensity
     LightUniforms lightUniforms[VK_MAX_LIGHTS];
-    int numLights;
-    int SSAOtype;
-    int emphasizeAO;
-    int useIBL;
-    float envRotation;
-    float envColorMultiplier;
+    int           numLights;
+    int           SSAOtype;
+    int           emphasizeAO;
+    int           useIBL;
+    float         envRotation;
+    float         envColorMultiplier;
 };
 
-struct ObjectUniforms
-{
+struct ObjectUniforms {
     Mat4 model;
     Vec4 otherParams1; // x is affected by fog, y is receive shadows, z cast shadows
     Vec4 otherParams2; // x is selected // is affected by ambient light
 };
 
-struct MaterialUniforms
-{
+struct MaterialUniforms {
     Vec4 dataSlot1;
     Vec4 dataSlot2;
     Vec4 dataSlot3;
@@ -67,8 +63,7 @@ struct MaterialUniforms
     Vec4 dataSlot6;
 };
 
-struct SkyboxUniforms
-{
+struct SkyboxUniforms {
     float blurriness;
     float intensity;
     float rotation;

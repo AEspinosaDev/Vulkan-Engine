@@ -9,8 +9,7 @@ VkCommandPoolCreateInfo Init::command_pool_create_info(uint32_t                 
     VkCommandPoolCreateInfo info = {};
     info.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.pNext                   = nullptr;
-
-    info.flags = flags;
+    info.flags                   = flags;
     return info;
 }
 
@@ -21,10 +20,9 @@ Init::command_buffer_allocate_info(VkCommandPool        pool,
     VkCommandBufferAllocateInfo info = {};
     info.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     info.pNext                       = nullptr;
-
-    info.commandPool        = pool;
-    info.commandBufferCount = count;
-    info.level              = level;
+    info.commandPool                 = pool;
+    info.commandBufferCount          = count;
+    info.level                       = level;
     return info;
 }
 
@@ -408,6 +406,12 @@ VkAccelerationStructureBuildSizesInfoKHR Init::acceleration_structure_build_size
     return accelerationStructureBuildSizesInfoKHR;
 }
 
+VkWriteDescriptorSetAccelerationStructureKHR Init::write_descriptor_set_acceleration_structure() {
+    VkWriteDescriptorSetAccelerationStructureKHR writeDescriptorSetAccelerationStructureKHR{};
+    writeDescriptorSetAccelerationStructureKHR.sType =
+        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+    return writeDescriptorSetAccelerationStructureKHR;
+}
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END

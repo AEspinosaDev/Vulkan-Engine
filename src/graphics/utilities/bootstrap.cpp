@@ -3,44 +3,43 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Graphics
-{
+namespace Graphics {
 #pragma region INSTANCE
-VkInstance Booter::create_instance(const char *appName, const char *engineName, bool validation,
-                                   std::vector<const char *> validationLayers)
-{
+VkInstance Booter::create_instance(const char*              appName,
+                                   const char*              engineName,
+                                   bool                     validation,
+                                   std::vector<const char*> validationLayers) {
     if (validation && !Utils::check_validation_layer_suport(validationLayers))
     {
         throw VKFW_Exception(" validation layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = appName;
+    appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName   = appName;
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = engineName;
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_3; // To enable the most extensions
+    appInfo.pEngineName        = engineName;
+    appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion         = VK_API_VERSION_1_3; // To enable the most extensions
 
     VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    auto extensions = get_required_extensions(validation);
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    auto extensions                    = get_required_extensions(validation);
+    createInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
     if (validation)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
         Utils::populate_debug_messenger_create_info(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
-    }
-    else
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+    } else
     {
         createInfo.enabledLayerCount = 0;
 
@@ -55,13 +54,12 @@ VkInstance Booter::create_instance(const char *appName, const char *engineName, 
     return instance;
 }
 
-std::vector<const char *> Booter::get_required_extensions(bool validation)
-{
-    uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
+std::vector<const char*> Booter::get_required_extensions(bool validation) {
+    uint32_t     glfwExtensionCount = 0;
+    const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
     if (validation)
     {
@@ -78,9 +76,8 @@ std::vector<const char *> Booter::get_required_extensions(bool validation)
 }
 #pragma region GPU
 
-VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface,
-                                                   std::vector<const char *> extensions)
-{
+VkPhysicalDevice
+Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std::vector<const char*> extensions) {
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
 
     uint32_t deviceCount = 0;
@@ -94,7 +91,7 @@ VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfac
 
     std::multimap<int, VkPhysicalDevice> candidates;
 
-    for (const auto &device : devices)
+    for (const auto& device : devices)
     {
         int score = rate_device_suitability(device, surface, extensions);
 
@@ -108,8 +105,7 @@ VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfac
     if (candidates.rbegin()->first > 0)
     {
         gpu = candidates.rbegin()->second;
-    }
-    else
+    } else
     {
         throw VKFW_Exception("failed to find a suitable GPU!");
     }
@@ -117,8 +113,9 @@ VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfac
     return gpu;
 }
 
-int Booter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface, std::vector<const char *> extensions)
-{
+int Booter::rate_device_suitability(VkPhysicalDevice         device,
+                                    VkSurfaceKHR             surface,
+                                    std::vector<const char*> extensions) {
     VkPhysicalDeviceProperties deviceProperties;
 
     // VR, 64B floats and multi-viewport
@@ -151,8 +148,7 @@ int Booter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surfac
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         if (!swapChainAdequate)
             return 0;
-    }
-    else
+    } else
     {
         return 0;
     }
@@ -160,8 +156,7 @@ int Booter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surfac
     return score;
 }
 
-bool Booter::check_device_extension_support(VkPhysicalDevice device, std::vector<const char *> extensions)
-{
+bool Booter::check_device_extension_support(VkPhysicalDevice device, std::vector<const char*> extensions) {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -170,7 +165,7 @@ bool Booter::check_device_extension_support(VkPhysicalDevice device, std::vector
 
     std::set<std::string> requiredExtensions(extensions.begin(), extensions.end());
 
-    for (const auto &extension : availableExtensions)
+    for (const auto& extension : availableExtensions)
     {
         requiredExtensions.erase(extension.extensionName);
     }
@@ -179,32 +174,34 @@ bool Booter::check_device_extension_support(VkPhysicalDevice device, std::vector
 }
 
 #pragma region DEVICE
-VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &queues, VkPhysicalDevice gpu,
-                                       VkPhysicalDeviceFeatures features, VkSurfaceKHR surface, bool validation,
-                                       std::vector<const char *> validationLayers)
-{
+VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& queues,
+                                       VkPhysicalDevice                        gpu,
+                                       VkPhysicalDeviceFeatures                features,
+                                       VkSurfaceKHR                            surface,
+                                       bool                                    validation,
+                                       std::vector<const char*>                validationLayers) {
 
-    Utils::QueueFamilyIndices queueFamilies = Utils::find_queue_families(gpu,surface);
+    Utils::QueueFamilyIndices            queueFamilies = Utils::find_queue_families(gpu, surface);
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {queueFamilies.graphicsFamily.value(),
-                                              queueFamilies.presentFamily.value()};
+    std::set<uint32_t>                   uniqueQueueFamilies = {
+        queueFamilies.graphicsFamily.value(), queueFamilies.presentFamily.value()};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
     {
         VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.queueCount       = 1;
         queueCreateInfo.pQueuePriorities = &queuePriority;
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    std::vector<const char *> enabledExtensions;
+    std::vector<const char*> enabledExtensions;
 
     VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
-    physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    physicalDeviceFeatures2.pNext = nullptr;
+    physicalDeviceFeatures2.sType                     = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2.pNext                     = nullptr;
 
     enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
@@ -245,17 +242,19 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &q
         physicalDeviceFeatures2.pNext = &extendedDynamicState3Features;
     }
 
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR    rayTracingPipelineFeatures    = {};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {};
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {};
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR   bufferDeviceAddressFeatures   = {};
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT    descriptorIndexingFeatures    = {};
+    VkPhysicalDeviceRayQueryFeaturesKHR              rayQueryFeatures              = {};
 
     // Check RTX extensions
     if (Utils::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
         Utils::is_device_extension_supported(gpu, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
         Utils::is_device_extension_supported(gpu, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) &&
         Utils::is_device_extension_supported(gpu, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-        Utils::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME))
+        Utils::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+        Utils::is_device_extension_supported(gpu, VK_KHR_RAY_QUERY_EXTENSION_NAME))
     {
 
         enabledExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -263,6 +262,7 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &q
         enabledExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
         enabledExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
         enabledExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        enabledExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         rayTracingPipelineFeatures.pNext = physicalDeviceFeatures2.pNext;
@@ -271,8 +271,12 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &q
         accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
         accelerationStructureFeatures.accelerationStructure = true;
 
+        rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        rayQueryFeatures.pNext    = &accelerationStructureFeatures;
+        rayQueryFeatures.rayQuery = true;
+
         bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
-        bufferDeviceAddressFeatures.pNext = &accelerationStructureFeatures;
+        bufferDeviceAddressFeatures.pNext = &rayQueryFeatures;
         bufferDeviceAddressFeatures.bufferDeviceAddress = true;
 
         descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
@@ -283,25 +287,23 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &q
     }
 
     physicalDeviceFeatures2.features = features;
-    
 
     VkDeviceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.pNext = &physicalDeviceFeatures2;
+    createInfo.pQueueCreateInfos    = queueCreateInfos.data();
+    createInfo.pNext                = &physicalDeviceFeatures2;
 
     // createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
+    createInfo.enabledExtensionCount   = static_cast<uint32_t>(enabledExtensions.size());
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
 
     if (validation)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
-    }
-    else
+    } else
     {
         createInfo.enabledLayerCount = 0;
     }
@@ -311,16 +313,15 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &q
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(device, queueFamilies.graphicsFamily.value(), 0, &queues[QueueType::GRAPHIC]);
-    vkGetDeviceQueue(device, queueFamilies.presentFamily.value(), 0, &queues[QueueType::PRESENT]);
+    vkGetDeviceQueue(device, queueFamilies.graphicsFamily.value(), 0, &queues[QueueType::GRAPHIC_QUEUE]);
+    vkGetDeviceQueue(device, queueFamilies.presentFamily.value(), 0, &queues[QueueType::PRESENT_QUEUE]);
 
     return device;
 }
 
 #pragma region DEBUG
 
-VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance)
-{
+VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance) {
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     Utils::populate_debug_messenger_create_info(createInfo);
 
@@ -332,13 +333,12 @@ VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance)
     return debugMessenger;
 }
 #pragma region VMA
-VmaAllocator Booter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu)
-{
+VmaAllocator Booter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu) {
     VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = gpu;
-    allocatorInfo.device = device;
-    allocatorInfo.instance = instance;
-    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    allocatorInfo.physicalDevice         = gpu;
+    allocatorInfo.device                 = device;
+    allocatorInfo.instance               = instance;
+    allocatorInfo.flags                  = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     VmaAllocator memoryAllocator;
     vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
     return memoryAllocator;

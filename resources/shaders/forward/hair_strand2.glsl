@@ -174,10 +174,10 @@ float computeShadow(LightUniform light, int lightId) {
         return 1.0;
 
     vec3 lightDir = normalize(light.position.xyz - g_pos);
-    float bias = max(light.shadowBias * 5.0 * (1.0 - dot(g_dir, lightDir)), light.shadowBias);  //Modulate by angle of incidence
+    float bias = max(light.shadowData.x * 5.0 * (1.0 - dot(g_dir, lightDir)), light.shadowData.x);  //Modulate by angle of incidence
 
-    return 1.0 - filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
-
+    // return 1.0 - filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
+  return 1.0 - filterPCF(shadowMap, lightId,int(light.shadowData.w), light.shadowData.y, projCoords, light.shadowData.x);
 }
 
 

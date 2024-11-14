@@ -1,29 +1,36 @@
 struct LightUniform{
 
     vec3    position;
-    int     type;
+    float   type;
+
     vec3    color;
     float   intensity;
 
     float   areaEffect;
     float   decay;
-
-    //Shadows
     float   shadowType;
     float   shadowCast;
+
     mat4    viewProj;
-    float   shadowBias;
-    float   kernelRadius;
-    bool    angleDependantBias;
-    float   pcfKernel;
+
+    vec4    shadowData;
+
+    // x   shadowBias;
+    // y   kernelRadius;
+    // z   angleDependantBias;
+    // w   pcfKernel;
+
+    //If raytraced
+    // vec3 world position
+    // w samples
 
 };
 
 bool isInAreaOfInfluence(LightUniform light, vec3 fragPos){
-    if(light.type == 0){ //Point Light
+    if(int(light.type) == 0){ //Point Light
         return length(light.position - fragPos) <= light.areaEffect;
     }
-    else if(light.type == 2){ //Spot light
+    else if(int(light.type) == 2){ //Spot light
         //TO DO...
         return true;
     }

@@ -17,10 +17,10 @@
 #include <engine/graphics/frame.h>
 #include <engine/graphics/framebuffer.h>
 #include <engine/graphics/swapchain.h>
-#include <engine/graphics/vk_renderpass.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/utils.h>
+#include <engine/graphics/vk_renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -55,7 +55,8 @@ class Device
                                                    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                                                    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                                                    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                                                   VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
+                                                   VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+                                                   VK_KHR_RAY_QUERY_EXTENSION_NAME};
 #ifdef NDEBUG
     const bool m_enableValidationLayers{false};
 #else
@@ -129,7 +130,7 @@ class Device
     /*Create and Setup Bottom-Level Acceleration Structure*/
     void create_BLAS(BLAS& accel, VAO& vao);
     /*Create and Setup Top-Level Acceleration Structure*/
-    void create_TLAS(TLAS& accel, std::vector<BLAS>& blases);
+    void create_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
     /*Create Descriptor Pool*/
     void create_descriptor_pool(DescriptorPool& pool,
                                 uint32_t        maxSets,
