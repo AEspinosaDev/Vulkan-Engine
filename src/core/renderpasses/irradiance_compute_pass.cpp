@@ -55,7 +55,7 @@ void IrrandianceComputePass::setup_shader_passes() {
 void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[0], m_extent,m_attachments);
+    cmd->begin_renderpass(m_handle, m_framebuffers[0], m_extent, m_attachments);
     cmd->set_viewport(m_extent);
 
     ShaderPass* shaderPass = m_shaderPasses["irr"];
@@ -83,11 +83,8 @@ void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const s
     CaptureData capture{};
 
     const size_t BUFFER_SIZE = Utils::pad_uniform_buffer_size(sizeof(CaptureData), m_device->get_GPU());
-    m_device->create_buffer(m_captureBuffer,
-                            BUFFER_SIZE,
-                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                            VMA_MEMORY_USAGE_CPU_TO_GPU,
-                            (uint32_t)BUFFER_SIZE);
+    m_captureBuffer          = m_device->create_buffer_VMA(
+        BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
 
     m_captureBuffer.upload_data(&capture, sizeof(CaptureData));
 

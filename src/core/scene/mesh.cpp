@@ -12,7 +12,7 @@ void Sphere::setup(Mesh *const mesh)
 
     for (Geometry *g : mesh->get_geometries())
     {
-        const GeometricData *stats = g->get_geometric_data();
+        const GeometricData *stats = g->get_properties();
 
         if (stats->maxCoords.x > maxCoords.x)
             maxCoords.x = stats->maxCoords.x;

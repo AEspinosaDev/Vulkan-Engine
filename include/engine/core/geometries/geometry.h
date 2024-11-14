@@ -41,14 +41,14 @@ class Geometry
 {
 
   private:
-    Graphics::VertexArrays m_VAO{};
-    Graphics::BLAS         m_BLAS{};
-    GeometricData          m_geometryData{};
+    Graphics::VAO  m_VAO{};
+    Graphics::BLAS m_BLAS{};
 
-    size_t m_materialID{0};
+    GeometricData m_properties{};
+    size_t        m_materialID{0};
 
     friend Graphics::VertexArrays* const get_VAO(Geometry* g);
-    friend Graphics::BLAS* const get_BLAS(Geometry* g);
+    friend Graphics::BLAS* const         get_BLAS(Geometry* g);
 
   public:
     Geometry() {
@@ -62,14 +62,14 @@ class Geometry
     }
 
     inline bool data_loaded() const {
-        return m_geometryData.loaded;
+        return m_properties.loaded;
     }
     inline bool indexed() const {
-        return !m_geometryData.vertexIndex.empty();
+        return !m_properties.vertexIndex.empty();
     }
 
-    inline const GeometricData* get_geometric_data() const {
-        return &m_geometryData;
+    inline const GeometricData* get_properties() const {
+        return &m_properties;
     }
     ~Geometry() {
     }
@@ -82,6 +82,7 @@ class Geometry
 };
 
 Graphics::VertexArrays* const get_VAO(Geometry* g);
+Graphics::BLAS* const         get_BLAS(Geometry* g);
 
 } // namespace Core
 

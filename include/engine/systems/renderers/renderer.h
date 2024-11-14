@@ -43,20 +43,19 @@ namespace Systems {
 Renderer Global Settings Data
 */
 struct RendererSettings {
-    MSAASamples     samplesMSAA{MSAA_x4};
-    BufferingType   bufferingType{_DOUBLE};
-    SyncType        screenSync{MAILBOX_SYNC};
-    ColorFormatType colorFormat{SBGRA_8};
-    DepthFormatType depthFormat{D32F};
-    uint16_t        irradianceResolution{128};
 
-    Vec4 clearColor{Vec4{0.0, 0.0, 0.0, 1.0}};
-
-    bool autoClearColor{true};
-    bool autoClearDepth{true};
-    bool autoClearStencil{true};
-
-    bool enableUI{false};
+    MSAASamples     samplesMSAA          = MSAA_x4;
+    BufferingType   bufferingType        = _DOUBLE;
+    SyncType        screenSync           = MAILBOX_SYNC;
+    ColorFormatType colorFormat          = SBGRA_8;
+    DepthFormatType depthFormat          = D32F;
+    uint16_t        irradianceResolution = 128;
+    Vec4            clearColor           = Vec4{0.0, 0.0, 0.0, 1.0};
+    bool            autoClearColor       = true;
+    bool            autoClearDepth       = true;
+    bool            autoClearStencil     = true;
+    bool            enableUI             = false;
+    bool            enableRaytracing     = true;
 };
 /*
 Structure that contains a list of renderpasses. These renderpasses will render
@@ -72,7 +71,7 @@ struct RenderPipeline {
     void push_renderpass(Core::RenderPass* pass) {
         renderpasses.push_back(pass);
     };
-    void render(Graphics::Frame & currentFrame, VKFW::Core::Scene* scene, uint32_t presentImageIndex = 0U) {
+    void render(Graphics::Frame& currentFrame, VKFW::Core::Scene* scene, uint32_t presentImageIndex = 0U) {
         for (Core::RenderPass* pass : renderpasses)
         {
             if (pass->is_active())

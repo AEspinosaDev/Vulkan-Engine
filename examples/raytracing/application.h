@@ -1,5 +1,5 @@
-#ifndef SAMPLE_APP_H
-#define SAMPLE_APP_H
+#ifndef SAMPLE_RT_H
+#define SAMPLE_RT_H
 
 #include <chrono>
 
@@ -37,7 +37,6 @@ class Application
     Camera *camera;
     Tools::Controller *m_controller;
 
-    Mesh *m_lightDummy;
     bool animateLight{true};
 
     struct Time

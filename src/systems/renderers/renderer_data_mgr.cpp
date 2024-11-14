@@ -176,6 +176,13 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
             }
             mesh_idx++;
         }
+        if (m_settings.enableRaytracing)
+        {
+            std::vector<Graphics::BLAS> blases = {*get_BLAS(meshes[0]->get_geometry()),*get_BLAS(meshes[1]->get_geometry())};
+            Graphics::TLAS*             accel  = get_TLAS(scene);
+            if (!accel->handle)
+                m_device.create_TLAS(*accel, blases);
+        }
     }
 }
 
@@ -195,27 +202,31 @@ void BaseRenderer::destroy_texture_image(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-void BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
+BaseRenderer::upload_geometry_data(Core::Geometry* const g) {
     PROFILING_EVENT()
+    /*
+    VERTEX ARRAYS
+    */
     Graphics::VertexArrays* rd = get_VAO(g);
     if (!rd->loadedOnGPU)
     {
-        const Core::GeometricData* gd = g->get_geometric_data();
-
-        size_t vboSize  = sizeof(gd->vertexData[0]) * gd->vertexData.size();
-        size_t iboSize  = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
-        rd->indexCount  = gd->vertexIndex.size();
-        rd->vertexCount = gd->vertexIndex.size();
+        const Core::GeometricData* gd      = g->get_properties();
+        size_t                     vboSize = sizeof(gd->vertexData[0]) * gd->vertexData.size();
+        size_t                     iboSize = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
+        rd->indexCount                     = gd->vertexIndex.size();
+        rd->vertexCount                    = gd->vertexIndex.size();
 
         m_device.upload_vertex_arrays(*rd, vboSize, gd->vertexData.data(), iboSize, gd->vertexIndex.data());
     }
-
     /*
-    TO DO
-
-    Upload vulkn RT ACCELERAITON STRUCTURES
-
+    ACCELERATION STRUCTURE
     */
+    if (m_settings.enableRaytracing)
+    {
+        Graphics::BLAS* accel = get_BLAS(g);
+        if (!accel->handle)
+            m_device.create_BLAS(*accel, *get_VAO(g));
+    }
 }
 
 void BaseRenderer::destroy_geometry_data(Core::Geometry* const g) {
@@ -228,6 +239,7 @@ void BaseRenderer::destroy_geometry_data(Core::Geometry* const g) {
             rd->ibo.cleanup();
 
         rd->loadedOnGPU = false;
+        get_BLAS(g)->cleanup();
     }
 }
 void BaseRenderer::setup_skybox(Core::Scene* const scene) {
@@ -283,27 +295,23 @@ void BaseRenderer::init_resources() {
     for (size_t i = 0; i < m_frames.size(); i++)
     {
         // Global Buffer
-        Graphics::Buffer globalBuffer;
-        const size_t     globalStrideSize =
+        const size_t globalStrideSize =
             (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_device.get_GPU()) +
              Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms), m_device.get_GPU()));
-        m_device.create_buffer(globalBuffer,
-                               globalStrideSize,
-                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                               VMA_MEMORY_USAGE_CPU_TO_GPU,
-                               (uint32_t)globalStrideSize);
+        Graphics::Buffer globalBuffer = m_device.create_buffer_VMA(globalStrideSize,
+                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
+                                                                   (uint32_t)globalStrideSize);
         m_frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
-        Graphics::Buffer objectBuffer;
-        const size_t     objectStrideSize =
+        const size_t objectStrideSize =
             (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms), m_device.get_GPU()) +
              Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms), m_device.get_GPU()));
-        m_device.create_buffer(objectBuffer,
-                               VK_MAX_OBJECTS * objectStrideSize,
-                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                               VMA_MEMORY_USAGE_CPU_TO_GPU,
-                               (uint32_t)objectStrideSize);
+        Graphics::Buffer objectBuffer = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
+                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
+                                                                   (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);
     }
 

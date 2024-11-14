@@ -2,39 +2,34 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 
-void Geometry::fill(std::vector<Graphics::Utils::Vertex> vertexInfo)
-{
-    m_geometryData.vertexData = vertexInfo;
-    m_geometryData.compute_statistics();
-    m_geometryData.loaded = true;
+void Geometry::fill(std::vector<Graphics::Utils::Vertex> vertexInfo) {
+    m_properties.vertexData = vertexInfo;
+    m_properties.compute_statistics();
+    m_properties.loaded = true;
 }
-void Geometry::fill(std::vector<Graphics::Utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex)
-{
-    m_geometryData.vertexData = vertexInfo;
-    m_geometryData.vertexIndex = vertexIndex;
-    m_geometryData.compute_statistics();
-    m_geometryData.loaded = true;
+void Geometry::fill(std::vector<Graphics::Utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex) {
+    m_properties.vertexData  = vertexInfo;
+    m_properties.vertexIndex = vertexIndex;
+    m_properties.compute_statistics();
+    m_properties.loaded = true;
 }
 
-void Geometry::fill(Vec3 *pos, Vec3 *normal, Vec2 *uv, Vec3 *tangent, uint32_t vertNumber)
-{
+void Geometry::fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber) {
     for (size_t i = 0; i < vertNumber; i++)
     {
-        m_geometryData.vertexData.push_back({pos[i], normal[i], tangent[i], uv[i], Vec3(1.0)});
+        m_properties.vertexData.push_back({pos[i], normal[i], tangent[i], uv[i], Vec3(1.0)});
     }
-    m_geometryData.compute_statistics();
-    m_geometryData.loaded = true;
+    m_properties.compute_statistics();
+    m_properties.loaded = true;
 }
 
-void GeometricData::compute_statistics()
-{
+void GeometricData::compute_statistics() {
     maxCoords = {0.0f, 0.0f, 0.0f};
     minCoords = {INFINITY, INFINITY, INFINITY};
 
-    for (const Graphics::Utils::Vertex &v : vertexData)
+    for (const Graphics::Utils::Vertex& v : vertexData)
     {
         if (v.pos.x > maxCoords.x)
             maxCoords.x = v.pos.x;
@@ -53,23 +48,21 @@ void GeometricData::compute_statistics()
     center = (maxCoords + minCoords) * 0.5f;
 }
 
-Geometry *Geometry::create_quad()
-{
-    Geometry *g = new Geometry();
+Geometry* Geometry::create_quad() {
+    Geometry* g = new Geometry();
 
-    g->fill({{{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-             {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-             {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},
-             {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},
+    g->fill({{{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+             {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+             {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},
+             {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},
 
             {0, 1, 2, 1, 3, 2});
 
     return g;
 }
 
-Geometry *Geometry::create_cube()
-{
-    Geometry *g = new Geometry();
+Geometry* Geometry::create_cube() {
+    Geometry* g = new Geometry();
 
     g->fill(
         {{{-1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},  // 0
@@ -84,9 +77,12 @@ Geometry *Geometry::create_cube()
 
     return g;
 }
-Graphics::VertexArrays *const get_VAO(Geometry *g)
-{
+Graphics::VertexArrays* const get_VAO(Geometry* g) {
     return &g->m_VAO;
+}
+Graphics::BLAS* const get_BLAS(Geometry* g) {
+
+    return &g->m_BLAS;
 }
 } // namespace Core
 

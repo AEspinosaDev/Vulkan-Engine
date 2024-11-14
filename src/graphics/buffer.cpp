@@ -5,88 +5,88 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 void Buffer::upload_data(const void* bufferData, size_t size) {
-    if (allocation == VK_NULL_HANDLE)
-        return;
     PROFILING_EVENT()
-    void* data;
-    vmaMapMemory(memory, allocation, &data);
-    memcpy(data, bufferData, size);
-    vmaUnmapMemory(memory, allocation);
-}
-
-void Buffer::upload_data(const void* bufferData, size_t size, size_t offset) {
-    if (allocation == VK_NULL_HANDLE)
+    if (!bufferData)
         return;
-    PROFILING_EVENT()
-    char* data;
-    vmaMapMemory(memory, allocation, (void**)&data);
-    data += offset;
-    memcpy(data, bufferData, size);
-    vmaUnmapMemory(memory, allocation);
-}
-
-void Buffer::init(VmaAllocator&      _memory,
-                  size_t             allocSize,
-                  VkBufferUsageFlags usage,
-                  VmaMemoryUsage     memoryUsage,
-                  uint32_t           istrideSize) {
-    memory = _memory;
-
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.pNext              = nullptr;
-
-    bufferInfo.size  = allocSize;
-    bufferInfo.usage = usage;
-
-    VmaAllocationCreateInfo vmaallocInfo = {};
-    vmaallocInfo.usage                   = memoryUsage;
-
-    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &handle, &allocation, nullptr));
-
-    strideSize = istrideSize;
-    size = allocSize;
-}
-
-void Buffer::init(VmaAllocator&         _memory,
-                  size_t                allocSize,
-                  VkBufferUsageFlags    usage,
-                  VmaMemoryUsage        memoryUsage,
-                  uint32_t              istrideSize,
-                  std::vector<uint32_t> stridePartitionsSizes) {
-    memory = _memory;
-
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.pNext              = nullptr;
-
-    bufferInfo.size  = allocSize;
-    bufferInfo.usage = usage;
-
-    VmaAllocationCreateInfo vmaallocInfo = {};
-    vmaallocInfo.usage                   = memoryUsage;
-
-    VK_CHECK(vmaCreateBuffer(memory, &bufferInfo, &vmaallocInfo, &handle, &allocation, nullptr));
-
-    size = allocSize;
-    strideSize      = istrideSize;
-    partitionsSize = stridePartitionsSizes;
-}
-
-void Buffer::cleanup() {
-    if (allocation != VK_NULL_HANDLE)
+    if (allocation)
     {
-        vmaDestroyBuffer(memory, handle, allocation);
-        allocation = VK_NULL_HANDLE;
+        void* data;
+        VK_CHECK(vmaMapMemory(allocator, allocation, &data));
+        memcpy(data, bufferData, size);
+        vmaUnmapMemory(allocator, allocation);
+    }
+    if (memory)
+    {
+        void* data;
+        VK_CHECK(vkMapMemory(device, memory, 0, size, 0, &data));
+        memcpy(data, bufferData, size);
+        // If host coherency hasn't been requested, do a manual flush to make writes visible
+        if (!coherence)
+        {
+            VkMappedMemoryRange mappedRange{};
+            mappedRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            mappedRange.memory = memory;
+            mappedRange.offset = 0;
+            mappedRange.size   = size;
+            vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+        }
+        vkUnmapMemory(device, memory);
     }
 }
 
-uint64_t Buffer::get_device_address(VkDevice device) {
+void Buffer::upload_data(const void* bufferData, size_t size, size_t offset) {
+    PROFILING_EVENT()
+    if (!bufferData)
+        return;
+    if (allocation)
+    {
+        char* data;
+        VK_CHECK(vmaMapMemory(allocator, allocation, (void**)&data));
+        data += offset;
+        memcpy(data, bufferData, size);
+        vmaUnmapMemory(allocator, allocation);
+    }
+    if (memory)
+    {
+        void* data;
+        VK_CHECK(vkMapMemory(device, memory, offset, size, 0, &data));
+        memcpy(data, bufferData, size);
+        // If host coherency hasn't been requested, do a manual flush to make writes visible
+        if (!coherence)
+        {
+            VkMappedMemoryRange mappedRange{};
+            mappedRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            mappedRange.memory = memory;
+            mappedRange.offset = offset;
+            mappedRange.size   = size;
+            vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+        }
+        vkUnmapMemory(device, memory);
+    }
+}
+
+uint64_t Buffer::get_device_address() {
     VkBufferDeviceAddressInfoKHR bufferDeviceAI{};
     bufferDeviceAI.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     bufferDeviceAI.buffer = handle;
     return vkGetBufferDeviceAddress(device, &bufferDeviceAI);
-    
+}
+void Buffer::cleanup() {
+    if (allocation)
+    {
+        vmaDestroyBuffer(allocator, handle, allocation);
+        allocation = VK_NULL_HANDLE;
+    }
+    if (memory)
+    {
+        if (handle)
+        {
+            vkDestroyBuffer(device, handle, nullptr);
+            handle = VK_NULL_HANDLE;
+        }
+        vkFreeMemory(device, memory, nullptr);
+        memory = VK_NULL_HANDLE;
+    }
 }
 
 } // namespace Graphics

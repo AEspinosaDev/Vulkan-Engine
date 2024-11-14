@@ -265,23 +265,25 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue> &q
         enabledExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-        rayTracingPipelineFeatures.pNext = nullptr;
+        rayTracingPipelineFeatures.pNext = physicalDeviceFeatures2.pNext;
 
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
+        accelerationStructureFeatures.accelerationStructure = true;
 
         bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
         bufferDeviceAddressFeatures.pNext = &accelerationStructureFeatures;
+        bufferDeviceAddressFeatures.bufferDeviceAddress = true;
 
         descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
         descriptorIndexingFeatures.pNext = &bufferDeviceAddressFeatures;
 
         // Finally, attach the descriptorIndexingFeatures to the physicalDeviceFeatures2
-        descriptorIndexingFeatures.pNext = physicalDeviceFeatures2.pNext;
         physicalDeviceFeatures2.pNext = &descriptorIndexingFeatures;
     }
 
     physicalDeviceFeatures2.features = features;
+    
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -336,6 +338,7 @@ VmaAllocator Booter::setup_memory(VkInstance instance, VkDevice device, VkPhysic
     allocatorInfo.physicalDevice = gpu;
     allocatorInfo.device = device;
     allocatorInfo.instance = instance;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     VmaAllocator memoryAllocator;
     vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
     return memoryAllocator;

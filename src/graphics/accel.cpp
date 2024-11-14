@@ -5,7 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 void BLAS::cleanup() {
-    if (handle != VK_NULL_HANDLE)
+    if (handle)
     {
         vkDestroyAccelerationStructure(device, handle, nullptr);
         handle = VK_NULL_HANDLE;
@@ -14,7 +14,7 @@ void BLAS::cleanup() {
 }
 void TLAS::cleanup() {
 
-    if (handle != VK_NULL_HANDLE)
+    if (handle)
     {
         vkDestroyAccelerationStructure(device, handle, nullptr);
         handle = VK_NULL_HANDLE;

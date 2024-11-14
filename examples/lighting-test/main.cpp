@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-    VulkanRenderer app;
+    Application app;
     try
     {
         app.run(argc,argv);

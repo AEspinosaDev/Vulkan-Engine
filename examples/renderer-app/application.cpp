@@ -1,16 +1,16 @@
 #include "application.h"
 #include <filesystem>
 
-void VulkanRenderer::init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2) {
+void Application::init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2) {
     m_window = new WindowGLFW("VK Engine", 1280, 1024);
 
     m_window->init();
 
     m_window->set_window_size_callback(
-        std::bind(&VulkanRenderer::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
+        std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
     m_window->set_mouse_callback(
-        std::bind(&VulkanRenderer::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
-    m_window->set_key_callback(std::bind(&VulkanRenderer::keyboard_callback,
+        std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_key_callback(std::bind(&Application::keyboard_callback,
                                          this,
                                          std::placeholders::_1,
                                          std::placeholders::_2,
@@ -24,12 +24,13 @@ void VulkanRenderer::init(Systems::RendererSettings settings, Systems::ForwardRe
     setup_gui();
 }
 
-void VulkanRenderer::run(int argc, char* argv[]) {
+void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.samplesMSAA = MSAASamples::_NONE;
-    settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
-    settings.enableUI   = true;
+    settings.samplesMSAA      = MSAASamples::_NONE;
+    settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
+    settings.enableUI         = true;
+    settings.enableRaytracing = true;
     Systems::ForwardRendererSettings settings2{};
     settings2.shadowQuality = ShadowResolution::MEDIUM;
     settings2.fxaa          = true;
@@ -126,7 +127,7 @@ void VulkanRenderer::run(int argc, char* argv[]) {
     m_renderer->shutdown(m_scene);
 }
 
-void VulkanRenderer::setup() {
+void Application::setup() {
     const std::string MESH_PATH(EXAMPLES_RESOURCES_PATH "meshes/");
     const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH "textures/");
     const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH "meshes/");
@@ -272,13 +273,6 @@ void VulkanRenderer::setup() {
     templeMesh2->set_scale(1.25);
     m_scene->add(templeMesh2);
 
-    // Mesh* hair = new Mesh();
-    // hair->load_file(MESH_PATH + "curly.hair", false);
-    // hair->set_material(new HairMaterial());
-    // hair->set_name("hair");
-    // hair->set_scale(0.1f);
-    // m_scene->add(hair);
-
     Mesh* lanternMesh = new Mesh();
     Tools::Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj", false);
     auto     lanternMat = new PhysicallyBasedMaterial();
@@ -333,7 +327,7 @@ void VulkanRenderer::setup() {
     m_controller = new Tools::Controller(camera, m_window);
 }
 
-void VulkanRenderer::setup_gui() {
+void Application::setup_gui() {
     m_interface.overlay = new Tools::GUIOverlay(
         (float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
@@ -380,7 +374,7 @@ void VulkanRenderer::setup_gui() {
     // m_renderer->set_gui_overlay(m_interface.overlay);
 }
 
-void VulkanRenderer::update() {
+void Application::update() {
     if (!m_interface.overlay->wants_to_handle_input())
         m_controller->handle_keyboard(0, 0, m_time.delta);
 
@@ -400,7 +394,7 @@ void VulkanRenderer::update() {
     m_interface.object->set_object(m_interface.scene->get_selected_object());
 }
 
-void VulkanRenderer::tick() {
+void Application::tick() {
     float currentTime      = (float)m_window->get_time_elapsed();
     m_time.delta           = currentTime - m_time.last;
     m_time.last            = currentTime;

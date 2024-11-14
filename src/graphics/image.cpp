@@ -23,7 +23,7 @@ void Image::init(VkDevice& _device, VmaAllocator _memory, bool useMipmaps, VmaMe
         config.layers,
         viewConfig.viewType == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
 
-    vmaCreateImage(memory, &img_info, &img_allocinfo, &handle, &allocation, nullptr);
+    VK_CHECK(vmaCreateImage(memory, &img_info, &img_allocinfo, &handle, &allocation, nullptr));
 
     isInitialized = true;
 }
@@ -45,7 +45,7 @@ void Image::create_sampler() {
                                                                 samplerConfig.samplerAddressMode);
     samplerInfo.borderColor         = samplerConfig.border;
 
-    vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
+    VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));
 
     hasSampler = true;
 }
@@ -99,8 +99,7 @@ void Image::upload_image(VkCommandBuffer& cmd, Buffer* stagingBuffer) {
     copyRegion.imageExtent                     = extent;
 
     // copy the buffer into the image
-    vkCmdCopyBufferToImage(
-        cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+    vkCmdCopyBufferToImage(cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
     if (config.mipLevels == 1)
     {
@@ -243,7 +242,8 @@ void Image::cleanup(bool destroySampler) {
         vkDestroySampler(device, sampler, VK_NULL_HANDLE);
         hasSampler = false;
     }
-    if (GUIReadHandle != VK_NULL_HANDLE){
+    if (GUIReadHandle != VK_NULL_HANDLE)
+    {
         ImGui_ImplVulkan_RemoveTexture(GUIReadHandle);
         GUIReadHandle = VK_NULL_HANDLE;
     }

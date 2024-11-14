@@ -16,7 +16,7 @@
  */
 USING_VULKAN_ENGINE_NAMESPACE
 using namespace Core;
-class VulkanRenderer
+class Application
 {
     struct UserInterface
     {

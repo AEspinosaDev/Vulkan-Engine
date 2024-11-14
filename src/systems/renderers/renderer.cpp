@@ -72,12 +72,14 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
         clean_Resources();
 
         if (scene)
+        {
             for (Core::Mesh* m : scene->get_meshes())
             {
                 for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
                     Core::Geometry* g = m->get_geometry(i);
                     destroy_geometry_data(g);
+
                     Core::IMaterial* mat = m->get_material(g->get_material_ID());
                     if (mat)
                     {
@@ -91,10 +93,12 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
                 }
             }
 
-        if (scene->get_skybox())
-        {
-            destroy_geometry_data(scene->get_skybox()->get_box());
-            destroy_texture_image(scene->get_skybox()->get_enviroment_map());
+            if (scene->get_skybox())
+            {
+                destroy_geometry_data(scene->get_skybox()->get_box());
+                destroy_texture_image(scene->get_skybox()->get_enviroment_map());
+            }
+            get_TLAS(scene)->cleanup();
         }
 
         if (m_settings.enableUI)
@@ -109,7 +113,6 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     }
 
     m_window->destroy();
-
     glfwTerminate();
 }
 void BaseRenderer::setup_renderpasses() {
@@ -161,7 +164,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
         return;
     } else if (imageResult != RenderResult::SUCCESS && imageResult != RenderResult::SUBOPTIMAL_KHR)
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
-    
+
     fr.renderFence.reset();
     fr.commandBuffer->reset();
 
@@ -180,10 +183,8 @@ void BaseRenderer::render(Core::Scene* const scene) {
     m_renderPipeline.render(fr, scene, imageIndex);
 
     fr.commandBuffer->end();
-    fr.commandBuffer->submit(m_device.get_queues()[QueueType::GRAPHIC],
-                fr.renderFence,
-                {fr.presentSemaphore},
-                {fr.renderSemaphore});
+    fr.commandBuffer->submit(
+        m_device.get_queues()[QueueType::GRAPHIC], fr.renderFence, {fr.presentSemaphore}, {fr.renderSemaphore});
 
     RenderResult renderResult = m_device.present_image(fr.renderSemaphore, imageIndex);
 
@@ -207,10 +208,9 @@ void BaseRenderer::connect_renderpass(Core::RenderPass* const currentPass) {
 }
 
 void BaseRenderer::update_renderpasses() {
+
     m_window->update_framebuffer();
-
     m_device.wait();
-
     m_device.update_swapchain(m_window->get_extent(),
                               static_cast<uint32_t>(m_settings.bufferingType),
                               static_cast<VkFormat>(m_settings.colorFormat),
@@ -234,6 +234,7 @@ void BaseRenderer::update_renderpasses() {
 }
 
 void BaseRenderer::init_gui() {
+
     if (m_settings.enableUI)
     {
         // Look for default pass

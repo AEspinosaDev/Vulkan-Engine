@@ -16,36 +16,23 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 // Vulkan buffer object
 struct Buffer {
-    VkBuffer handle = VK_NULL_HANDLE;
-    /*Memory allocation controlled by VMA*/
-    VmaAllocator          memory     = VK_NULL_HANDLE;
-    VmaAllocation         allocation = VK_NULL_HANDLE;
+    VkBuffer              handle     = VK_NULL_HANDLE;
     uint32_t              size       = 0;
     uint32_t              strideSize = 0;
     std::vector<uint32_t> partitionsSize;
 
-    Buffer() {
-    }
+    /*IF Memory allocation is controlled by VMA*/
+    VmaAllocator  allocator  = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    /*IF using Vulkan API*/
+    VkDevice       device    = VK_NULL_HANDLE;
+    VkDeviceMemory memory    = VK_NULL_HANDLE;
+    bool           coherence = false;
 
-    void init(VmaAllocator&      _memory,
-              size_t             allocSize,
-              VkBufferUsageFlags usage,
-              VmaMemoryUsage     memoryUsage,
-              uint32_t           istrideSize = 0);
-    void init(VmaAllocator&         _memory,
-              size_t                allocSize,
-              VkBufferUsageFlags    usage,
-              VmaMemoryUsage        memoryUsage,
-              uint32_t              istrideSize,
-              std::vector<uint32_t> stridePartitionsSizes);
-
-    void upload_data(const void* bufferData, size_t size);
-
-    void upload_data(const void* bufferData, size_t size, size_t offset);
-
-    void cleanup();
-
-    uint64_t get_device_address(VkDevice device);
+    void     upload_data(const void* bufferData, size_t size);
+    void     upload_data(const void* bufferData, size_t size, size_t offset);
+    uint64_t get_device_address();
+    void     cleanup();
 };
 
 } // namespace Graphics
