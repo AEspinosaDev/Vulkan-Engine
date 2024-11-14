@@ -2,7 +2,10 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
-void Framebuffer::init(VulkanRenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
+void Framebuffer::init(VulkanRenderPass&        renderpass,
+                       Extent2D                 extent,
+                       std::vector<Attachment>& attachments,
+                       uint32_t                 layers) {
 
     m_device = renderpass.get_device_handle();
     m_layers = layers;
@@ -18,11 +21,10 @@ void Framebuffer::init(VulkanRenderPass& renderpass, std::vector<Attachment>& at
         viewAttachments[i] = attachments[i].image.view;
     }
 
-    VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(
-        renderpass.get_handle(), {attachments[0].image.extent.width, attachments[0].image.extent.height});
-    fbInfo.pAttachments    = viewAttachments.data();
-    fbInfo.attachmentCount = (uint32_t)viewAttachments.size();
-    fbInfo.layers          = layers;
+    VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.get_handle(), extent);
+    fbInfo.pAttachments            = viewAttachments.data();
+    fbInfo.attachmentCount         = (uint32_t)viewAttachments.size();
+    fbInfo.layers                  = layers;
 
     if (vkCreateFramebuffer(m_device, &fbInfo, nullptr, &m_handle) != VK_SUCCESS)
     {

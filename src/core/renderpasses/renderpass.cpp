@@ -58,7 +58,7 @@ void RenderPass::create_framebuffer() {
         if (m_isDefault) // If its default need swapchain PRESENT images
             framebufferAttachments[presentViewIndex].image = m_device->get_swapchain().get_present_images()[fb];
 
-        m_device->create_framebuffer(m_framebuffers[fb], m_handle, framebufferAttachments, m_framebufferImageDepth);
+        m_device->create_framebuffer(m_framebuffers[fb], m_extent, m_handle, framebufferAttachments, m_framebufferImageDepth);
     }
 }
 

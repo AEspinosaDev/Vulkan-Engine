@@ -121,10 +121,11 @@ void Device::create_render_pass(VulkanRenderPass&               rp,
     rp.init(m_handle, attachments, dependencies);
 }
 void Device::create_framebuffer(Framebuffer&             fbo,
+                                Extent2D                 extent,
                                 VulkanRenderPass&        renderpass,
                                 std::vector<Attachment>& attachments,
                                 uint32_t                 layers) {
-    fbo.init(renderpass, attachments, layers);
+    fbo.init(renderpass, extent, attachments, layers);
 }
 
 RenderResult Device::aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex) {
@@ -446,7 +447,6 @@ void Device::create_TLAS(TLAS& accel, std::vector<BLAS>& blases) {
                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                        VMA_MEMORY_USAGE_GPU_ONLY);
 
-   
     VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
     accelerationBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
@@ -477,7 +477,6 @@ void Device::create_TLAS(TLAS& accel, std::vector<BLAS>& blases) {
 
     scratchBuffer.cleanup();
     instanceBuffer.cleanup();
-
 }
 void Device::wait() {
     VK_CHECK(vkDeviceWaitIdle(m_handle));

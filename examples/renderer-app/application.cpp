@@ -27,14 +27,12 @@ void VulkanRenderer::init(Systems::RendererSettings settings, Systems::ForwardRe
 void VulkanRenderer::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.samplesMSAA = MSAASamples::MSAA_x8;
-    // settings.colorFormat = ColorFormatType::SRGBA_8;
-    // settings.depthFormat = DepthFormatType::D16F;
+    settings.samplesMSAA = MSAASamples::_NONE;
     settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI   = true;
     Systems::ForwardRendererSettings settings2{};
     settings2.shadowQuality = ShadowResolution::MEDIUM;
-    settings2.fxaa          = false;
+    settings2.fxaa          = true;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;

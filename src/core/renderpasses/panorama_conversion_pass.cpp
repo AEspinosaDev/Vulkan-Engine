@@ -56,7 +56,7 @@ void PanoramaConverterPass::setup_shader_passes() {
 void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[0], m_attachments);
+    cmd->begin_renderpass(m_handle, m_framebuffers[0],m_extent, m_attachments);
     cmd->set_viewport(m_extent);
 
     ShaderPass* shaderPass = m_shaderPasses["converter"];

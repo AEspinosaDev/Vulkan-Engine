@@ -27,7 +27,7 @@ class Framebuffer
     Framebuffer() {
     }
 
-    inline VkFramebuffer& get_handle()  {
+    inline VkFramebuffer& get_handle() {
         return m_handle;
     }
 
@@ -35,7 +35,7 @@ class Framebuffer
         return m_layers;
     }
 
-    void init(VulkanRenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
+    void init(VulkanRenderPass& renderpass, Extent2D extent, std::vector<Attachment>& attachments, uint32_t layers = 1);
 
     void cleanup();
 };

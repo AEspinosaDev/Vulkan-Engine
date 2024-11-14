@@ -121,6 +121,7 @@ class Device
                             std::vector<SubPassDependency>& dependencies);
 
     void create_framebuffer(Framebuffer&             fbo,
+                            Extent2D                 extent,
                             VulkanRenderPass&        renderpass,
                             std::vector<Attachment>& attachments,
                             uint32_t                 layers = 1);

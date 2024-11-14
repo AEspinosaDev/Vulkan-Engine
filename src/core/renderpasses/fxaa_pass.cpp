@@ -57,7 +57,7 @@ void FXAAPass::setup_shader_passes() {
 void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex],m_extent, m_attachments);
     cmd->set_viewport(m_extent);
 
     ShaderPass* shaderPass = m_shaderPasses["fxaa"];

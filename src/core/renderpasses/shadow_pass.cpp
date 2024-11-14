@@ -151,7 +151,7 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
     PROFILING_EVENT()
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_attachments);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex],m_extent, m_attachments);
     cmd->set_viewport(m_extent);
 
     cmd->set_depth_bias_enable(true);

@@ -59,7 +59,6 @@ void CommandBuffer::begin(VkCommandBufferUsageFlags flags) {
         throw VKFW_Exception("Command buffer is already recording!");
     }
 
-
     VkCommandBufferBeginInfo beginInfo = Init::command_buffer_begin_info();
 
     if (vkBeginCommandBuffer(m_handle, &beginInfo) != VK_SUCCESS)
@@ -133,13 +132,12 @@ void CommandBuffer::submit(VkQueue                queue,
 
 void CommandBuffer::begin_renderpass(VulkanRenderPass&        renderpass,
                                      Framebuffer&             fbo,
+                                     Extent2D                 extent,
                                      std::vector<Attachment>& attachments,
                                      VkSubpassContents        subpassContents) {
 
     VkRenderPassBeginInfo renderPassInfo =
-        Init::renderpass_begin_info(renderpass.get_handle(),
-                                    {attachments.front().image.extent.width, attachments.front().image.extent.height},
-                                    fbo.get_handle());
+        Init::renderpass_begin_info(renderpass.get_handle(), extent, fbo.get_handle());
 
     std::vector<VkClearValue> clearValues;
     clearValues.reserve(attachments.size());

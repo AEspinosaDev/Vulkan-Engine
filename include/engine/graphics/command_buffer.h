@@ -12,11 +12,12 @@
 #include <engine/common.h>
 #include <engine/graphics/buffer.h>
 #include <engine/graphics/framebuffer.h>
+#include <engine/graphics/semaphore.h>
 #include <engine/graphics/shaderpass.h>
 #include <engine/graphics/utilities/initializers.h>
-#include <engine/graphics/vk_renderpass.h>
-#include <engine/graphics/semaphore.h>
 #include <engine/graphics/vao.h>
+#include <engine/graphics/vk_renderpass.h>
+
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -49,7 +50,7 @@ class CommandBuffer
                 std::vector<Semaphore> waitSemaphores   = {},
                 std::vector<Semaphore> signalSemaphores = {});
 
-    VkCommandBuffer& get_handle()  {
+    VkCommandBuffer& get_handle() {
         return m_handle;
     }
 
@@ -59,6 +60,7 @@ class CommandBuffer
 
     void begin_renderpass(VulkanRenderPass&        renderpass,
                           Framebuffer&             fbo,
+                          Extent2D                 extent,
                           std::vector<Attachment>& attachments,
                           VkSubpassContents        subpassContents = VK_SUBPASS_CONTENTS_INLINE);
     void end_renderpass();
@@ -94,7 +96,7 @@ class CommandPool
         return m_handle;
     }
 
-    void init(VkDevice                device,
+    void init(VkDevice                 device,
               uint32_t                 queueFamilyIndex,
               VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
