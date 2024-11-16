@@ -7,7 +7,7 @@ struct LightUniform{
     float   intensity;
 
     float   areaEffect;
-    float   decay;
+    float   area;          //Area if raytraced
     float   shadowType;
     float   shadowCast;
 

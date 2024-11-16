@@ -421,7 +421,7 @@ void Device::create_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
         VkTransformMatrixKHR transformMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
         for (int row = 0; row < 3; ++row)
             for (int col = 0; col < 4; ++col)
-                transformMatrix.matrix[row][col] = BLASinstances[i].transform[col][row];
+                transformMatrix.matrix[row][col] = BLASinstances[i].transform[col][row]; //Column-major to Row-major
 
         instances[i].transform                              = transformMatrix;
         instances[i].instanceCustomIndex                    = i;

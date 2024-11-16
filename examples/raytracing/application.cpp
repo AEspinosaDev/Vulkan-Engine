@@ -72,6 +72,7 @@ void Application::setup() {
     light->set_area_of_effect(20.0f);
     light->set_shadow_fov(115.0f);
     light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
+    light->set_area(0.5f);
     light->add_child(lightDummy);
     light->set_name("Light");
 

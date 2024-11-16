@@ -20,6 +20,8 @@
 
 #include <engine/common.h>
 
+#include <engine/tools/loaders.h>
+
 #include <engine/core/materials/material.h>
 #include <engine/core/renderpasses/irradiance_compute_pass.h>
 #include <engine/core/renderpasses/panorama_conversion_pass.h>
@@ -120,9 +122,9 @@ class BaseRenderer
     Graphics::Utils::DeletionQueue m_deletionQueue;
 
     // Query
-    uint32_t m_currentFrame{0};
-    bool     m_initialized{false};
-    bool     m_updateFramebuffers{false};
+    uint32_t m_currentFrame       = 0;
+    bool     m_initialized        = false;
+    bool     m_updateFramebuffers = false;
 
 #pragma endregion
   public:

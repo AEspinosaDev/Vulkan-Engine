@@ -100,6 +100,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
             }
             get_TLAS(scene)->cleanup();
         }
+        destroy_texture_image(Core::Texture::BLUE_NOISE_TEXT);
 
         if (m_settings.enableUI)
             m_device.destroy_imgui();

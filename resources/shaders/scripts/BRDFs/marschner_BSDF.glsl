@@ -7,7 +7,9 @@
 #define R_NORMALIZING_FACTOR    1.5
 #define TT_NORMALIZING_FACTOR   1.0
 #define TRT_NORMALIZING_FACTOR  0.01
-#define PI 3.1415926535897932384626433832795
+#ifndef PI 
+#define PI              3.1415926535897932384626433832795
+#endif
 #define ONE_OVER_PI      (1.0 / PI)
 #define ONE_OVER_PI_HALF (2.0 / PI)
 #define DEG2RAD(x) ((x) / 180.0 * PI)

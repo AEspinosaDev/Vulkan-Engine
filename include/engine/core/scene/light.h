@@ -21,6 +21,7 @@ class Light : public Object3D
   protected:
     Vec3  m_color;
     float m_intensity;
+    float m_area = 0.0; // If ZERO is treated as a VPL (Virtual Point Light)
 
     // Shadow
     struct Shadow {
@@ -35,12 +36,14 @@ class Light : public Object3D
         bool       angleDependableBias = false;
         float      kernelRadius        = 1.0;
         int        softness            = 3;
+        int        raySamples          = 4;
     };
 
     Shadow          m_shadow;
     const LightType m_lighType;
 
   public:
+
     Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
         : Object3D(name, LIGHT)
         , m_color(color)
@@ -121,6 +124,12 @@ class Light : public Object3D
     virtual inline void set_shadow_softness(int k) {
         m_shadow.softness = k;
     }
+    virtual inline int get_shadow_ray_samples() const {
+        return m_shadow.raySamples;
+    }
+    virtual inline void set_shadow_ray_samples(int rays) {
+        m_shadow.raySamples = rays;
+    }
 
     virtual inline bool get_angle_dependant_bias() const {
         return m_shadow.angleDependableBias;
@@ -139,6 +148,12 @@ class Light : public Object3D
     virtual LightType get_light_type() const {
         return m_lighType;
     }
+    virtual inline float get_area() const {
+        return m_area;
+    }
+    virtual inline void set_area(float a) {
+        m_area = a;
+    }
 
     virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const = 0;
 };
@@ -148,15 +163,13 @@ class Light : public Object3D
 class PointLight : public Light
 {
     float m_effectArea;
-    float m_decaying;
 
     static int m_instanceCount;
 
   public:
     PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
         : Light("Point Light #" + std::to_string(PointLight::m_instanceCount), LightType::POINT, color, intensity)
-        , m_effectArea(12.0f)
-        , m_decaying(1.0f) {
+        , m_effectArea(12.0f) {
         PointLight::m_instanceCount++;
     }
 
@@ -165,13 +178,6 @@ class PointLight : public Light
     }
     inline void set_area_of_effect(float a) {
         m_effectArea = a;
-    }
-
-    inline float get_decaying() const {
-        return m_decaying;
-    }
-    inline void set_decaying(float d) {
-        m_decaying = d;
     }
 
     virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const;

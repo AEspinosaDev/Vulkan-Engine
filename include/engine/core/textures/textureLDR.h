@@ -27,6 +27,7 @@ class TextureLDR : public ITexture
 
   public:
     static Texture *FALLBACK_TEX;
+    static Texture *BLUE_NOISE_TEXT;
 
     TextureLDR() : ITexture()
     {

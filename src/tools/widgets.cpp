@@ -814,18 +814,18 @@ void ObjectExplorerWidget::render() {
             }
             ImGui::Separator();
             ImGui::Spacing();
-            float shadowFov = light->get_shadow_fov();
-            if (ImGui::DragFloat("FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
-                light->set_shadow_fov(shadowFov);
-            float position[3] = {
-                light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
-            if (ImGui::DragFloat3("Target", position, 0.1f))
-            {
-                light->set_shadow_target(Vec3(position[0], position[1], position[2]));
-            };
             ImGui::Text("Advanced Shadow Settings:");
             if (currentShadow == 0)
             {
+                float shadowFov = light->get_shadow_fov();
+                if (ImGui::DragFloat("FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
+                    light->set_shadow_fov(shadowFov);
+                float position[3] = {
+                    light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
+                if (ImGui::DragFloat3("Target", position, 0.1f))
+                {
+                    light->set_shadow_target(Vec3(position[0], position[1], position[2]));
+                };
                 float shadowNear = light->get_shadow_near();
                 if (ImGui::DragFloat("Near Plane", &shadowNear, 0.005f, 0.0f, 10.0f))
                     light->set_shadow_near(shadowNear);
@@ -835,21 +835,45 @@ void ObjectExplorerWidget::render() {
                 float bias = light->get_shadow_bias();
                 if (ImGui::DragFloat("Bias", &bias, 0.0001f, 0.0f, 1.0f))
                     light->set_shadow_bias(bias);
+                int kernel = light->get_shadow_softness();
+                if (ImGui::DragInt("Softness", &kernel, 2, 3, 15))
+                    light->set_shadow_softness(kernel);
+
+                float kernelRad = light->get_shadow_kernel_radius();
+                if (ImGui::DragFloat("Softness Magnifier", &kernelRad, 0.1f, 1.0f, 100.0f))
+                    light->set_shadow_kernel_radius(kernelRad);
             }
             if (currentShadow == 1)
             {
+                float shadowFov = light->get_shadow_fov();
+                if (ImGui::DragFloat("FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
+                    light->set_shadow_fov(shadowFov);
+                float position[3] = {
+                    light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
+                if (ImGui::DragFloat3("Target", position, 0.1f))
+                {
+                    light->set_shadow_target(Vec3(position[0], position[1], position[2]));
+                };
                 float bleeding = light->get_shadow_bleeding();
                 if (ImGui::DragFloat("Bleeding", &bleeding, 0.001f, 0.0f, 1.0f))
                     light->set_shadow_bleeding(bleeding);
+                int kernel = light->get_shadow_softness();
+                if (ImGui::DragInt("Softness", &kernel, 2, 3, 15))
+                    light->set_shadow_softness(kernel);
+
+                float kernelRad = light->get_shadow_kernel_radius();
+                if (ImGui::DragFloat("Softness Magnifier", &kernelRad, 0.1f, 1.0f, 100.0f))
+                    light->set_shadow_kernel_radius(kernelRad);
             }
-
-            int kernel = light->get_shadow_softness();
-            if (ImGui::DragInt("Softness", &kernel, 2, 3, 15))
-                light->set_shadow_softness(kernel);
-
-            float kernelRad = light->get_shadow_kernel_radius();
-            if (ImGui::DragFloat("Softness Magnifier", &kernelRad, 0.1f, 1.0f, 100.0f))
-                light->set_shadow_kernel_radius(kernelRad);
+            if (currentShadow == 2)
+            {
+                float area = light->get_area();
+                if (ImGui::DragFloat("Area", &area, 0.05f, 0.0f, 5.0f))
+                    light->set_area(area);
+                int samples = light->get_shadow_ray_samples();
+                if (ImGui::DragInt("Ray samples", &samples, 1, 0, 16))
+                    light->set_shadow_ray_samples(samples);
+            }
         }
     }
     if (m_object->get_type() == ObjectType::CAMERA)

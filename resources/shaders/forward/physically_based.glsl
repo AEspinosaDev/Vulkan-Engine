@@ -76,6 +76,7 @@ void main() {
 #version 460
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
+
 #include camera.glsl
 #include light.glsl
 #include scene.glsl
@@ -87,7 +88,7 @@ void main() {
 #include IBL.glsl
 #include reindhart.glsl
 #include BRDFs/schlick_smith_BRDF.glsl
-#include raytraced_shadows.glsl
+#include raytracing.glsl
 
 //Input
 layout(location = 0) in vec3 v_pos;
@@ -102,11 +103,11 @@ layout(location = 6) in mat3 v_TBN;
 layout(location = 0) out vec4 outColor;
 
 
-layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
-layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
-layout (set = 0,  binding = 5) uniform accelerationStructureEXT TLAS;
-
-
+//Uniforms
+layout(set = 0, binding = 2)    uniform sampler2DArray              shadowMap;
+layout(set = 0, binding = 4)    uniform samplerCube                 irradianceMap;
+layout(set = 0,  binding = 5)   uniform accelerationStructureEXT    TLAS;
+layout(set = 0,  binding = 6)   uniform sampler2D                   blueNoiseMap;
 layout(set = 1, binding = 1) uniform MaterialUniforms {
      vec3 albedo;
     float opacity;
@@ -129,8 +130,6 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     int maskType;
     float opacityWeight;
 } material;
-
-
 layout(set = 2, binding = 0) uniform sampler2D albedoTex;
 layout(set = 2, binding = 1) uniform sampler2D normalTex;
 layout(set = 2, binding = 2) uniform sampler2D maskRoughTex;
@@ -202,7 +201,7 @@ void main() {
                 if(scene.lights[i].shadowType == 1) //VSM   
                     lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, v_modelPos);
                 if(scene.lights[i].shadowType == 2) //Raytraced  
-                    lighting *= computeRaytracedShadow(TLAS, v_modelPos, normalize(scene.lights[i].shadowData.xyz - v_modelPos), 1000);
+                    lighting *= computeRaytracedShadow(TLAS, blueNoiseMap ,v_modelPos, scene.lights[i].shadowData.xyz - v_modelPos, int(scene.lights[i].shadowData.w) , scene.lights[i].area , 0);
             }
 
         color += lighting;

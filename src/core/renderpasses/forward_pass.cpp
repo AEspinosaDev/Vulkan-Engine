@@ -79,9 +79,10 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
     LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
     LayoutBinding accelBinding(UniformDataType::ACCELERATION_STRUCTURE, VK_SHADER_STAGE_FRAGMENT_BIT, 5);
+    LayoutBinding noiseBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 6);
     m_descriptorPool.set_layout(
         DescriptorLayoutType::GLOBAL_LAYOUT,
-        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding});
+        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding, noiseBinding});
 
     // PER-OBJECT SET
     LayoutBinding objectBufferBinding(
@@ -126,6 +127,11 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
+
+        m_descriptorPool.set_descriptor_write(get_image(Texture::BLUE_NOISE_TEXT),
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              6);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(

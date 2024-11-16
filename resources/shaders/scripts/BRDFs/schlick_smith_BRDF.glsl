@@ -1,5 +1,9 @@
-const float PI          = 3.14159265359;
-const float EPSILON     = 0.1;
+#ifndef PI 
+#define PI              3.1415926535897932384626433832795
+#endif
+#ifndef EPSILON 
+#define EPSILON         0.001
+#endif  
 
 struct                  SchlickSmithBRDF{
     vec3                albedo;

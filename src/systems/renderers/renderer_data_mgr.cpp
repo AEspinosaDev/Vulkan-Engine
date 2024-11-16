@@ -53,6 +53,7 @@ void BaseRenderer::update_global_data(Core::Scene* const scene) {
         sceneParams.envRotation        = scene->get_skybox()->get_rotation();
         sceneParams.envColorMultiplier = scene->get_skybox()->get_intensity();
     }
+    sceneParams.time = m_window->get_time_elapsed();
 
     std::vector<Core::Light*> lights = scene->get_lights();
     if (lights.size() > VK_MAX_LIGHTS)
@@ -140,8 +141,7 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
 
                     Graphics::ObjectUniforms objectData;
                     objectData.model        = m->get_model_matrix();
-                    objectData.otherParams1 = {
-                        m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), false};
+                    objectData.otherParams1 = {m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), false};
                     objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
                     m_frames[m_currentFrame].uniformBuffers[1].upload_data(
                         &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
@@ -324,13 +324,31 @@ void BaseRenderer::init_resources() {
     upload_geometry_data(m_vignette->get_geometry());
 
     // Setup fallback texture
-    unsigned char texture_data[1] = {0};
-    Core::Texture::FALLBACK_TEX   = new Core::Texture(texture_data, {1, 1, 1}, 4);
-    Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
+    if (!Core::Texture::FALLBACK_TEX) // If not user set
+    {
+        unsigned char texture_data[1] = {0};
+        Core::Texture::FALLBACK_TEX   = new Core::Texture(texture_data, {1, 1, 1}, 4);
+        Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
+    }
     void* imgCache{nullptr};
     Core::Texture::FALLBACK_TEX->get_image_cache(imgCache);
     m_device.upload_texture_image(
         imgCache, Core::Texture::FALLBACK_TEX->get_bytes_per_pixel(), get_image(Core::Texture::FALLBACK_TEX), false);
+
+    // Setup blue noise texture
+    if (!Core::Texture::BLUE_NOISE_TEXT) // If not user set
+    {
+        Core::Texture::BLUE_NOISE_TEXT = new Core::Texture();
+        Tools::Loaders::load_PNG(Core::Texture::BLUE_NOISE_TEXT, ENGINE_RESOURCES_PATH "textures/blueNoise.png");
+        Core::Texture::BLUE_NOISE_TEXT->set_use_mipmaps(false);
+        Core::Texture::BLUE_NOISE_TEXT->set_adress_mode(TextureAdressModeType::REPEAT);
+    }
+    void* imgCache2{nullptr};
+    Core::Texture::BLUE_NOISE_TEXT->get_image_cache(imgCache2);
+    m_device.upload_texture_image(imgCache2,
+                                  Core::Texture::BLUE_NOISE_TEXT->get_bytes_per_pixel(),
+                                  get_image(Core::Texture::BLUE_NOISE_TEXT),
+                                  false);
 }
 
 void BaseRenderer::clean_Resources() {
