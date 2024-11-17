@@ -7,7 +7,7 @@ namespace Graphics {
 bool Frame::guiEnabled = false;
 
 void Frame::cleanup() {
-    commandPool->cleanup();
+    commandPool.cleanup();
     renderFence.cleanup();
     renderSemaphore.cleanup();
     presentSemaphore.cleanup();

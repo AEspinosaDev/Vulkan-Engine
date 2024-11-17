@@ -30,8 +30,8 @@ struct Accel {
 
     void cleanup();
 };
-typedef Accel BLAS;
-typedef Accel TLAS;
+typedef Accel BLAS; //Bottom level acceleration structure
+typedef Accel TLAS; //Top level acceleration structure
 /*
 Instance of a Bottom Level Acceleration Structure. Has a unique transform.
 */

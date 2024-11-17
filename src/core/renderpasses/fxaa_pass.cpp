@@ -57,23 +57,23 @@ void FXAAPass::setup_shader_passes() {
 
 void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
-    CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd->set_viewport(m_handle.extent);
+    CommandBuffer cmd = currentFrame.commandBuffer;
+    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_handle.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["fxaa"];
 
-    cmd->bind_shaderpass(*shaderPass);
-    cmd->bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
+    cmd.bind_shaderpass(*shaderPass);
+    cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
     Geometry* g = m_vignette->get_geometry();
-    cmd->draw_geometry(*get_VAO(g));
+    cmd.draw_geometry(*get_VAO(g));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
-        cmd->draw_gui_data();
+        cmd.draw_gui_data();
 
-    cmd->end_renderpass();
+    cmd.end_renderpass();
 }
 
 void FXAAPass::connect_to_previous_images(std::vector<Image> images) {

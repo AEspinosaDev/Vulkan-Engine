@@ -54,17 +54,17 @@ void PanoramaConverterPass::setup_shader_passes() {
 
 void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
-    CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[0]);
-    cmd->set_viewport(m_handle.extent);
+    CommandBuffer cmd = currentFrame.commandBuffer;
+    cmd.begin_renderpass(m_handle, m_framebuffers[0]);
+    cmd.set_viewport(m_handle.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["converter"];
-    cmd->bind_shaderpass(*shaderPass);
-    cmd->bind_descriptor_set(m_panoramaDescriptorSet, 0, *shaderPass);
+    cmd.bind_shaderpass(*shaderPass);
+    cmd.bind_descriptor_set(m_panoramaDescriptorSet, 0, *shaderPass);
 
     Geometry* g = m_vignette->get_geometry();
-    cmd->draw_geometry(*get_VAO(g));
-    cmd->end_renderpass();
+    cmd.draw_geometry(*get_VAO(g));
+    cmd.end_renderpass();
 }
 
 void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

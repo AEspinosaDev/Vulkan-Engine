@@ -167,11 +167,11 @@ void BaseRenderer::render(Core::Scene* const scene) {
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
 
     fr.renderFence.reset();
-    fr.commandBuffer->reset();
+    fr.commandBuffer.reset();
 
     on_before_render(scene);
 
-    fr.commandBuffer->begin();
+    fr.commandBuffer.begin();
 
     if (scene->get_skybox())
         if (scene->get_skybox()->update_enviroment())
@@ -183,8 +183,8 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     m_renderPipeline.render(fr, scene, imageIndex);
 
-    fr.commandBuffer->end();
-    fr.commandBuffer->submit(
+    fr.commandBuffer.end();
+    fr.commandBuffer.submit(
         m_device.get_queues()[QueueType::GRAPHIC_QUEUE], fr.renderFence, {fr.presentSemaphore}, {fr.renderSemaphore});
 
     RenderResult renderResult = m_device.present_image(fr.renderSemaphore, imageIndex);

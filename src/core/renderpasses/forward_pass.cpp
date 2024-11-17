@@ -262,9 +262,9 @@ void ForwardPass::setup_shader_passes() {
 void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
-    CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd->set_viewport(m_handle.extent);
+    CommandBuffer cmd = currentFrame.commandBuffer;
+    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_handle.extent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -288,29 +288,29 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
                         Geometry*  g   = m->get_geometry(i);
                         IMaterial* mat = m->get_material(g->get_material_ID());
 
-                        cmd->set_depth_test_enable(mat->get_parameters().depthTest);
-                        cmd->set_depth_write_enable(mat->get_parameters().depthWrite);
-                        cmd->set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
+                        cmd.set_depth_test_enable(mat->get_parameters().depthTest);
+                        cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
+                        cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
                                                                              : CullingMode::NO_CULLING);
 
                         ShaderPass* shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
                         // Bind pipeline
-                        cmd->bind_shaderpass(*shaderPass);
+                        cmd.bind_shaderpass(*shaderPass);
                         // GLOBAL LAYOUT BINDING
-                        cmd->bind_descriptor_set(
+                        cmd.bind_descriptor_set(
                             m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
                         // PER OBJECT LAYOUT BINDING
-                        cmd->bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
+                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
                                                  1,
                                                  *shaderPass,
                                                  {objectOffset, objectOffset});
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
-                            cmd->bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
+                            cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
 
                         // DRAW
-                        cmd->draw_geometry(*get_VAO(g));
+                        cmd.draw_geometry(*get_VAO(g));
                     }
                 }
             }
@@ -322,28 +322,28 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
             if (scene->get_skybox()->is_active())
             {
 
-                cmd->set_depth_test_enable(true);
-                cmd->set_depth_write_enable(true);
-                cmd->set_cull_mode(CullingMode::NO_CULLING);
+                cmd.set_depth_test_enable(true);
+                cmd.set_depth_write_enable(true);
+                cmd.set_cull_mode(CullingMode::NO_CULLING);
 
                 ShaderPass* shaderPass = m_shaderPasses["skybox"];
 
                 // Bind pipeline
-                cmd->bind_shaderpass(*shaderPass);
+                cmd.bind_shaderpass(*shaderPass);
 
                 // GLOBAL LAYOUT BINDING
-                cmd->bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
-                cmd->draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
+                cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
             }
         }
     }
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
-        cmd->draw_gui_data();
+        cmd.draw_gui_data();
 
-    cmd->end_renderpass();
+    cmd.end_renderpass();
 }
 
 void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

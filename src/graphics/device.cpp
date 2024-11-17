@@ -382,13 +382,10 @@ Fence Device::create_fence() {
     return fence;
 }
 Frame Device::create_frame(uint16_t id) {
-    Frame frame         = {};
-    frame.index         = id;
-    frame.commandPool   = new CommandPool;
-    frame.commandBuffer = new CommandBuffer;
-    *frame.commandPool = create_command_pool(QueueType::GRAPHIC_QUEUE, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    *frame.commandBuffer = create_command_buffer(*frame.commandPool);
-
+    Frame frame       = {};
+    frame.index       = id;
+    frame.commandPool = create_command_pool(QueueType::GRAPHIC_QUEUE, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    frame.commandBuffer    = create_command_buffer(frame.commandPool);
     frame.renderFence      = create_fence();
     frame.renderSemaphore  = create_semaphore();
     frame.presentSemaphore = create_semaphore();
