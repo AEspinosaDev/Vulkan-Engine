@@ -18,51 +18,34 @@
 #include <engine/graphics/vao.h>
 #include <engine/graphics/vk_renderpass.h>
 
-
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-class CommandPool;
+struct CommandPool;
 
-class CommandBuffer
-{
-    VkCommandBuffer m_handle = VK_NULL_HANDLE;
-
-    VkDevice      m_device      = VK_NULL_HANDLE;
-    VkCommandPool m_pool        = VK_NULL_HANDLE;
-    bool          m_isRecording = false;
-
-  public:
-    CommandBuffer() {
-    }
-
-    ~CommandBuffer();
-
-    void init(VkDevice device, CommandPool commandPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+struct CommandBuffer {
+    VkCommandBuffer handle      = VK_NULL_HANDLE;
+    VkDevice        device      = VK_NULL_HANDLE;
+    VkCommandPool   pool        = VK_NULL_HANDLE;
+    bool            isRecording = false;
 
     void begin(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     void end();
     void reset();
-
     void submit(VkQueue                queue,
                 Fence                  fence,
                 std::vector<Semaphore> waitSemaphores   = {},
                 std::vector<Semaphore> signalSemaphores = {});
-
-    VkCommandBuffer& get_handle() {
-        return m_handle;
-    }
+    void cleanup();
 
     /****************************************** */
     /* COMMANDS */
     /****************************************** */
 
-    void begin_renderpass(VulkanRenderPass&        renderpass,
-                          Framebuffer&             fbo,
-                          Extent2D                 extent,
-                          std::vector<Attachment>& attachments,
-                          VkSubpassContents        subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+    void begin_renderpass(VulkanRenderPass& renderpass,
+                          Framebuffer&      fbo,
+                          VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
     void end_renderpass();
     void draw_geometry(VertexArrays& vao,
                        uint32_t      instanceCount  = 1,
@@ -83,18 +66,9 @@ class CommandBuffer
     void set_depth_bias_enable(bool op);
     void set_depth_bias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor);
 };
-class CommandPool
-{
-    VkCommandPool m_handle = VK_NULL_HANDLE;
-    VkDevice      m_device = VK_NULL_HANDLE;
-
-  public:
-    CommandPool() {
-    }
-
-    inline VkCommandPool& get_handle() {
-        return m_handle;
-    }
+struct CommandPool {
+    VkCommandPool handle = VK_NULL_HANDLE;
+    VkDevice      device = VK_NULL_HANDLE;
 
     void init(VkDevice                 device,
               uint32_t                 queueFamilyIndex,

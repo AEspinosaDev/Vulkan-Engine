@@ -4,7 +4,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void ForwardPass::setup_attachments() {
+void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                    std::vector<Graphics::SubPassDependency>& dependencies) {
+
     VkSampleCountFlagBits samples      = static_cast<VkSampleCountFlagBits>(m_aa);
     bool                  multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
 
@@ -22,7 +24,7 @@ void ForwardPass::setup_attachments() {
         VK_FILTER_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
-    m_attachments.push_back(colorAttachment);
+    attachments.push_back(colorAttachment);
 
     Graphics::Attachment resolveAttachment;
     if (multisampled)
@@ -37,7 +39,7 @@ void ForwardPass::setup_attachments() {
                                  VK_IMAGE_ASPECT_COLOR_BIT,
                                  VK_IMAGE_VIEW_TYPE_2D);
         resolveAttachment.isPresentImage = multisampled ? true : false;
-        m_attachments.push_back(resolveAttachment);
+        attachments.push_back(resolveAttachment);
     }
 
     Graphics::Attachment depthAttachment = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
@@ -48,22 +50,22 @@ void ForwardPass::setup_attachments() {
                                                                 AttachmentType::DEPTH_ATTACHMENT,
                                                                 VK_IMAGE_ASPECT_DEPTH_BIT,
                                                                 VK_IMAGE_VIEW_TYPE_2D);
-    m_attachments.push_back(depthAttachment);
+    attachments.push_back(depthAttachment);
 
     // Depdencies
-    m_dependencies.resize(2);
+    dependencies.resize(2);
 
-    m_dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-    m_dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+    dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+    dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 }
 void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
-    m_device->create_descriptor_pool(
-        m_descriptorPool, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+    m_descriptorPool = m_device->create_descriptor_pool(
+        VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
@@ -115,13 +117,12 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               &m_descriptors[i].globalDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
-        m_descriptorPool.set_descriptor_write(
-            &frames[i].uniformBuffers[GLOBAL_LAYOUT],
-            sizeof(SceneUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_device->get_GPU()),
-            &m_descriptors[i].globalDescritor,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            1);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                              sizeof(SceneUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                              &m_descriptors[i].globalDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              1);
 
         m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX),
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -142,13 +143,12 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               &m_descriptors[i].objectDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
-        m_descriptorPool.set_descriptor_write(
-            &frames[i].uniformBuffers[OBJECT_LAYOUT],
-            sizeof(MaterialUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_device->get_GPU()),
-            &m_descriptors[i].objectDescritor,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            1);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                              sizeof(MaterialUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                              &m_descriptors[i].objectDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              1);
     }
 }
 void ForwardPass::setup_shader_passes() {
@@ -255,7 +255,7 @@ void ForwardPass::setup_shader_passes() {
         ShaderPass* pass = pair.second;
 
         pass->build_shader_stages();
-        pass->build(m_handle, m_descriptorPool, m_extent);
+        pass->build(m_handle, m_descriptorPool);
     }
 }
 
@@ -263,8 +263,8 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
     PROFILING_EVENT()
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_extent, m_attachments);
-    cmd->set_viewport(m_extent);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd->set_viewport(m_handle.extent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {

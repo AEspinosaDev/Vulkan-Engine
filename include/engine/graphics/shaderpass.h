@@ -74,7 +74,7 @@ class ShaderPass
         return m_pipelineLayout;
     }
     void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
-    void build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager, Extent2D& extent);
+    void build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager);
     void cleanup();
 };
 

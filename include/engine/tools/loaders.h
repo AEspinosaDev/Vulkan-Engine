@@ -66,6 +66,9 @@ void load_PNG(Core::Texture* const texture,
 Load .hrd
 */
 void load_HDRi(Core::TextureHDR* const texture, const std::string fileName);
+
+void compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices, const std::vector<uint32_t>& indices);
+
 }; // namespace Tools::Loaders
 
 VULKAN_ENGINE_NAMESPACE_END

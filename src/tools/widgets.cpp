@@ -761,7 +761,7 @@ void ObjectExplorerWidget::render() {
 
         Light* light = static_cast<Light*>(m_object);
 
-        if (light->get_light_type() == DIRECTIONAL)
+        if (light->get_light_type() == LightType::DIRECTIONAL)
         {
             DirectionalLight* dirL   = static_cast<DirectionalLight*>(light);
             float             dir[3] = {dirL->get_direction().x, dirL->get_direction().y, dirL->get_direction().z};

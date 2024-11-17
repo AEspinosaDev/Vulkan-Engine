@@ -28,9 +28,9 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
         return;
     }
 
-    std::vector<Graphics::Utils::Vertex>                  vertices;
-    std::vector<uint32_t>                                 indices;
-    std::unordered_map<Graphics::Utils::Vertex, uint32_t> uniqueVertices;
+    std::vector<Graphics::Vertex>                  vertices;
+    std::vector<uint32_t>                          indices;
+    std::unordered_map<Graphics::Vertex, uint32_t> uniqueVertices;
 
     size_t shape_id = 0;
     for (const tinyobj::shape_t& shape : shapes)
@@ -40,7 +40,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
             // IS INDEXED
             for (const tinyobj::index_t& index : shape.mesh.indices)
             {
-                Graphics::Utils::Vertex vertex = {};
+                Graphics::Vertex vertex = {};
 
                 // Position and color
                 if (index.vertex_index >= 0)
@@ -86,7 +86,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
             {
                 for (size_t j = 0; j < shape.mesh.num_face_vertices[i]; j++)
                 {
-                    Graphics::Utils::Vertex vertex{};
+                    Graphics::Vertex vertex{};
                     size_t vertex_index = shape.mesh.indices[i * shape.mesh.num_face_vertices[i] + j].vertex_index;
                     // Pos
                     if (!attrib.vertices.empty())
@@ -300,8 +300,8 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh,
                           << " total indices (tristrip) " << std::endl;
         }
 
-        std::vector<Graphics::Utils::Vertex> vertices;
-        std::vector<uint32_t>                indices;
+        std::vector<Graphics::Vertex> vertices;
+        std::vector<uint32_t>         indices;
 
         if (positions)
         {
@@ -644,7 +644,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh* const mesh, const char* fileNam
     dirs = new float[header.point_count * 3];
     fillDirectionArray(dirs);
 
-    std::vector<Graphics::Utils::Vertex> vertices;
+    std::vector<Graphics::Vertex> vertices;
     vertices.reserve(header.point_count * 3);
     std::vector<uint32_t> indices;
 
@@ -776,4 +776,42 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std:
 #ifndef NDEBUG
     DEBUG_LOG("HDRi Texture loaded successfully");
 #endif // DEBUG
+}
+
+void VKFW::Tools::Loaders::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
+                                                 const std::vector<uint32_t>&   indices) {
+    if (!indices.empty())
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            size_t i0 = indices[i];
+            size_t i1 = indices[i + 1];
+            size_t i2 = indices[i + 2];
+
+            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i0].pos,
+                                                         vertices[i1].pos,
+                                                         vertices[i2].pos,
+                                                         vertices[i0].texCoord,
+                                                         vertices[i1].texCoord,
+                                                         vertices[i2].texCoord,
+                                                         vertices[i0].normal);
+
+            vertices[i0].tangent += tangent;
+            vertices[i1].tangent += tangent;
+            vertices[i2].tangent += tangent;
+        }
+    else
+        for (size_t i = 0; i < vertices.size(); i += 3)
+        {
+            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i].pos,
+                                                         vertices[i + 1].pos,
+                                                         vertices[i + 2].pos,
+                                                         vertices[i].texCoord,
+                                                         vertices[i + 1].texCoord,
+                                                         vertices[i + 2].texCoord,
+                                                         vertices[i].normal);
+
+            vertices[i].tangent += tangent;
+            vertices[i + 1].tangent += tangent;
+            vertices[i + 2].tangent += tangent;
+        }
 }

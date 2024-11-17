@@ -35,25 +35,27 @@ It can be inherited for full user control over the render pipeline.
 class RenderPass
 {
   protected:
-    Graphics::VulkanRenderPass                             m_handle;
     Graphics::Device*                                      m_device{nullptr};
     Graphics::DescriptorPool                               m_descriptorPool{};
-    std::vector<Graphics::Attachment>                      m_attachments;
-    std::vector<Graphics::SubPassDependency>               m_dependencies;
+    Graphics::VulkanRenderPass                             m_handle;
     std::vector<Graphics::Framebuffer>                     m_framebuffers;
     std::unordered_map<std::string, Graphics::ShaderPass*> m_shaderPasses;
 
-    Extent2D m_extent;
     uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
 
     // Key: Renderpass ID
     // Value: Framebuffer's image ID inside renderpass
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
 
-    bool m_initiatized{false};
-    bool m_isResizeable{true};
-    bool m_enabled{true};
-    bool m_isDefault;
+    bool m_initiatized  = false;
+    bool m_isResizeable = true;
+    bool m_enabled      = true;
+    bool m_isDefault    = false;
+
+    virtual void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                   std::vector<Graphics::SubPassDependency>& dependencies) = 0;
+    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames)                      = 0;
+    virtual void setup_shader_passes()                                                     = 0;
 
   public:
     // static std::vector<Graphics::Frame> frames;
@@ -64,10 +66,10 @@ class RenderPass
                uint32_t          framebufferDepth = 1,
                bool              isDefault        = false)
         : m_device(ctx)
-        , m_extent(extent)
         , m_framebufferImageDepth(framebufferDepth)
         , m_isDefault(isDefault) {
         m_framebuffers.resize(framebufferCount);
+        m_handle.extent = extent;
     }
 
 #pragma region Getters & Setters
@@ -80,10 +82,10 @@ class RenderPass
     }
 
     inline Extent2D get_extent() const {
-        return m_extent;
+        return m_handle.extent;
     }
     inline void set_extent(Extent2D extent) {
-        m_extent = extent;
+        m_handle.extent = extent;
     }
 
     inline Graphics::VulkanRenderPass get_handle() const {
@@ -94,10 +96,10 @@ class RenderPass
     }
 
     inline std::vector<Graphics::Attachment> get_attachments() {
-        return m_attachments;
+        return m_handle.attachments;
     }
     inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) {
-        m_attachments[attachmentLayout].clearValue = value;
+        m_handle.attachments[attachmentLayout].clearValue = value;
     }
 
     inline bool resizeable() const {
@@ -139,9 +141,6 @@ class RenderPass
     */
     void setup(std::vector<Graphics::Frame>& frames);
 
-    virtual void setup_attachments()                                                                       = 0;
-    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames)                                      = 0;
-    virtual void setup_shader_passes()                                                                     = 0;
     virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) = 0;
 
     virtual void update_uniforms(uint32_t frameIndex, Scene* const scene) {

@@ -32,6 +32,7 @@ struct LightUniforms {
     Vec4 dataSlot1 = {0.0f, 0.0f, 0.0f, 0.0f};
     Mat4 viewProj;
     Vec4 dataSlot2 = {0.0f, 0.0f, 0.0f, 0.0f};
+    Vec4 dataSlot3 = {0.0f, 0.0f, 0.0f, 0.0f};
 };
 
 struct SceneUniforms {

@@ -91,87 +91,7 @@ class ManualTimer
     }
 };
 
-/*
-Canonical vertex definition. Most meshes will use some or all of these attributes.
-*/
-struct Vertex {
-    Vec3 pos;
-    Vec3 normal;
-    Vec3 tangent;
-    Vec2 texCoord;
-    Vec3 color;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding   = 0;
-        bindingDescription.stride    = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        return bindingDescription;
-    }
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(bool position = true,
-                                                                                   bool normal   = true,
-                                                                                   bool tangent  = true,
-                                                                                   bool texCoord = true,
-                                                                                   bool color    = true) {
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-        if (position)
-        {
-            VkVertexInputAttributeDescription posAtt{};
-            posAtt.binding  = 0;
-            posAtt.location = 0;
-            posAtt.format   = VK_FORMAT_R32G32B32_SFLOAT;
-            posAtt.offset   = offsetof(Vertex, pos);
-            attributeDescriptions.push_back(posAtt);
-        }
-        if (normal)
-        {
-            VkVertexInputAttributeDescription normalAtt{};
-            normalAtt.binding  = 0;
-            normalAtt.location = 1;
-            normalAtt.format   = VK_FORMAT_R32G32B32_SFLOAT;
-            normalAtt.offset   = offsetof(Vertex, normal);
-            attributeDescriptions.push_back(normalAtt);
-        }
-        if (texCoord)
-        {
-            VkVertexInputAttributeDescription texCoordAtt{};
-            texCoordAtt.binding  = 0;
-            texCoordAtt.location = 2;
-            texCoordAtt.format   = VK_FORMAT_R32G32_SFLOAT;
-            texCoordAtt.offset   = offsetof(Vertex, texCoord);
-            attributeDescriptions.push_back(texCoordAtt);
-        }
-        if (tangent)
-        {
-            VkVertexInputAttributeDescription tangentAtt{};
-            tangentAtt.binding  = 0;
-            tangentAtt.location = 3;
-            tangentAtt.format   = VK_FORMAT_R32G32B32_SFLOAT;
-            tangentAtt.offset   = offsetof(Vertex, tangent);
-            attributeDescriptions.push_back(tangentAtt);
-        }
-        if (color)
-        {
-            VkVertexInputAttributeDescription colorAtt{};
-            colorAtt.binding  = 0;
-            colorAtt.location = 4;
-            colorAtt.format   = VK_FORMAT_R32G32B32_SFLOAT;
-            colorAtt.offset   = offsetof(Vertex, color);
-            attributeDescriptions.push_back(colorAtt);
-        }
-
-        return attributeDescriptions;
-    }
-
-    bool operator==(const Vertex& other) const {
-        return pos == other.pos && normal == other.normal && tangent == other.tangent && texCoord == other.texCoord &&
-               color == other.color;
-    }
-
-    bool operator!=(const Vertex& other) const {
-        return !(*this == other);
-    }
-};
 
 struct memory_buffer : public std::streambuf {
     char*  p_start{nullptr};
@@ -227,24 +147,6 @@ inline std::vector<uint8_t> read_file_binary(const std::string& pathToFile) {
     return fileBufferBytes;
 }
 
-struct EventDispatcher {
-
-    std::vector<std::function<void()>> functions;
-
-    void push_function(std::function<void()>&& function) {
-        functions.push_back(function);
-    }
-
-    void dispatch() {
-        // reverse iterate the deletion queue to execute all the functions
-        for (auto it = functions.rbegin(); it != functions.rend(); it++)
-        {
-            (*it)(); // call functors
-        }
-
-        functions.clear();
-    }
-};
 
 VkPhysicalDeviceProperties get_gpu_properties(VkPhysicalDevice gpu);
 
@@ -286,8 +188,6 @@ inline bool is_device_extension_supported(VkPhysicalDevice physicalDevice, const
     return false;
 }
 
-size_t pad_uniform_buffer_size(size_t originalSize, VkPhysicalDevice gpu);
-
 uint32_t find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 bool check_validation_layer_suport(std::vector<const char*> validationLayers);
@@ -318,27 +218,14 @@ void log_available_extensions(std::vector<VkExtensionProperties> ext);
 void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 
 Vec3 get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, glm::vec2& uv1, glm::vec2& uv2, glm::vec2& uv3, Vec3 normal);
-void compute_tangents_gram_smidt(std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 
-template <typename T, typename... Rest> void hash_combine(std::size_t& seed, const T& v, const Rest&... rest) {
-    seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    (hash_combine(seed, rest), ...);
-}
+
+
 
 }; // namespace Utils
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
 
-namespace std {
-template <> struct hash<VKFW::Graphics::Utils::Vertex> {
-    size_t operator()(VKFW::Graphics::Utils::Vertex const& vertex) const {
-        size_t seed = 0;
-        VKFW::Graphics::Utils::hash_combine(
-            seed, vertex.pos, vertex.normal, vertex.tangent, vertex.texCoord, vertex.color);
-        return seed;
-    }
-};
-}; // namespace std
 
 #endif

@@ -4,12 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-void Device::init(void*            windowHandle,
-                  WindowingSystem  windowingSystem,
-                  VkExtent2D       surfaceExtent,
-                  uint32_t         framesPerFlight,
-                  VkFormat         presentFormat,
-                  VkPresentModeKHR presentMode) {
+void Device::init(void*           windowHandle,
+                  WindowingSystem windowingSystem,
+                  Extent2D        surfaceExtent,
+                  uint32_t        framesPerFlight,
+                  ColorFormatType presentFormat,
+                  SyncType        presentMode) {
 
     // BOOT Vulkan ------>>>
 
@@ -32,7 +32,13 @@ void Device::init(void*            windowHandle,
     m_allocator = Booter::setup_memory(m_instance, m_handle, m_gpu);
 
     // Create swapchain
-    m_swapchain.create(m_gpu, m_handle, actualExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+    m_swapchain.create(m_gpu,
+                       m_handle,
+                       actualExtent,
+                       surfaceExtent,
+                       framesPerFlight,
+                       Translator::get(presentFormat),
+                       Translator::get(presentMode));
 
     m_uploadContext.init(m_handle, m_gpu, m_swapchain.get_surface());
 
@@ -51,11 +57,17 @@ void Device::init(void*            windowHandle,
     //------<<<
 }
 
-void Device::update_swapchain(VkExtent2D       surfaceExtent,
-                              uint32_t         framesPerFlight,
-                              VkFormat         presentFormat,
-                              VkPresentModeKHR presentMode) {
-    m_swapchain.create(m_gpu, m_handle, surfaceExtent, surfaceExtent, framesPerFlight, presentFormat, presentMode);
+void Device::update_swapchain(Extent2D        surfaceExtent,
+                              uint32_t        framesPerFlight,
+                              ColorFormatType presentFormat,
+                              SyncType        presentMode) {
+    m_swapchain.create(m_gpu,
+                       m_handle,
+                       surfaceExtent,
+                       surfaceExtent,
+                       framesPerFlight,
+                       Translator::get(presentFormat),
+                       Translator::get(presentMode));
 }
 
 void Device::cleanup() {
@@ -134,61 +146,264 @@ Buffer Device::create_buffer(size_t                allocSize,
 
     return buffer;
 }
-void Device::create_image(Image& image, bool useMipmaps, VmaMemoryUsage memoryUsage) {
-    image.init(m_handle, m_allocator, useMipmaps, memoryUsage);
+Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps, VmaMemoryUsage memoryUsage) {
+    Image img  = {};
+    img.extent = extent;
+    img.device = m_handle;
+    img.memory = m_allocator;
+
+    VmaAllocationCreateInfo img_allocinfo = {};
+    img_allocinfo.usage                   = memoryUsage;
+
+    img.mipLevels =
+        useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
+
+    VkImageCreateInfo img_info =
+        Init::image_create_info(config.format,
+                                config.usageFlags,
+                                extent,
+                                img.mipLevels,
+                                config.samples,
+                                config.layers,
+                                config.viewType == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
+
+    VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
+
+    return img;
 }
-void Device::create_command_pool(CommandPool& pool, QueueType type) {
-    pool.init(m_handle, Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value());
+CommandPool Device::create_command_pool(QueueType QueueType, VkCommandPoolCreateFlags flags) {
+    CommandPool pool = {};
+    pool.device      = m_handle;
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    switch (QueueType)
+    {
+    case QueueType::GRAPHIC_QUEUE:
+        poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
+        break;
+    case QueueType::COMPUTE_QUEUE:
+        poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).computeFamily.value();
+        break;
+    case QueueType::PRESENT_QUEUE:
+        poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).presentFamily.value();
+        break;
+    }
+    poolInfo.flags = flags;
+
+    if (vkCreateCommandPool(m_handle, &poolInfo, nullptr, &pool.handle) != VK_SUCCESS)
+    {
+        throw VKFW_Exception("Failed to create command pool!");
+    }
+    return pool;
 }
-void Device::create_descriptor_pool(DescriptorPool& pool,
-                                    uint32_t        maxSets,
-                                    uint32_t        numUBO,
-                                    uint32_t        numUBODynamic,
-                                    uint32_t        numUBOStorage,
-                                    uint32_t        numImageCombined,
-                                    uint32_t        numSampler,
-                                    uint32_t        numSampledImage,
-                                    uint32_t        numStrgImage,
-                                    uint32_t        numUBTexel,
-                                    uint32_t        numStrgTexel,
-                                    uint32_t        numUBOStorageDynamic,
-                                    uint32_t        numIAttachment) {
-    pool.init(m_handle,
-              maxSets,
-              numUBO,
-              numUBODynamic,
-              numUBOStorage,
-              numImageCombined,
-              numSampler,
-              numSampledImage,
-              numStrgImage,
-              numUBTexel,
-              numStrgTexel,
-              numUBOStorageDynamic,
-              numIAttachment);
+CommandBuffer Device::create_command_buffer(CommandPool commandPool, VkCommandBufferLevel level) {
+    CommandBuffer cmd                        = {};
+    cmd.device                               = m_handle;
+    cmd.pool                                 = commandPool.handle;
+    VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(commandPool.handle, 1, level);
+    VK_CHECK(vkAllocateCommandBuffers(m_handle, &cmdAllocInfo, &cmd.handle));
+    return cmd;
 }
-void Device::create_render_pass(VulkanRenderPass&               rp,
-                                std::vector<Attachment>&        attachments,
-                                std::vector<SubPassDependency>& dependencies) {
-    rp.init(m_handle, attachments, dependencies);
+DescriptorPool Device::create_descriptor_pool(uint32_t                       maxSets,
+                                              uint32_t                       numUBO,
+                                              uint32_t                       numUBODynamic,
+                                              uint32_t                       numUBOStorage,
+                                              uint32_t                       numImageCombined,
+                                              uint32_t                       numSampler,
+                                              uint32_t                       numSampledImage,
+                                              uint32_t                       numStrgImage,
+                                              uint32_t                       numUBTexel,
+                                              uint32_t                       numStrgTexel,
+                                              uint32_t                       numUBOStorageDynamic,
+                                              uint32_t                       numIAttachment,
+                                              VkDescriptorPoolCreateFlagBits flag) {
+    DescriptorPool pool = {};
+    pool.device         = m_handle;
+
+    std::vector<VkDescriptorPoolSize> sizes = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numUBO},
+                                               {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, numUBODynamic},
+                                               {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numUBOStorage},
+                                               {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImageCombined}};
+    if (numSampler > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_SAMPLER, numSampler});
+    if (numSampledImage > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSampledImage});
+    if (numStrgImage > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numStrgImage});
+    if (numUBTexel > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, numUBTexel});
+    if (numStrgTexel > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, numStrgTexel});
+    if (numUBOStorageDynamic > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, numUBOStorageDynamic});
+    if (numIAttachment > 0)
+        sizes.push_back({VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, numIAttachment});
+
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags                      = flag;
+    pool_info.maxSets                    = maxSets;
+    pool_info.poolSizeCount              = (uint32_t)sizes.size();
+    pool_info.pPoolSizes                 = sizes.data();
+
+    VK_CHECK(vkCreateDescriptorPool(m_handle, &pool_info, nullptr, &pool.handle));
+    return pool;
 }
-void Device::create_framebuffer(Framebuffer&             fbo,
-                                Extent2D                 extent,
-                                VulkanRenderPass&        renderpass,
-                                std::vector<Attachment>& attachments,
-                                uint32_t                 layers) {
-    fbo.init(renderpass, extent, attachments, layers);
+VulkanRenderPass Device::create_render_pass(Extent2D                        extent,
+                                            std::vector<Attachment>&        attachments,
+                                            std::vector<SubPassDependency>& dependencies) {
+    VulkanRenderPass rp = {};
+    // ATTACHMENT SETUP ----------------------------------
+    rp.device = m_handle;
+    rp.extent = extent;
+
+    std::vector<VkAttachmentDescription> attachmentsInfo;
+    attachmentsInfo.resize(attachments.size(), {});
+
+    std::vector<VkAttachmentReference> colorAttachmentRefs;
+    bool                               hasDepthAttachment = false;
+    VkAttachmentReference              depthAttachmentRef;
+    bool                               hasResolveAttachment = false;
+    VkAttachmentReference              resolveAttachemtRef;
+
+    for (size_t i = 0; i < attachmentsInfo.size(); i++)
+    {
+        attachmentsInfo[i].format         = attachments[i].imageConfig.format;
+        attachmentsInfo[i].samples        = attachments[i].imageConfig.samples;
+        attachmentsInfo[i].loadOp         = attachments[i].loadOp;
+        attachmentsInfo[i].storeOp        = attachments[i].storeOp;
+        attachmentsInfo[i].stencilLoadOp  = attachments[i].stencilLoadOp;
+        attachmentsInfo[i].stencilStoreOp = attachments[i].stencilStoreOp;
+        attachmentsInfo[i].initialLayout  = attachments[i].initialLayout;
+        attachmentsInfo[i].finalLayout    = attachments[i].finalLayout;
+
+        switch (attachments[i].type)
+        {
+        case AttachmentType::COLOR_ATTACHMENT:
+            colorAttachmentRefs.push_back(Init::attachment_reference(i, attachments[i].attachmentLayout));
+            break;
+        case AttachmentType::DEPTH_ATTACHMENT:
+            hasDepthAttachment = true;
+            depthAttachmentRef = Init::attachment_reference(i, attachments[i].attachmentLayout);
+            break;
+        case AttachmentType::RESOLVE_ATTACHMENT:
+            hasResolveAttachment = true;
+            resolveAttachemtRef  = Init::attachment_reference(i, attachments[i].attachmentLayout);
+            break;
+        }
+    }
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+    subpass.pColorAttachments    = colorAttachmentRefs.data();
+    if (hasDepthAttachment)
+        subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    if (hasResolveAttachment)
+        subpass.pResolveAttachments = &resolveAttachemtRef;
+
+    // SUBPASS DEPENDENCIES SETUP ----------------------------------
+
+    std::vector<VkSubpassDependency> subpassDependencies;
+    subpassDependencies.resize(dependencies.size(), {});
+
+    // Depdencies
+    for (size_t i = 0; i < subpassDependencies.size(); i++)
+    {
+        subpassDependencies[i].srcSubpass      = dependencies[i].srcSubpass;
+        subpassDependencies[i].dstSubpass      = dependencies[i].dstSubpass;
+        subpassDependencies[i].srcStageMask    = dependencies[i].srcStageMask;
+        subpassDependencies[i].dstStageMask    = dependencies[i].dstStageMask;
+        subpassDependencies[i].srcAccessMask   = dependencies[i].srcAccessMask;
+        subpassDependencies[i].dstAccessMask   = dependencies[i].dstAccessMask;
+        subpassDependencies[i].dependencyFlags = dependencies[i].dependencyFlags;
+    }
+
+    // Creation
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentsInfo.size());
+    renderPassInfo.pAttachments    = attachmentsInfo.data();
+    renderPassInfo.subpassCount    = 1;
+    renderPassInfo.pSubpasses      = &subpass;
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
+    renderPassInfo.pDependencies   = subpassDependencies.data();
+
+    if (vkCreateRenderPass(m_handle, &renderPassInfo, nullptr, &rp.handle) != VK_SUCCESS)
+    {
+        new VKFW_Exception("failed to create renderpass!");
+    }
+    rp.attachments  = attachments;
+    rp.dependencies = dependencies;
+    return rp;
+} // namespace Graphics
+Framebuffer
+Device::create_framebuffer(VulkanRenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
+    Framebuffer fbo = {};
+    fbo.device      = m_handle;
+    fbo.layers      = layers;
+
+    std::vector<VkImageView> viewAttachments;
+    viewAttachments.resize(attachments.size());
+
+    // If default
+    size_t presentViewIndex{0};
+
+    for (size_t i = 0; i < viewAttachments.size(); i++)
+    {
+        viewAttachments[i] = attachments[i].image.view;
+    }
+
+    VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.handle, renderpass.extent);
+    fbInfo.pAttachments            = viewAttachments.data();
+    fbInfo.attachmentCount         = (uint32_t)viewAttachments.size();
+    fbInfo.layers                  = layers;
+
+    if (vkCreateFramebuffer(m_handle, &fbInfo, nullptr, &fbo.handle) != VK_SUCCESS)
+    {
+        throw VKFW_Exception("failed to create framebuffer!");
+    }
+    return fbo;
 }
 
+Semaphore Device::create_semaphore() {
+    Semaphore semaphore                       = {};
+    semaphore.device                          = m_handle;
+    VkSemaphoreCreateInfo semaphoreCreateInfo = Init::semaphore_create_info();
+    VK_CHECK(vkCreateSemaphore(m_handle, &semaphoreCreateInfo, nullptr, &semaphore.handle));
+    return semaphore;
+}
+Fence Device::create_fence() {
+    Fence fence                       = {};
+    fence.device                      = m_handle;
+    VkFenceCreateInfo fenceCreateInfo = Init::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+    VK_CHECK(vkCreateFence(m_handle, &fenceCreateInfo, nullptr, &fence.handle));
+    return fence;
+}
+Frame Device::create_frame(uint16_t id) {
+    Frame frame         = {};
+    frame.index         = id;
+    frame.commandPool   = new CommandPool;
+    frame.commandBuffer = new CommandBuffer;
+    *frame.commandPool = create_command_pool(QueueType::GRAPHIC_QUEUE, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    *frame.commandBuffer = create_command_buffer(*frame.commandPool);
+
+    frame.renderFence      = create_fence();
+    frame.renderSemaphore  = create_semaphore();
+    frame.presentSemaphore = create_semaphore();
+
+    return frame;
+}
 RenderResult Device::aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex) {
     VkResult result = vkAcquireNextImageKHR(
-        m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.get_handle(), VK_NULL_HANDLE, &imageIndex);
+        m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.handle, VK_NULL_HANDLE, &imageIndex);
     return static_cast<RenderResult>(result);
 }
 
 RenderResult Device::present_image(Semaphore& signalSemaphore, uint32_t imageIndex) {
 
-    VkSemaphore      signalSemaphores[] = {signalSemaphore.get_handle()};
+    VkSemaphore      signalSemaphores[] = {signalSemaphore.handle};
     VkPresentInfoKHR presentInfo        = Init::present_info();
     presentInfo.sType                   = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount      = 1;
@@ -257,35 +472,37 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
 
     vao.loadedOnGPU = true;
 }
-void Device::upload_texture_image(const void* imgCache, size_t bytesPerPixel, Image* const img, bool mipmapping) {
+void Device::upload_texture_image(Image* const  img,
+                                  ImageConfig   config,
+                                  SamplerConfig samplerConfig,
+                                  const void*   imgCache,
+                                  size_t        bytesPerPixel,
+                                  bool          mipmapping) {
     PROFILING_EVENT()
 
     // CREATE IMAGE
-    img->config.usageFlags =
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    img->config.samples = VK_SAMPLE_COUNT_1_BIT;
-    img->init(m_handle, m_allocator, mipmapping);
-
-    // CREATE VIEW
-    img->viewConfig.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    // What if other type of texture
-    img->create_view();
+    config.usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    config.samples     = VK_SAMPLE_COUNT_1_BIT;
+    config.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    *img               = create_image(img->extent, config, mipmapping);
+    img->create_view(config);
 
     VkDeviceSize imageSize = img->extent.width * img->extent.height * img->extent.depth * bytesPerPixel;
 
     Buffer stagingBuffer = create_buffer_VMA(imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer.upload_data(imgCache, static_cast<size_t>(imageSize));
 
-    m_uploadContext.immediate_submit(
-        m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) { img->upload_image(cmd, &stagingBuffer); });
+    m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
+        img->upload_image(cmd, &stagingBuffer);
+    });
 
     stagingBuffer.cleanup();
 
     // GENERATE MIPMAPS
-    if (img->config.mipLevels > 1)
+    if (img->mipLevels > 1)
     {
         VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(m_gpu, img->config.format, &formatProperties);
+        vkGetPhysicalDeviceFormatProperties(m_gpu, config.format, &formatProperties);
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
         {
             throw std::runtime_error("texture image format does not support linear blitting!");
@@ -296,16 +513,16 @@ void Device::upload_texture_image(const void* imgCache, size_t bytesPerPixel, Im
     }
 
     // CREATE SAMPLER
-    img->samplerConfig.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    img->samplerConfig.maxAnysotropy = Utils::get_gpu_properties(m_gpu).limits.maxSamplerAnisotropy;
-    img->create_sampler();
+    samplerConfig.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerConfig.maxAnysotropy = m_properties.limits.maxSamplerAnisotropy;
+    img->create_sampler(samplerConfig);
 
     if (ImGui::GetCurrentContext())
         img->create_GUI_handle();
 
     img->loadedOnGPU = true;
 }
-void Device::create_BLAS(BLAS& accel, VAO& vao) {
+void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     if (!vao.loadedOnGPU)
         return;
 
@@ -325,7 +542,7 @@ void Device::create_BLAS(BLAS& accel, VAO& vao) {
     accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
     accelerationStructureGeometry.geometry.triangles.vertexData   = vertexBufferDeviceAddress;
     accelerationStructureGeometry.geometry.triangles.maxVertex    = vao.vertexCount - 1;
-    accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(Utils::Vertex);
+    accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(Vertex);
 
     if (vao.indexCount > 0)
     {
@@ -409,7 +626,7 @@ void Device::create_BLAS(BLAS& accel, VAO& vao) {
     accel.device = m_handle;
 }
 
-void Device::create_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) {
+void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) {
 
     // Set up instance data for each BLAS
 
@@ -421,7 +638,7 @@ void Device::create_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
         VkTransformMatrixKHR transformMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
         for (int row = 0; row < 3; ++row)
             for (int col = 0; col < 4; ++col)
-                transformMatrix.matrix[row][col] = BLASinstances[i].transform[col][row]; //Column-major to Row-major
+                transformMatrix.matrix[row][col] = BLASinstances[i].transform[col][row]; // Column-major to Row-major
 
         instances[i].transform                              = transformMatrix;
         instances[i].instanceCustomIndex                    = i;
@@ -530,20 +747,19 @@ void Device::init_imgui(void*                 windowHandle,
                         VulkanRenderPass      renderPass,
                         VkSampleCountFlagBits samples) {
 
-    m_guiPool.init(m_handle,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   1000,
-                   VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
+    m_guiPool = create_descriptor_pool(1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       1000,
+                                       VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -556,10 +772,10 @@ void Device::init_imgui(void*                 windowHandle,
     init_info.PhysicalDevice            = m_gpu;
     init_info.Device                    = m_handle;
     init_info.Queue                     = m_queues[QueueType::GRAPHIC_QUEUE];
-    init_info.DescriptorPool            = m_guiPool.get_handle();
+    init_info.DescriptorPool            = m_guiPool.handle;
     init_info.MinImageCount             = 3;
     init_info.ImageCount                = 3;
-    init_info.RenderPass                = renderPass.get_handle();
+    init_info.RenderPass                = renderPass.handle;
     init_info.MSAASamples               = samples;
 
     ImGui_ImplVulkan_Init(&init_info);
@@ -594,6 +810,15 @@ uint32_t Device::get_memory_type(uint32_t typeBits, VkMemoryPropertyFlags proper
     {
         throw std::runtime_error("Could not find a matching memory type");
     }
+}
+size_t Device::pad_uniform_buffer_size(size_t originalSize) {
+    size_t minUboAlignment = m_properties.limits.minUniformBufferOffsetAlignment;
+    size_t alignedSize     = originalSize;
+    if (minUboAlignment > 0)
+    {
+        alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
+    }
+    return alignedSize;
 }
 } // namespace Graphics
 

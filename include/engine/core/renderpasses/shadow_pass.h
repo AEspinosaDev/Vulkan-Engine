@@ -36,7 +36,8 @@ class ShadowPass : public RenderPass
         , m_depthFormat(depthFormat) {
     }
 
-    void setup_attachments();
+    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                           std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 

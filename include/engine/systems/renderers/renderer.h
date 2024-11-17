@@ -267,8 +267,8 @@ class BaseRenderer
     /*
     Initialize and setup texture IMAGE
     */
-    void upload_texture_image(Core::ITexture* const t);
-    void destroy_texture_image(Core::ITexture* const t);
+    void upload_texture_data(Core::ITexture* const t);
+    void destroy_texture_data(Core::ITexture* const t);
     /*
     Upload geometry vertex buffers to the GPU
     */

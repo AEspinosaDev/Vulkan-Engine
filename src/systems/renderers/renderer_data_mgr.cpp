@@ -82,7 +82,7 @@ void BaseRenderer::update_global_data(Core::Scene* const scene) {
     m_frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(
         &sceneParams,
         sizeof(Graphics::SceneUniforms),
-        Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_device.get_GPU()));
+        m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
 
     /*
     SKYBOX MESH AND TEXTURE UPLOAD
@@ -164,7 +164,7 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                             for (auto pair : textures)
                             {
                                 Core::ITexture* texture = pair.second;
-                                upload_texture_image(texture);
+                                upload_texture_data(texture);
                             }
                         }
 
@@ -173,8 +173,7 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                         m_frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(
                             &materialData,
                             sizeof(Graphics::MaterialUniforms),
-                            objectOffset + Graphics::Utils::pad_uniform_buffer_size(
-                                               sizeof(Graphics::MaterialUniforms), m_device.get_GPU()));
+                            objectOffset + m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
                     }
                 }
             }
@@ -184,24 +183,33 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
         {
             Graphics::TLAS* accel = get_TLAS(scene);
             if (!accel->handle)
-                m_device.create_TLAS(*accel, BLASInstances);
+                m_device.upload_TLAS(*accel, BLASInstances);
         }
     }
 }
 
-void BaseRenderer::upload_texture_image(Core::ITexture* const t) {
+void BaseRenderer::upload_texture_data(Core::ITexture* const t) {
     if (t && t->loaded_on_CPU())
     {
         if (!t->loaded_on_GPU())
         {
+            Graphics::ImageConfig   config        = {};
+            Graphics::SamplerConfig samplerConfig = {};
+            Core::TextureSettings   textSettings  = t->get_settings();
+            config.format                         = static_cast<VkFormat>(textSettings.format);
+            // config.mipLevels                      = textSettings.maxMipLevel;
+            samplerConfig.anysotropicFilter  = textSettings.anisotropicFilter;
+            samplerConfig.filters            = static_cast<VkFilter>(textSettings.filter);
+            samplerConfig.samplerAddressMode = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
+
             void* imgCache{nullptr};
             t->get_image_cache(imgCache);
             m_device.upload_texture_image(
-                imgCache, t->get_bytes_per_pixel(), get_image(t), t->get_settings().useMipmaps);
+                get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel(), t->get_settings().useMipmaps);
         }
     }
 }
-void BaseRenderer::destroy_texture_image(Core::ITexture* const t) {
+void BaseRenderer::destroy_texture_data(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
@@ -228,7 +236,7 @@ void BaseRenderer::upload_geometry_data(Core::Geometry* const g, bool createAcce
     {
         Graphics::BLAS* accel = get_BLAS(g);
         if (!accel->handle)
-            m_device.create_BLAS(*accel, *get_VAO(g));
+            m_device.upload_BLAS(*accel, *get_VAO(g));
     }
 }
 
@@ -257,9 +265,18 @@ void BaseRenderer::setup_skybox(Core::Scene* const scene) {
             {
                 if (!envMap->loaded_on_GPU())
                 {
+                    Graphics::ImageConfig   config        = {};
+                    Graphics::SamplerConfig samplerConfig = {};
+                    Core::TextureSettings   textSettings  = envMap->get_settings();
+                    config.format                         = static_cast<VkFormat>(textSettings.format);
+                    samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
+                    samplerConfig.filters                 = static_cast<VkFilter>(textSettings.filter);
+                    samplerConfig.samplerAddressMode      = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
+
                     void* imgCache{nullptr};
                     envMap->get_image_cache(imgCache);
-                    m_device.upload_texture_image(imgCache, envMap->get_bytes_per_pixel(), get_image(envMap), false);
+                    m_device.upload_texture_image(
+                        get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
                 }
                 // Create Panorama converter pass
                 if (m_renderPipeline.panoramaConverterPass)
@@ -294,24 +311,22 @@ void BaseRenderer::init_resources() {
     // Setup frames
     m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
     for (size_t i = 0; i < m_frames.size(); i++)
-        m_frames[i].init(m_device.get_handle(), m_device.get_GPU(), m_device.get_swapchain().get_surface(), i);
+        m_frames[i] = m_device.create_frame(i);
     for (size_t i = 0; i < m_frames.size(); i++)
     {
         // Global Buffer
-        const size_t globalStrideSize =
-            (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms), m_device.get_GPU()) +
-             Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms), m_device.get_GPU()));
-        Graphics::Buffer globalBuffer = m_device.create_buffer_VMA(globalStrideSize,
+        const size_t     globalStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
+                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
+        Graphics::Buffer globalBuffer     = m_device.create_buffer_VMA(globalStrideSize,
                                                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                                    VMA_MEMORY_USAGE_CPU_TO_GPU,
                                                                    (uint32_t)globalStrideSize);
         m_frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
-        const size_t objectStrideSize =
-            (Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms), m_device.get_GPU()) +
-             Graphics::Utils::pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms), m_device.get_GPU()));
-        Graphics::Buffer objectBuffer = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
+        const size_t     objectStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
+                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+        Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
                                                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                                    VMA_MEMORY_USAGE_CPU_TO_GPU,
                                                                    (uint32_t)objectStrideSize);
@@ -330,25 +345,16 @@ void BaseRenderer::init_resources() {
         Core::Texture::FALLBACK_TEX   = new Core::Texture(texture_data, {1, 1, 1}, 4);
         Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
     }
-    void* imgCache{nullptr};
-    Core::Texture::FALLBACK_TEX->get_image_cache(imgCache);
-    m_device.upload_texture_image(
-        imgCache, Core::Texture::FALLBACK_TEX->get_bytes_per_pixel(), get_image(Core::Texture::FALLBACK_TEX), false);
+    upload_texture_data(Core::Texture::FALLBACK_TEX);
 
     // Setup blue noise texture
     if (!Core::Texture::BLUE_NOISE_TEXT) // If not user set
     {
         Core::Texture::BLUE_NOISE_TEXT = new Core::Texture();
         Tools::Loaders::load_PNG(Core::Texture::BLUE_NOISE_TEXT, ENGINE_RESOURCES_PATH "textures/blueNoise.png");
-        Core::Texture::BLUE_NOISE_TEXT->set_use_mipmaps(false);
-        Core::Texture::BLUE_NOISE_TEXT->set_adress_mode(TextureAdressModeType::REPEAT);
+        Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
     }
-    void* imgCache2{nullptr};
-    Core::Texture::BLUE_NOISE_TEXT->get_image_cache(imgCache2);
-    m_device.upload_texture_image(imgCache2,
-                                  Core::Texture::BLUE_NOISE_TEXT->get_bytes_per_pixel(),
-                                  get_image(Core::Texture::BLUE_NOISE_TEXT),
-                                  false);
+    upload_texture_data(Core::Texture::BLUE_NOISE_TEXT);
 }
 
 void BaseRenderer::clean_Resources() {

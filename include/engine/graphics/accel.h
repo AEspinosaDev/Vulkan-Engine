@@ -18,17 +18,20 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 /*
-Bottom Level Acceleration structure
+Acceleration structure
 */
-struct BLAS {
+struct Accel {
     VkAccelerationStructureKHR handle       = VK_NULL_HANDLE;
     VkDevice                   device       = VK_NULL_HANDLE;
     VkDeviceAddress            deviceAdress = 0;
 
     Buffer buffer = {};
+    bool   binded = false;
 
     void cleanup();
 };
+typedef Accel BLAS;
+typedef Accel TLAS;
 /*
 Instance of a Bottom Level Acceleration Structure. Has a unique transform.
 */
@@ -36,19 +39,7 @@ struct BLASInstance {
     BLAS accel     = {};
     Mat4 transform = {};
 };
-/*
-Top Level Acceleration structure
-*/
-struct TLAS {
-    VkAccelerationStructureKHR handle       = VK_NULL_HANDLE;
-    VkDevice                   device       = VK_NULL_HANDLE;
-    VkDeviceAddress            deviceAdress = 0;
 
-    Buffer buffer = {};
-    bool binded = false;
-
-    void cleanup();
-};
 
 } // namespace Graphics
 

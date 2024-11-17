@@ -4,50 +4,22 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-void Image::init(VkDevice& _device, VmaAllocator _memory, bool useMipmaps, VmaMemoryUsage memoryUsage) {
-    device = _device;
-    memory = _memory;
-
-    VmaAllocationCreateInfo img_allocinfo = {};
-    img_allocinfo.usage                   = memoryUsage;
-
-    config.mipLevels =
-        useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
-
-    VkImageCreateInfo img_info = Init::image_create_info(
-        config.format,
-        config.usageFlags,
-        extent,
-        config.mipLevels,
-        config.samples,
-        config.layers,
-        viewConfig.viewType == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
-
-    VK_CHECK(vmaCreateImage(memory, &img_info, &img_allocinfo, &handle, &allocation, nullptr));
-
-    isInitialized = true;
-}
-
-void Image::create_view() {
+void Image::create_view(ImageConfig config) {
     VkImageViewCreateInfo dview_info = Init::imageview_create_info(
-        config.format, handle, viewConfig.viewType, viewConfig.aspectFlags, config.mipLevels, config.layers);
+        config.format, handle, config.viewType, config.aspectFlags, mipLevels, config.layers);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
-
-    hasView = true;
 }
-void Image::create_sampler() {
-    VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(samplerConfig.filters,
+void Image::create_sampler(SamplerConfig config) {
+    VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(config.filters,
                                                                 VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                                                                samplerConfig.minLod,
-                                                                samplerConfig.maxLod,
-                                                                samplerConfig.anysotropicFilter,
-                                                                samplerConfig.maxAnysotropy,
-                                                                samplerConfig.samplerAddressMode);
-    samplerInfo.borderColor         = samplerConfig.border;
+                                                                config.minLod,
+                                                                config.maxLod,
+                                                                config.anysotropicFilter,
+                                                                config.maxAnysotropy,
+                                                                config.samplerAddressMode);
+    samplerInfo.borderColor         = config.border;
 
     VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));
-
-    hasSampler = true;
 }
 
 void Image::create_GUI_handle() {
@@ -60,7 +32,7 @@ void Image::upload_image(VkCommandBuffer& cmd, Buffer* stagingBuffer) {
     VkImageSubresourceRange range;
     range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     range.baseMipLevel   = 0;
-    range.levelCount     = config.mipLevels;
+    range.levelCount     = mipLevels;
     range.baseArrayLayer = 0;
     range.layerCount     = 1;
 
@@ -101,7 +73,7 @@ void Image::upload_image(VkCommandBuffer& cmd, Buffer* stagingBuffer) {
     // copy the buffer into the image
     vkCmdCopyBufferToImage(cmd, stagingBuffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    if (config.mipLevels == 1)
+    if (mipLevels == 1)
     {
         VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
@@ -142,7 +114,7 @@ void Image::generate_mipmaps(VkCommandBuffer& cmd) {
     imageBarrier_toTransfer.image                = handle;
     imageBarrier_toTransfer.subresourceRange     = range;
 
-    for (uint32_t i = 1; i < config.mipLevels; i++)
+    for (uint32_t i = 1; i < mipLevels; i++)
     {
 
         imageBarrier_toTransfer.subresourceRange.baseMipLevel = i - 1;
@@ -208,7 +180,7 @@ void Image::generate_mipmaps(VkCommandBuffer& cmd) {
     }
 
     VkImageMemoryBarrier imageBarrier_toReadable          = imageBarrier_toTransfer;
-    imageBarrier_toReadable.subresourceRange.baseMipLevel = config.mipLevels - 1;
+    imageBarrier_toReadable.subresourceRange.baseMipLevel = mipLevels - 1;
     imageBarrier_toReadable.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     imageBarrier_toReadable.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageBarrier_toReadable.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -227,22 +199,22 @@ void Image::generate_mipmaps(VkCommandBuffer& cmd) {
 }
 
 void Image::cleanup(bool destroySampler) {
-    if (hasView)
+    if (view)
     {
         vkDestroyImageView(device, view, nullptr);
-        hasView = false;
+        view = VK_NULL_HANDLE;
     }
-    if (isInitialized)
+    if (handle)
     {
         vmaDestroyImage(memory, handle, allocation);
-        isInitialized = false;
+        handle = VK_NULL_HANDLE;
     }
-    if (destroySampler && hasSampler)
+    if (destroySampler && sampler)
     {
         vkDestroySampler(device, sampler, VK_NULL_HANDLE);
-        hasSampler = false;
+        sampler = VK_NULL_HANDLE;
     }
-    if (GUIReadHandle != VK_NULL_HANDLE)
+    if (GUIReadHandle)
     {
         ImGui_ImplVulkan_RemoveTexture(GUIReadHandle);
         GUIReadHandle = VK_NULL_HANDLE;

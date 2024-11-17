@@ -38,14 +38,11 @@ class Device
     Swapchain                              m_swapchain     = {};
     Utils::QueueFamilyIndices              m_queueFamilies = {};
     DescriptorPool                         m_guiPool       = {};
-    Utils::UploadContext                   m_uploadContext = {};
     std::unordered_map<QueueType, VkQueue> m_queues;
     // GPU Properties
     VkPhysicalDeviceProperties       m_properties       = {};
     VkPhysicalDeviceFeatures         m_features         = {};
-    VkPhysicalDeviceFeatures         m_enabledFeatures  = {};
     VkPhysicalDeviceMemoryProperties m_memoryProperties = {};
-    // std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     // Validation
     VkDebugUtilsMessengerEXT       m_debugMessenger   = VK_NULL_HANDLE;
     const std::vector<const char*> m_validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -57,6 +54,8 @@ class Device
                                                    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
                                                    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
                                                    VK_KHR_RAY_QUERY_EXTENSION_NAME};
+    // Utils
+    Utils::UploadContext m_uploadContext = {};
 #ifdef NDEBUG
     const bool m_enableValidationLayers{false};
 #else
@@ -88,16 +87,16 @@ class Device
     INIT AND SHUTDOWN
     -----------------------------------------------
     */
-    void init(void*            windowHandle,
-              WindowingSystem  windowingSystem,
-              VkExtent2D       surfaceExtent,
-              uint32_t         framesPerFlight,
-              VkFormat         presentFormat,
-              VkPresentModeKHR presentMode);
-    void update_swapchain(VkExtent2D       surfaceExtent,
-                          uint32_t         framesPerFlight,
-                          VkFormat         presentFormat,
-                          VkPresentModeKHR presentMode);
+    void init(void*           windowHandle,
+              WindowingSystem windowingSystem,
+              Extent2D        surfaceExtent,
+              uint32_t        framesPerFlight,
+              ColorFormatType presentFormat,
+              SyncType        presentMode);
+    void update_swapchain(Extent2D      surfaceExtent,
+                          uint32_t        framesPerFlight,
+                          ColorFormatType presentFormat,
+                          SyncType        presentMode);
     void cleanup();
 
     /*
@@ -114,37 +113,42 @@ class Device
                          VkMemoryPropertyFlags memoryProperties,
                          uint32_t              strideSize = 0);
     /*Create Image*/
-    void create_image(Image& image, bool useMipmaps, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
-    /*Create Command Pool*/
-    void create_command_pool(CommandPool& pool, QueueType type);
-    /*Create RenderPass*/
-    void create_render_pass(VulkanRenderPass&               rp,
-                            std::vector<Attachment>&        attachments,
-                            std::vector<SubPassDependency>& dependencies);
+    Image create_image(Extent3D       extent,
+                       ImageConfig    config,
+                       bool           useMipmaps,
+                       VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
-    void create_framebuffer(Framebuffer&             fbo,
-                            Extent2D                 extent,
-                            VulkanRenderPass&        renderpass,
-                            std::vector<Attachment>& attachments,
-                            uint32_t                 layers = 1);
-    /*Create and Setup Bottom-Level Acceleration Structure*/
-    void create_BLAS(BLAS& accel, VAO& vao);
-    /*Create and Setup Top-Level Acceleration Structure*/
-    void create_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
+    Framebuffer
+    create_framebuffer(VulkanRenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
+    Semaphore create_semaphore();
+    Fence     create_fence();
+    /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
+     * buffers to contain data needed for the GPU to render*/
+    Frame create_frame(uint16_t id);
+    /*Create RenderPass*/
+    VulkanRenderPass create_render_pass(Extent2D                        extent,
+                                        std::vector<Attachment>&        attachments,
+                                        std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
-    void create_descriptor_pool(DescriptorPool& pool,
-                                uint32_t        maxSets,
-                                uint32_t        numUBO,
-                                uint32_t        numUBODynamic,
-                                uint32_t        numUBOStorage,
-                                uint32_t        numImageCombined,
-                                uint32_t        numSampler           = 0,
-                                uint32_t        numSampledImage      = 0,
-                                uint32_t        numStrgImage         = 0,
-                                uint32_t        numUBTexel           = 0,
-                                uint32_t        numStrgTexel         = 0,
-                                uint32_t        numUBOStorageDynamic = 0,
-                                uint32_t        numIAttachment       = 0);
+    DescriptorPool create_descriptor_pool(uint32_t                       maxSets,
+                                          uint32_t                       numUBO,
+                                          uint32_t                       numUBODynamic,
+                                          uint32_t                       numUBOStorage,
+                                          uint32_t                       numImageCombined,
+                                          uint32_t                       numSampler           = 0,
+                                          uint32_t                       numSampledImage      = 0,
+                                          uint32_t                       numStrgImage         = 0,
+                                          uint32_t                       numUBTexel           = 0,
+                                          uint32_t                       numStrgTexel         = 0,
+                                          uint32_t                       numUBOStorageDynamic = 0,
+                                          uint32_t                       numIAttachment       = 0,
+                                          VkDescriptorPoolCreateFlagBits flag                 = {});
+    /*Create Command Pool*/
+    CommandPool create_command_pool(QueueType                QueueType,
+                                    VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    /*Create command buffer*/
+    CommandBuffer create_command_buffer(CommandPool          commandPool,
+                                        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     /*
     DRAWING
@@ -163,8 +167,14 @@ class Device
     */
     void
     upload_vertex_arrays(VertexArrays& vao, size_t vboSize, const void* vboData, size_t iboSize, const void* iboData);
-    void upload_texture_image(const void* imgCache, size_t bytesPerPixel, Image* const img, bool mipmapping);
-
+    void upload_texture_image(Image* const  img,
+                              ImageConfig   config,
+                              SamplerConfig samplerConfig,
+                              const void*   imgCache,
+                              size_t        bytesPerPixel,
+                              bool          mipmapping);
+    void upload_BLAS(BLAS& accel, VAO& vao);
+    void upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
     /*
     MISC
     -----------------------------------------------
@@ -176,6 +186,10 @@ class Device
                         VkSampleCountFlagBits samples);
     void     destroy_imgui();
     uint32_t get_memory_type(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32* memTypeFound = nullptr);
+    /*
+    Returns the size of the data having in mind the minimun alginment size per stride in the GPU
+    */
+    size_t pad_uniform_buffer_size(size_t originalSize);
 };
 
 } // namespace Graphics

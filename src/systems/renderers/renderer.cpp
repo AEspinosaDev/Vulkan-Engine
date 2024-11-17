@@ -24,8 +24,8 @@ void BaseRenderer::init() {
                   m_window->get_windowing_system(),
                   m_window->get_extent(),
                   static_cast<uint32_t>(m_settings.bufferingType),
-                  static_cast<VkFormat>(m_settings.colorFormat),
-                  static_cast<VkPresentModeKHR>(m_settings.screenSync));
+                  m_settings.colorFormat,
+                  m_settings.screenSync);
     // Init resources
     init_resources();
 
@@ -87,7 +87,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
                         for (auto pair : textures)
                         {
                             Core::ITexture* texture = pair.second;
-                            destroy_texture_image(texture);
+                            destroy_texture_data(texture);
                         }
                     }
                 }
@@ -96,11 +96,11 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
             if (scene->get_skybox())
             {
                 destroy_geometry_data(scene->get_skybox()->get_box());
-                destroy_texture_image(scene->get_skybox()->get_enviroment_map());
+                destroy_texture_data(scene->get_skybox()->get_enviroment_map());
             }
             get_TLAS(scene)->cleanup();
         }
-        destroy_texture_image(Core::Texture::BLUE_NOISE_TEXT);
+        destroy_texture_data(Core::Texture::BLUE_NOISE_TEXT);
 
         if (m_settings.enableUI)
             m_device.destroy_imgui();
@@ -214,8 +214,8 @@ void BaseRenderer::update_renderpasses() {
     m_device.wait();
     m_device.update_swapchain(m_window->get_extent(),
                               static_cast<uint32_t>(m_settings.bufferingType),
-                              static_cast<VkFormat>(m_settings.colorFormat),
-                              static_cast<VkPresentModeKHR>(m_settings.screenSync));
+                              m_settings.colorFormat,
+                              m_settings.screenSync);
 
     // Renderpass framebuffer updating
     for (Core::RenderPass* pass : m_renderPipeline.renderpasses)

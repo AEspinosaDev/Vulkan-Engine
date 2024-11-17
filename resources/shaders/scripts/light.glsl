@@ -1,3 +1,7 @@
+#define POINT_LIGHT         0
+#define DIRECTIONAL_LIGHT   1
+#define SPOT_LIGHT          2
+
 struct LightUniform{
 
     vec3    position;
@@ -14,6 +18,9 @@ struct LightUniform{
     mat4    viewProj;
 
     vec4    shadowData;
+
+    vec3    direction;
+    float   data;
 
     // x   shadowBias;
     // y   kernelRadius;

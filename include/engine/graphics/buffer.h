@@ -14,7 +14,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
-// Vulkan buffer object
+// Vulkan buffer object. Device class should populate the struct
 struct Buffer {
     VkBuffer              handle     = VK_NULL_HANDLE;
     uint32_t              size       = 0;

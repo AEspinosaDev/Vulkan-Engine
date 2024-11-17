@@ -18,40 +18,30 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-class Semaphore
+/*
+To be populated by device class with create_semaphore()
+*/
+struct Semaphore
 {
-    VkSemaphore m_handle = VK_NULL_HANDLE;
-    VkDevice    m_device = VK_NULL_HANDLE;
+    VkSemaphore handle = VK_NULL_HANDLE;
+    VkDevice    device = VK_NULL_HANDLE;
 
-  public:
-    Semaphore() {
-    }
 
-    inline VkSemaphore& get_handle() {
-        return m_handle;
-    }
-
-    void init(VkDevice device);
     void cleanup();
 };
 
-class Fence
+/*
+To be populated by device class with create_fence()
+*/
+struct Fence
 {
-    VkFence  m_handle = VK_NULL_HANDLE;
-    VkDevice m_device = VK_NULL_HANDLE;
+    VkFence  handle = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
 
-  public:
-    Fence() {
-    }
-
-    inline VkFence& get_handle() {
-        return m_handle;
-    }
-
-    void init(VkDevice device);
-    void cleanup();
+   
     void reset();
     void wait(uint64_t timeout = UINT64_MAX);
+    void cleanup();
 };
 
 } // namespace Graphics

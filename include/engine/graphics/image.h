@@ -17,16 +17,13 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 struct ImageConfig {
-    VkFormat              format     = VK_FORMAT_B8G8R8A8_SRGB;
-    VkImageUsageFlags     usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkSampleCountFlagBits samples    = VK_SAMPLE_COUNT_1_BIT;
-    uint32_t              mipLevels  = 1U;
-    uint32_t              layers     = 1U;
-};
-
-struct ViewConfig {
-    VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    VkImageViewType    viewType    = VK_IMAGE_VIEW_TYPE_2D;
+    VkFormat              format      = VK_FORMAT_B8G8R8A8_SRGB;
+    VkImageUsageFlags     usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkSampleCountFlagBits samples     = VK_SAMPLE_COUNT_1_BIT;
+    uint32_t              mipLevels   = 1U;
+    uint32_t              layers      = 1U;
+    VkImageAspectFlags    aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    VkImageViewType       viewType    = VK_IMAGE_VIEW_TYPE_2D;
 };
 
 struct SamplerConfig {
@@ -42,33 +39,23 @@ struct SamplerConfig {
 
 struct Image {
 
-    VkImage         handle;
-    VkExtent3D      extent;
-    VkDevice        device;
-    VmaAllocator    memory; /*Memory allocation controlled by VMA*/
-    VmaAllocation   allocation;
-    ImageConfig     config{};
-    VkImageView     view;
-    ViewConfig      viewConfig{};
-    VkSampler       sampler;
-    SamplerConfig   samplerConfig{};
-    VkDescriptorSet GUIReadHandle{VK_NULL_HANDLE};
+    VkImage         handle        = VK_NULL_HANDLE;
+    VkDevice        device        = VK_NULL_HANDLE;
+    VmaAllocator    memory        = VK_NULL_HANDLE; /*Memory allocation controlled by VMA*/
+    VmaAllocation   allocation    = VK_NULL_HANDLE;
+    VkImageView     view          = VK_NULL_HANDLE;
+    VkSampler       sampler       = VK_NULL_HANDLE;
+    VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
+
+    Extent3D extent;
+    uint32_t mipLevels = 1;
 
     bool loadedOnCPU{false};
     bool loadedOnGPU{false};
 
-    bool isInitialized{false};
-    bool hasView{false};
-    bool hasSampler{false};
+    void create_view(ImageConfig config);
 
-    void init(VkDevice&      device,
-              VmaAllocator   memory,
-              bool           useMipmaps,
-              VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
-
-    void create_view();
-
-    void create_sampler();
+    void create_sampler(SamplerConfig config);
 
     void create_GUI_handle();
 

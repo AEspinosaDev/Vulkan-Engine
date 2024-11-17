@@ -16,27 +16,13 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
-
-class Framebuffer
+/*Vulkan FBO. Device should populate the struct*/
+struct Framebuffer
 {
-    VkFramebuffer m_handle = VK_NULL_HANDLE;
-    VkDevice      m_device = VK_NULL_HANDLE;
-    uint32_t      m_layers = 1;
-
-  public:
-    Framebuffer() {
-    }
-
-    inline VkFramebuffer& get_handle() {
-        return m_handle;
-    }
-
-    inline uint32_t get_layer_count() const {
-        return m_layers;
-    }
-
-    void init(VulkanRenderPass& renderpass, Extent2D extent, std::vector<Attachment>& attachments, uint32_t layers = 1);
-
+    VkFramebuffer handle = VK_NULL_HANDLE;
+    VkDevice      device = VK_NULL_HANDLE;
+    uint32_t      layers = 1;
+   
     void cleanup();
 };
 

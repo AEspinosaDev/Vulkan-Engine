@@ -22,7 +22,7 @@ class Geometry;
 
 struct GeometricData {
     std::vector<uint32_t>                vertexIndex;
-    std::vector<Graphics::Utils::Vertex> vertexData;
+    std::vector<Graphics::Vertex> vertexData;
 
     // Stats
     Vec3 maxCoords;
@@ -74,8 +74,8 @@ class Geometry
     ~Geometry() {
     }
 
-    void             fill(std::vector<Graphics::Utils::Vertex> vertexInfo);
-    void             fill(std::vector<Graphics::Utils::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
+    void             fill(std::vector<Graphics::Vertex> vertexInfo);
+    void             fill(std::vector<Graphics::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
     void             fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber);
     static Geometry* create_quad();
     static Geometry* create_cube();

@@ -43,12 +43,12 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
     VkPipelineVertexInputStateCreateInfo   vertexInputInfo = Init::vertex_input_state_create_info();
     VkPipelineInputAssemblyStateCreateInfo inputAssembly   = Init::input_assembly_create_info(settings.topology);
 
-    auto bindingDescription                       = Utils::Vertex::getBindingDescription();
+    auto bindingDescription                       = Vertex::getBindingDescription();
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions    = &bindingDescription;
 
     auto attributeDescriptions =
-        Utils::Vertex::getAttributeDescriptions(settings.attributes[VertexAttributeType::POSITION],
+        Vertex::getAttributeDescriptions(settings.attributes[VertexAttributeType::POSITION],
                                                 settings.attributes[VertexAttributeType::NORMAL],
                                                 settings.attributes[VertexAttributeType::TANGENT],
                                                 settings.attributes[VertexAttributeType::UV],

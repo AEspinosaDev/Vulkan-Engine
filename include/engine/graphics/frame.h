@@ -20,26 +20,17 @@ namespace Graphics {
 
 struct Frame {
     // Control
-    Semaphore presentSemaphore;
-    Semaphore renderSemaphore;
-    Fence     renderFence;
-
+    Semaphore presentSemaphore = {};
+    Semaphore renderSemaphore  = {};
+    Fence     renderFence      = {};
     // Command
-    CommandPool*   commandPool;
-    CommandBuffer* commandBuffer;
-
+    CommandPool*   commandPool   = nullptr;
+    CommandBuffer* commandBuffer = nullptr;
     // Uniforms
     std::vector<Buffer> uniformBuffers;
+    uint32_t            index = 0;
 
-    uint32_t index = 0;
-
-    void init(VkDevice _device, VkPhysicalDevice gpu, VkSurfaceKHR surface, uint32_t id);
     void cleanup();
-
-    // VkResult aquire_next_image(uint32_t& imageIndex);
-    // void     begin_render();
-    // void     end_render();
-    // void     present_image(uint32_t imageIndex);
 
     static bool guiEnabled;
 };

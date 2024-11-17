@@ -142,7 +142,7 @@ void ShaderPass::build_shader_stages(shaderc_optimization_level optimization) {
     }
 }
 
-void ShaderPass::build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager, Extent2D& extent) {
+void ShaderPass::build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager) {
     PipelineBuilder::build_pipeline_layout(m_pipelineLayout, m_device, descriptorManager, settings);
 
     std::vector<VkPipelineShaderStageCreateInfo> stages;
@@ -151,7 +151,7 @@ void ShaderPass::build(VulkanRenderPass renderPass, DescriptorPool& descriptorMa
         stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
     }
     PipelineBuilder::build_graphic_pipeline(
-        m_pipeline, m_pipelineLayout, m_device, renderPass.get_handle(), extent, settings, stages);
+        m_pipeline, m_pipelineLayout, m_device, renderPass.handle, renderPass.extent, settings, stages);
 }
 void ShaderPass::cleanup() {
     for (auto& stage : m_shaderStages)

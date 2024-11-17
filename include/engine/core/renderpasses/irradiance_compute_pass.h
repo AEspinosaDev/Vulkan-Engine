@@ -26,7 +26,8 @@ class IrrandianceComputePass : public RenderPass
         , m_format(format) {
     }
 
-    void setup_attachments();
+    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                           std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 

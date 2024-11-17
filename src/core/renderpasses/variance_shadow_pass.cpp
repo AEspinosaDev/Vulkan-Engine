@@ -4,46 +4,47 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void VarianceShadowPass::setup_attachments() {
+void VarianceShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                           std::vector<Graphics::SubPassDependency>& dependencies) {
 
-    m_attachments.resize(2);
+    attachments.resize(2);
 
-    m_attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_format),
-                                            VK_SAMPLE_COUNT_1_BIT,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                            AttachmentType::COLOR_ATTACHMENT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-                                            VK_FILTER_LINEAR,
-                                            VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_format),
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                          AttachmentType::COLOR_ATTACHMENT,
+                                          VK_IMAGE_ASPECT_COLOR_BIT,
+                                          VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                                          VK_FILTER_LINEAR,
+                                          VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
-    m_attachments[1] = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
-                                            VK_SAMPLE_COUNT_1_BIT,
-                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                            AttachmentType::DEPTH_ATTACHMENT,
-                                            VK_IMAGE_ASPECT_DEPTH_BIT,
-                                            VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    attachments[1] = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                          AttachmentType::DEPTH_ATTACHMENT,
+                                          VK_IMAGE_ASPECT_DEPTH_BIT,
+                                          VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     // Depdencies
-    m_dependencies.resize(2);
+    dependencies.resize(2);
 
-    m_dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-    m_dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+    dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+    dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
     m_isResizeable = false;
 }
 void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
-    m_device->create_descriptor_pool(
-        m_descriptorPool, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+    m_descriptorPool = m_device->create_descriptor_pool(
+        VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
@@ -83,13 +84,12 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               &m_descriptors[i].globalDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
-        m_descriptorPool.set_descriptor_write(
-            &frames[i].uniformBuffers[0],
-            sizeof(SceneUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(CameraUniforms), m_device->get_GPU()),
-            &m_descriptors[i].globalDescritor,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            1);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[0],
+                                              sizeof(SceneUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                              &m_descriptors[i].globalDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              1);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(
@@ -100,13 +100,12 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               &m_descriptors[i].objectDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               0);
-        m_descriptorPool.set_descriptor_write(
-            &frames[i].uniformBuffers[1],
-            sizeof(MaterialUniforms),
-            Utils::pad_uniform_buffer_size(sizeof(MaterialUniforms), m_device->get_GPU()),
-            &m_descriptors[i].objectDescritor,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            1);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[1],
+                                              sizeof(MaterialUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                              &m_descriptors[i].objectDescritor,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              1);
     }
 }
 void VarianceShadowPass::setup_shader_passes() {
@@ -135,7 +134,7 @@ void VarianceShadowPass::setup_shader_passes() {
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/vsm_geom.glsl");
     depthPass->settings = settings;
     depthPass->build_shader_stages();
-    depthPass->build(m_handle, m_descriptorPool, m_extent);
+    depthPass->build(m_handle, m_descriptorPool);
     m_shaderPasses["shadowTri"] = depthPass;
 
     ShaderPass* depthLinePass =
@@ -144,7 +143,7 @@ void VarianceShadowPass::setup_shader_passes() {
     depthLinePass->settings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;
     depthLinePass->build_shader_stages();
-    depthLinePass->build(m_handle, m_descriptorPool, m_extent);
+    depthLinePass->build(m_handle, m_descriptorPool);
     m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
@@ -152,8 +151,8 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
     PROFILING_EVENT()
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_extent, m_attachments);
-    cmd->set_viewport(m_extent);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd->set_viewport(m_handle.extent);
 
     cmd->set_depth_bias_enable(true);
     float depthBiasConstant = 0.0;

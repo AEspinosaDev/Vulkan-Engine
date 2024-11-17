@@ -4,11 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void FXAAPass::setup_attachments() {
+void FXAAPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                 std::vector<Graphics::SubPassDependency>& dependencies) {
 
-    m_attachments.resize(1);
+    attachments.resize(1);
 
-    m_attachments[0] =
+    attachments[0] =
         Graphics::Attachment(static_cast<VkFormat>(m_colorFormat),
                              VK_SAMPLE_COUNT_1_BIT,
                              m_isDefault ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -19,17 +20,17 @@ void FXAAPass::setup_attachments() {
                              VK_IMAGE_VIEW_TYPE_2D,
                              VK_FILTER_LINEAR,
                              VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-    m_attachments[0].isPresentImage = m_isDefault ? true : false;
+    attachments[0].isPresentImage = m_isDefault ? true : false;
 
     // Depdencies
-    m_dependencies.resize(1);
+    dependencies.resize(1);
 
-    m_dependencies[0] = Graphics::SubPassDependency(
+    dependencies[0] = Graphics::SubPassDependency(
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 }
 void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
-    m_device->create_descriptor_pool(m_descriptorPool, 1, 1, 1, 1, 1);
+    m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
     LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, {outputTextureBinding});
@@ -49,7 +50,7 @@ void FXAAPass::setup_shader_passes() {
     // fxaaPass->settings.blendAttachments = {};
 
     fxaaPass->build_shader_stages();
-    fxaaPass->build(m_handle, m_descriptorPool, m_extent);
+    fxaaPass->build(m_handle, m_descriptorPool);
 
     m_shaderPasses["fxaa"] = fxaaPass;
 }
@@ -57,8 +58,8 @@ void FXAAPass::setup_shader_passes() {
 void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex], m_extent, m_attachments);
-    cmd->set_viewport(m_extent);
+    cmd->begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd->set_viewport(m_handle.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["fxaa"];
 

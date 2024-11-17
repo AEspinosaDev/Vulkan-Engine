@@ -42,37 +42,18 @@ struct LayoutBinding {
     }
 };
 
-class DescriptorPool
-{
-    VkDescriptorPool                                    m_handle = VK_NULL_HANDLE;
-    VkDevice                                            m_device;
-    std::unordered_map<uint32_t, VkDescriptorSetLayout> m_layouts;
+struct DescriptorPool {
+    VkDescriptorPool                                    handle = VK_NULL_HANDLE;
+    VkDevice                                            device = VK_NULL_HANDLE;
+    std::unordered_map<uint32_t, VkDescriptorSetLayout> layouts;
 
-  public:
-    inline VkDescriptorPool& get_handle() {
-        return m_handle;
-    }
-    void init(VkDevice                       dvc,
-              uint32_t                       maxSets,
-              uint32_t                       numUBO,
-              uint32_t                       numUBODynamic,
-              uint32_t                       numUBOStorage,
-              uint32_t                       numImageCombined,
-              uint32_t                       numSampler           = 0,
-              uint32_t                       numSampledImage      = 0,
-              uint32_t                       numStrgImage         = 0,
-              uint32_t                       numUBTexel           = 0,
-              uint32_t                       numStrgTexel         = 0,
-              uint32_t                       numUBOStorageDynamic = 0,
-              uint32_t                       numIAttachment       = 0,
-              VkDescriptorPoolCreateFlagBits flag                 = {});
 
     void set_layout(uint32_t                         layoutSetIndex,
                     std::vector<LayoutBinding>       bindings,
                     VkDescriptorSetLayoutCreateFlags flags = 0);
 
     inline VkDescriptorSetLayout get_layout(uint32_t layoutSetIndex) {
-        return m_layouts[layoutSetIndex];
+        return layouts[layoutSetIndex];
     }
 
     void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor);

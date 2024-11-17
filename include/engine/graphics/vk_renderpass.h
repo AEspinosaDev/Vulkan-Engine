@@ -16,9 +16,14 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
+/*
+Attachment info needed for Renderpasses and framebuffers
+*/
 struct Attachment {
     AttachmentType type           = AttachmentType::COLOR_ATTACHMENT;
     Image          image          = {};
+    ImageConfig    imageConfig    = {};
+    SamplerConfig  samplerConfig  = {};
     bool           isPresentImage = false;
     VkClearValue   clearValue     = {};
 
@@ -46,14 +51,14 @@ struct Attachment {
         , attachmentLayout(attach_layout)
         , clearValue(clearVal)
         , type(attachmentType) {
-        image.config.format                    = format;
-        image.config.usageFlags                = usage;
-        image.config.samples                   = samples;
-        image.viewConfig.aspectFlags           = aspect;
-        image.viewConfig.viewType              = viewType;
-        image.samplerConfig.filters            = filter;
-        image.samplerConfig.samplerAddressMode = addressMode;
-        clearValue.depthStencil.depth          = 1.0f;
+        imageConfig.format               = format;
+        imageConfig.usageFlags           = usage;
+        imageConfig.samples              = samples;
+        imageConfig.aspectFlags          = aspect;
+        imageConfig.viewType             = viewType;
+        samplerConfig.filters            = filter;
+        samplerConfig.samplerAddressMode = addressMode;
+        clearValue.depthStencil.depth    = 1.0f;
     };
 };
 
@@ -78,28 +83,16 @@ struct SubPassDependency {
     }
 };
 
-class VulkanRenderPass
-{
-    VkRenderPass                   m_handle = VK_NULL_HANDLE;
-    VkDevice                       m_device = VK_NULL_HANDLE;
-  
+struct VulkanRenderPass {
+    VkRenderPass handle = VK_NULL_HANDLE;
+    VkDevice     device = VK_NULL_HANDLE;
 
-  public:
-    VulkanRenderPass() {
-    }
+    Extent2D extent;
 
-    inline VkRenderPass& get_handle()  {
-        return m_handle;
-    }
-    inline VkDevice get_device_handle() const {
-        return m_device;
-    };
-   
-
-    void init(VkDevice device, std::vector<Attachment> &attachments, std::vector<SubPassDependency> &dependencies);
+    std::vector<Graphics::Attachment>        attachments;
+    std::vector<Graphics::SubPassDependency> dependencies;
 
     void cleanup();
-    
 };
 
 } // namespace Graphics

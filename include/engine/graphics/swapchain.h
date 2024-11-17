@@ -19,16 +19,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 class Swapchain
 {
-    VkSwapchainKHR m_handle;
-    VkDevice       m_device;
-    VkSurfaceKHR   m_surface;
-
-    VkFormat         m_presentFormat;
-    VkPresentModeKHR m_presentMode;
-
-    std::vector<Image> m_presentImages;
-
-    std::vector<VkFramebuffer> m_framebuffers;
+    VkSwapchainKHR             m_handle;
+    VkDevice                   m_device;
+    VkSurfaceKHR               m_surface;
+    VkFormat                   m_presentFormat;
+    VkPresentModeKHR           m_presentMode;
+    std::vector<Image>         m_presentImages;
 
     bool m_initialized{false};
 

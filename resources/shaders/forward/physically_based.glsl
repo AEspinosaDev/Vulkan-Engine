@@ -21,30 +21,26 @@ layout(location = 6) out mat3 v_TBN;
 
 //Uniforms
 layout(set = 1, binding = 1) uniform MaterialUniforms {
-
-    vec3 albedo;
-    float opacity;
-    vec2 tileUV;
-    bool alphaTest;
-    float unused;
-
-    float albedoWeight;
-    float metalness;
-    float metalnessWeight;
-    float roughness;
-    float roughnessWeight;
-    float occlusion;
-    float occlusionWeight;
-
-    bool hasAlbdoTexture;
-    bool hasNormalTexture;
-    bool hasRoughnessTexture;
-    bool hasMetallicTexture;
-    bool hasAOTexture;
-    bool hasMaskTexture;
-
-    int maskType;
-
+    vec3    albedo;
+    float   opacity;
+    vec2    tileUV;
+    bool    alphaTest;
+    bool    blending;
+    float   albedoWeight;
+    float   metalness;
+    float   metalnessWeight;
+    float   roughness;
+    float   roughnessWeight;
+    float   occlusion;
+    float   occlusionWeight;
+    bool    hasAlbdoTexture;
+    bool    hasNormalTexture;
+    bool    hasRoughnessTexture;
+    bool    hasMetallicTexture;
+    bool    hasAOTexture;
+    bool    hasMaskTexture;
+    int     maskType;
+    float   opacityWeight;
 } material;
 
 void main() {
@@ -108,27 +104,27 @@ layout(set = 0, binding = 2)    uniform sampler2DArray              shadowMap;
 layout(set = 0, binding = 4)    uniform samplerCube                 irradianceMap;
 layout(set = 0,  binding = 5)   uniform accelerationStructureEXT    TLAS;
 layout(set = 0,  binding = 6)   uniform sampler2D                   blueNoiseMap;
-layout(set = 1, binding = 1) uniform MaterialUniforms {
-     vec3 albedo;
-    float opacity;
-    vec2 tileUV;
-    bool alphaTest;
-    bool blending;
-    float albedoWeight;
-    float metalness;
-    float metalnessWeight;
-    float roughness;
-    float roughnessWeight;
-    float occlusion;
-    float occlusionWeight;
-    bool hasAlbdoTexture;
-    bool hasNormalTexture;
-    bool hasRoughnessTexture;
-    bool hasMetallicTexture;
-    bool hasAOTexture;
-    bool hasMaskTexture;
-    int maskType;
-    float opacityWeight;
+layout(set = 1, binding = 1)    uniform MaterialUniforms {
+    vec3    albedo;
+    float   opacity;
+    vec2    tileUV;
+    bool    alphaTest;
+    bool    blending;
+    float   albedoWeight;
+    float   metalness;
+    float   metalnessWeight;
+    float   roughness;
+    float   roughnessWeight;
+    float   occlusion;
+    float   occlusionWeight;
+    bool    hasAlbdoTexture;
+    bool    hasNormalTexture;
+    bool    hasRoughnessTexture;
+    bool    hasMetallicTexture;
+    bool    hasAOTexture;
+    bool    hasMaskTexture;
+    int     maskType;
+    float   opacityWeight;
 } material;
 layout(set = 2, binding = 0) uniform sampler2D albedoTex;
 layout(set = 2, binding = 1) uniform sampler2D normalTex;
@@ -188,7 +184,7 @@ void main() {
         if(isInAreaOfInfluence(scene.lights[i], v_pos)){
 
             vec3 lighting =evalSchlickSmithBRDF( 
-                scene.lights[i].type != 1 ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].position.xyz), //wi
+                scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].position.xyz), //wi
                 normalize(-v_pos),                                                                                           //wo
                 scene.lights[i].color * computeAttenuation( scene.lights[i], v_pos) *  scene.lights[i].intensity,              //radiance
                 brdf
@@ -201,7 +197,14 @@ void main() {
                 if(scene.lights[i].shadowType == 1) //VSM   
                     lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, v_modelPos);
                 if(scene.lights[i].shadowType == 2) //Raytraced  
-                    lighting *= computeRaytracedShadow(TLAS, blueNoiseMap ,v_modelPos, scene.lights[i].shadowData.xyz - v_modelPos, int(scene.lights[i].shadowData.w) , scene.lights[i].area , 0);
+                    lighting *= computeRaytracedShadow(
+                        TLAS, 
+                        blueNoiseMap,
+                        v_modelPos, 
+                        scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].shadowData.xyz - v_modelPos : scene.lights[i].shadowData.xyz,
+                        int(scene.lights[i].shadowData.w), 
+                        scene.lights[i].area, 
+                        0);
             }
 
         color += lighting;

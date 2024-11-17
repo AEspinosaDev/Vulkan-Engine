@@ -4,35 +4,34 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void PanoramaConverterPass::setup_attachments() {
+void PanoramaConverterPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                              std::vector<Graphics::SubPassDependency>& dependencies) {
 
-    m_attachments.resize(1);
+    attachments.resize(1);
 
-    m_attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_format),
-                                            VK_SAMPLE_COUNT_1_BIT,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                            AttachmentType::COLOR_ATTACHMENT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            VK_IMAGE_VIEW_TYPE_CUBE,
-                                            VK_FILTER_LINEAR,
-                                            VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_format),
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                          AttachmentType::COLOR_ATTACHMENT,
+                                          VK_IMAGE_ASPECT_COLOR_BIT,
+                                          VK_IMAGE_VIEW_TYPE_CUBE,
+                                          VK_FILTER_LINEAR,
+                                          VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
-    std::vector<Graphics::SubPassDependency> dependencies;
-    m_dependencies.resize(1);
+    dependencies.resize(1);
 
-    m_dependencies[0] = Graphics::SubPassDependency(
+    dependencies[0] = Graphics::SubPassDependency(
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 }
 void PanoramaConverterPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
-    m_device->create_descriptor_pool(m_descriptorPool, 1, 1, 1, 1, 1);
+      m_descriptorPool = m_device->create_descriptor_pool( 1, 1, 1, 1, 1);
 
     LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, {panoramaTextureBinding});
-
 
     m_descriptorPool.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_panoramaDescriptorSet);
 }
@@ -48,7 +47,7 @@ void PanoramaConverterPass::setup_shader_passes() {
                                                       {VertexAttributeType::COLOR, false}};
 
     converterPass->build_shader_stages();
-    converterPass->build(m_handle, m_descriptorPool, m_extent);
+    converterPass->build(m_handle, m_descriptorPool);
 
     m_shaderPasses["converter"] = converterPass;
 }
@@ -56,8 +55,8 @@ void PanoramaConverterPass::setup_shader_passes() {
 void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer* cmd = currentFrame.commandBuffer;
-    cmd->begin_renderpass(m_handle, m_framebuffers[0],m_extent, m_attachments);
-    cmd->set_viewport(m_extent);
+    cmd->begin_renderpass(m_handle, m_framebuffers[0]);
+    cmd->set_viewport(m_handle.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["converter"];
     cmd->bind_shaderpass(*shaderPass);
@@ -77,10 +76,8 @@ void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const sc
 
         if (m_panoramaDescriptorSet.bindings == 0 || envMap->is_dirty())
         {
-            m_descriptorPool.set_descriptor_write(get_image(envMap),
-                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                  &m_panoramaDescriptorSet,
-                                                  0);
+            m_descriptorPool.set_descriptor_write(
+                get_image(envMap), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_panoramaDescriptorSet, 0);
             envMap->set_dirty(false);
         }
     }
