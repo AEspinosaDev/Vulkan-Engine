@@ -215,12 +215,14 @@ class HairStrandMaterial2 : public HairStrandMaterial
 
     enum Textures
     {
-        M  = 0,
-        N1 = 1,
-        N2 = 2,
+
+        N1  = 0,
+        N2  = 1,
+        GI  = 2,
+        MGI = 3,
     };
 
-    std::unordered_map<int, ITexture*> m_textures{{M, nullptr}, {N1, nullptr}, {N2, nullptr}};
+    std::unordered_map<int, ITexture*> m_textures{{N1, nullptr}, {N2, nullptr}, {GI, nullptr}, {MGI, nullptr}};
     virtual Graphics::MaterialUniforms get_uniforms() const;
 
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
@@ -240,22 +242,27 @@ class HairStrandMaterial2 : public HairStrandMaterial
         TextureSettings settings{};
         settings.useMipmaps = false;
         settings.adressMode = TextureAdressModeType::EDGE_CLAMP;
-        m_textures[M]       = new Texture(settings);
         m_textures[N1]      = new Texture(settings);
         m_textures[N2]      = new Texture(settings);
-        Tools::Loaders::load_texture(
-            m_textures[M], ENGINE_RESOURCES_PATH "textures/m.png", TextureFormatType::COLOR_FORMAT, false);
+        m_textures[GI]      = new Texture(settings);
+        m_textures[MGI]     = new Texture(settings);
         Tools::Loaders::load_texture(
             m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TextureFormatType::COLOR_FORMAT, false);
         Tools::Loaders::load_texture(
             m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TextureFormatType::COLOR_FORMAT, false);
-        m_textures[M]->set_format(RGBA_8U);
+        Tools::Loaders::load_3D_texture(
+            m_textures[GI], ENGINE_RESOURCES_PATH "textures/GI.png");
+        Tools::Loaders::load_texture(
+            m_textures[MGI], ENGINE_RESOURCES_PATH "textures/M_GI.png", TextureFormatType::COLOR_FORMAT, false);
         m_textures[N1]->set_format(RGBA_8U);
         m_textures[N2]->set_format(RGBA_8U);
-        m_textureBindingState[M]  = false;
-        m_textureBindingState[N1] = false;
-        m_textureBindingState[N2] = false;
-        m_isDirty                 = true;
+        m_textures[GI]->set_format(RGBA_8U);
+        m_textures[MGI]->set_format(RGBA_8U);
+        m_textureBindingState[N1]  = false;
+        m_textureBindingState[N2]  = false;
+        m_textureBindingState[GI]  = false;
+        m_textureBindingState[MGI] = false;
+        m_isDirty                  = true;
     }
 };
 } // namespace Core

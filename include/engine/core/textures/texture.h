@@ -93,6 +93,9 @@ class ITexture
     inline Extent3D get_size() const {
         return m_image.extent;
     }
+    inline void set_size(Extent3D s) {
+        m_image.extent = s;
+    }
 
     inline void set_use_mipmaps(bool op) {
         m_settings.useMipmaps = op;

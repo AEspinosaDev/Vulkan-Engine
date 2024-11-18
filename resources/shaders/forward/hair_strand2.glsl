@@ -153,9 +153,10 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool occlusion;
 } material;
 
-layout(set = 2, binding = 0) uniform sampler2D mTex;
-layout(set = 2, binding = 1) uniform sampler2D nTex1;
-layout(set = 2, binding = 2) uniform sampler2D nTex2;
+layout(set = 2, binding = 0) uniform sampler2D nTex1;
+layout(set = 2, binding = 1) uniform sampler2D nTex2;
+layout(set = 2, binding = 2) uniform sampler3D GITex;
+// layout(set = 2, binding = 3) uniform sampler2D mGITex;
 
 MarschnerLookupBSDF bsdf;
 
@@ -198,9 +199,9 @@ vec3 computeAmbient(vec3 n) {
                 normalize(-g_pos),
                 texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity,
                 bsdf, 
-                mTex,
                 nTex1,
                 nTex2,
+                GITex,
                 material.r, 
                 false,  //Take oput transmitance
                 material.trt);
@@ -233,9 +234,9 @@ void main() {
                 normalize(-g_pos),
                 scene.lights[i].color * scene.lights[i].intensity,
                 bsdf, 
-                mTex,
                 nTex1,
                 nTex2,
+                GITex,
                 material.r, 
                 material.tt, 
                 material.trt);

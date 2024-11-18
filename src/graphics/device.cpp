@@ -159,6 +159,12 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
         useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
     img.layers = config.viewType == TextureType::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
 
+    VkImageType imageType = VK_IMAGE_TYPE_2D;
+    if (config.viewType == TextureType::TEXTURE_3D)
+        imageType = VK_IMAGE_TYPE_3D;
+    if (config.viewType == TextureType::TEXTURE_1D || config.viewType == TextureType::TEXTURE_1D_ARRAY)
+        imageType = VK_IMAGE_TYPE_1D;
+
     VkImageCreateInfo img_info =
         Init::image_create_info(Translator::get(config.format),
                                 config.usageFlags,
@@ -166,6 +172,7 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
                                 img.mipLevels,
                                 static_cast<VkSampleCountFlagBits>(config.samples),
                                 img.layers,
+                                imageType,
                                 config.viewType == TextureType::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
 
     VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
@@ -501,7 +508,7 @@ void Device::upload_texture_image(Image&        img,
     config.usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     config.samples     = 1;
     config.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    img               = create_image(img.extent, config, mipmapping);
+    img                = create_image(img.extent, config, mipmapping);
     img.create_view(config);
 
     VkDeviceSize imageSize = img.extent.width * img.extent.height * img.extent.depth * bytesPerPixel;
@@ -759,10 +766,10 @@ void Device::wait() {
     VK_CHECK(vkDeviceWaitIdle(m_handle));
 }
 
-void Device::init_imgui(void*                 windowHandle,
-                        WindowingSystem       windowingSystem,
-                        VulkanRenderPass      renderPass,
-                        uint16_t samples) {
+void Device::init_imgui(void*            windowHandle,
+                        WindowingSystem  windowingSystem,
+                        VulkanRenderPass renderPass,
+                        uint16_t         samples) {
 
     m_guiPool = create_descriptor_pool(1000,
                                        1000,

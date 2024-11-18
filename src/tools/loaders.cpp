@@ -732,7 +732,7 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
     if (imgCache)
     {
         texture->set_image_cache(imgCache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
-        // Set automatically teh best format for each type.
+        // Set automatically teh optimal format for each type.
         // User can override it after, I he need some other more specific format ...
         switch (textureFormat)
         {
@@ -777,9 +777,50 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std:
     DEBUG_LOG("HDRi Texture loaded successfully");
 #endif // DEBUG
 }
-
+void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
+                                           const std::string    fileName,
+                                           uint16_t             depth,
+                                           TextureFormatType    textureFormat) {
+    int            w, h, ch;
+    unsigned char* imgCache = nullptr;
+    imgCache                = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
+    if (imgCache)
+    {
+        texture->set_type(TextureType::TEXTURE_3D);
+        int      largerSide  = w > h ? w : h;
+        int      shorterSide = w > h ? h : w;
+        uint16_t finalDepth  = depth == 0 ? largerSide / shorterSide : depth;
+        texture->set_image_cache(
+            imgCache,
+            {static_cast<unsigned int>(shorterSide), static_cast<unsigned int>(largerSide / finalDepth), finalDepth},
+            4);
+        // Set automatically the optimal format for each type.
+        // User can override it after, I he need some other more specific format ...
+        switch (textureFormat)
+        {
+        case TextureFormatType::COLOR_FORMAT:
+            texture->set_format(SRGBA_8);
+            break;
+        case TextureFormatType::NORMAL_FORMAT:
+            texture->set_format(RGBA_8U);
+            break;
+        case TextureFormatType::HDR_FORMAT:
+            texture->set_format(SRGBA_16F);
+            break;
+        }
+    } else
+    {
+#ifndef NDEBUG
+        DEBUG_LOG("Failed to load texture PNG file" + fileName);
+#endif
+        return;
+    };
+#ifndef NDEBUG
+    DEBUG_LOG("PNG Texture loaded successfully");
+#endif // DEBUG
+}
 void VKFW::Tools::Loaders::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
-                                                 const std::vector<uint32_t>&   indices) {
+                                                       const std::vector<uint32_t>&   indices) {
     if (!indices.empty())
         for (size_t i = 0; i < indices.size(); i += 3)
         {
@@ -788,12 +829,12 @@ void VKFW::Tools::Loaders::compute_tangents_gram_smidt(std::vector<Graphics::Ver
             size_t i2 = indices[i + 2];
 
             Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i0].pos,
-                                                         vertices[i1].pos,
-                                                         vertices[i2].pos,
-                                                         vertices[i0].texCoord,
-                                                         vertices[i1].texCoord,
-                                                         vertices[i2].texCoord,
-                                                         vertices[i0].normal);
+                                                                   vertices[i1].pos,
+                                                                   vertices[i2].pos,
+                                                                   vertices[i0].texCoord,
+                                                                   vertices[i1].texCoord,
+                                                                   vertices[i2].texCoord,
+                                                                   vertices[i0].normal);
 
             vertices[i0].tangent += tangent;
             vertices[i1].tangent += tangent;
@@ -803,12 +844,12 @@ void VKFW::Tools::Loaders::compute_tangents_gram_smidt(std::vector<Graphics::Ver
         for (size_t i = 0; i < vertices.size(); i += 3)
         {
             Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i].pos,
-                                                         vertices[i + 1].pos,
-                                                         vertices[i + 2].pos,
-                                                         vertices[i].texCoord,
-                                                         vertices[i + 1].texCoord,
-                                                         vertices[i + 2].texCoord,
-                                                         vertices[i].normal);
+                                                                   vertices[i + 1].pos,
+                                                                   vertices[i + 2].pos,
+                                                                   vertices[i].texCoord,
+                                                                   vertices[i + 1].texCoord,
+                                                                   vertices[i + 2].texCoord,
+                                                                   vertices[i].normal);
 
             vertices[i].tangent += tangent;
             vertices[i + 1].tangent += tangent;

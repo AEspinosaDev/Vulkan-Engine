@@ -57,6 +57,7 @@ VkImageCreateInfo            image_create_info(VkFormat              format,
                                                uint32_t              mipLevels = 1,
                                                VkSampleCountFlagBits samples   = VK_SAMPLE_COUNT_1_BIT,
                                                uint32_t              layers    = 1,
+                                               VkImageType           type      = VK_IMAGE_TYPE_2D,
                                                VkImageCreateFlags    flags     = {});
 VkImageViewCreateInfo        imageview_create_info(VkFormat           format,
                                                    VkImage            image,

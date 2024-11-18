@@ -280,6 +280,7 @@ VkImageCreateInfo Init::image_create_info(VkFormat              format,
                                           uint32_t              mipLevels,
                                           VkSampleCountFlagBits samples,
                                           uint32_t              layers,
+                                          VkImageType           type,
                                           VkImageCreateFlags    flags) {
 
     VkImageCreateInfo info = {};
@@ -287,7 +288,7 @@ VkImageCreateInfo Init::image_create_info(VkFormat              format,
     info.pNext             = nullptr;
     info.flags             = flags;
 
-    info.imageType = VK_IMAGE_TYPE_2D;
+    info.imageType = type;
 
     info.format = format;
     info.extent = extent;
