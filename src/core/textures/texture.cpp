@@ -5,7 +5,6 @@ namespace Core
 {
 Graphics::Image *const get_image(ITexture *t)
 {
-   
     return &t->m_image;
 }
 

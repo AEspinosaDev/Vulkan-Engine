@@ -42,21 +42,14 @@ VkFormat get(ColorFormatType colorFormatType) {
         return VK_FORMAT_R16G16B16A16_SFLOAT;
     case ColorFormatType::SRGBA_32F:
         return VK_FORMAT_R32G32B32A32_SFLOAT;
-    default:
-        throw std::invalid_argument("Unknown ColorFormatType");
-    }
-}
-
-// DepthFormatType -> VkFormat
-VkFormat get(DepthFormatType depthFormatType) {
-    switch (depthFormatType)
-    {
-    case DepthFormatType::D16F:
+    case ColorFormatType::RGBA_8U:
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    case ColorFormatType::DEPTH_16F:
         return VK_FORMAT_D16_UNORM;
-    case DepthFormatType::D32F:
+    case ColorFormatType::DEPTH_32F:
         return VK_FORMAT_D32_SFLOAT;
     default:
-        throw std::invalid_argument("Unknown DepthFormatType");
+        throw std::invalid_argument("Unknown ColorFormatType");
     }
 }
 
@@ -136,28 +129,6 @@ VkDescriptorType get(UniformDataType uniformDataType) {
     }
 }
 
-VkSampleCountFlagBits get(SampleCount sampleCount) {
-    switch (sampleCount)
-    {
-    case SampleCount::SAMPLE_COUNT_1:
-        return VK_SAMPLE_COUNT_1_BIT;
-    case SampleCount::SAMPLE_COUNT_2:
-        return VK_SAMPLE_COUNT_2_BIT;
-    case SampleCount::SAMPLE_COUNT_4:
-        return VK_SAMPLE_COUNT_4_BIT;
-    case SampleCount::SAMPLE_COUNT_8:
-        return VK_SAMPLE_COUNT_8_BIT;
-    case SampleCount::SAMPLE_COUNT_16:
-        return VK_SAMPLE_COUNT_16_BIT;
-    case SampleCount::SAMPLE_COUNT_32:
-        return VK_SAMPLE_COUNT_32_BIT;
-    case SampleCount::SAMPLE_COUNT_64:
-        return VK_SAMPLE_COUNT_64_BIT;
-    default:
-        throw std::invalid_argument("Unknown SampleCount");
-    }
-}
-
 VkImageUsageFlags get(ImageUsageFlags usageFlags) {
     switch (usageFlags)
     {
@@ -202,22 +173,22 @@ VkImageLayout get(ImageLayoutType layoutType) {
     }
 }
 
-VkImageViewType get(ImageViewType viewType) {
+VkImageViewType get(TextureType viewType) {
     switch (viewType)
     {
-    case ImageViewType::TYPE_1D:
+    case TextureType::TEXTURE_1D:
         return VK_IMAGE_VIEW_TYPE_1D;
-    case ImageViewType::TYPE_2D:
+    case TextureType::TEXTURE_2D:
         return VK_IMAGE_VIEW_TYPE_2D;
-    case ImageViewType::TYPE_3D:
+    case TextureType::TEXTURE_3D:
         return VK_IMAGE_VIEW_TYPE_3D;
-    case ImageViewType::TYPE_CUBE:
+    case TextureType::TEXTURE_CUBE:
         return VK_IMAGE_VIEW_TYPE_CUBE;
-    case ImageViewType::TYPE_1D_ARRAY:
+    case TextureType::TEXTURE_1D_ARRAY:
         return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-    case ImageViewType::TYPE_2D_ARRAY:
+    case TextureType::TEXTURE_2D_ARRAY:
         return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    case ImageViewType::TYPE_CUBE_ARRAY:
+    case TextureType::TEXTURE_CUBE_ARRAY:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     default:
         throw std::invalid_argument("Unknown ImageViewType");

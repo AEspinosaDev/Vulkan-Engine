@@ -343,7 +343,7 @@ Init::sampler_create_info(VkFilter             filters,
     info.minFilter = filters;
 
     info.mipmapMode = mipmapMode;
-    info.minLod     = 0.0f; // Optional
+    info.minLod     = minLod; // Optional
     info.maxLod     = maxLod;
     info.mipLodBias = 0.0f; // Optional
 

@@ -20,7 +20,7 @@ class ForwardPass : public RenderPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
-    DepthFormatType m_depthFormat;
+    ColorFormatType m_depthFormat;
     MSAASamples     m_aa;
 
     /*Descriptors*/
@@ -37,7 +37,7 @@ class ForwardPass : public RenderPass
                 Extent2D          extent,
                 uint32_t          framebufferCount,
                 ColorFormatType   colorFormat,
-                DepthFormatType   depthFormat,
+                ColorFormatType   depthFormat,
                 MSAASamples       samples,
                 bool              isDefault = true)
         : RenderPass(ctx, extent, framebufferCount, 1, isDefault)

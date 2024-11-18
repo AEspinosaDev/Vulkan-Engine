@@ -17,7 +17,7 @@ namespace Core {
 class ShadowPass : public RenderPass
 {
     /* Config  */
-    DepthFormatType m_depthFormat;
+    ColorFormatType m_depthFormat;
 
     /*Descriptors*/
     struct FrameDescriptors {
@@ -31,7 +31,7 @@ class ShadowPass : public RenderPass
                Extent2D          extent,
                uint32_t          framebufferCount,
                uint32_t          numLights,
-               DepthFormatType   depthFormat)
+               ColorFormatType   depthFormat)
         : RenderPass(ctx, extent, framebufferCount, numLights)
         , m_depthFormat(depthFormat) {
     }

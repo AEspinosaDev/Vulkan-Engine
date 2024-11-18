@@ -11,19 +11,20 @@
 
 #include <engine/graphics/buffer.h>
 #include <engine/graphics/utilities/initializers.h>
+#include <engine/graphics/utilities/translator.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
 struct ImageConfig {
-    VkFormat              format      = VK_FORMAT_B8G8R8A8_SRGB;
-    VkImageUsageFlags     usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkSampleCountFlagBits samples     = VK_SAMPLE_COUNT_1_BIT;
-    uint32_t              mipLevels   = 1U;
-    uint32_t              layers      = 1U;
-    VkImageAspectFlags    aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    VkImageViewType       viewType    = VK_IMAGE_VIEW_TYPE_2D;
+    ColorFormatType    format      = ColorFormatType::SRGBA_8;
+    VkImageUsageFlags  usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT;
+    uint16_t           samples     = 1;
+    uint32_t           mipLevels   = 1U;
+    uint32_t           layers      = 1U;
+    VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    TextureType        viewType    = TextureType::TEXTURE_2D;
 };
 
 struct SamplerConfig {
@@ -31,7 +32,7 @@ struct SamplerConfig {
     VkSamplerMipmapMode  mipmapMode         = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     float                minLod             = 0.0f;
-    float                maxLod             = 1.0f;
+    float                maxLod             = 12.0f;
     bool                 anysotropicFilter  = false;
     float                maxAnysotropy      = 1.0f;
     VkBorderColor        border             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -47,7 +48,8 @@ struct Image {
     VkSampler       sampler       = VK_NULL_HANDLE;
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
-    Extent3D extent;
+    Extent3D extent    = {0, 0, 1}; // Depth for 3D Textures
+    uint32_t layers    = 1; // Layers for Cubemaps and Arrays
     uint32_t mipLevels = 1;
 
     bool loadedOnCPU{false};

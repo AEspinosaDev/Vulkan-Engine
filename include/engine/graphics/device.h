@@ -36,7 +36,6 @@ class Device
     VkPhysicalDevice                       m_gpu           = VK_NULL_HANDLE;
     VmaAllocator                           m_allocator     = VK_NULL_HANDLE;
     Swapchain                              m_swapchain     = {};
-    Utils::QueueFamilyIndices              m_queueFamilies = {};
     DescriptorPool                         m_guiPool       = {};
     std::unordered_map<QueueType, VkQueue> m_queues;
     // GPU Properties
@@ -56,6 +55,7 @@ class Device
                                                    VK_KHR_RAY_QUERY_EXTENSION_NAME};
     // Utils
     Utils::UploadContext m_uploadContext = {};
+    Utils::QueueFamilyIndices              m_queueFamilies = {};
 #ifdef NDEBUG
     const bool m_enableValidationLayers{false};
 #else
@@ -67,22 +67,15 @@ class Device
     GETTERS
     -----------------------------------------------
     */
-    inline VkDevice& get_handle() {
+    inline VkDevice get_handle() {
         return m_handle;
     };
-    inline VmaAllocator& get_memory_allocator() {
-        return m_allocator;
-    }
-    inline VkPhysicalDevice& get_GPU() {
-        return m_gpu;
-    }
+   
+    
     inline Swapchain get_swapchain() const {
         return m_swapchain;
     }
-    inline std::unordered_map<QueueType, VkQueue>& get_queues() {
-        return m_queues;
-    }
-
+    
     /*
     INIT AND SHUTDOWN
     -----------------------------------------------
@@ -93,7 +86,7 @@ class Device
               uint32_t        framesPerFlight,
               ColorFormatType presentFormat,
               SyncType        presentMode);
-    void update_swapchain(Extent2D      surfaceExtent,
+    void update_swapchain(Extent2D        surfaceExtent,
                           uint32_t        framesPerFlight,
                           ColorFormatType presentFormat,
                           SyncType        presentMode);
@@ -154,20 +147,19 @@ class Device
     DRAWING
     -----------------------------------------------
     */
-    RenderResult prepare_frame(Frame& frame, uint32_t& imageIndex) {
-    }
-    RenderResult submit_frame(Frame& frame, uint32_t imageIndex) {
-    }
+    /*Setups frame for new rendering cicle, waits for the last one to finish and starts the command buffer*/
+    RenderResult prepare_frame(Frame& frame, uint32_t& imageIndex);
+    /*Submits the frame to the graphic queue for presenting into the swapchain*/
+    RenderResult submit_frame(Frame& frame, uint32_t imageIndex);
     RenderResult aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex);
     RenderResult present_image(Semaphore& signalSemaphore, uint32_t imageIndex);
-
     /*
     DATA TRANSFER
     -----------------------------------------------
     */
     void
     upload_vertex_arrays(VertexArrays& vao, size_t vboSize, const void* vboData, size_t iboSize, const void* iboData);
-    void upload_texture_image(Image* const  img,
+    void upload_texture_image(Image&        img,
                               ImageConfig   config,
                               SamplerConfig samplerConfig,
                               const void*   imgCache,
@@ -183,7 +175,7 @@ class Device
     void     init_imgui(void*                 windowHandle,
                         WindowingSystem       windowingSystem,
                         VulkanRenderPass      renderPass,
-                        VkSampleCountFlagBits samples);
+                        uint16_t samples);
     void     destroy_imgui();
     uint32_t get_memory_type(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32* memTypeFound = nullptr);
     /*

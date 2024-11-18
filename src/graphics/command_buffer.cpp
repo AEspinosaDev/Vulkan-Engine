@@ -8,6 +8,7 @@ CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, VkCommandBuff
     CommandBuffer cmd                        = {};
     cmd.device                               = device;
     cmd.pool                                 = handle;
+    cmd.queue = queue;
     VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(handle, 1, level);
     VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &cmd.handle));
     return cmd;
@@ -71,8 +72,7 @@ void CommandBuffer::reset() {
     isRecording = false;
 }
 
-void CommandBuffer::submit(VkQueue                queue,
-                           Fence                  fence,
+void CommandBuffer::submit(Fence                  fence,
                            std::vector<Semaphore> waitSemaphores,
                            std::vector<Semaphore> signalSemaphores) {
 

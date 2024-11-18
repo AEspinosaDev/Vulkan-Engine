@@ -2,8 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
-int PointLight::m_instanceCount       = 0;
-int DirectionalLight::m_instanceCount = 0;
+uint16_t Light::m_nonRaytraceCount         = 0;
+int      PointLight::m_instanceCount       = 0;
+int      DirectionalLight::m_instanceCount = 0;
 
 Graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const {
     Graphics::LightUniforms uniforms{};

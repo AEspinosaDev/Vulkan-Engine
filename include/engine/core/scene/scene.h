@@ -25,18 +25,19 @@ class Scene : public Object3D
     std::vector<Camera*> m_cameras;
     std::vector<Mesh*>   m_meshes;
     std::vector<Light*>  m_lights;
+    Skybox*              m_skybox = nullptr;
 
     Graphics::TLAS m_accel = {};
 
     // ENVIROMENT & FOG
-    Skybox* m_skybox           = nullptr;
-    bool    m_useIBL           = false;
-    Vec3    m_ambientColor     = {0.7f, 0.5f, 0.5f}; // Fallback if no skybox
-    float   m_ambientIntensity = 0.2f;
-    bool    m_fog              = true;
-    Vec3    m_fogColor         = {0.2f, 0.2f, 0.2f};
-    float   m_fogIntensity     = 20.0f;
-    float   m_fogExponent      = 1.0f;
+    bool  m_useIBL           = false;
+    Vec3  m_ambientColor     = {0.7f, 0.5f, 0.5f}; // Fallback if no skybox
+    float m_ambientIntensity = 0.2f;
+    bool  m_fog              = true;
+    Vec3  m_fogColor         = {0.2f, 0.2f, 0.2f};
+    float m_fogIntensity     = 20.0f;
+    float m_fogExponent      = 1.0f;
+
 
     inline void classify_object(Object3D* obj) {
         switch (obj->get_type())

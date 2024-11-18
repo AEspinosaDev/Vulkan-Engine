@@ -35,7 +35,9 @@
 #include <engine/graphics/uniforms.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
+#include <engine/graphics/utilities/translator.h>
 #include <engine/graphics/utilities/utils.h>
+
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -50,7 +52,7 @@ struct RendererSettings {
     BufferingType   bufferingType        = DOUBLE_BUFFER;
     SyncType        screenSync           = MAILBOX_SYNC;
     ColorFormatType colorFormat          = SBGRA_8;
-    DepthFormatType depthFormat          = D32F;
+    ColorFormatType depthFormat          = DEPTH_32F;
     uint16_t        irradianceResolution = 128;
     Vec4            clearColor           = Vec4{0.0, 0.0, 0.0, 1.0};
     bool            autoClearColor       = true;
@@ -159,7 +161,7 @@ class BaseRenderer
     inline void set_color_format(ColorFormatType color) {
         m_settings.colorFormat = color;
     }
-    inline void set_depth_format(DepthFormatType d) {
+    inline void set_depth_format(ColorFormatType d) {
         m_settings.depthFormat = d;
     }
     inline void set_enable_gui(bool op) {
@@ -255,7 +257,7 @@ class BaseRenderer
     /*
     Clean all resources used
     */
-    virtual void clean_Resources();
+    virtual void clean_resources();
     /*
     Global descriptor layouts uniforms buffer upload to GPU
     */

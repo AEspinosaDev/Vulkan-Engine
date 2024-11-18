@@ -56,7 +56,6 @@ class ForwardRenderer : public BaseRenderer
 
     virtual void setup_renderpasses();
 
-    virtual void update_shadow_quality();
 };
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

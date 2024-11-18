@@ -36,17 +36,17 @@ struct Attachment {
     VkImageLayout       attachmentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     Attachment() {};
-    Attachment(VkFormat              format,
-               VkSampleCountFlagBits samples,
-               VkImageLayout         final_Layout,
-               VkImageLayout         attach_layout,
-               VkImageUsageFlags     usage,
-               AttachmentType        attachmentType = AttachmentType::COLOR_ATTACHMENT,
-               VkImageAspectFlags    aspect         = VK_IMAGE_ASPECT_COLOR_BIT,
-               VkImageViewType       viewType       = VK_IMAGE_VIEW_TYPE_2D,
-               VkFilter              filter         = VK_FILTER_LINEAR,
-               VkSamplerAddressMode  addressMode    = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-               VkClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
+    Attachment(ColorFormatType      format,
+               uint16_t             samples,
+               VkImageLayout        final_Layout,
+               VkImageLayout        attach_layout,
+               VkImageUsageFlags    usage,
+               AttachmentType       attachmentType = AttachmentType::COLOR_ATTACHMENT,
+               VkImageAspectFlags   aspect         = VK_IMAGE_ASPECT_COLOR_BIT,
+               TextureType          viewType       = TextureType::TEXTURE_2D,
+               VkFilter             filter         = VK_FILTER_LINEAR,
+               VkSamplerAddressMode addressMode    = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+               VkClearValue         clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
         : finalLayout(final_Layout)
         , attachmentLayout(attach_layout)
         , clearValue(clearVal)

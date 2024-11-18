@@ -18,7 +18,7 @@ class VarianceShadowPass : public RenderPass
 {
     /* Config  */
     ColorFormatType m_format = SRG_32F;
-    DepthFormatType m_depthFormat;
+    ColorFormatType m_depthFormat;
 
     /*Descriptors*/
     struct FrameDescriptors {
@@ -32,7 +32,7 @@ class VarianceShadowPass : public RenderPass
                        Extent2D          extent,
                        uint32_t          framebufferCount,
                        uint32_t          numLights,
-                       DepthFormatType   depthFormat)
+                       ColorFormatType   depthFormat)
         : RenderPass(ctx, extent, framebufferCount, numLights)
         , m_depthFormat(depthFormat) {
     }

@@ -7,6 +7,10 @@ namespace Graphics {
 bool Frame::guiEnabled = false;
 
 void Frame::cleanup() {
+    for (Buffer& buffer : uniformBuffers)
+    {
+        buffer.cleanup();
+    }
     commandPool.cleanup();
     renderFence.cleanup();
     renderSemaphore.cleanup();

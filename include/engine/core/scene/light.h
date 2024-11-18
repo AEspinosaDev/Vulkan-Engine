@@ -42,13 +42,16 @@ class Light : public Object3D
     Shadow          m_shadow;
     const LightType m_lighType;
 
-  public:
+    static uint16_t m_nonRaytraceCount;
 
+  public:
     Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
         : Object3D(name, LIGHT)
         , m_color(color)
         , m_intensity(intensity)
         , m_lighType(type) {
+        if (m_shadow.type != ShadowType::RAYTRACED_SHADOW)
+            m_nonRaytraceCount++;
     }
 
     virtual inline Vec3 get_color() const {
@@ -75,7 +78,13 @@ class Light : public Object3D
         return m_shadow.type;
     }
     virtual inline void set_shadow_type(ShadowType t) {
+        auto oldType  = m_shadow.type;
         m_shadow.type = t;
+        if (m_shadow.type != ShadowType::RAYTRACED_SHADOW && oldType == ShadowType::RAYTRACED_SHADOW)
+        {
+            m_nonRaytraceCount++;
+        } else if (oldType != ShadowType::RAYTRACED_SHADOW)
+        { m_nonRaytraceCount--; }
     }
     virtual inline Vec3 get_shadow_target() const {
         return m_shadow.target;
@@ -156,6 +165,9 @@ class Light : public Object3D
     }
 
     virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const = 0;
+    static uint16_t                 get_non_raytraced_count() {
+        return m_nonRaytraceCount;
+    }
 };
 
 // POINT LIGHT

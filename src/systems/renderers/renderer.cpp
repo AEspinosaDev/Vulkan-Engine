@@ -69,8 +69,6 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     {
         m_deletionQueue.flush();
 
-        clean_Resources();
-
         if (scene)
         {
             for (Core::Mesh* m : scene->get_meshes())
@@ -100,16 +98,10 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
             }
             get_TLAS(scene)->cleanup();
         }
-        destroy_texture_data(Core::Texture::BLUE_NOISE_TEXT);
-
+        clean_resources();
         if (m_settings.enableUI)
             m_device.destroy_imgui();
-
         m_renderPipeline.flush_framebuffers();
-        for (size_t i = 0; i < m_frames.size(); i++)
-        {
-            m_frames[i].cleanup();
-        }
         m_device.cleanup();
     }
 
@@ -154,40 +146,28 @@ void BaseRenderer::render(Core::Scene* const scene) {
     if (!m_initialized)
         init();
 
-    Graphics::Frame fr = m_frames[m_currentFrame];
-    fr.renderFence.wait();
-    uint32_t     imageIndex;
-    RenderResult imageResult = m_device.aquire_present_image(fr.presentSemaphore, imageIndex);
+    on_before_render(scene);
 
-    if (imageResult == RenderResult::ERROR_OUT_OF_DATE_KHR)
+    uint32_t     imageIndex;
+    RenderResult result = m_device.prepare_frame(m_frames[m_currentFrame], imageIndex);
+    if (result == RenderResult::ERROR_OUT_OF_DATE_KHR)
     {
         update_renderpasses();
         return;
-    } else if (imageResult != RenderResult::SUCCESS && imageResult != RenderResult::SUBOPTIMAL_KHR)
+    } else if (result != RenderResult::SUCCESS && result != RenderResult::SUBOPTIMAL_KHR)
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
-
-    fr.renderFence.reset();
-    fr.commandBuffer.reset();
-
-    on_before_render(scene);
-
-    fr.commandBuffer.begin();
 
     if (scene->get_skybox())
         if (scene->get_skybox()->update_enviroment())
         {
-            m_renderPipeline.panoramaConverterPass->render(fr, scene, imageIndex);
-            m_renderPipeline.irradianceComputePass->render(fr, scene, imageIndex);
+            m_renderPipeline.panoramaConverterPass->render(m_frames[m_currentFrame], scene, imageIndex);
+            m_renderPipeline.irradianceComputePass->render(m_frames[m_currentFrame], scene, imageIndex);
             scene->get_skybox()->set_update_enviroment(false);
         }
 
-    m_renderPipeline.render(fr, scene, imageIndex);
+    m_renderPipeline.render(m_frames[m_currentFrame], scene, imageIndex);
 
-    fr.commandBuffer.end();
-    fr.commandBuffer.submit(
-        m_device.get_queues()[QueueType::GRAPHIC_QUEUE], fr.renderFence, {fr.presentSemaphore}, {fr.renderSemaphore});
-
-    RenderResult renderResult = m_device.present_image(fr.renderSemaphore, imageIndex);
+    RenderResult renderResult = m_device.submit_frame(m_frames[m_currentFrame], imageIndex);
 
     on_after_render(renderResult, scene);
 }
@@ -253,7 +233,7 @@ void BaseRenderer::init_gui() {
         m_device.init_imgui(windowHandle,
                             m_window->get_windowing_system(),
                             defaultPass->get_handle(),
-                            static_cast<VkSampleCountFlagBits>(m_settings.samplesMSAA));
+                            m_settings.samplesMSAA);
     }
 }
 

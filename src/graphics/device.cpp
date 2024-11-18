@@ -157,15 +157,16 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
 
     img.mipLevels =
         useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
+    img.layers = config.viewType == TextureType::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
 
     VkImageCreateInfo img_info =
-        Init::image_create_info(config.format,
+        Init::image_create_info(Translator::get(config.format),
                                 config.usageFlags,
                                 extent,
                                 img.mipLevels,
-                                config.samples,
-                                config.layers,
-                                config.viewType == VK_IMAGE_VIEW_TYPE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
+                                static_cast<VkSampleCountFlagBits>(config.samples),
+                                img.layers,
+                                config.viewType == TextureType::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
 
     VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
 
@@ -189,6 +190,7 @@ CommandPool Device::create_command_pool(QueueType QueueType, VkCommandPoolCreate
         poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).presentFamily.value();
         break;
     }
+    pool.queue     = m_queues[QueueType];
     poolInfo.flags = flags;
 
     if (vkCreateCommandPool(m_handle, &poolInfo, nullptr, &pool.handle) != VK_SUCCESS)
@@ -201,6 +203,7 @@ CommandBuffer Device::create_command_buffer(CommandPool commandPool, VkCommandBu
     CommandBuffer cmd                        = {};
     cmd.device                               = m_handle;
     cmd.pool                                 = commandPool.handle;
+    cmd.queue                                = commandPool.queue;
     VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(commandPool.handle, 1, level);
     VK_CHECK(vkAllocateCommandBuffers(m_handle, &cmdAllocInfo, &cmd.handle));
     return cmd;
@@ -269,8 +272,8 @@ VulkanRenderPass Device::create_render_pass(Extent2D                        exte
 
     for (size_t i = 0; i < attachmentsInfo.size(); i++)
     {
-        attachmentsInfo[i].format         = attachments[i].imageConfig.format;
-        attachmentsInfo[i].samples        = attachments[i].imageConfig.samples;
+        attachmentsInfo[i].format         = Translator::get(attachments[i].imageConfig.format);
+        attachmentsInfo[i].samples        = static_cast<VkSampleCountFlagBits>(attachments[i].imageConfig.samples);
         attachmentsInfo[i].loadOp         = attachments[i].loadOp;
         attachmentsInfo[i].storeOp        = attachments[i].storeOp;
         attachmentsInfo[i].stencilLoadOp  = attachments[i].stencilLoadOp;
@@ -392,7 +395,24 @@ Frame Device::create_frame(uint16_t id) {
 
     return frame;
 }
+RenderResult Device::prepare_frame(Frame& frame, uint32_t& imageIndex) {
+
+    frame.renderFence.wait();
+    RenderResult imageResult = aquire_present_image(frame.presentSemaphore, imageIndex);
+    frame.renderFence.reset();
+    frame.commandBuffer.reset();
+    frame.commandBuffer.begin();
+    return imageResult;
+}
+RenderResult Device::submit_frame(Frame& frame, uint32_t imageIndex) {
+
+    frame.commandBuffer.end();
+    frame.commandBuffer.submit(frame.renderFence, {frame.presentSemaphore}, {frame.renderSemaphore});
+
+    return present_image(frame.renderSemaphore, imageIndex);
+}
 RenderResult Device::aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex) {
+
     VkResult result = vkAcquireNextImageKHR(
         m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.handle, VK_NULL_HANDLE, &imageIndex);
     return static_cast<RenderResult>(result);
@@ -469,7 +489,7 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
 
     vao.loadedOnGPU = true;
 }
-void Device::upload_texture_image(Image* const  img,
+void Device::upload_texture_image(Image&        img,
                                   ImageConfig   config,
                                   SamplerConfig samplerConfig,
                                   const void*   imgCache,
@@ -479,45 +499,45 @@ void Device::upload_texture_image(Image* const  img,
 
     // CREATE IMAGE
     config.usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    config.samples     = VK_SAMPLE_COUNT_1_BIT;
+    config.samples     = 1;
     config.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    *img               = create_image(img->extent, config, mipmapping);
-    img->create_view(config);
+    img               = create_image(img.extent, config, mipmapping);
+    img.create_view(config);
 
-    VkDeviceSize imageSize = img->extent.width * img->extent.height * img->extent.depth * bytesPerPixel;
+    VkDeviceSize imageSize = img.extent.width * img.extent.height * img.extent.depth * bytesPerPixel;
 
     Buffer stagingBuffer = create_buffer_VMA(imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer.upload_data(imgCache, static_cast<size_t>(imageSize));
 
     m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
-        img->upload_image(cmd, &stagingBuffer);
+        img.upload_image(cmd, &stagingBuffer);
     });
 
     stagingBuffer.cleanup();
 
     // GENERATE MIPMAPS
-    if (img->mipLevels > 1)
+    if (img.mipLevels > 1)
     {
         VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(m_gpu, config.format, &formatProperties);
+        vkGetPhysicalDeviceFormatProperties(m_gpu, Translator::get(config.format), &formatProperties);
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
         {
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
 
         m_uploadContext.immediate_submit(
-            m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) { img->generate_mipmaps(cmd); });
+            m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) { img.generate_mipmaps(cmd); });
     }
 
     // CREATE SAMPLER
     samplerConfig.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerConfig.maxAnysotropy = m_properties.limits.maxSamplerAnisotropy;
-    img->create_sampler(samplerConfig);
+    img.create_sampler(samplerConfig);
 
     if (ImGui::GetCurrentContext())
-        img->create_GUI_handle();
+        img.create_GUI_handle();
 
-    img->loadedOnGPU = true;
+    img.loadedOnGPU = true;
 }
 void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     if (!vao.loadedOnGPU)
@@ -742,7 +762,7 @@ void Device::wait() {
 void Device::init_imgui(void*                 windowHandle,
                         WindowingSystem       windowingSystem,
                         VulkanRenderPass      renderPass,
-                        VkSampleCountFlagBits samples) {
+                        uint16_t samples) {
 
     m_guiPool = create_descriptor_pool(1000,
                                        1000,
@@ -773,7 +793,7 @@ void Device::init_imgui(void*                 windowHandle,
     init_info.MinImageCount             = 3;
     init_info.ImageCount                = 3;
     init_info.RenderPass                = renderPass.handle;
-    init_info.MSAASamples               = samples;
+    init_info.MSAASamples               = static_cast<VkSampleCountFlagBits>(samples);
 
     ImGui_ImplVulkan_Init(&init_info);
 }

@@ -9,14 +9,14 @@ void IrrandianceComputePass::setup_attachments(std::vector<Graphics::Attachment>
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_format),
+    attachments[0] = Graphics::Attachment(m_format,
                                           VK_SAMPLE_COUNT_1_BIT,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                           AttachmentType::COLOR_ATTACHMENT,
                                           VK_IMAGE_ASPECT_COLOR_BIT,
-                                          VK_IMAGE_VIEW_TYPE_CUBE,
+                                          TextureType::TEXTURE_CUBE,
                                           VK_FILTER_LINEAR,
                                           VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 

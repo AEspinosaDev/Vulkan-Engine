@@ -7,11 +7,11 @@ namespace Core {
 void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
                                     std::vector<Graphics::SubPassDependency>& dependencies) {
 
-    VkSampleCountFlagBits samples      = static_cast<VkSampleCountFlagBits>(m_aa);
-    bool                  multisampled = samples > VK_SAMPLE_COUNT_1_BIT;
+    uint16_t samples      = static_cast<uint16_t>(m_aa);
+    bool     multisampled = samples > 1;
 
     Graphics::Attachment colorAttachment = Graphics::Attachment(
-        static_cast<VkFormat>(m_colorFormat),
+        m_colorFormat,
         samples,
         m_isDefault ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
                     : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -20,7 +20,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
                      : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         AttachmentType::COLOR_ATTACHMENT,
         VK_IMAGE_ASPECT_COLOR_BIT,
-        VK_IMAGE_VIEW_TYPE_2D,
+        TextureType::TEXTURE_2D,
         VK_FILTER_LINEAR,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
@@ -30,26 +30,26 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
     if (multisampled)
     {
         resolveAttachment =
-            Graphics::Attachment(static_cast<VkFormat>(m_colorFormat),
-                                 VK_SAMPLE_COUNT_1_BIT,
+            Graphics::Attachment(m_colorFormat,
+                                 1,
                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                  VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                  AttachmentType::RESOLVE_ATTACHMENT,
                                  VK_IMAGE_ASPECT_COLOR_BIT,
-                                 VK_IMAGE_VIEW_TYPE_2D);
+                                 TextureType::TEXTURE_2D);
         resolveAttachment.isPresentImage = multisampled ? true : false;
         attachments.push_back(resolveAttachment);
     }
 
-    Graphics::Attachment depthAttachment = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
+    Graphics::Attachment depthAttachment = Graphics::Attachment(m_depthFormat,
                                                                 samples,
                                                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                                                 AttachmentType::DEPTH_ATTACHMENT,
                                                                 VK_IMAGE_ASPECT_DEPTH_BIT,
-                                                                VK_IMAGE_VIEW_TYPE_2D);
+                                                                TextureType::TEXTURE_2D);
     attachments.push_back(depthAttachment);
 
     // Depdencies
@@ -291,7 +291,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
                         cmd.set_depth_test_enable(mat->get_parameters().depthTest);
                         cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
                         cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                             : CullingMode::NO_CULLING);
+                                                                            : CullingMode::NO_CULLING);
 
                         ShaderPass* shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
@@ -302,9 +302,9 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
                             m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
                         // PER OBJECT LAYOUT BINDING
                         cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
-                                                 1,
-                                                 *shaderPass,
-                                                 {objectOffset, objectOffset});
+                                                1,
+                                                *shaderPass,
+                                                {objectOffset, objectOffset});
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
                             cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);

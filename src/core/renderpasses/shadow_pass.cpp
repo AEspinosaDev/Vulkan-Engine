@@ -9,14 +9,14 @@ void ShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        att
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
+    attachments[0] = Graphics::Attachment(m_depthFormat,
                                           VK_SAMPLE_COUNT_1_BIT,
                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                           AttachmentType::DEPTH_ATTACHMENT,
                                           VK_IMAGE_ASPECT_DEPTH_BIT,
-                                          VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                                          TextureType::TEXTURE_2D_ARRAY,
                                           VK_FILTER_LINEAR,
                                           VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
@@ -181,16 +181,16 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
                     cmd.set_depth_test_enable(mat->get_parameters().depthTest);
                     cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
                     cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                         : CullingMode::NO_CULLING);
+                                                                        : CullingMode::NO_CULLING);
 
                     cmd.bind_shaderpass(*shaderPass);
                     // GLOBAL LAYOUT BINDING
                     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
                     // PER OBJECT LAYOUT BINDING
                     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
-                                             1,
-                                             *shaderPass,
-                                             {objectOffset, objectOffset});
+                                            1,
+                                            *shaderPass,
+                                            {objectOffset, objectOffset});
 
                     // DRAW
                     Geometry* g = m->get_geometry(i);

@@ -28,15 +28,13 @@ struct CommandBuffer {
     VkCommandBuffer handle      = VK_NULL_HANDLE;
     VkDevice        device      = VK_NULL_HANDLE;
     VkCommandPool   pool        = VK_NULL_HANDLE;
+    VkQueue         queue       = VK_NULL_HANDLE;
     bool            isRecording = false;
 
     void begin(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     void end();
     void reset();
-    void submit(VkQueue                queue,
-                Fence                  fence,
-                std::vector<Semaphore> waitSemaphores   = {},
-                std::vector<Semaphore> signalSemaphores = {});
+    void submit(Fence fence, std::vector<Semaphore> waitSemaphores = {}, std::vector<Semaphore> signalSemaphores = {});
     void cleanup();
 
     /****************************************** */
@@ -69,10 +67,7 @@ struct CommandBuffer {
 struct CommandPool {
     VkCommandPool handle = VK_NULL_HANDLE;
     VkDevice      device = VK_NULL_HANDLE;
-
-    void init(VkDevice                 device,
-              uint32_t                 queueFamilyIndex,
-              VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkQueue       queue  = VK_NULL_HANDLE;
 
     CommandBuffer allocate_command_buffer(uint32_t count, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 

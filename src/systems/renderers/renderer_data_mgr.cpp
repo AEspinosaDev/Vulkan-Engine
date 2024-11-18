@@ -196,16 +196,19 @@ void BaseRenderer::upload_texture_data(Core::ITexture* const t) {
             Graphics::ImageConfig   config        = {};
             Graphics::SamplerConfig samplerConfig = {};
             Core::TextureSettings   textSettings  = t->get_settings();
-            config.format                         = static_cast<VkFormat>(textSettings.format);
-            // config.mipLevels                      = textSettings.maxMipLevel;
-            samplerConfig.anysotropicFilter  = textSettings.anisotropicFilter;
-            samplerConfig.filters            = static_cast<VkFilter>(textSettings.filter);
-            samplerConfig.samplerAddressMode = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
+            config.viewType                       = textSettings.type;
+            config.format                         = textSettings.format;
+            config.mipLevels                      = textSettings.maxMipLevel;
+            samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
+            samplerConfig.filters                 = static_cast<VkFilter>(textSettings.filter);
+            samplerConfig.maxLod                  = textSettings.maxMipLevel;
+            samplerConfig.minLod                  = textSettings.minMipLevel;
+            samplerConfig.samplerAddressMode      = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
 
             void* imgCache{nullptr};
             t->get_image_cache(imgCache);
             m_device.upload_texture_image(
-                get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel(), t->get_settings().useMipmaps);
+                *get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel(), t->get_settings().useMipmaps);
         }
     }
 }
@@ -268,7 +271,7 @@ void BaseRenderer::setup_skybox(Core::Scene* const scene) {
                     Graphics::ImageConfig   config        = {};
                     Graphics::SamplerConfig samplerConfig = {};
                     Core::TextureSettings   textSettings  = envMap->get_settings();
-                    config.format                         = static_cast<VkFormat>(textSettings.format);
+                    config.format                         = textSettings.format;
                     samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
                     samplerConfig.filters                 = static_cast<VkFilter>(textSettings.filter);
                     samplerConfig.samplerAddressMode      = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
@@ -276,7 +279,7 @@ void BaseRenderer::setup_skybox(Core::Scene* const scene) {
                     void* imgCache{nullptr};
                     envMap->get_image_cache(imgCache);
                     m_device.upload_texture_image(
-                        get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
+                        *get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
                 }
                 // Create Panorama converter pass
                 if (m_renderPipeline.panoramaConverterPass)
@@ -357,18 +360,14 @@ void BaseRenderer::init_resources() {
     upload_texture_data(Core::Texture::BLUE_NOISE_TEXT);
 }
 
-void BaseRenderer::clean_Resources() {
+void BaseRenderer::clean_resources() {
     for (size_t i = 0; i < m_frames.size(); i++)
     {
-        for (Graphics::Buffer& buffer : m_frames[i].uniformBuffers)
-        {
-            buffer.cleanup();
-        }
+        m_frames[i].cleanup();
     }
-
     destroy_geometry_data(m_vignette->get_geometry());
-
-    get_image(Core::Texture::FALLBACK_TEX)->cleanup();
+    destroy_texture_data(Core::Texture::FALLBACK_TEX);
+    destroy_texture_data(Core::Texture::BLUE_NOISE_TEXT);
 }
 } // namespace Systems
 

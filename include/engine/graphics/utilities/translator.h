@@ -17,15 +17,13 @@ namespace Translator {
 
 VkFilter              get(TextureFilterType filterType);
 VkFormat              get(ColorFormatType colorFormatType);
-VkFormat              get(DepthFormatType depthFormatType);
 VkSamplerAddressMode  get(TextureAdressModeType addressModeType);
 VkPresentModeKHR      get(SyncType syncType);
 VkShaderStageFlagBits get(ShaderStageType stageType);
 VkDescriptorType      get(UniformDataType uniformDataType);
-VkSampleCountFlagBits get(SampleCount sampleCount);
 VkImageUsageFlags     get(ImageUsageFlags usageFlags);
 VkImageLayout         get(ImageLayoutType layoutType);
-VkImageViewType       get(ImageViewType viewType);
+VkImageViewType       get(TextureType viewType);
 VkFilter              get(FilterType filterType);
 VkSamplerAddressMode  get(AddressMode addressMode);
 VkClearValue          get(ClearValueType clearValueType);
@@ -35,5 +33,5 @@ VkAccessFlags         get(AccessFlags accessFlags);
 
 } // namespace Translator
 } // namespace Graphics
-#endif // VULKAN_ENUM_TRANSLATOR_H
 VULKAN_ENGINE_NAMESPACE_END
+#endif // VULKAN_ENUM_TRANSLATOR_H

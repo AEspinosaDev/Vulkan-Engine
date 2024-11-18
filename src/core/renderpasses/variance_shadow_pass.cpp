@@ -9,25 +9,25 @@ void VarianceShadowPass::setup_attachments(std::vector<Graphics::Attachment>&   
 
     attachments.resize(2);
 
-    attachments[0] = Graphics::Attachment(static_cast<VkFormat>(m_format),
+    attachments[0] = Graphics::Attachment(m_format,
                                           VK_SAMPLE_COUNT_1_BIT,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                           AttachmentType::COLOR_ATTACHMENT,
                                           VK_IMAGE_ASPECT_COLOR_BIT,
-                                          VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                                          TextureType::TEXTURE_2D_ARRAY,
                                           VK_FILTER_LINEAR,
                                           VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 
-    attachments[1] = Graphics::Attachment(static_cast<VkFormat>(m_depthFormat),
+    attachments[1] = Graphics::Attachment(m_depthFormat,
                                           VK_SAMPLE_COUNT_1_BIT,
                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                           AttachmentType::DEPTH_ATTACHMENT,
                                           VK_IMAGE_ASPECT_DEPTH_BIT,
-                                          VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+                                          TextureType::TEXTURE_2D_ARRAY);
 
     // Depdencies
     dependencies.resize(2);
@@ -149,6 +149,8 @@ void VarianceShadowPass::setup_shader_passes() {
 
 void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
+    if ((Core::Light::get_non_raytraced_count() == 0 && currentFrame.index > 0) || scene->get_lights().empty())
+        return;
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
@@ -168,7 +170,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
             {
                 uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                for (size_t i = 0; i < m->get_num_geometries(); i++)
+                for (size_t i = 0; i < 1; i++)
                 {
 
                     // Setup per object render state
@@ -182,16 +184,16 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
                     cmd.set_depth_test_enable(mat->get_parameters().depthTest);
                     cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
                     cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                         : CullingMode::NO_CULLING);
+                                                                        : CullingMode::NO_CULLING);
 
                     cmd.bind_shaderpass(*shaderPass);
                     // GLOBAL LAYOUT BINDING
                     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
                     // PER OBJECT LAYOUT BINDING
                     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
-                                             1,
-                                             *shaderPass,
-                                             {objectOffset, objectOffset});
+                                            1,
+                                            *shaderPass,
+                                            {objectOffset, objectOffset});
 
                     // DRAW
                     Geometry* g = m->get_geometry(i);
