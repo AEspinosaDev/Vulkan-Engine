@@ -1,41 +1,88 @@
-/*
-    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
-
-    MIT License
-
-    Copyright (c) 2023 Antonio Espinosa Garcia
-
-    ////////////////////////////////////////////////////////////////////////////////////
-
-    In this Renderer's module you will find:
-
-    Implementation of functions focused on managing the uploading to the GPU and caching of data needed for
-    rendering.
-
-    ////////////////////////////////////////////////////////////////////////////////////
-*/
-#include <engine/systems/renderers/renderer.h>
+#include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-namespace Systems {
-void BaseRenderer::update_global_data(Core::Scene* const scene) {
+
+namespace Core {
+
+Core::PanoramaConverterPass*  ResourceManager::panoramaConverterPass = nullptr;
+Core::IrrandianceComputePass* ResourceManager::irradianceComputePass = nullptr;
+
+Core::Texture* ResourceManager::FALLBACK_TEXTURE   = nullptr;
+Core::Texture* ResourceManager::FALLBACK_CUBEMAP   = nullptr;
+Core::Texture* ResourceManager::BLUE_NOISE_TEXTURE = nullptr;
+Core::Mesh*    ResourceManager::VIGNETTE           = nullptr;
+
+void ResourceManager::init_basic_resources(Graphics::Device* const device) {
+
+    // Setup vignette
+    VIGNETTE = new Core::Mesh();
+    VIGNETTE->push_geometry(Core::Geometry::create_quad());
+    upload_geometry_data(device, VIGNETTE->get_geometry());
+
+    // Setup fallback texture
+    if (!FALLBACK_TEXTURE) // If not user set
+    {
+        unsigned char texture_data[1] = {0};
+        FALLBACK_TEXTURE              = new Core::Texture(texture_data, {1, 1, 1}, 4);
+        FALLBACK_TEXTURE->set_use_mipmaps(false);
+    }
+    upload_texture_data(device, FALLBACK_TEXTURE);
+    if (!FALLBACK_CUBEMAP) // If not user set
+    {
+        unsigned char cube_data[6] = {0, 0, 0, 0, 0, 0};
+        FALLBACK_CUBEMAP           = new Core::Texture(cube_data, {1, 1, 1}, 4);
+        FALLBACK_CUBEMAP->set_use_mipmaps(false);
+        FALLBACK_CUBEMAP->set_type(TextureType::TEXTURE_CUBE);
+    }
+    upload_texture_data(device, FALLBACK_CUBEMAP);
+
+    // Setup blue noise texture
+    if (!BLUE_NOISE_TEXTURE) // If not user set
+    {
+        BLUE_NOISE_TEXTURE = new Core::Texture();
+        Tools::Loaders::load_PNG(BLUE_NOISE_TEXTURE, ENGINE_RESOURCES_PATH "textures/blueNoise.png");
+        BLUE_NOISE_TEXTURE->set_use_mipmaps(false);
+    }
+    upload_texture_data(device, BLUE_NOISE_TEXTURE);
+}
+
+void ResourceManager::clean_basic_resources() {
+    destroy_geometry_data(VIGNETTE->get_geometry());
+    destroy_texture_data(FALLBACK_TEXTURE);
+    destroy_texture_data(BLUE_NOISE_TEXTURE);
+    destroy_texture_data(FALLBACK_CUBEMAP);
+    if (irradianceComputePass)
+    {
+        irradianceComputePass->clean_framebuffer();
+        irradianceComputePass->cleanup();
+    }
+    if (panoramaConverterPass)
+    {
+        panoramaConverterPass->clean_framebuffer();
+        panoramaConverterPass->cleanup();
+    }
+}
+void ResourceManager::update_global_data(Graphics::Device* const device,
+                                         Graphics::Frame* const  currentFrame,
+                                         Core::Scene* const      scene,
+                                         Core::IWindow* const    window) {
     PROFILING_EVENT()
     /*
     CAMERA UNIFORMS LOAD
     */
     Core::Camera* camera = scene->get_active_camera();
     if (camera->is_dirty())
-        camera->set_projection(m_window->get_extent().width, m_window->get_extent().height);
+        camera->set_projection(window->get_extent().width, window->get_extent().height);
     Graphics::CameraUniforms camData;
     camData.view         = camera->get_view();
     camData.proj         = camera->get_projection();
     camData.viewProj     = camera->get_projection() * camera->get_view();
     camData.position     = Vec4(camera->get_position(), 0.0f);
-    camData.screenExtent = {m_window->get_extent().width, m_window->get_extent().height};
+    camData.screenExtent = {window->get_extent().width, window->get_extent().height};
     camData.nearPlane    = camera->get_near();
     camData.farPlane     = camera->get_far();
 
-    m_frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(&camData, sizeof(Graphics::CameraUniforms), 0);
+    currentFrame->uniformBuffers[GLOBAL_LAYOUT].upload_data(&camData, sizeof(Graphics::CameraUniforms), 0);
 
     /*
     SCENE UNIFORMS LOAD
@@ -53,7 +100,7 @@ void BaseRenderer::update_global_data(Core::Scene* const scene) {
         sceneParams.envRotation        = scene->get_skybox()->get_rotation();
         sceneParams.envColorMultiplier = scene->get_skybox()->get_intensity();
     }
-    sceneParams.time = m_window->get_time_elapsed();
+    sceneParams.time = window->get_time_elapsed();
 
     std::vector<Core::Light*> lights = scene->get_lights();
     if (lights.size() > VK_MAX_LIGHTS)
@@ -79,17 +126,22 @@ void BaseRenderer::update_global_data(Core::Scene* const scene) {
     }
     sceneParams.numLights = static_cast<int>(lights.size());
 
-    m_frames[m_currentFrame].uniformBuffers[GLOBAL_LAYOUT].upload_data(
+    currentFrame->uniformBuffers[GLOBAL_LAYOUT].upload_data(
         &sceneParams,
         sizeof(Graphics::SceneUniforms),
-        m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
+        device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
 
     /*
     SKYBOX MESH AND TEXTURE UPLOAD
     */
-    setup_skybox(scene);
+    setup_skybox(device, scene);
 }
-void BaseRenderer::update_object_data(Core::Scene* const scene) {
+void ResourceManager::update_object_data(Graphics::Device* const device,
+                                         Graphics::Frame* const  currentFrame,
+                                         Core::Scene* const      scene,
+                                         Core::IWindow* const    window,
+                                         bool                    enableRT) {
+
     PROFILING_EVENT()
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
@@ -136,22 +188,21 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                         scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
                 {
                     // Offset calculation
-                    uint32_t objectOffset =
-                        m_frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
+                    uint32_t objectOffset = currentFrame->uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
 
                     Graphics::ObjectUniforms objectData;
                     objectData.model        = m->get_model_matrix();
                     objectData.otherParams1 = {m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), false};
                     objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
-                    m_frames[m_currentFrame].uniformBuffers[1].upload_data(
+                    currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(
                         &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
                         // Object vertex buffer setup
                         Core::Geometry* g = m->get_geometry(i);
-                        upload_geometry_data(g, m_settings.enableRaytracing && m->ray_hittable());
-                        if (m_settings.enableRaytracing && m->ray_hittable())
+                        upload_geometry_data(device, g, enableRT && m->ray_hittable());
+                        if (enableRT && m->ray_hittable())
                             BLASInstances.push_back({*get_BLAS(g), m->get_model_matrix()});
 
                         // Object material setup
@@ -164,31 +215,30 @@ void BaseRenderer::update_object_data(Core::Scene* const scene) {
                             for (auto pair : textures)
                             {
                                 Core::ITexture* texture = pair.second;
-                                upload_texture_data(texture);
+                                upload_texture_data(device, texture);
                             }
                         }
 
                         // ObjectUniforms materialData;
                         Graphics::MaterialUniforms materialData = mat->get_uniforms();
-                        m_frames[m_currentFrame].uniformBuffers[OBJECT_LAYOUT].upload_data(
+                        currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(
                             &materialData,
                             sizeof(Graphics::MaterialUniforms),
-                            objectOffset + m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+                            objectOffset + device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
                     }
                 }
             }
             mesh_idx++;
         }
-        if (m_settings.enableRaytracing)
+        if (enableRT)
         {
             Graphics::TLAS* accel = get_TLAS(scene);
             if (!accel->handle)
-                m_device.upload_TLAS(*accel, BLASInstances);
+                device->upload_TLAS(*accel, BLASInstances);
         }
     }
 }
-
-void BaseRenderer::upload_texture_data(Core::ITexture* const t) {
+void ResourceManager::upload_texture_data(Graphics::Device* const device, Core::ITexture* const t) {
     if (t && t->loaded_on_CPU())
     {
         if (!t->loaded_on_GPU())
@@ -207,16 +257,19 @@ void BaseRenderer::upload_texture_data(Core::ITexture* const t) {
 
             void* imgCache{nullptr};
             t->get_image_cache(imgCache);
-            m_device.upload_texture_image(
+            device->upload_texture_image(
                 *get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel(), t->get_settings().useMipmaps);
         }
     }
 }
-void BaseRenderer::destroy_texture_data(Core::ITexture* const t) {
+
+void ResourceManager::destroy_texture_data(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-void BaseRenderer::upload_geometry_data(Core::Geometry* const g, bool createAccelStructure) {
+void ResourceManager::upload_geometry_data(Graphics::Device* const device,
+                                           Core::Geometry* const   g,
+                                           bool                    createAccelStructure) {
     PROFILING_EVENT()
     /*
     VERTEX ARRAYS
@@ -230,7 +283,7 @@ void BaseRenderer::upload_geometry_data(Core::Geometry* const g, bool createAcce
         rd->indexCount                     = gd->vertexIndex.size();
         rd->vertexCount                    = gd->vertexIndex.size();
 
-        m_device.upload_vertex_arrays(*rd, vboSize, gd->vertexData.data(), iboSize, gd->vertexIndex.data());
+        device->upload_vertex_arrays(*rd, vboSize, gd->vertexData.data(), iboSize, gd->vertexIndex.data());
     }
     /*
     ACCELERATION STRUCTURE
@@ -239,12 +292,10 @@ void BaseRenderer::upload_geometry_data(Core::Geometry* const g, bool createAcce
     {
         Graphics::BLAS* accel = get_BLAS(g);
         if (!accel->handle)
-            m_device.upload_BLAS(*accel, *get_VAO(g));
+            device->upload_BLAS(*accel, *get_VAO(g));
     }
 }
-
-void BaseRenderer::destroy_geometry_data(Core::Geometry* const g) {
-
+void ResourceManager::destroy_geometry_data(Core::Geometry* const g) {
     Graphics::VertexArrays* rd = get_VAO(g);
     if (rd->loadedOnGPU)
     {
@@ -256,13 +307,13 @@ void BaseRenderer::destroy_geometry_data(Core::Geometry* const g) {
         get_BLAS(g)->cleanup();
     }
 }
-void BaseRenderer::setup_skybox(Core::Scene* const scene) {
+void ResourceManager::setup_skybox(Graphics::Device* const device, Core::Scene* const scene) {
     Core::Skybox* const skybox = scene->get_skybox();
     if (skybox)
     {
         if (skybox->update_enviroment())
         {
-            upload_geometry_data(skybox->get_box());
+            upload_geometry_data(device, skybox->get_box());
             Core::TextureHDR* envMap = skybox->get_enviroment_map();
             if (envMap && envMap->loaded_on_CPU())
             {
@@ -278,106 +329,77 @@ void BaseRenderer::setup_skybox(Core::Scene* const scene) {
 
                     void* imgCache{nullptr};
                     envMap->get_image_cache(imgCache);
-                    m_device.upload_texture_image(
+                    device->upload_texture_image(
                         *get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
                 }
                 // Create Panorama converter pass
-                if (m_renderPipeline.panoramaConverterPass)
+                if (panoramaConverterPass)
                 { // If already exists
-                    m_renderPipeline.panoramaConverterPass->cleanup();
-                    m_renderPipeline.irradianceComputePass->cleanup();
-                    m_renderPipeline.panoramaConverterPass->clean_framebuffer();
-                    m_renderPipeline.irradianceComputePass->clean_framebuffer();
+                    panoramaConverterPass->cleanup();
+                    irradianceComputePass->cleanup();
+                    panoramaConverterPass->clean_framebuffer();
+                    irradianceComputePass->clean_framebuffer();
+                    delete panoramaConverterPass;
+                    delete irradianceComputePass;
                 }
-                m_renderPipeline.panoramaConverterPass =
-                    new Core::PanoramaConverterPass(&m_device,
+                panoramaConverterPass =
+                    new Core::PanoramaConverterPass(device,
                                                     envMap->get_settings().format,
                                                     {envMap->get_size().height, envMap->get_size().height},
-                                                    m_vignette);
-                m_renderPipeline.panoramaConverterPass->setup(m_frames);
-                m_renderPipeline.panoramaConverterPass->update_uniforms(m_currentFrame, scene);
+                                                    VIGNETTE);
+                std::vector<Graphics::Frame> empty;
+                panoramaConverterPass->setup(empty);
+                panoramaConverterPass->update_uniforms(0, scene);
                 // Create Irradiance converter pass
-                m_renderPipeline.irradianceComputePass = new Core::IrrandianceComputePass(
-                    &m_device,
+                irradianceComputePass = new Core::IrrandianceComputePass(
+                    device,
                     envMap->get_settings().format,
-                    {m_settings.irradianceResolution, m_settings.irradianceResolution});
-                m_renderPipeline.irradianceComputePass->setup(m_frames);
-                m_renderPipeline.irradianceComputePass->update_uniforms(m_currentFrame, scene);
-                m_renderPipeline.irradianceComputePass->connect_env_cubemap(
-                    m_renderPipeline.panoramaConverterPass->get_attachments()[0].image);
+                    {skybox->get_irradiance_resolution(), skybox->get_irradiance_resolution()});
+                irradianceComputePass->setup(empty);
+                irradianceComputePass->update_uniforms(0, scene);
+                irradianceComputePass->connect_env_cubemap(panoramaConverterPass->get_attachments()[0].image);
             }
         }
     }
 }
-void BaseRenderer::init_resources() {
-
-    // Setup frames
-    m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
-    for (size_t i = 0; i < m_frames.size(); i++)
-        m_frames[i] = m_device.create_frame(i);
-    for (size_t i = 0; i < m_frames.size(); i++)
+void ResourceManager::generate_skybox_maps(Graphics::Frame* const currentFrame, Core::Scene* const scene) {
+    if (scene->get_skybox()->update_enviroment())
     {
-        // Global Buffer
-        const size_t     globalStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
-                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
-        Graphics::Buffer globalBuffer     = m_device.create_buffer_VMA(globalStrideSize,
-                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
-                                                                   (uint32_t)globalStrideSize);
-        m_frames[i].uniformBuffers.push_back(globalBuffer);
-
-        // Object Buffer
-        const size_t     objectStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
-                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
-        Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
-                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
-                                                                   (uint32_t)objectStrideSize);
-        m_frames[i].uniformBuffers.push_back(objectBuffer);
+        panoramaConverterPass->render(*currentFrame, scene);
+        irradianceComputePass->render(*currentFrame, scene);
+        scene->get_skybox()->set_update_enviroment(false);
     }
-
-    // Setup vignette
-    m_vignette = new Core::Mesh();
-    m_vignette->push_geometry(Core::Geometry::create_quad());
-    upload_geometry_data(m_vignette->get_geometry());
-
-    // Setup fallback texture
-    if (!Core::Texture::FALLBACK_TEX) // If not user set
-    {
-        unsigned char texture_data[1] = {0};
-        Core::Texture::FALLBACK_TEX   = new Core::Texture(texture_data, {1, 1, 1}, 4);
-        Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
-    }
-    upload_texture_data(Core::Texture::FALLBACK_TEX);
-    if (!Core::Texture::FALLBACK_CUBE_TEX) // If not user set
-    {
-        unsigned char cube_data[6] = {0,0,0,0,0,0};
-        Core::Texture::FALLBACK_CUBE_TEX   = new Core::Texture(cube_data, {1, 1, 1}, 4);
-        Core::Texture::FALLBACK_CUBE_TEX->set_use_mipmaps(false);
-        Core::Texture::FALLBACK_CUBE_TEX->set_type(TextureType::TEXTURE_CUBE);
-    }
-    upload_texture_data(Core::Texture::FALLBACK_CUBE_TEX);
-
-    // Setup blue noise texture
-    if (!Core::Texture::BLUE_NOISE_TEXT) // If not user set
-    {
-        Core::Texture::BLUE_NOISE_TEXT = new Core::Texture();
-        Tools::Loaders::load_PNG(Core::Texture::BLUE_NOISE_TEXT, ENGINE_RESOURCES_PATH "textures/blueNoise.png");
-        Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
-    }
-    upload_texture_data(Core::Texture::BLUE_NOISE_TEXT);
 }
-
-void BaseRenderer::clean_resources() {
-    for (size_t i = 0; i < m_frames.size(); i++)
+void ResourceManager::clean_scene(Core::Scene* const scene) {
+    if (scene)
     {
-        m_frames[i].cleanup();
-    }
-    destroy_geometry_data(m_vignette->get_geometry());
-    destroy_texture_data(Core::Texture::FALLBACK_TEX);
-    destroy_texture_data(Core::Texture::BLUE_NOISE_TEXT);
-    destroy_texture_data(Core::Texture::FALLBACK_CUBE_TEX);
-}
-} // namespace Systems
+        for (Core::Mesh* m : scene->get_meshes())
+        {
+            for (size_t i = 0; i < m->get_num_geometries(); i++)
+            {
+                Core::Geometry* g = m->get_geometry(i);
+                destroy_geometry_data(g);
 
-VULKAN_ENGINE_NAMESPACE_END
+                Core::IMaterial* mat = m->get_material(g->get_material_ID());
+                if (mat)
+                {
+                    auto textures = mat->get_textures();
+                    for (auto pair : textures)
+                    {
+                        Core::ITexture* texture = pair.second;
+                        destroy_texture_data(texture);
+                    }
+                }
+            }
+        }
+        if (scene->get_skybox())
+        {
+            destroy_geometry_data(scene->get_skybox()->get_box());
+            destroy_texture_data(scene->get_skybox()->get_enviroment_map());
+        }
+        get_TLAS(scene)->cleanup();
+    }
+}
+} // namespace Core
+
+VULKAN_ENGINE_NAMESPACE_END;

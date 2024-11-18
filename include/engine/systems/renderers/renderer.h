@@ -8,36 +8,12 @@
 
         ////////////////////////////////////////////////////////////////////////////////////
 
-        Implementation of this class is fragmentated in three submodules:
-
-        * vk_renderer.cpp
-        * vk_renderer_data_mgr.cpp
-
-        ////////////////////////////////////////////////////////////////////////////////////
 */
 #ifndef RENDERER_H
 #define RENDERER_H
 
 #include <engine/common.h>
-
-#include <engine/tools/loaders.h>
-
-#include <engine/core/materials/material.h>
-#include <engine/core/renderpasses/irradiance_compute_pass.h>
-#include <engine/core/renderpasses/panorama_conversion_pass.h>
-#include <engine/core/textures/texture.h>
-#include <engine/core/textures/textureLDR.h>
-#include <engine/core/windows/window.h>
-#include <engine/core/windows/windowGLFW.h>
-
-#include <engine/graphics/device.h>
-#include <engine/graphics/image.h>
-#include <engine/graphics/uniforms.h>
-#include <engine/graphics/utilities/bootstrap.h>
-#include <engine/graphics/utilities/initializers.h>
-#include <engine/graphics/utilities/translator.h>
-#include <engine/graphics/utilities/utils.h>
-
+#include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -68,10 +44,6 @@ in the order they where added.
 struct RenderPipeline {
     std::vector<Core::RenderPass*> renderpasses;
 
-    // Auxiliar passes
-    Core::PanoramaConverterPass*  panoramaConverterPass{nullptr};
-    Core::IrrandianceComputePass* irradianceComputePass{nullptr};
-
     void push_renderpass(Core::RenderPass* pass) {
         renderpasses.push_back(pass);
     };
@@ -87,20 +59,12 @@ struct RenderPipeline {
         {
             pass->cleanup();
         }
-        if (panoramaConverterPass)
-            panoramaConverterPass->cleanup();
-        if (irradianceComputePass)
-            irradianceComputePass->cleanup();
     }
     void flush_framebuffers() {
         for (Core::RenderPass* pass : renderpasses)
         {
             pass->clean_framebuffer();
         }
-        if (panoramaConverterPass)
-            panoramaConverterPass->clean_framebuffer();
-        if (irradianceComputePass)
-            irradianceComputePass->clean_framebuffer();
     }
 };
 
@@ -116,8 +80,8 @@ class BaseRenderer
     Graphics::Device             m_device{};
     std::vector<Graphics::Frame> m_frames;
 
-    Core::IWindow*   m_window;
-    Core::Mesh*      m_vignette{};
+    Core::IWindow* m_window;
+
     RendererSettings m_settings{};
     RenderPipeline   m_renderPipeline;
 
@@ -204,7 +168,7 @@ class BaseRenderer
 #pragma region Core Functions
   protected:
     /*
-     Init renderpasses and 
+     Init renderpasses and
      */
     virtual void create_renderpasses();
     /*
@@ -231,26 +195,6 @@ class BaseRenderer
     virtual void on_shutdown(Core::Scene* const scene) {
     }
     /*
-    Link images of previous passes to current pass
-    */
-    void connect_renderpass(Core::RenderPass* const currentPass);
-    /*
-    Clean and recreates swapchain and framebuffers in the renderer. Useful to use
-    when resizing context
-    */
-    void update_renderpasses();
-
-#pragma endregion
-    /*
-            ////////////////////////////////////////////////////////////////////////////////////
-
-            Implementation of this region can be found in the module ==>>
-       vk_renderer_data_mgr.cpp
-
-            ////////////////////////////////////////////////////////////////////////////////////
-    */
-#pragma region Data Management
-    /*
     Resource like samplers, base textures and misc creation
     */
     virtual void init_resources();
@@ -259,34 +203,18 @@ class BaseRenderer
     */
     virtual void clean_resources();
     /*
-    Global descriptor layouts uniforms buffer upload to GPU
+    Link images of previous passes to current pass
     */
-    virtual void update_global_data(Core::Scene* const scene);
+    void connect_renderpass(Core::RenderPass* const currentPass);
     /*
-    Object descriptor layouts uniforms buffer upload to GPU
+    Clean and recreates swapchain and framebuffers in the renderer. Useful to use
+    when resizing context
     */
-    virtual void update_object_data(Core::Scene* const scene);
-    /*
-    Initialize and setup texture IMAGE
-    */
-    void upload_texture_data(Core::ITexture* const t);
-    void destroy_texture_data(Core::ITexture* const t);
-    /*
-    Upload geometry vertex buffers to the GPU
-    */
-    void upload_geometry_data(Core::Geometry* const g, bool createAccelStructure = true);
-    void destroy_geometry_data(Core::Geometry* const g);
-    /*
-    Setup skybox
-    */
-    void setup_skybox(Core::Scene* const scene);
-
-#pragma region GUI
+    void update_renderpasses();
     /*
     Initialize gui layout in case ther's one enabled
     */
     void init_gui();
-
 #pragma endregion
 };
 } // namespace Systems

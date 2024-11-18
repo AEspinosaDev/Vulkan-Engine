@@ -10,12 +10,10 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
     {
         if (scene->get_skybox()->update_enviroment())
             static_cast<Core::ForwardPass*>(m_renderPipeline.renderpasses[FORWARD])
-                ->set_envmap_descriptor(m_renderPipeline.panoramaConverterPass->get_attachments()[0].image,
-                                        m_renderPipeline.irradianceComputePass->get_attachments()[0].image);
+                ->set_envmap_descriptor(Core::ResourceManager::panoramaConverterPass->get_attachments()[0].image,
+                                        Core::ResourceManager::irradianceComputePass->get_attachments()[0].image);
     }
 
-
-   
     m_renderPipeline.renderpasses[FORWARD]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
 }
@@ -58,8 +56,12 @@ void ForwardRenderer::create_renderpasses() {
     m_renderPipeline.push_renderpass(forwardPass);
 
     // FXAA Pass
-    Core::FXAAPass* fxaaPass = new Core::FXAAPass(
-        &m_device, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_vignette, m_settings2.fxaa);
+    Core::FXAAPass* fxaaPass = new Core::FXAAPass(&m_device,
+                                                  m_window->get_extent(),
+                                                  totalImagesInFlight,
+                                                  m_settings.colorFormat,
+                                                  Core::ResourceManager::VIGNETTE,
+                                                  m_settings2.fxaa);
     fxaaPass->set_image_dependace_table({{FORWARD, {0}}});
     m_renderPipeline.push_renderpass(fxaaPass);
     if (!m_settings2.fxaa)

@@ -25,10 +25,6 @@ class TextureLDR : public ITexture
     unsigned char* m_tmpCache{nullptr};
 
   public:
-    static Texture* FALLBACK_TEX;
-    static Texture* FALLBACK_CUBE_TEX;
-    static Texture* BLUE_NOISE_TEXT;
-
     TextureLDR()
         : ITexture() {
     }

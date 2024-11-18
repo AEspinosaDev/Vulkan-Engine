@@ -21,13 +21,14 @@ Skybox for rendering enviroments and IBL
 class Skybox
 {
   private:
-    Geometry*   m_box{nullptr};
-    TextureHDR* m_env{nullptr};
+    Geometry*   m_box = nullptr;
+    TextureHDR* m_env = nullptr;
 
     // Settings
-    float m_blurriness{0.0f};
-    float m_intensity{1.0f};
-    float m_rotation{0.0f};
+    float    m_blurriness           = 0.0f;
+    float    m_intensity            = 1.0f;
+    float    m_rotation             = 0.0f;
+    uint32_t m_irradianceResolution = 32;
 
     bool m_updateEnviroment{true};
     bool m_active{true};
@@ -88,6 +89,13 @@ class Skybox
     }
     inline bool is_active() {
         return m_active;
+    }
+    inline uint32_t get_irradiance_resolution() const{
+        return m_irradianceResolution;
+    }
+    inline void set_irradiance_resolution(uint32_t r){
+        m_irradianceResolution = r;
+        m_updateEnviroment = true;
     }
 };
 

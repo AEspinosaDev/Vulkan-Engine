@@ -124,12 +124,12 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               1);
 
-        m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX),
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_TEXTURE),
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
 
-        m_descriptorPool.set_descriptor_write(get_image(Texture::BLUE_NOISE_TEXT),
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::BLUE_NOISE_TEXTURE),
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               6);
@@ -150,11 +150,11 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               1);
         // Set up enviroment fallback texture
-        m_descriptorPool.set_descriptor_write(get_image(Core::Texture::FALLBACK_CUBE_TEX),
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
-        m_descriptorPool.set_descriptor_write(get_image(Core::Texture::FALLBACK_CUBE_TEX),
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               4);
@@ -425,7 +425,7 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
         {
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorPool.set_descriptor_write(get_image(Texture::FALLBACK_TEX),
+                m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_TEXTURE),
                                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                       &mat->get_texture_descriptor(),
                                                       pair.first);

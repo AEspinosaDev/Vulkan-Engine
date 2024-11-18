@@ -11,6 +11,7 @@
 #include <engine/core/renderpasses/renderpass.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
+#include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

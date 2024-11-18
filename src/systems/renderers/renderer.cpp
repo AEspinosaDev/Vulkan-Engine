@@ -69,36 +69,9 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     {
         m_deletionQueue.flush();
 
-        if (scene)
-        {
-            for (Core::Mesh* m : scene->get_meshes())
-            {
-                for (size_t i = 0; i < m->get_num_geometries(); i++)
-                {
-                    Core::Geometry* g = m->get_geometry(i);
-                    destroy_geometry_data(g);
-
-                    Core::IMaterial* mat = m->get_material(g->get_material_ID());
-                    if (mat)
-                    {
-                        auto textures = mat->get_textures();
-                        for (auto pair : textures)
-                        {
-                            Core::ITexture* texture = pair.second;
-                            destroy_texture_data(texture);
-                        }
-                    }
-                }
-            }
-
-            if (scene->get_skybox())
-            {
-                destroy_geometry_data(scene->get_skybox()->get_box());
-                destroy_texture_data(scene->get_skybox()->get_enviroment_map());
-            }
-            get_TLAS(scene)->cleanup();
-        }
         clean_resources();
+        Core::ResourceManager::clean_scene(scene);
+
         if (m_settings.enableUI)
             m_device.destroy_imgui();
         m_renderPipeline.flush_framebuffers();
@@ -114,8 +87,9 @@ void BaseRenderer::create_renderpasses() {
 void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
 
-    update_global_data(scene);
-    update_object_data(scene);
+    Core::ResourceManager::update_global_data(&m_device, &m_frames[m_currentFrame], scene, m_window);
+    Core::ResourceManager::update_object_data(
+        &m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
 
     for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
     {
@@ -158,12 +132,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
 
     if (scene->get_skybox())
-        if (scene->get_skybox()->update_enviroment())
-        {
-            m_renderPipeline.panoramaConverterPass->render(m_frames[m_currentFrame], scene, imageIndex);
-            m_renderPipeline.irradianceComputePass->render(m_frames[m_currentFrame], scene, imageIndex);
-            scene->get_skybox()->set_update_enviroment(false);
-        }
+       Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame],scene);
 
     m_renderPipeline.render(m_frames[m_currentFrame], scene, imageIndex);
 
@@ -230,13 +199,46 @@ void BaseRenderer::init_gui() {
 
         void* windowHandle;
         m_window->get_handle(windowHandle);
-        m_device.init_imgui(windowHandle,
-                            m_window->get_windowing_system(),
-                            defaultPass->get_handle(),
-                            m_settings.samplesMSAA);
+        m_device.init_imgui(
+            windowHandle, m_window->get_windowing_system(), defaultPass->get_handle(), m_settings.samplesMSAA);
     }
 }
+void BaseRenderer::init_resources() {
 
+    // Setup frames
+    m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
+    for (size_t i = 0; i < m_frames.size(); i++)
+        m_frames[i] = m_device.create_frame(i);
+    for (size_t i = 0; i < m_frames.size(); i++)
+    {
+        // Global Buffer
+        const size_t     globalStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
+                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
+        Graphics::Buffer globalBuffer     = m_device.create_buffer_VMA(globalStrideSize,
+                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
+                                                                   (uint32_t)globalStrideSize);
+        m_frames[i].uniformBuffers.push_back(globalBuffer);
+
+        // Object Buffer
+        const size_t     objectStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
+                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+        Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
+                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
+                                                                   (uint32_t)objectStrideSize);
+        m_frames[i].uniformBuffers.push_back(objectBuffer);
+    }
+    Core::ResourceManager::init_basic_resources(&m_device);
+}
+
+void BaseRenderer::clean_resources() {
+    for (size_t i = 0; i < m_frames.size(); i++)
+    {
+        m_frames[i].cleanup();
+    }
+    Core::ResourceManager::clean_basic_resources();
+}
 } // namespace Systems
 
 VULKAN_ENGINE_NAMESPACE_END
