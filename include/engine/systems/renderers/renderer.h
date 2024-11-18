@@ -204,9 +204,9 @@ class BaseRenderer
 #pragma region Core Functions
   protected:
     /*
-     Init renderpasses and create framebuffers and image resources attached to them
+     Init renderpasses and 
      */
-    virtual void setup_renderpasses();
+    virtual void create_renderpasses();
     /*
     What to do when instancing the renderer
     */

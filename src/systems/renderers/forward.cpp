@@ -13,6 +13,8 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
                 ->set_envmap_descriptor(m_renderPipeline.panoramaConverterPass->get_attachments()[0].image,
                                         m_renderPipeline.irradianceComputePass->get_attachments()[0].image);
     }
+
+
    
     m_renderPipeline.renderpasses[FORWARD]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
@@ -35,7 +37,7 @@ void ForwardRenderer::on_after_render(RenderResult& renderResult, Core::Scene* c
         connect_renderpass(m_renderPipeline.renderpasses[FORWARD]);
     }
 }
-void ForwardRenderer::setup_renderpasses() {
+void ForwardRenderer::create_renderpasses() {
     const uint32_t SHADOW_RES          = (uint32_t)m_settings2.shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 

@@ -29,7 +29,7 @@ void BaseRenderer::init() {
     // Init resources
     init_resources();
 
-    setup_renderpasses();
+    create_renderpasses();
     for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
     {
         if (pass->is_active())
@@ -108,7 +108,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     m_window->destroy();
     glfwTerminate();
 }
-void BaseRenderer::setup_renderpasses() {
+void BaseRenderer::create_renderpasses() {
     throw VKFW_Exception("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
 }
 void BaseRenderer::on_before_render(Core::Scene* const scene) {

@@ -113,6 +113,12 @@ class ITexture
     inline void set_adress_mode(TextureAdressModeType am) {
         m_settings.adressMode = am;
     }
+    inline void set_type(TextureType t) {
+        m_settings.type = t;
+    }
+    inline TextureType get_type() const {
+        return m_settings.type;
+    }
 };
 
 Graphics::Image* const get_image(ITexture* t);

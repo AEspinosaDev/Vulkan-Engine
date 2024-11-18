@@ -149,6 +149,15 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               &m_descriptors[i].objectDescritor,
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                               1);
+        // Set up enviroment fallback texture
+        m_descriptorPool.set_descriptor_write(get_image(Core::Texture::FALLBACK_CUBE_TEX),
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              3);
+        m_descriptorPool.set_descriptor_write(get_image(Core::Texture::FALLBACK_CUBE_TEX),
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              4);
     }
 }
 void ForwardPass::setup_shader_passes() {

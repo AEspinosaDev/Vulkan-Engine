@@ -349,6 +349,14 @@ void BaseRenderer::init_resources() {
         Core::Texture::FALLBACK_TEX->set_use_mipmaps(false);
     }
     upload_texture_data(Core::Texture::FALLBACK_TEX);
+    if (!Core::Texture::FALLBACK_CUBE_TEX) // If not user set
+    {
+        unsigned char cube_data[6] = {0,0,0,0,0,0};
+        Core::Texture::FALLBACK_CUBE_TEX   = new Core::Texture(cube_data, {1, 1, 1}, 4);
+        Core::Texture::FALLBACK_CUBE_TEX->set_use_mipmaps(false);
+        Core::Texture::FALLBACK_CUBE_TEX->set_type(TextureType::TEXTURE_CUBE);
+    }
+    upload_texture_data(Core::Texture::FALLBACK_CUBE_TEX);
 
     // Setup blue noise texture
     if (!Core::Texture::BLUE_NOISE_TEXT) // If not user set
@@ -368,6 +376,7 @@ void BaseRenderer::clean_resources() {
     destroy_geometry_data(m_vignette->get_geometry());
     destroy_texture_data(Core::Texture::FALLBACK_TEX);
     destroy_texture_data(Core::Texture::BLUE_NOISE_TEXT);
+    destroy_texture_data(Core::Texture::FALLBACK_CUBE_TEX);
 }
 } // namespace Systems
 

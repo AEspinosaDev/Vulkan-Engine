@@ -54,7 +54,7 @@ class ForwardRenderer : public BaseRenderer
 
     virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
 
-    virtual void setup_renderpasses();
+    virtual void create_renderpasses();
 
 };
 } // namespace Systems
