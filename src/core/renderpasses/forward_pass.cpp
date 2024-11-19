@@ -13,16 +13,16 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
     Graphics::Attachment colorAttachment = Graphics::Attachment(
         m_colorFormat,
         samples,
-        m_isDefault ? (multisampled ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-                    : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        m_isDefault ? (multisampled ? ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL : ImageLayoutType::PRESENT)
+                    : ImageLayoutType::SHADER_READ_ONLY_OPTIMAL,
+        ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL,
         !m_isDefault ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
                      : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         AttachmentType::COLOR_ATTACHMENT,
-        VK_IMAGE_ASPECT_COLOR_BIT,
+        AspectType::COLOR,
         TextureType::TEXTURE_2D,
-        VK_FILTER_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+        FilterType::LINEAR,
+        AddressMode::CLAMP_TO_BORDER);
     colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
     attachments.push_back(colorAttachment);
 
@@ -32,11 +32,11 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
         resolveAttachment =
             Graphics::Attachment(m_colorFormat,
                                  1,
-                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 ImageLayoutType::PRESENT,
+                                 ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL,
                                  VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                  AttachmentType::RESOLVE_ATTACHMENT,
-                                 VK_IMAGE_ASPECT_COLOR_BIT,
+                                 AspectType::COLOR,
                                  TextureType::TEXTURE_2D);
         resolveAttachment.isPresentImage = multisampled ? true : false;
         attachments.push_back(resolveAttachment);
@@ -44,11 +44,11 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
 
     Graphics::Attachment depthAttachment = Graphics::Attachment(m_depthFormat,
                                                                 samples,
-                                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                ImageLayoutType::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                ImageLayoutType::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                                                 AttachmentType::DEPTH_ATTACHMENT,
-                                                                VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                                AspectType::DEPTH,
                                                                 TextureType::TEXTURE_2D);
     attachments.push_back(depthAttachment);
 
@@ -370,7 +370,6 @@ void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
     if (!get_TLAS(scene)->binded)
     {
-
         for (size_t i = 0; i < m_descriptors.size(); i++)
         {
             m_descriptorPool.set_descriptor_write(get_TLAS(scene), &m_descriptors[i].globalDescritor, 5);

@@ -17,7 +17,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 /*
-Attachment info needed for Renderpasses and framebuffers
+Attachment info needed for Renderpasses and Framebuffers
 */
 struct Attachment {
     AttachmentType type           = AttachmentType::COLOR_ATTACHMENT;
@@ -27,26 +27,26 @@ struct Attachment {
     bool           isPresentImage = false;
     VkClearValue   clearValue     = {};
 
-    VkAttachmentLoadOp  loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    VkAttachmentStoreOp storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
-    VkAttachmentLoadOp  stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    VkAttachmentStoreOp stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    VkImageLayout       initialLayout    = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageLayout       finalLayout      = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    VkImageLayout       attachmentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    AttachmentLoadOp  loadOp           = AttachmentLoadOp::CLEAR_OP;
+    AttachmentStoreOp storeOp          = AttachmentStoreOp::STORE_OP;
+    AttachmentLoadOp  stencilLoadOp    = AttachmentLoadOp::DONT_CARE_OP;
+    AttachmentStoreOp stencilStoreOp   = AttachmentStoreOp::DONT_CARE_OP;
+    ImageLayoutType   initialLayout    = ImageLayoutType::UNDEFINED;
+    ImageLayoutType   finalLayout      = ImageLayoutType::SHADER_READ_ONLY_OPTIMAL;
+    ImageLayoutType   attachmentLayout = ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL;
 
     Attachment() {};
-    Attachment(ColorFormatType      format,
-               uint16_t             samples,
-               VkImageLayout        final_Layout,
-               VkImageLayout        attach_layout,
-               VkImageUsageFlags    usage,
-               AttachmentType       attachmentType = AttachmentType::COLOR_ATTACHMENT,
-               VkImageAspectFlags   aspect         = VK_IMAGE_ASPECT_COLOR_BIT,
-               TextureType          viewType       = TextureType::TEXTURE_2D,
-               VkFilter             filter         = VK_FILTER_LINEAR,
-               VkSamplerAddressMode addressMode    = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-               VkClearValue         clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
+    Attachment(ColorFormatType   format,
+               uint16_t          samples,
+               ImageLayoutType   final_Layout,
+               ImageLayoutType   attach_layout,
+               VkImageUsageFlags usage,
+               AttachmentType    attachmentType = AttachmentType::COLOR_ATTACHMENT,
+               AspectType        aspect         = AspectType::COLOR,
+               TextureType       viewType       = TextureType::TEXTURE_2D,
+               FilterType        filter         = FilterType::LINEAR,
+               AddressMode       addressMode    = AddressMode::REPEAT,
+               VkClearValue      clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
         : finalLayout(final_Layout)
         , attachmentLayout(attach_layout)
         , clearValue(clearVal)

@@ -168,6 +168,10 @@ VkImageLayout get(ImageLayoutType layoutType) {
         return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     case ImageLayoutType::TRANSFER_DST_OPTIMAL:
         return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    case ImageLayoutType::PRESENT:
+        return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    case ImageLayoutType::DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+        return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     default:
         throw std::invalid_argument("Unknown ImageLayoutType");
     }
@@ -306,6 +310,59 @@ VkAccessFlags get(AccessFlags accessFlags) {
         throw std::invalid_argument("Unknown AccessFlags");
     }
 }
+VkAttachmentStoreOp get(AttachmentStoreOp storeOp) {
+    switch (storeOp)
+    {
+    case AttachmentStoreOp::STORE_OP:
+        return VK_ATTACHMENT_STORE_OP_STORE;
+    case AttachmentStoreOp::DONT_CARE_OP:
+        return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    case AttachmentStoreOp::NONE_OP: // Optional, requires Vulkan 1.2 or later.
+#ifdef VK_ATTACHMENT_STORE_OP_NONE
+        return VK_ATTACHMENT_STORE_OP_NONE;
+#else
+        throw std::invalid_argument("VK_ATTACHMENT_STORE_OP_NONE not supported in this Vulkan version");
+#endif
+    default:
+        throw std::invalid_argument("Unknown AttachmentStoreOp");
+    }
+}
+
+VkAttachmentLoadOp get(AttachmentLoadOp loadOp) {
+    switch (loadOp)
+    {
+    case AttachmentLoadOp::LOAD_OP:
+        return VK_ATTACHMENT_LOAD_OP_LOAD;
+    case AttachmentLoadOp::CLEAR_OP:
+        return VK_ATTACHMENT_LOAD_OP_CLEAR;
+    case AttachmentLoadOp::DONT_CARE_OP:
+        return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    default:
+        throw std::invalid_argument("Unknown AttachmentLoadOp");
+    }
+}
+VkImageAspectFlags get(AspectType aspectType) {
+    switch (aspectType)
+    {
+    case AspectType::COLOR:
+        return VK_IMAGE_ASPECT_COLOR_BIT;
+    case AspectType::DEPTH:
+        return VK_IMAGE_ASPECT_DEPTH_BIT;
+    case AspectType::STENCIL:
+        return VK_IMAGE_ASPECT_STENCIL_BIT;
+    case AspectType::METADATA:
+        return VK_IMAGE_ASPECT_METADATA_BIT;
+    case AspectType::PLANE_0:
+        return VK_IMAGE_ASPECT_PLANE_0_BIT;
+    case AspectType::PLANE_1:
+        return VK_IMAGE_ASPECT_PLANE_1_BIT;
+    case AspectType::PLANE_2:
+        return VK_IMAGE_ASPECT_PLANE_2_BIT;
+    default:
+        throw std::invalid_argument("Unknown Image AspectType");
+    }
+}
+
 } // namespace Translator
 } // namespace Graphics
 VULKAN_ENGINE_NAMESPACE_END

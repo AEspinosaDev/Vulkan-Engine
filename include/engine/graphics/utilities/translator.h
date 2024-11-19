@@ -17,7 +17,6 @@ namespace Translator {
 
 VkFilter              get(TextureFilterType filterType);
 VkFormat              get(ColorFormatType colorFormatType);
-VkSamplerAddressMode  get(TextureAdressModeType addressModeType);
 VkPresentModeKHR      get(SyncType syncType);
 VkShaderStageFlagBits get(ShaderStageType stageType);
 VkDescriptorType      get(UniformDataType uniformDataType);
@@ -30,6 +29,9 @@ VkClearValue          get(ClearValueType clearValueType);
 VkDependencyFlags     get(SubPassDependencyFlags dependencyFlags);
 VkPipelineStageFlags  get(PipelineStageFlags stageFlags);
 VkAccessFlags         get(AccessFlags accessFlags);
+VkAttachmentStoreOp   get(AttachmentStoreOp storeOp);
+VkAttachmentLoadOp    get(AttachmentLoadOp loadOp);
+VkImageAspectFlags    get(AspectType aspectType);
 
 } // namespace Translator
 } // namespace Graphics

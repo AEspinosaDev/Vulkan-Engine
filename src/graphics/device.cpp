@@ -281,25 +281,26 @@ VulkanRenderPass Device::create_render_pass(Extent2D                        exte
     {
         attachmentsInfo[i].format         = Translator::get(attachments[i].imageConfig.format);
         attachmentsInfo[i].samples        = static_cast<VkSampleCountFlagBits>(attachments[i].imageConfig.samples);
-        attachmentsInfo[i].loadOp         = attachments[i].loadOp;
-        attachmentsInfo[i].storeOp        = attachments[i].storeOp;
-        attachmentsInfo[i].stencilLoadOp  = attachments[i].stencilLoadOp;
-        attachmentsInfo[i].stencilStoreOp = attachments[i].stencilStoreOp;
-        attachmentsInfo[i].initialLayout  = attachments[i].initialLayout;
-        attachmentsInfo[i].finalLayout    = attachments[i].finalLayout;
+        attachmentsInfo[i].loadOp         = Translator::get(attachments[i].loadOp);
+        attachmentsInfo[i].storeOp        = Translator::get(attachments[i].storeOp);
+        attachmentsInfo[i].stencilLoadOp  = Translator::get(attachments[i].stencilLoadOp);
+        attachmentsInfo[i].stencilStoreOp = Translator::get(attachments[i].stencilStoreOp);
+        attachmentsInfo[i].initialLayout  = Translator::get(attachments[i].initialLayout);
+        attachmentsInfo[i].finalLayout    = Translator::get(attachments[i].finalLayout);
 
         switch (attachments[i].type)
         {
         case AttachmentType::COLOR_ATTACHMENT:
-            colorAttachmentRefs.push_back(Init::attachment_reference(i, attachments[i].attachmentLayout));
+            colorAttachmentRefs.push_back(
+                Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout)));
             break;
         case AttachmentType::DEPTH_ATTACHMENT:
             hasDepthAttachment = true;
-            depthAttachmentRef = Init::attachment_reference(i, attachments[i].attachmentLayout);
+            depthAttachmentRef = Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout));
             break;
         case AttachmentType::RESOLVE_ATTACHMENT:
             hasResolveAttachment = true;
-            resolveAttachemtRef  = Init::attachment_reference(i, attachments[i].attachmentLayout);
+            resolveAttachemtRef  = Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout));
             break;
         }
     }
@@ -507,7 +508,7 @@ void Device::upload_texture_image(Image&        img,
     // CREATE IMAGE
     config.usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     config.samples     = 1;
-    config.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    config.aspectFlags = AspectType::COLOR;
     img                = create_image(img.extent, config, mipmapping);
     img.create_view(config);
 
@@ -653,6 +654,7 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
 void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) {
 
     // Set up instance data for each BLAS
+    accel.instances = BLASinstances.size();
 
     std::vector<VkAccelerationStructureInstanceKHR> instances;
     instances.resize(BLASinstances.size(), {});

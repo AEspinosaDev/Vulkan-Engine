@@ -241,7 +241,7 @@ class HairStrandMaterial2 : public HairStrandMaterial
         : HairStrandMaterial(baseColor, {}, "hairstr2") {
         TextureSettings settings{};
         settings.useMipmaps = false;
-        settings.adressMode = TextureAdressModeType::EDGE_CLAMP;
+        settings.adressMode = AddressMode::CLAMP_TO_EDGE;
         m_textures[N1]      = new Texture(settings);
         m_textures[N2]      = new Texture(settings);
         m_textures[GI]      = new Texture(settings);

@@ -10,15 +10,15 @@ void ShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        att
     attachments.resize(1);
 
     attachments[0] = Graphics::Attachment(m_depthFormat,
-                                          VK_SAMPLE_COUNT_1_BIT,
-                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          1,
+                                          ImageLayoutType::DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                          ImageLayoutType::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                           AttachmentType::DEPTH_ATTACHMENT,
-                                          VK_IMAGE_ASPECT_DEPTH_BIT,
+                                          AspectType::DEPTH,
                                           TextureType::TEXTURE_2D_ARRAY,
-                                          VK_FILTER_LINEAR,
-                                          VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+                                          FilterType::LINEAR,
+                                          AddressMode::CLAMP_TO_BORDER);
 
     // Depdencies
 

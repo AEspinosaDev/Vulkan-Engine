@@ -18,24 +18,24 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 struct ImageConfig {
-    ColorFormatType    format      = ColorFormatType::SRGBA_8;
-    VkImageUsageFlags  usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT;
-    uint16_t           samples     = 1;
-    uint32_t           mipLevels   = 1U;
-    uint32_t           layers      = 1U;
-    VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    TextureType        viewType    = TextureType::TEXTURE_2D;
+    ColorFormatType   format      = ColorFormatType::SRGBA_8;
+    VkImageUsageFlags usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT;
+    AspectType        aspectFlags = AspectType::COLOR;
+    TextureType       viewType    = TextureType::TEXTURE_2D;
+    uint16_t          samples     = 1U;
+    uint32_t          mipLevels   = 1U;
+    uint32_t          layers      = 1U;
 };
 
 struct SamplerConfig {
-    VkFilter             filters            = VK_FILTER_LINEAR;
-    VkSamplerMipmapMode  mipmapMode         = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    float                minLod             = 0.0f;
-    float                maxLod             = 12.0f;
-    bool                 anysotropicFilter  = false;
-    float                maxAnysotropy      = 1.0f;
-    VkBorderColor        border             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    FilterType          filters            = FilterType::LINEAR;
+    VkSamplerMipmapMode mipmapMode         = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    AddressMode         samplerAddressMode = AddressMode::REPEAT;
+    float               minLod             = 0.0f;
+    float               maxLod             = 12.0f;
+    bool                anysotropicFilter  = false;
+    float               maxAnysotropy      = 1.0f;
+    VkBorderColor       border             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 };
 
 struct Image {
@@ -49,7 +49,7 @@ struct Image {
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
     Extent3D extent    = {0, 0, 1}; // Depth for 3D Textures
-    uint32_t layers    = 1; // Layers for Cubemaps and Arrays
+    uint32_t layers    = 1;         // Layers for Cubemaps and Arrays
     uint32_t mipLevels = 1;
 
     bool loadedOnCPU{false};

@@ -202,7 +202,8 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
                         // Object vertex buffer setup
                         Core::Geometry* g = m->get_geometry(i);
                         upload_geometry_data(device, g, enableRT && m->ray_hittable());
-                        if (enableRT && m->ray_hittable())
+                        //Add BLASS to instances list
+                        if (enableRT && m->ray_hittable() && get_BLAS(g)->handle)
                             BLASInstances.push_back({*get_BLAS(g), m->get_model_matrix()});
 
                         // Object material setup
@@ -230,11 +231,18 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
             }
             mesh_idx++;
         }
+        // CREATE TOP LEVEL ACCELERATION STRUCTURE
         if (enableRT)
         {
             Graphics::TLAS* accel = get_TLAS(scene);
             if (!accel->handle)
                 device->upload_TLAS(*accel, BLASInstances);
+            //Update Acceleration Structure if change in objects
+            if (accel->instances < BLASInstances.size())
+            {
+                accel->cleanup();
+                device->upload_TLAS(*accel, BLASInstances);
+            }
         }
     }
 }
@@ -250,10 +258,10 @@ void ResourceManager::upload_texture_data(Graphics::Device* const device, Core::
             config.format                         = textSettings.format;
             config.mipLevels                      = textSettings.maxMipLevel;
             samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
-            samplerConfig.filters                 = static_cast<VkFilter>(textSettings.filter);
+            samplerConfig.filters                 = textSettings.filter;
             samplerConfig.maxLod                  = textSettings.maxMipLevel;
             samplerConfig.minLod                  = textSettings.minMipLevel;
-            samplerConfig.samplerAddressMode      = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
+            samplerConfig.samplerAddressMode      = textSettings.adressMode;
 
             void* imgCache{nullptr};
             t->get_image_cache(imgCache);
@@ -324,8 +332,8 @@ void ResourceManager::setup_skybox(Graphics::Device* const device, Core::Scene* 
                     Core::TextureSettings   textSettings  = envMap->get_settings();
                     config.format                         = textSettings.format;
                     samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
-                    samplerConfig.filters                 = static_cast<VkFilter>(textSettings.filter);
-                    samplerConfig.samplerAddressMode      = static_cast<VkSamplerAddressMode>(textSettings.adressMode);
+                    samplerConfig.filters                 = textSettings.filter;
+                    samplerConfig.samplerAddressMode      = textSettings.adressMode;
 
                     void* imgCache{nullptr};
                     envMap->get_image_cache(imgCache);

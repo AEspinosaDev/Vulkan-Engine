@@ -8,19 +8,19 @@ void Image::create_view(ImageConfig config) {
     VkImageViewCreateInfo dview_info = Init::imageview_create_info(Translator::get(config.format),
                                                                    handle,
                                                                    Translator::get(config.viewType),
-                                                                   config.aspectFlags,
+                                                                   Translator::get(config.aspectFlags),
                                                                    mipLevels,
                                                                    layers);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 }
 void Image::create_sampler(SamplerConfig config) {
-    VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(config.filters,
+    VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(Translator::get(config.filters),
                                                                 VK_SAMPLER_MIPMAP_MODE_LINEAR,
                                                                 config.minLod,
                                                                 config.maxLod <= mipLevels ? config.maxLod : mipLevels,
                                                                 config.anysotropicFilter,
                                                                 config.maxAnysotropy,
-                                                                config.samplerAddressMode);
+                                                                Translator::get(config.samplerAddressMode));
     samplerInfo.borderColor         = config.border;
 
     VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));

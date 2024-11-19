@@ -17,14 +17,14 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
 struct TextureSettings {
-    TextureType           type              = TextureType::TEXTURE_2D;
-    ColorFormatType       format            = SRGBA_8;
-    TextureFilterType     filter            = LINEAR;
-    TextureAdressModeType adressMode        = REPEAT;
-    bool                  useMipmaps        = true;
-    uint16_t              anisotropicFilter = 16;
-    int                   minMipLevel       = 0;
-    int                   maxMipLevel       = 12;
+    TextureType     type              = TextureType::TEXTURE_2D;
+    ColorFormatType format            = SRGBA_8;
+    FilterType      filter            = FilterType::LINEAR;
+    AddressMode     adressMode        = AddressMode::REPEAT;
+    bool            useMipmaps        = true;
+    uint16_t        anisotropicFilter = 16;
+    int             minMipLevel       = 0;
+    int             maxMipLevel       = 12;
 };
 
 /*
@@ -109,11 +109,11 @@ class ITexture
         m_settings.format = f;
     }
 
-    inline void set_filter(TextureFilterType f) {
+    inline void set_filter(FilterType f) {
         m_settings.filter = f;
     }
 
-    inline void set_adress_mode(TextureAdressModeType am) {
+    inline void set_adress_mode(AddressMode am) {
         m_settings.adressMode = am;
     }
     inline void set_type(TextureType t) {

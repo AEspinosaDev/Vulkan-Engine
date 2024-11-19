@@ -25,13 +25,14 @@ struct Accel {
     VkDevice                   device       = VK_NULL_HANDLE;
     VkDeviceAddress            deviceAdress = 0;
 
-    Buffer buffer = {};
-    bool   binded = false;
+    Buffer   buffer    = {};
+    bool     binded    = false;
+    uint32_t instances = 0;
 
     void cleanup();
 };
-typedef Accel BLAS; //Bottom level acceleration structure
-typedef Accel TLAS; //Top level acceleration structure
+typedef Accel BLAS; // Bottom level acceleration structure
+typedef Accel TLAS; // Top level acceleration structure
 /*
 Instance of a Bottom Level Acceleration Structure. Has a unique transform.
 */
@@ -39,7 +40,6 @@ struct BLASInstance {
     BLAS accel     = {};
     Mat4 transform = {};
 };
-
 
 } // namespace Graphics
 

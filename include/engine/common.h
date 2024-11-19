@@ -60,11 +60,17 @@
 #endif
 
 #define _LOG(msg)                                                                                                      \
-    { std::cout << "VKEngine log: " << msg << std::endl; }
+    {                                                                                                                  \
+        std::cout << "VKEngine log: " << msg << std::endl;                                                             \
+    }
 #define DEBUG_LOG(msg)                                                                                                 \
-    { std::cout << "VKEngine debug: " << msg << std::endl; }
+    {                                                                                                                  \
+        std::cout << "VKEngine debug: " << msg << std::endl;                                                           \
+    }
 #define ERR_LOG(msg)                                                                                                   \
-    { std::cerr << "VKEngine error: " << msg << std::endl; }
+    {                                                                                                                  \
+        std::cerr << "VKEngine error: " << msg << std::endl;                                                           \
+    }
 #define VK_CHECK(x)                                                                                                    \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -388,11 +394,24 @@ enum class ImageLayoutType
     UNDEFINED = 0,
     COLOR_ATTACHMENT_OPTIMAL,
     DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    DEPTH_STENCIL_READ_ONLY_OPTIMAL,
     SHADER_READ_ONLY_OPTIMAL,
     TRANSFER_SRC_OPTIMAL,
     TRANSFER_DST_OPTIMAL,
+    PRESENT,
     GENERAL,
     MAX_IMAGE_LAYOUT
+};
+//Image Aspect Type
+enum class AspectType
+{
+    COLOR = 0,
+    DEPTH,
+    STENCIL,
+    METADATA,
+    PLANE_0,
+    PLANE_1,
+    PLANE_2
 };
 
 // Texture type, used for image views also
@@ -470,6 +489,20 @@ enum class AccessFlags
     SHADER_READ,
     SHADER_WRITE,
     MAX_ACCESS_FLAGS
+};
+
+enum class AttachmentStoreOp
+{
+    STORE_OP = 0,
+    DONT_CARE_OP,
+    NONE_OP // Optional, depending on Vulkan version (e.g., Vulkan 1.2 and above).
+};
+
+enum class AttachmentLoadOp
+{
+    LOAD_OP = 0,
+    CLEAR_OP,
+    DONT_CARE_OP
 };
 
 enum class TextureFormatType
