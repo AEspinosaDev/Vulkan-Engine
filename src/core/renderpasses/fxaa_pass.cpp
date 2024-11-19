@@ -9,43 +9,42 @@ void FXAAPass::setup_attachments(std::vector<Graphics::Attachment>&        attac
 
     attachments.resize(1);
 
-    attachments[0] =
-        Graphics::Attachment(m_colorFormat,
-                             1,
-                             m_isDefault ? ImageLayoutType::PRESENT : ImageLayoutType::SHADER_READ_ONLY_OPTIMAL,
-                             ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL,
-                             VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                             AttachmentType::COLOR_ATTACHMENT,
-                             AspectType::COLOR,
-                             TextureType::TEXTURE_2D,
-                             FilterType::LINEAR,
-                             AddressMode::CLAMP_TO_BORDER);
+    attachments[0] = Graphics::Attachment(m_colorFormat,
+                                          1,
+                                          m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          USAGE_TRANSIENT_ATTACHMENT | USAGE_COLOR_ATTACHMENT,
+                                          COLOR_ATTACHMENT,
+                                          ASPECT_COLOR,
+                                          TEXTURE_2D,
+                                          FILTER_LINEAR,
+                                          ADDRESS_MODE_CLAMP_TO_BORDER);
+
     attachments[0].isPresentImage = m_isDefault ? true : false;
 
     // Depdencies
     dependencies.resize(1);
 
-    dependencies[0] = Graphics::SubPassDependency(
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+    dependencies[0] = Graphics::SubPassDependency(COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_NONE);
 }
 void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
     LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, {outputTextureBinding});
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {outputTextureBinding});
 
-    m_descriptorPool.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_imageDescriptorSet);
+    m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptorSet);
 }
 void FXAAPass::setup_shader_passes() {
 
     ShaderPass* fxaaPass = new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl");
-    fxaaPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
-    fxaaPass->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                 {VertexAttributeType::NORMAL, false},
-                                                 {VertexAttributeType::UV, true},
-                                                 {VertexAttributeType::TANGENT, false},
-                                                 {VertexAttributeType::COLOR, false}};
+    fxaaPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
+    fxaaPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                 {NORMAL_ATTRIBUTE, false},
+                                                 {UV_ATTRIBUTE, true},
+                                                 {TANGENT_ATTRIBUTE, false},
+                                                 {COLOR_ATTRIBUTE, false}};
     // fxaaPass->settings.blending = false;
     // fxaaPass->settings.blendAttachments = {};
 

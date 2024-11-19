@@ -18,24 +18,24 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 struct ImageConfig {
-    ColorFormatType   format      = ColorFormatType::SRGBA_8;
-    VkImageUsageFlags usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT;
-    AspectType        aspectFlags = AspectType::COLOR;
-    TextureType       viewType    = TextureType::TEXTURE_2D;
-    uint16_t          samples     = 1U;
-    uint32_t          mipLevels   = 1U;
-    uint32_t          layers      = 1U;
+    ColorFormatType format      = ColorFormatType::SRGBA_8;
+    ImageUsageFlags usageFlags  = USAGE_SAMPLED;
+    ImageAspect     aspectFlags = ASPECT_COLOR;
+    TextureType     viewType    = TEXTURE_2D;
+    uint16_t        samples     = 1U;
+    uint32_t        mipLevels   = 1U;
+    uint32_t        layers      = 1U;
 };
 
 struct SamplerConfig {
-    FilterType          filters            = FilterType::LINEAR;
-    VkSamplerMipmapMode mipmapMode         = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    AddressMode         samplerAddressMode = AddressMode::REPEAT;
-    float               minLod             = 0.0f;
-    float               maxLod             = 12.0f;
-    bool                anysotropicFilter  = false;
-    float               maxAnysotropy      = 1.0f;
-    VkBorderColor       border             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    FilterType  filters            = FILTER_LINEAR;
+    MipmapMode  mipmapMode         = MIPMAP_LINEAR;
+    AddressMode samplerAddressMode = ADDRESS_MODE_REPEAT;
+    float       minLod             = 0.0f;
+    float       maxLod             = 12.0f;
+    bool        anysotropicFilter  = false;
+    float       maxAnysotropy      = 1.0f;
+    BorderColor border             = BorderColor::FLOAT_OPAQUE_WHITE;
 };
 
 struct Image {

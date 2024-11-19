@@ -515,7 +515,7 @@ void ObjectExplorerWidget::render() {
                 float metallic  = mat->get_metalness();
                 float roughness = mat->get_roughness();
                 float ao        = mat->get_occlusion();
-                if (mat->get_mask_type() == NO_MASK)
+                if (mat->get_mask_type() == MaskType::NO_MASK)
                 {
 
                     if (ImGui::DragFloat("Metalness", &metallic, 0.05f, 0.0f, 1.0f))
@@ -561,13 +561,13 @@ void ObjectExplorerWidget::render() {
                 {
                     switch (mat->get_mask_type())
                     {
-                    case UNREAL_ENGINE:
+                    case MaskType::UNREAL_ENGINE:
                         break;
                         ImGui::Text("Unreal Mask");
-                    case UNITY_HDRP:
+                    case MaskType::UNITY_HDRP:
                         ImGui::Text("Unity HDRP Mask");
                         break;
-                    case UNITY_URP:
+                    case MaskType::UNITY_URP:
                         ImGui::Text("Unity URP Mask");
                         break;
                     }

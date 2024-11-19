@@ -21,7 +21,7 @@ void Image::create_sampler(SamplerConfig config) {
                                                                 config.anysotropicFilter,
                                                                 config.maxAnysotropy,
                                                                 Translator::get(config.samplerAddressMode));
-    samplerInfo.borderColor         = config.border;
+    samplerInfo.borderColor         = Translator::get(config.border);
 
     VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));
 }

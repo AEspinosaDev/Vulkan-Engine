@@ -25,28 +25,28 @@ struct Attachment {
     ImageConfig    imageConfig    = {};
     SamplerConfig  samplerConfig  = {};
     bool           isPresentImage = false;
-    VkClearValue   clearValue     = {};
+    ClearValue     clearValue     = {};
 
-    AttachmentLoadOp  loadOp           = AttachmentLoadOp::CLEAR_OP;
-    AttachmentStoreOp storeOp          = AttachmentStoreOp::STORE_OP;
-    AttachmentLoadOp  stencilLoadOp    = AttachmentLoadOp::DONT_CARE_OP;
-    AttachmentStoreOp stencilStoreOp   = AttachmentStoreOp::DONT_CARE_OP;
-    ImageLayoutType   initialLayout    = ImageLayoutType::UNDEFINED;
-    ImageLayoutType   finalLayout      = ImageLayoutType::SHADER_READ_ONLY_OPTIMAL;
-    ImageLayoutType   attachmentLayout = ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL;
+    AttachmentLoadOp  loadOp           = ATTACHMENT_LOAD_OP_CLEAR;
+    AttachmentStoreOp storeOp          = ATTACHMENT_STORE_OP_STORE;
+    AttachmentLoadOp  stencilLoadOp    = ATTACHMENT_LOAD_OP_DONT_CARE;
+    AttachmentStoreOp stencilStoreOp   = ATTACHMENT_STORE_OP_DONT_CARE;
+    ImageLayout       initialLayout    = LAYOUT_UNDEFINED;
+    ImageLayout       finalLayout      = LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    ImageLayout       attachmentLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     Attachment() {};
-    Attachment(ColorFormatType   format,
-               uint16_t          samples,
-               ImageLayoutType   final_Layout,
-               ImageLayoutType   attach_layout,
-               VkImageUsageFlags usage,
-               AttachmentType    attachmentType = AttachmentType::COLOR_ATTACHMENT,
-               AspectType        aspect         = AspectType::COLOR,
-               TextureType       viewType       = TextureType::TEXTURE_2D,
-               FilterType        filter         = FilterType::LINEAR,
-               AddressMode       addressMode    = AddressMode::REPEAT,
-               VkClearValue      clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
+    Attachment(ColorFormatType     format,
+               uint16_t            samples,
+               ImageLayout         final_Layout,
+               ImageLayout         attach_layout,
+               ImageUsageFlags     usage,
+               AttachmentType      attachmentType = AttachmentType::COLOR_ATTACHMENT,
+               ImageAspect         aspect         = ASPECT_COLOR,
+               TextureTypeFlagBits viewType       = TEXTURE_2D,
+               FilterType          filter         = FILTER_LINEAR,
+               AddressMode         addressMode    = ADDRESS_MODE_REPEAT,
+               ClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
         : finalLayout(final_Layout)
         , attachmentLayout(attach_layout)
         , clearValue(clearVal)
@@ -63,19 +63,19 @@ struct Attachment {
 };
 
 struct SubPassDependency {
-    uint32_t             srcSubpass      = VK_SUBPASS_EXTERNAL;
-    uint32_t             dstSubpass      = 0;
-    VkPipelineStageFlags srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkPipelineStageFlags dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkAccessFlags        srcAccessMask   = 0;
-    VkAccessFlags        dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    VkDependencyFlags    dependencyFlags = 0; // Default flags (no special flags)
+    uint32_t              srcSubpass      = VK_SUBPASS_EXTERNAL;
+    uint32_t              dstSubpass      = 0;
+    PipelineStage         srcStageMask    = COLOR_ATTACHMENT_OUTPUT_STAGE;
+    PipelineStage         dstStageMask    = COLOR_ATTACHMENT_OUTPUT_STAGE;
+    AccessFlags           srcAccessMask   = AccessFlags::ACCESS_NONE;
+    AccessFlags           dstAccessMask   = AccessFlags::ACCESS_COLOR_ATTACHMENT_WRITE;
+    SubPassDependencyType dependencyFlags = SUBPASS_DEPENDENCY_NONE;
 
     SubPassDependency() {};
-    SubPassDependency(VkPipelineStageFlags srcStage,
-                      VkPipelineStageFlags dstStage,
-                      VkAccessFlags        dstAccess,
-                      VkDependencyFlags    deps = VK_DEPENDENCY_BY_REGION_BIT)
+    SubPassDependency(PipelineStage         srcStage,
+                      PipelineStage         dstStage,
+                      AccessFlags           dstAccess,
+                      SubPassDependencyType deps = SUBPASS_DEPENDENCY_BY_REGION)
         : srcStageMask(srcStage)
         , dstStageMask(dstStage)
         , dstAccessMask(dstAccess)

@@ -51,12 +51,12 @@ struct CommandBuffer {
                        int32_t       offset         = 0,
                        uint32_t      firstInstance  = 0);
     void draw_gui_data();
-    void bind_shaderpass(ShaderPass& pass, BindingType binding = BindingType::GRAPHIC_BINDING);
+    void bind_shaderpass(ShaderPass& pass, BindingType binding = BINDING_TYPE_GRAPHIC);
     void bind_descriptor_set(DescriptorSet         descriptor,
                              uint32_t              ocurrence,
                              ShaderPass&           pass,
                              std::vector<uint32_t> offsets = {},
-                             BindingType           binding = BindingType::GRAPHIC_BINDING);
+                             BindingType           binding = BINDING_TYPE_GRAPHIC);
     void set_viewport(Extent2D extent, Offset2D scissorOffset = {0, 0});
     void set_cull_mode(CullingMode mode);
     void set_depth_write_enable(bool op);

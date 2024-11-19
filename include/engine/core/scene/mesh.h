@@ -64,7 +64,7 @@ class Mesh : public Object3D
     bool        m_affectedByFog  = true;
     bool        m_castShadows    = true;
     bool        m_receiveShadows = true;
-    bool        m_rayHittable   = true;
+    bool        m_rayHittable    = true;
     std::string m_fileRoute      = "None";
 
     static IMaterial* m_debugMaterial;
@@ -76,12 +76,12 @@ class Mesh : public Object3D
 
   public:
     Mesh()
-        : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), MESH)
+        : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), ObjectType::MESH)
         , m_volume(new Sphere()) {
         Mesh::m_instanceCount++;
     }
     Mesh(Geometry* geom, IMaterial* mat)
-        : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), MESH)
+        : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), ObjectType::MESH)
         , m_volume(new Sphere()) {
         Mesh::m_instanceCount++;
         m_geometry.push_back(geom);

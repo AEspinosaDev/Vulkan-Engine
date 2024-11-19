@@ -78,7 +78,7 @@ class Object3D
         m_transform.position = Vec3(0.0f);
     }
 
-    Object3D() : TYPE(OTHER), m_name(""), enabled(true), m_parent(nullptr)
+    Object3D() : TYPE(ObjectType::OTHER), m_name(""), enabled(true), m_parent(nullptr)
     {
         m_transform.position = Vec3(0.0f);
     }

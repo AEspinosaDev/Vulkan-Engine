@@ -11,40 +11,40 @@ void PanoramaConverterPass::setup_attachments(std::vector<Graphics::Attachment>&
 
     attachments[0] = Graphics::Attachment(m_format,
                                           1,
-                                          ImageLayoutType::SHADER_READ_ONLY_OPTIMAL,
-                                          ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL,
-                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                          AttachmentType::COLOR_ATTACHMENT,
-                                          AspectType::COLOR,
-                                          TextureType::TEXTURE_CUBE,
-                                          FilterType::LINEAR,
-                                          AddressMode::CLAMP_TO_BORDER);
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          USAGE_COLOR_ATTACHMENT | USAGE_SAMPLED,
+                                          COLOR_ATTACHMENT,
+                                          ASPECT_COLOR,
+                                          TEXTURE_CUBE,
+                                          FILTER_LINEAR,
+                                          ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
     dependencies.resize(1);
 
-    dependencies[0] = Graphics::SubPassDependency(
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+    dependencies[0] =
+        Graphics::SubPassDependency(COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_NONE);
 }
 void PanoramaConverterPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
     LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT, {panoramaTextureBinding});
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {panoramaTextureBinding});
 
-    m_descriptorPool.allocate_descriptor_set(DescriptorLayoutType::GLOBAL_LAYOUT, &m_panoramaDescriptorSet);
+    m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_panoramaDescriptorSet);
 }
 void PanoramaConverterPass::setup_shader_passes() {
 
     ShaderPass* converterPass =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
-    converterPass->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true}};
-    converterPass->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                      {VertexAttributeType::NORMAL, false},
-                                                      {VertexAttributeType::UV, true},
-                                                      {VertexAttributeType::TANGENT, false},
-                                                      {VertexAttributeType::COLOR, false}};
+    converterPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
+    converterPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                      {NORMAL_ATTRIBUTE, false},
+                                                      {UV_ATTRIBUTE, true},
+                                                      {TANGENT_ATTRIBUTE, false},
+                                                      {COLOR_ATTRIBUTE, false}};
 
     converterPass->build_shader_stages();
     converterPass->build(m_handle, m_descriptorPool);

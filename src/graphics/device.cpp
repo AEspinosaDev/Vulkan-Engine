@@ -157,23 +157,23 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
 
     img.mipLevels =
         useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
-    img.layers = config.viewType == TextureType::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
+    img.layers = config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
 
     VkImageType imageType = VK_IMAGE_TYPE_2D;
-    if (config.viewType == TextureType::TEXTURE_3D)
+    if (config.viewType == TextureTypeFlagBits::TEXTURE_3D)
         imageType = VK_IMAGE_TYPE_3D;
-    if (config.viewType == TextureType::TEXTURE_1D || config.viewType == TextureType::TEXTURE_1D_ARRAY)
+    if (config.viewType == TextureTypeFlagBits::TEXTURE_1D || config.viewType == TextureTypeFlagBits::TEXTURE_1D_ARRAY)
         imageType = VK_IMAGE_TYPE_1D;
 
-    VkImageCreateInfo img_info =
-        Init::image_create_info(Translator::get(config.format),
-                                config.usageFlags,
-                                extent,
-                                img.mipLevels,
-                                static_cast<VkSampleCountFlagBits>(config.samples),
-                                img.layers,
-                                imageType,
-                                config.viewType == TextureType::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
+    VkImageCreateInfo img_info = Init::image_create_info(
+        Translator::get(config.format),
+        Translator::get(config.usageFlags),
+        extent,
+        img.mipLevels,
+        static_cast<VkSampleCountFlagBits>(config.samples),
+        img.layers,
+        imageType,
+        config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
 
     VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
 
@@ -324,11 +324,11 @@ VulkanRenderPass Device::create_render_pass(Extent2D                        exte
     {
         subpassDependencies[i].srcSubpass      = dependencies[i].srcSubpass;
         subpassDependencies[i].dstSubpass      = dependencies[i].dstSubpass;
-        subpassDependencies[i].srcStageMask    = dependencies[i].srcStageMask;
-        subpassDependencies[i].dstStageMask    = dependencies[i].dstStageMask;
-        subpassDependencies[i].srcAccessMask   = dependencies[i].srcAccessMask;
-        subpassDependencies[i].dstAccessMask   = dependencies[i].dstAccessMask;
-        subpassDependencies[i].dependencyFlags = dependencies[i].dependencyFlags;
+        subpassDependencies[i].srcStageMask    = Translator::get(dependencies[i].srcStageMask);
+        subpassDependencies[i].dstStageMask    = Translator::get(dependencies[i].dstStageMask);
+        subpassDependencies[i].srcAccessMask   = Translator::get(dependencies[i].srcAccessMask);
+        subpassDependencies[i].dstAccessMask   = Translator::get(dependencies[i].dstAccessMask);
+        subpassDependencies[i].dependencyFlags = Translator::get(dependencies[i].dependencyFlags);
     }
 
     // Creation
@@ -506,9 +506,9 @@ void Device::upload_texture_image(Image&        img,
     PROFILING_EVENT()
 
     // CREATE IMAGE
-    config.usageFlags  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    config.usageFlags  = USAGE_SAMPLED | USAGE_TRANSFER_SRC | USAGE_TRANSFER_DST;
     config.samples     = 1;
-    config.aspectFlags = AspectType::COLOR;
+    config.aspectFlags = ASPECT_COLOR;
     img                = create_image(img.extent, config, mipmapping);
     img.create_view(config);
 
@@ -538,7 +538,7 @@ void Device::upload_texture_image(Image&        img,
     }
 
     // CREATE SAMPLER
-    samplerConfig.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerConfig.mipmapMode    = MipmapMode::MIPMAP_LINEAR;
     samplerConfig.maxAnysotropy = m_properties.limits.maxSamplerAnisotropy;
     img.create_sampler(samplerConfig);
 

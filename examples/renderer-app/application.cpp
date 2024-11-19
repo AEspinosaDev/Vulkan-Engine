@@ -27,7 +27,7 @@ void Application::init(Systems::RendererSettings settings, Systems::ForwardRende
 void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.samplesMSAA      = MSAASamples::_NONE;
+    settings.samplesMSAA      = MSAASamples::x1;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
@@ -82,15 +82,15 @@ void Application::run(int argc, char* argv[]) {
             }
             std::string aaType(argv[i + 1]);
             if (aaType == "none")
-                settings.samplesMSAA = MSAASamples::_NONE;
+                settings.samplesMSAA = MSAASamples::x1;
             if (aaType == "msaa4")
-                settings.samplesMSAA = MSAASamples::MSAA_x4;
+                settings.samplesMSAA = MSAASamples::x4;
             if (aaType == "msaa8")
-                settings.samplesMSAA = MSAASamples::MSAA_x8;
+                settings.samplesMSAA = MSAASamples::x8;
             if (aaType == "fxaa")
             {
                 settings2.fxaa       = true;
-                settings.samplesMSAA = MSAASamples::_NONE;
+                settings.samplesMSAA = MSAASamples::x1;
             }
 
             i++;
@@ -169,7 +169,7 @@ void Application::setup() {
     Texture* toriiT    = new Texture();
     Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
     Texture* toriiN = new Texture();
-    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TextureFormatType::NORMAL_FORMAT);
+    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
     Texture* toriiM = new Texture();
     Tools::Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
@@ -193,7 +193,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
 
     Texture* floorNormalText = new Texture();
-    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TextureFormatType::NORMAL_FORMAT);
+    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
     Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();

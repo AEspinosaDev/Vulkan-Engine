@@ -38,17 +38,16 @@ class Scene : public Object3D
     float m_fogIntensity     = 20.0f;
     float m_fogExponent      = 1.0f;
 
-
     inline void classify_object(Object3D* obj) {
         switch (obj->get_type())
         {
-        case MESH:
+        case ObjectType::MESH:
             m_meshes.push_back(static_cast<Mesh*>(obj));
             break;
-        case CAMERA:
+        case ObjectType::CAMERA:
             m_cameras.push_back(static_cast<Camera*>(obj));
             break;
-        case LIGHT:
+        case ObjectType::LIGHT:
             m_lights.push_back(static_cast<Light*>(obj));
             break;
         }

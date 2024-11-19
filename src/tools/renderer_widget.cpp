@@ -96,13 +96,13 @@ void RendererSettingsWidget::render()
         switch (sync_current)
         {
         case 0:
-            m_renderer->set_sync_type(SyncType::NONE_SYNC);
+            m_renderer->set_sync_type(SyncType::NONE);
             break;
         case 1:
-            m_renderer->set_sync_type(SyncType::MAILBOX_SYNC);
+            m_renderer->set_sync_type(SyncType::MAILBOX);
             break;
         case 2:
-            m_renderer->set_sync_type(SyncType::V_SYNC);
+            m_renderer->set_sync_type(SyncType::VERTICAL);
             break;
         }
     }

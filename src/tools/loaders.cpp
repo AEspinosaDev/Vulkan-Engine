@@ -736,13 +736,13 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
         // User can override it after, I he need some other more specific format ...
         switch (textureFormat)
         {
-        case TextureFormatType::COLOR_FORMAT:
+        case TEXTURE_FORMAT_TYPE_COLOR:
             texture->set_format(SRGBA_8);
             break;
-        case TextureFormatType::NORMAL_FORMAT:
+        case TEXTURE_FORMAT_TYPE_NORMAL:
             texture->set_format(RGBA_8U);
             break;
-        case TextureFormatType::HDR_FORMAT:
+        case TEXTURE_FORMAT_TYPE_HDR:
             texture->set_format(SRGBA_16F);
             break;
         }
@@ -778,15 +778,15 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std:
 #endif // DEBUG
 }
 void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
-                                           const std::string    fileName,
-                                           uint16_t             depth,
-                                           TextureFormatType    textureFormat) {
+                                           const std::string     fileName,
+                                           uint16_t              depth,
+                                           TextureFormatType     textureFormat) {
     int            w, h, ch;
     unsigned char* imgCache = nullptr;
     imgCache                = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);
     if (imgCache)
     {
-        texture->set_type(TextureType::TEXTURE_3D);
+        texture->set_type(TextureTypeFlagBits::TEXTURE_3D);
         int      largerSide  = w > h ? w : h;
         int      shorterSide = w > h ? h : w;
         uint16_t finalDepth  = depth == 0 ? largerSide / shorterSide : depth;
@@ -798,13 +798,13 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
         // User can override it after, I he need some other more specific format ...
         switch (textureFormat)
         {
-        case TextureFormatType::COLOR_FORMAT:
+        case TEXTURE_FORMAT_TYPE_COLOR:
             texture->set_format(SRGBA_8);
             break;
-        case TextureFormatType::NORMAL_FORMAT:
+        case TEXTURE_FORMAT_TYPE_NORMAL:
             texture->set_format(RGBA_8U);
             break;
-        case TextureFormatType::HDR_FORMAT:
+        case TEXTURE_FORMAT_TYPE_HDR:
             texture->set_format(SRGBA_16F);
             break;
         }

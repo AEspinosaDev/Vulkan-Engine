@@ -13,25 +13,29 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
+
+// Translates engine flags to Vulkan types
 namespace Translator {
 
-VkFilter              get(TextureFilterType filterType);
 VkFormat              get(ColorFormatType colorFormatType);
 VkPresentModeKHR      get(SyncType syncType);
 VkShaderStageFlagBits get(ShaderStageType stageType);
 VkDescriptorType      get(UniformDataType uniformDataType);
 VkImageUsageFlags     get(ImageUsageFlags usageFlags);
-VkImageLayout         get(ImageLayoutType layoutType);
-VkImageViewType       get(TextureType viewType);
+VkImageLayout         get(ImageLayout layoutType);
+VkImageViewType       get(TextureTypeFlagBits viewType);
 VkFilter              get(FilterType filterType);
 VkSamplerAddressMode  get(AddressMode addressMode);
 VkClearValue          get(ClearValueType clearValueType);
-VkDependencyFlags     get(SubPassDependencyFlags dependencyFlags);
-VkPipelineStageFlags  get(PipelineStageFlags stageFlags);
+VkDependencyFlags     get(SubPassDependencyType dependencyFlags);
+VkPipelineStageFlags  get(PipelineStage stageFlags);
 VkAccessFlags         get(AccessFlags accessFlags);
 VkAttachmentStoreOp   get(AttachmentStoreOp storeOp);
 VkAttachmentLoadOp    get(AttachmentLoadOp loadOp);
-VkImageAspectFlags    get(AspectType aspectType);
+VkImageAspectFlags    get(ImageAspect aspectType);
+VkSamplerMipmapMode   get(MipmapMode mipmapMode);
+VkBorderColor         get(BorderColor borderColor);
+
 
 } // namespace Translator
 } // namespace Graphics

@@ -48,11 +48,11 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
     vertexInputInfo.pVertexBindingDescriptions    = &bindingDescription;
 
     auto attributeDescriptions =
-        Vertex::getAttributeDescriptions(settings.attributes[VertexAttributeType::POSITION],
-                                                settings.attributes[VertexAttributeType::NORMAL],
-                                                settings.attributes[VertexAttributeType::TANGENT],
-                                                settings.attributes[VertexAttributeType::UV],
-                                                settings.attributes[VertexAttributeType::COLOR]);
+        Vertex::getAttributeDescriptions(settings.attributes[VertexAttributeType::POSITION_ATTRIBUTE],
+                                                settings.attributes[VertexAttributeType::NORMAL_ATTRIBUTE],
+                                                settings.attributes[VertexAttributeType::TANGENT_ATTRIBUTE],
+                                                settings.attributes[VertexAttributeType::UV_ATTRIBUTE],
+                                                settings.attributes[VertexAttributeType::COLOR_ATTRIBUTE]);
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
 

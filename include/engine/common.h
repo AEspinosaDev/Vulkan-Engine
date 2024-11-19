@@ -121,11 +121,12 @@ typedef math::vec2 Vec2;
 typedef math::mat4 Mat4;
 typedef math::mat3 Mat3;
 
-typedef VkExtent3D Extent3D;
-typedef VkExtent2D Extent2D;
-typedef VkOffset2D Offset2D;
+typedef VkExtent3D   Extent3D;
+typedef VkExtent2D   Extent2D;
+typedef VkOffset2D   Offset2D;
+typedef VkClearValue ClearValue;
 
-typedef enum ObjectType
+enum class ObjectType
 {
     MESH   = 0,
     LIGHT  = 1,
@@ -134,18 +135,17 @@ typedef enum ObjectType
     SKYBOX = 4,
     OTHER
 
-} ObjectType;
-
+};
 /**
 Support for some presets of commercial game engines
 */
-typedef enum MaskType
+enum class MaskType
 {
     NO_MASK       = -1,
     UNITY_HDRP    = 0,
     UNREAL_ENGINE = 1,
     UNITY_URP     = 2
-} MaskType;
+};
 
 typedef enum CullingMode
 {
@@ -153,169 +153,72 @@ typedef enum CullingMode
     BACK_CULLING  = VK_CULL_MODE_BACK_BIT,
     NO_CULLING    = VK_CULL_MODE_NONE,
 } CullingMode;
-
-typedef enum BufferingType
+enum class BufferingType
 {
-    UNIQUE_BUFFER = 1,
-    DOUBLE_BUFFER = 2,
-    TRIPLE_BUFFER = 3,
-    QUAD_BUFFER   = 4
-} BufferingType;
-
-typedef enum MSAASamples
+    UNIQUE = 1,
+    DOUBLE = 2,
+    TRIPLE = 3,
+    QUAD   = 4
+};
+enum class MSAASamples
 {
-    _NONE    = VK_SAMPLE_COUNT_1_BIT,
-    MSAA_x4  = VK_SAMPLE_COUNT_4_BIT,
-    MSAA_x8  = VK_SAMPLE_COUNT_8_BIT,
-    MSAA_x16 = VK_SAMPLE_COUNT_16_BIT,
-    MSAA_x32 = VK_SAMPLE_COUNT_32_BIT,
-} MSAASamples;
-
-typedef enum ShadowResolution
+    x1  = 1,
+    x4  = 4,
+    x8  = 8,
+    x16 = 16,
+    x32 = 32,
+};
+enum class ShadowResolution
 {
     VERY_LOW = 256,
     LOW      = 512,
     MEDIUM   = 1024,
     HIGH     = 2048,
     ULTRA    = 4096
-} ShadowResolution;
+};
 
-typedef enum ControllerMovementType
+enum class SyncType
+{
+    NONE             = 0, // No framerate cap (POTENTIAL TEARING)
+    MAILBOX          = 1, // Triple buffering (Better V-Sync)
+    VERTICAL         = 2, // Classic V-Sync
+    RELAXED_VERTICAL = 3,
+    // V-Sync with a wait time. If wait time is not enough potential tearing
+};
+
+enum class ControllerMovementType
 {
     ORBITAL,
     WASD,
-} ControllerMovementType;
-
-typedef enum VertexAttributeType
-{
-    POSITION = 0,
-    NORMAL   = 1,
-    TANGENT  = 2,
-    UV       = 3,
-    COLOR    = 4
-} VertexAttributeType0;
-
-typedef enum DescriptorLayoutType
-{
-    GLOBAL_LAYOUT         = 0,
-    OBJECT_LAYOUT         = 1,
-    OBJECT_TEXTURE_LAYOUT = 2,
-    G_BUFFER_LAYOUT       = 3
-} DescriptorLayoutType;
-
-typedef enum TextureFilterType
-{
-    NEAREST = VK_FILTER_NEAREST,
-    LINEAR  = VK_FILTER_LINEAR,
-    CUBIC   = VK_FILTER_CUBIC_EXT,
-    MAX     = VK_FILTER_MAX_ENUM
-} TextureFilterType;
-typedef enum ColorFormatType
-{
-    SR_8      = VK_FORMAT_R8_SRGB,       // Red
-    SRG_8     = VK_FORMAT_R8G8_SRGB,     // Red Green
-    SRGB_8    = VK_FORMAT_R8G8B8_SRGB,   // RGB
-    SRGBA_8   = VK_FORMAT_R8G8B8A8_SRGB, // RGB with Alpha
-    SBGRA_8   = VK_FORMAT_B8G8R8A8_SRGB, // Other order
-    SRG_16F   = VK_FORMAT_R16G16_SFLOAT,
-    SRG_32F   = VK_FORMAT_R32G32_SFLOAT,
-    SRGB_16F  = VK_FORMAT_R16G16B16_SFLOAT,
-    SRGB_32F  = VK_FORMAT_R32G32B32_SFLOAT,
-    SRGBA_16F = VK_FORMAT_R16G16B16A16_SFLOAT, // HDR precission 16
-    SRGBA_32F = VK_FORMAT_R32G32B32A32_SFLOAT, // HDR precission 32
-    RGBA_8U   = VK_FORMAT_R8G8B8A8_UNORM,
-    DEPTH_16F = VK_FORMAT_D16_UNORM,
-    DEPTH_32F = VK_FORMAT_D32_SFLOAT
-} ColorFormatType;
-
-typedef enum TextureAdressModeType
-{
-    REPEAT        = VK_SAMPLER_ADDRESS_MODE_REPEAT, // Repeat the texture when going beyond the image dimensions.
-    MIRROR_REPEAT = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT, // Like repeat, but inverts the coordinates to mirror the
-                                                             // image when going beyond the dimensions.
-    EDGE_CLAMP = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, // Take the color of the edge closest to the coordinate beyond
-                                                        // the image dimensions.
-    MIRROR_EDGE_CLAMP = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE, // Like clamp to edge, but instead uses the edge
-                                                                      // opposite to the closest edge.
-    BORDER_CLAMP = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER // Return a solid color when sampling beyond the dimensions
-                                                           // of the image.
-} TextureAdressModeType;
-
-typedef enum PanelWidgetFlags
-{
-
-    None                      = ImGuiWindowFlags_None,
-    NoTitleBar                = ImGuiWindowFlags_NoTitleBar,
-    NoResize                  = ImGuiWindowFlags_NoResize,
-    NoMove                    = ImGuiWindowFlags_NoMove,
-    NoScrollbar               = ImGuiWindowFlags_NoScrollbar,
-    NoScrollWithMouse         = ImGuiWindowFlags_NoScrollWithMouse,
-    NoCollapse                = ImGuiWindowFlags_NoCollapse,
-    AlwaysAutoResize          = ImGuiWindowFlags_AlwaysAutoResize,
-    NoBackground              = ImGuiWindowFlags_NoBackground,
-    NoSavedSettings           = ImGuiWindowFlags_NoSavedSettings,
-    NoMouseInputs             = ImGuiWindowFlags_NoMouseInputs,
-    MenuBar                   = ImGuiWindowFlags_MenuBar,
-    HorizontalScrollbar       = ImGuiWindowFlags_HorizontalScrollbar,
-    NoFocusOnAppearing        = ImGuiWindowFlags_NoFocusOnAppearing,
-    NoBringToFrontOnFocus     = ImGuiWindowFlags_NoBringToFrontOnFocus,
-    AlwaysVerticalScrollbar   = ImGuiWindowFlags_AlwaysVerticalScrollbar,
-    AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar,
-    NoNavInputs               = ImGuiWindowFlags_NoNavInputs,
-    NoNavFocus                = ImGuiWindowFlags_NoNavFocus,
-    UnsavedDocument           = ImGuiWindowFlags_UnsavedDocument,
-    NoNav                     = ImGuiWindowFlags_NoNav,
-    NoDecoration              = ImGuiWindowFlags_NoDecoration,
-    NoInputs                  = ImGuiWindowFlags_NoInputs,
-
-} PanelWidgetFlags;
-
-typedef enum TextWidgetType
-{
-    SIMPLE,
-    COLORIZED,
-    WARPED,
-    BULLET,
-} TextWidgetType;
-
-typedef enum LightType
+};
+enum class LightType
 {
     POINT       = 0,
     DIRECTIONAL = 1,
     SPOT        = 2,
     AREA        = 3
-} LightType;
+};
 
+typedef enum VertexAttributeType
+{
+    POSITION_ATTRIBUTE = 0,
+    NORMAL_ATTRIBUTE   = 1,
+    TANGENT_ATTRIBUTE  = 2,
+    UV_ATTRIBUTE       = 3,
+    COLOR_ATTRIBUTE    = 4
+} VertexAttributeType;
 typedef enum ShadowType
 {
     BASIC_SHADOW     = 0, // Classic shadow mapping
     VSM_SHADOW       = 1, // Variance shadow mapping
     RAYTRACED_SHADOW = 2, // Raytraced shadow
 } ShadowType;
-
-typedef enum GuiColorProfileType
-{
-    DARK    = 0,
-    BRIGHT  = 1,
-    CLASSIC = 2,
-    CUSTOM  = 3
-} GuiColorProfileType;
-
 typedef enum VolumeType
 {
     SPHERE_VOLUME = 0,
     AABB_VOLUME   = 1,
     OBB_VOLUME    = 2,
 } VolumeType;
-
-typedef enum SyncType
-{
-    NONE_SYNC      = VK_PRESENT_MODE_IMMEDIATE_KHR, // No framerate cap (POTENTIAL TEARING)
-    MAILBOX_SYNC   = VK_PRESENT_MODE_MAILBOX_KHR,   // Triple buffering (Better V-Sync)
-    V_SYNC         = VK_PRESENT_MODE_FIFO_KHR,      // Classic V-Sync
-    RELAXED_V_SYNC = VK_PRESENT_MODE_FIFO_RELAXED_KHR,
-    // V-Sync with a wait time. If wait time is not enough potential tearing
-} SyncType;
 
 typedef enum RendererType
 {
@@ -341,7 +244,6 @@ enum AttachmentType
     DEPTH_ATTACHMENT   = 1,
     RESOLVE_ATTACHMENT = 2,
 };
-
 enum ShaderStageType
 {
     NONE_STAGE      = -1,
@@ -352,7 +254,6 @@ enum ShaderStageType
     TESS_EVALUATION = 4,
     ALL_STAGES      = 5
 };
-
 enum UniformDataType
 {
     UNIFORM_BUFFER         = 0,
@@ -360,165 +261,180 @@ enum UniformDataType
     COMBINED_IMAGE_SAMPLER = 2,
     ACCELERATION_STRUCTURE = 3,
 };
-
-// Sample count enum: to represent sample counts in a clearer way
-enum class SampleCount
+enum BorderColor
 {
-    SAMPLE_COUNT_1 = 0,
-    SAMPLE_COUNT_2,
-    SAMPLE_COUNT_4,
-    SAMPLE_COUNT_8,
-    SAMPLE_COUNT_16,
-    SAMPLE_COUNT_32,
-    SAMPLE_COUNT_64,
-    MAX_SAMPLE_COUNT
+    FLOAT_TRANSPARENT_BLACK = 0,
+    INT_TRANSPARENT_BLACK,
+    FLOAT_OPAQUE_BLACK,
+    INT_OPAQUE_BLACK,
+    FLOAT_OPAQUE_WHITE,
+    INT_OPAQUE_WHITE
 };
-
-// ImageUsageFlags enum: to represent image usage flags in a more readable way
-enum class ImageUsageFlags
+typedef enum DescriptorLayoutType
 {
-    COLOR_ATTACHMENT = 0,
-    DEPTH_STENCIL_ATTACHMENT,
-    SAMPLED,
-    STORAGE,
-    TRANSFER_SRC,
-    TRANSFER_DST,
-    SHADER_READ_ONLY,
-    TRANSFER,
-    MAX_IMAGE_USAGE
-};
-
-// ImageLayout enum: representing possible image layouts in Vulkan
-enum class ImageLayoutType
+    GLOBAL_LAYOUT         = 0,
+    OBJECT_LAYOUT         = 1,
+    OBJECT_TEXTURE_LAYOUT = 2,
+    G_BUFFER_LAYOUT       = 3
+} DescriptorLayout;
+typedef enum ColorFormatTypeFlagBits
 {
-    UNDEFINED = 0,
-    COLOR_ATTACHMENT_OPTIMAL,
-    DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-    DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-    SHADER_READ_ONLY_OPTIMAL,
-    TRANSFER_SRC_OPTIMAL,
-    TRANSFER_DST_OPTIMAL,
-    PRESENT,
-    GENERAL,
-    MAX_IMAGE_LAYOUT
-};
-//Image Aspect Type
-enum class AspectType
+    SR_8      = VK_FORMAT_R8_SRGB,       // Red
+    SRG_8     = VK_FORMAT_R8G8_SRGB,     // Red Green
+    SRGB_8    = VK_FORMAT_R8G8B8_SRGB,   // RGB
+    SRGBA_8   = VK_FORMAT_R8G8B8A8_SRGB, // RGB with Alpha
+    SBGRA_8   = VK_FORMAT_B8G8R8A8_SRGB, // Other order
+    SRG_16F   = VK_FORMAT_R16G16_SFLOAT,
+    SRG_32F   = VK_FORMAT_R32G32_SFLOAT,
+    SRGB_16F  = VK_FORMAT_R16G16B16_SFLOAT,
+    SRGB_32F  = VK_FORMAT_R32G32B32_SFLOAT,
+    SRGBA_16F = VK_FORMAT_R16G16B16A16_SFLOAT, // HDR precission 16
+    SRGBA_32F = VK_FORMAT_R32G32B32A32_SFLOAT, // HDR precission 32
+    RGBA_8U   = VK_FORMAT_R8G8B8A8_UNORM,
+    DEPTH_16F = VK_FORMAT_D16_UNORM,
+    DEPTH_32F = VK_FORMAT_D32_SFLOAT
+} ColorFormatType;
+typedef enum MipmapModeFlagsBits
 {
-    COLOR = 0,
-    DEPTH,
-    STENCIL,
-    METADATA,
-    PLANE_0,
-    PLANE_1,
-    PLANE_2
-};
-
+    MIPMAP_NEAREST = 0x00000001,
+    MIPMAP_LINEAR  = 0x00000002
+} MipmapMode;
+typedef enum ImageLayoutFlagBits
+{
+    LAYOUT_UNDEFINED                        = 0x00000000,
+    LAYOUT_COLOR_ATTACHMENT_OPTIMAL         = 0x00000001,
+    LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL = 0x00000002,
+    LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL  = 0x00000003,
+    LAYOUT_SHADER_READ_ONLY_OPTIMAL         = 0x00000004,
+    LAYOUT_TRANSFER_SRC_OPTIMAL             = 0x00000005,
+    LAYOUT_TRANSFER_DST_OPTIMAL             = 0x00000006,
+    LAYOUT_PRESENT                          = 0x00000007,
+    LAYOUT_GENERAL                          = 0x00000008,
+} ImageLayout;
+typedef enum ImageAspectFlagBits
+{
+    ASPECT_COLOR    = 0x00000001,
+    ASPECT_DEPTH    = 0x00000002,
+    ASPECT_STENCIL  = 0x00000003,
+    ASPECT_METADATA = 0x00000004,
+} ImageAspect;
 // Texture type, used for image views also
-enum class TextureType
+typedef enum TextureTypeFlagBits
 {
-    TEXTURE_1D         = 0,
-    TEXTURE_1D_ARRAY   = 1,
-    TEXTURE_2D         = 2,
-    TEXTURE_2D_ARRAY   = 3,
-    TEXTURE_3D         = 4,
-    TEXTURE_CUBE       = 5,
-    TEXTURE_CUBE_ARRAY = 6,
-};
-
+    TEXTURE_1D         = 0x00000000,
+    TEXTURE_1D_ARRAY   = 0x00000001,
+    TEXTURE_2D         = 0x00000002,
+    TEXTURE_2D_ARRAY   = 0x00000003,
+    TEXTURE_3D         = 0x00000004,
+    TEXTURE_CUBE       = 0x00000005,
+    TEXTURE_CUBE_ARRAY = 0x00000006,
+} TextureType;
 // FilterType enum: for Vulkan texture filters
-enum class FilterType
+typedef enum FilterTypeFlagBits
 {
-    NEAREST = 0,
-    LINEAR,
-    CUBIC,
-    MAX_FILTER_TYPE
-};
+    FILTER_NEAREST = 0x00000001,
+    FILTER_LINEAR  = 0x00000002,
+    FILTER_CUBIC   = 0x00000003,
+} FilterType;
+typedef enum AddressModeFlagBits
+{
+    ADDRESS_MODE_REPEAT               = 0x00000001,
+    ADDRESS_MODE_MIRROR_REPEAT        = 0x00000002,
+    ADDRESS_MODE_CLAMP_TO_EDGE        = 0x00000003,
+    ADDRESS_MODE_CLAMP_TO_BORDER      = 0x00000004,
+    ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE = 0x00000005,
+} AddressMode;
+typedef enum class ClearValueTypeFlagBits
+{
+    CLEAR_COLOR         = 0x00000001,
+    CLEAR_DEPTH_STENCIL = 0x00000002,
+} ClearValueType;
+typedef enum SubPassDependencyTypeFlagsBits
+{
+    SUBPASS_DEPENDENCY_NONE      = 0x00000000,
+    SUBPASS_DEPENDENCY_BY_REGION = 0x00000001
+} SubPassDependencyType;
+typedef enum PipelineStageFlagsBits
+{
+    TOP_OF_PIPE_STAGE             = 0x00000001,
+    BOTTOM_OF_PIPE_STAGE          = 0x00000002,
+    COLOR_ATTACHMENT_OUTPUT_STAGE = 0x00000003,
+    EARLY_FRAGMENT_TESTS_STAGE    = 0x00000004,
+    LATE_FRAGMENT_TESTS_STAGE     = 0x00000005,
+    ALL_GRAPHICS_STAGE            = 0x00000006,
+    TRANSFER_STAGE                = 0x00000007,
+    COMPUTE_SHADER_STAGE          = 0x00000008,
+    FRAGMENT_SHADER_STAGE         = 0x00000009,
+    ALL_COMMANDS_STAGE            = 0x00000010,
+} PipelineStage;
+typedef enum AccessFlagsBits
+{
+    ACCESS_NONE                           = 0x00000000,
+    ACCESS_COLOR_ATTACHMENT_READ          = 0x00000001,
+    ACCESS_COLOR_ATTACHMENT_WRITE         = 0x00000002,
+    ACCESS_DEPTH_STENCIL_ATTACHMENT_READ  = 0x00000003,
+    ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE = 0x00000004,
+    ACCESS_TRANSFER_READ                  = 0x00000005,
+    ACCESS_TRANSFER_WRITE                 = 0x00000006,
+    ACCESS_SHADER_READ                    = 0x00000007,
+    ACCESS_SHADER_WRITE                   = 0x00000008,
+    ACCESS_MAX                            = 0x00000009
+} AccessFlags;
+typedef enum AttachmentStoreOpFlagsBits
+{
+    ATTACHMENT_STORE_OP_NONE      = 0x00000000,
+    ATTACHMENT_STORE_OP_STORE     = 0x00000001,
+    ATTACHMENT_STORE_OP_DONT_CARE = 0x00000002,
+} AttachmentStoreOp;
+typedef enum AttachmentLoadOpFlagBits
+{
+    ATTACHMENT_LOAD_OP_LOAD      = 0x00000000,
+    ATTACHMENT_LOAD_OP_CLEAR     = 0x00000001,
+    ATTACHMENT_LOAD_OP_DONT_CARE = 0x00000002
+} AttachmentLoadOp;
+typedef enum TextureFormatTypeFlagBits
+{
+    TEXTURE_FORMAT_TYPE_COLOR  = 0x00000000,
+    TEXTURE_FORMAT_TYPE_NORMAL = 0x00000001,
+    TEXTURE_FORMAT_TYPE_DEPTH  = 0x00000002,
+    TEXTURE_FORMAT_TYPE_HDR    = 0x00000003
+} TextureFormatType;
+typedef enum BindingTypeFlagBits
+{
+    BINDING_TYPE_GRAPHIC    = 0x00000000,
+    BINDING_TYPE_COMPUTE    = 0x00000001,
+    BINDING_TYPE_RAYTRACING = 0x00000002
+} BindingType;
 
-// AddressMode enum: for sampler address modes in Vulkan
-enum class AddressMode
+typedef enum ImageUsageFlagsBits
 {
-    REPEAT = 0,
-    MIRROR_REPEAT,
-    CLAMP_TO_EDGE,
-    CLAMP_TO_BORDER,
-    MIRROR_CLAMP_TO_EDGE,
-    MAX_ADDRESS_MODE
-};
-
-// ClearValue enum: to set clear values for attachments
-enum class ClearValueType
-{
-    COLOR = 0,
-    DEPTH_STENCIL,
-    MAX_CLEAR_VALUE
-};
-
-// SubPassDependencyFlags enum: for Vulkan subpass dependency flags
-enum class SubPassDependencyFlags
-{
-    BY_REGION = 0,
-    MAX_SUBPASS_DEPENDENCY_FLAGS
-};
-
-// PipelineStageFlags enum: for pipeline stages in Vulkan
-enum class PipelineStageFlags
-{
-    TOP_OF_PIPE = 0,
-    BOTTOM_OF_PIPE,
-    COLOR_ATTACHMENT_OUTPUT,
-    EARLY_FRAGMENT_TESTS,
-    LATE_FRAGMENT_TESTS,
-    ALL_GRAPHICS,
-    TRANSFER,
-    COMPUTE_SHADER,
-    ALL_COMMANDS,
-    MAX_PIPELINE_STAGE_FLAGS
-};
-
-// AccessFlags enum: to represent access types for Vulkan resources
-enum class AccessFlags
-{
-    ACCESS_NONE = 0,
-    COLOR_ATTACHMENT_READ,
-    COLOR_ATTACHMENT_WRITE,
-    DEPTH_STENCIL_ATTACHMENT_READ,
-    DEPTH_STENCIL_ATTACHMENT_WRITE,
-    TRANSFER_READ,
-    TRANSFER_WRITE,
-    SHADER_READ,
-    SHADER_WRITE,
-    MAX_ACCESS_FLAGS
-};
-
-enum class AttachmentStoreOp
-{
-    STORE_OP = 0,
-    DONT_CARE_OP,
-    NONE_OP // Optional, depending on Vulkan version (e.g., Vulkan 1.2 and above).
-};
-
-enum class AttachmentLoadOp
-{
-    LOAD_OP = 0,
-    CLEAR_OP,
-    DONT_CARE_OP
-};
-
-enum class TextureFormatType
-{
-    COLOR_FORMAT  = 0,
-    NORMAL_FORMAT = 1,
-    DEPTH_FORMAT  = 2,
-    HDR_FORMAT    = 3,
-};
-
-enum class BindingType
-{
-    GRAPHIC_BINDING    = VK_PIPELINE_BIND_POINT_GRAPHICS,
-    COMPUTE_BINDING    = VK_PIPELINE_BIND_POINT_COMPUTE,
-    RAYTRACING_BINDING = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-};
+    USAGE_NONE                     = 0x0,
+    USAGE_SAMPLED                  = 0x1,
+    USAGE_STORAGE                  = 0x2,
+    USAGE_TRANSFER_SRC             = 0x4,
+    USAGE_TRANSFER_DST             = 0x8,
+    USAGE_COLOR_ATTACHMENT         = 0x10,
+    USAGE_DEPTH_STENCIL_ATTACHMENT = 0x20,
+    USAGE_TRANSIENT_ATTACHMENT     = 0x40,
+    USAGE_INPUT_ATTACHMENT         = 0x80,
+} ImageUsageFlags;
+inline ImageUsageFlags operator|(ImageUsageFlags a, ImageUsageFlags b) {
+    return static_cast<ImageUsageFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+inline ImageUsageFlags operator&(ImageUsageFlags a, ImageUsageFlags b) {
+    return static_cast<ImageUsageFlags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+inline ImageUsageFlags& operator|=(ImageUsageFlags& a, ImageUsageFlags b) {
+    a = a | b;
+    return a;
+}
+inline ImageUsageFlags& operator&=(ImageUsageFlags& a, ImageUsageFlags b) {
+    a = a & b;
+    return a;
+}
+inline ImageUsageFlags operator~(ImageUsageFlags a) {
+    return static_cast<ImageUsageFlags>(~static_cast<uint32_t>(a));
+}
 /*
 Graphic pipeline result info
 */
@@ -568,20 +484,65 @@ typedef enum RenderResult
     THREAD_DONE_KHR                                    = VK_THREAD_DONE_KHR,
     OPERATION_DEFERRED_KHR                             = VK_OPERATION_DEFERRED_KHR,
     OPERATION_NOT_DEFERRED_KHR                         = VK_OPERATION_NOT_DEFERRED_KHR,
-    // ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR             = VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR,
-    ERROR_COMPRESSION_EXHAUSTED_EXT = VK_ERROR_COMPRESSION_EXHAUSTED_EXT,
+    ERROR_COMPRESSION_EXHAUSTED_EXT                    = VK_ERROR_COMPRESSION_EXHAUSTED_EXT,
+    ERROR_OUT_OF_POOL_MEMORY_KHR                       = VK_ERROR_OUT_OF_POOL_MEMORY_KHR,
+    ERROR_INVALID_EXTERNAL_HANDLE_KHR                  = VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+    ERROR_FRAGMENTATION_EXT                            = VK_ERROR_FRAGMENTATION_EXT,
+    ERROR_NOT_PERMITTED_EXT                            = VK_ERROR_NOT_PERMITTED_EXT,
+    ERROR_INVALID_DEVICE_ADDRESS_EXT                   = VK_ERROR_INVALID_DEVICE_ADDRESS_EXT,
+    ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR           = VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR,
+    PIPELINE_COMPILE_REQUIRED_EXT                      = VK_PIPELINE_COMPILE_REQUIRED_EXT,
+    ERROR_PIPELINE_COMPILE_REQUIRED_EXT                = VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT,
+    ERROR_INCOMPATIBLE_SHADER_BINARY_EXT               = VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT,
+    RESULT_MAX_ENUM                                    = VK_RESULT_MAX_ENUM
     // INCOMPATIBLE_SHADER_BINARY_EXT                     = VK_INCOMPATIBLE_SHADER_BINARY_EXT,
-    ERROR_OUT_OF_POOL_MEMORY_KHR             = VK_ERROR_OUT_OF_POOL_MEMORY_KHR,
-    ERROR_INVALID_EXTERNAL_HANDLE_KHR        = VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
-    ERROR_FRAGMENTATION_EXT                  = VK_ERROR_FRAGMENTATION_EXT,
-    ERROR_NOT_PERMITTED_EXT                  = VK_ERROR_NOT_PERMITTED_EXT,
-    ERROR_INVALID_DEVICE_ADDRESS_EXT         = VK_ERROR_INVALID_DEVICE_ADDRESS_EXT,
-    ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR = VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR,
-    PIPELINE_COMPILE_REQUIRED_EXT            = VK_PIPELINE_COMPILE_REQUIRED_EXT,
-    ERROR_PIPELINE_COMPILE_REQUIRED_EXT      = VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT,
-    ERROR_INCOMPATIBLE_SHADER_BINARY_EXT     = VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT,
-    RESULT_MAX_ENUM                          = VK_RESULT_MAX_ENUM
+    // ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR             = VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR,
 } RenderResult;
+
+typedef enum PanelWidgetFlags
+{
+
+    None                      = ImGuiWindowFlags_None,
+    NoTitleBar                = ImGuiWindowFlags_NoTitleBar,
+    NoResize                  = ImGuiWindowFlags_NoResize,
+    NoMove                    = ImGuiWindowFlags_NoMove,
+    NoScrollbar               = ImGuiWindowFlags_NoScrollbar,
+    NoScrollWithMouse         = ImGuiWindowFlags_NoScrollWithMouse,
+    NoCollapse                = ImGuiWindowFlags_NoCollapse,
+    AlwaysAutoResize          = ImGuiWindowFlags_AlwaysAutoResize,
+    NoBackground              = ImGuiWindowFlags_NoBackground,
+    NoSavedSettings           = ImGuiWindowFlags_NoSavedSettings,
+    NoMouseInputs             = ImGuiWindowFlags_NoMouseInputs,
+    MenuBar                   = ImGuiWindowFlags_MenuBar,
+    HorizontalScrollbar       = ImGuiWindowFlags_HorizontalScrollbar,
+    NoFocusOnAppearing        = ImGuiWindowFlags_NoFocusOnAppearing,
+    NoBringToFrontOnFocus     = ImGuiWindowFlags_NoBringToFrontOnFocus,
+    AlwaysVerticalScrollbar   = ImGuiWindowFlags_AlwaysVerticalScrollbar,
+    AlwaysHorizontalScrollbar = ImGuiWindowFlags_AlwaysHorizontalScrollbar,
+    NoNavInputs               = ImGuiWindowFlags_NoNavInputs,
+    NoNavFocus                = ImGuiWindowFlags_NoNavFocus,
+    UnsavedDocument           = ImGuiWindowFlags_UnsavedDocument,
+    NoNav                     = ImGuiWindowFlags_NoNav,
+    NoDecoration              = ImGuiWindowFlags_NoDecoration,
+    NoInputs                  = ImGuiWindowFlags_NoInputs,
+
+} PanelWidgetFlags;
+
+typedef enum GuiColorProfileType
+{
+    DARK    = 0,
+    BRIGHT  = 1,
+    CLASSIC = 2,
+    CUSTOM  = 3
+} GuiColorProfileType;
+
+typedef enum TextWidgetType
+{
+    SIMPLE,
+    COLORIZED,
+    WARPED,
+    BULLET,
+} TextWidgetType;
 
 VULKAN_ENGINE_NAMESPACE_END
 

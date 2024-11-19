@@ -1,8 +1,7 @@
 #include "application.h"
 #include <filesystem>
 
-void Application::init(Systems::RendererSettings settings)
-{
+void Application::init(Systems::RendererSettings settings) {
     m_window = new WindowGLFW("Lighting Test", 1280, 1024);
 
     m_window->init();
@@ -11,24 +10,26 @@ void Application::init(Systems::RendererSettings settings)
         std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
     m_window->set_mouse_callback(
         std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
-    m_window->set_key_callback(std::bind(&Application::keyboard_callback, this, std::placeholders::_1,
-                                         std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    m_window->set_key_callback(std::bind(&Application::keyboard_callback,
+                                         this,
+                                         std::placeholders::_1,
+                                         std::placeholders::_2,
+                                         std::placeholders::_3,
+                                         std::placeholders::_4));
 
-    m_renderer = new Systems::ForwardRenderer(m_window, settings, {LOW,true});
+    m_renderer = new Systems::ForwardRenderer(m_window, settings, {ShadowResolution::LOW, true});
 
     setup();
 
     setup_gui();
 }
 
-void Application::run(int argc, char *argv[])
-{
+void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    // settings.AAtype = MSAASamples::FXAA;
-    settings.samplesMSAA = _NONE;
-    settings.clearColor = Vec4(0.02, 0.02, 0.02, 1.0);
-    settings.enableUI = true;
+    settings.samplesMSAA = MSAASamples::x1;
+    settings.clearColor  = Vec4(0.02, 0.02, 0.02, 1.0);
+    settings.enableUI    = true;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
@@ -64,8 +65,7 @@ void Application::run(int argc, char *argv[])
             std::cerr << "[forward]" << std::endl;
             std::cerr << "[deferred]" << std::endl;
             return;
-        }
-        else if (token == "-aa")
+        } else if (token == "-aa")
         {
             if (i + 1 >= argc)
             {
@@ -78,18 +78,17 @@ void Application::run(int argc, char *argv[])
             }
             std::string aaType(argv[i + 1]);
             if (aaType == "none")
-                settings.samplesMSAA = MSAASamples::_NONE;
+                settings.samplesMSAA = MSAASamples::x1;
             if (aaType == "msaa4")
-                settings.samplesMSAA = MSAASamples::MSAA_x4;
+                settings.samplesMSAA = MSAASamples::x4;
             if (aaType == "msaa8")
-                settings.samplesMSAA = MSAASamples::MSAA_x8;
+                settings.samplesMSAA = MSAASamples::x8;
             // if (aaType == "fxaa")
             //     settings.AAtype = MSAASamples::FXAA;
 
             i++;
             continue;
-        }
-        else if (token == "-gui")
+        } else if (token == "-gui")
         {
             if (i + 1 >= argc)
             {
@@ -121,8 +120,7 @@ void Application::run(int argc, char *argv[])
     m_renderer->shutdown(m_scene);
 }
 
-void Application::setup()
-{
+void Application::setup() {
     const std::string MESH_PATH(EXAMPLES_RESOURCES_PATH "meshes/");
     const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH "textures/");
     const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH "meshes/");
@@ -138,8 +136,8 @@ void Application::setup()
 
     m_scene->enable_fog(false);
 
-    int gridSize = 10;    // 10x10 grid
-    float spacing = 4.0f; // Spacing between lights
+    int   gridSize = 10;   // 10x10 grid
+    float spacing  = 4.0f; // Spacing between lights
 
     float offset = (gridSize - 1) * spacing / 2.0f;
 
@@ -147,7 +145,7 @@ void Application::setup()
     {
         for (int j = 0; j < gridSize; ++j)
         {
-            PointLight *light = new PointLight();
+            PointLight* light = new PointLight();
 
             // Calculate the position for the light, centered around 0.0
             float x = i * spacing - offset;
@@ -162,7 +160,8 @@ void Application::setup()
             light->set_cast_shadows(false);
 
             // Generate a random color
-            glm::vec3 color(static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX,
+            glm::vec3 color(static_cast<float>(rand()) / RAND_MAX,
+                            static_cast<float>(rand()) / RAND_MAX,
                             static_cast<float>(rand()) / RAND_MAX);
 
             // Set the color of the light
@@ -173,16 +172,16 @@ void Application::setup()
         }
     }
 
-    Mesh *terrainMesh = new Mesh();
+    Mesh* terrainMesh = new Mesh();
     terrainMesh->push_geometry(Geometry::create_quad());
     terrainMesh->set_scale(25.0);
     terrainMesh->set_position({0.0, -2.0, 0.0});
     terrainMesh->set_rotation({-90.0, 0.0, 0.0});
-    Texture *floorText = new Texture();
+    Texture* floorText = new Texture();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
-    Texture *floorNormalText = new Texture();
+    Texture* floorNormalText = new Texture();
     Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
-    Texture *floorRoughText = new Texture();
+    Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
@@ -193,12 +192,12 @@ void Application::setup()
     terrainMesh->set_name("Terrain");
     m_scene->add(terrainMesh);
 
-    Mesh *kabutoMesh = new Mesh();
+    Mesh* kabutoMesh = new Mesh();
     Tools::Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     kabutoMesh->set_position({-5.0, 0.0, 5.0});
-    auto kabutoMat = new PhysicallyBasedMaterial();
-    Texture *kabutoText = new Texture();
+    auto     kabutoMat  = new PhysicallyBasedMaterial();
+    Texture* kabutoText = new Texture();
     Tools::Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
@@ -212,7 +211,7 @@ void Application::setup()
     {
         for (int j = 0; j < 6; ++j)
         {
-            Mesh *kabutoMesh2 = kabutoMesh->clone();
+            Mesh* kabutoMesh2 = kabutoMesh->clone();
             // kabutoMesh2->set_position({5.0, 0.0, 5.0});
 
             // Calculate the position for the light, centered around 0.0
@@ -234,12 +233,11 @@ void Application::setup()
     m_controller = new Tools::Controller(camera, m_window);
 }
 
-void Application::setup_gui()
-{
-    m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width,
-                                                (float)m_window->get_extent().height, GuiColorProfileType::DARK);
+void Application::setup_gui() {
+    m_interface.overlay = new Tools::GUIOverlay(
+        (float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
-    Tools::Panel *tutorialPanel =
+    Tools::Panel* tutorialPanel =
         new Tools::Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 
     tutorialPanel->add_child(new Tools::Space());
@@ -258,8 +256,8 @@ void Application::setup_gui()
     m_interface.overlay->add_panel(tutorialPanel);
     m_interface.tutorial = tutorialPanel;
 
-    Tools::Panel *explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene = new Tools::SceneExplorerWidget(m_scene);
+    Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
+    m_interface.scene           = new Tools::SceneExplorerWidget(m_scene);
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
     explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));
@@ -271,7 +269,7 @@ void Application::setup_gui()
     m_interface.overlay->add_panel(explorerPanel);
     m_interface.explorer = explorerPanel;
 
-    Tools::Panel *propertiesPanel =
+    Tools::Panel* propertiesPanel =
         new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
     m_interface.object = new Tools::ObjectExplorerWidget();
     propertiesPanel->add_child(m_interface.object);
@@ -280,19 +278,17 @@ void Application::setup_gui()
     m_interface.properties = propertiesPanel;
 }
 
-void Application::update()
-{
+void Application::update() {
     if (!m_interface.overlay->wants_to_handle_input())
         m_controller->handle_keyboard(0, 0, m_time.delta);
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());
 }
 
-void Application::tick()
-{
-    float currentTime = (float)m_window->get_time_elapsed();
-    m_time.delta = currentTime - m_time.last;
-    m_time.last = currentTime;
+void Application::tick() {
+    float currentTime      = (float)m_window->get_time_elapsed();
+    m_time.delta           = currentTime - m_time.last;
+    m_time.last            = currentTime;
     m_time.framesPerSecond = 1.0f / m_time.delta;
 
     update();

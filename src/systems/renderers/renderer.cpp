@@ -200,7 +200,7 @@ void BaseRenderer::init_gui() {
         void* windowHandle;
         m_window->get_handle(windowHandle);
         m_device.init_imgui(
-            windowHandle, m_window->get_windowing_system(), defaultPass->get_handle(), m_settings.samplesMSAA);
+            windowHandle, m_window->get_windowing_system(), defaultPass->get_handle(), static_cast<uint16_t>(m_settings.samplesMSAA));
     }
 }
 void BaseRenderer::init_resources() {

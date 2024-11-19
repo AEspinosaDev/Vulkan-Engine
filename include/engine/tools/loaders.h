@@ -53,14 +53,14 @@ Load image texture
 */
 void load_texture(Core::ITexture*   texture,
                   const std::string fileName,
-                  TextureFormatType textureFormat = TextureFormatType::COLOR_FORMAT,
+                  TextureFormatType textureFormat = TEXTURE_FORMAT_TYPE_COLOR,
                   bool              asyncCall     = true);
 /*
 Load .png file.
  */
 void load_PNG(Core::Texture* const texture,
               const std::string    fileName,
-              TextureFormatType    textureFormat = TextureFormatType::COLOR_FORMAT);
+              TextureFormatType    textureFormat = TEXTURE_FORMAT_TYPE_COLOR);
 /*
 Load .hrd
 */
@@ -72,7 +72,7 @@ will be used for computing the depth if no depthy input is given. PNG or JPEG av
 void load_3D_texture(Core::ITexture* const texture,
                      const std::string     fileName,
                      uint16_t              depth         = 0,
-                     TextureFormatType     textureFormat = TextureFormatType::COLOR_FORMAT);
+                     TextureFormatType     textureFormat = TEXTURE_FORMAT_TYPE_COLOR);
 
 void compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices, const std::vector<uint32_t>& indices);
 

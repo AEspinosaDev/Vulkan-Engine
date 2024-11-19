@@ -24,12 +24,11 @@ Renderer Global Settings Data
 */
 struct RendererSettings {
 
-    MSAASamples     samplesMSAA          = MSAA_x4;
-    BufferingType   bufferingType        = DOUBLE_BUFFER;
-    SyncType        screenSync           = MAILBOX_SYNC;
+    MSAASamples     samplesMSAA          = MSAASamples::x4;
+    BufferingType   bufferingType        = BufferingType::DOUBLE;
+    SyncType        screenSync           = SyncType::MAILBOX;
     ColorFormatType colorFormat          = SBGRA_8;
     ColorFormatType depthFormat          = DEPTH_32F;
-    uint16_t        irradianceResolution = 128;
     Vec4            clearColor           = Vec4{0.0, 0.0, 0.0, 1.0};
     bool            autoClearColor       = true;
     bool            autoClearDepth       = true;

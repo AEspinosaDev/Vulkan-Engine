@@ -32,7 +32,7 @@ void ResourceManager::init_basic_resources(Graphics::Device* const device) {
         unsigned char cube_data[6] = {0, 0, 0, 0, 0, 0};
         FALLBACK_CUBEMAP           = new Core::Texture(cube_data, {1, 1, 1}, 4);
         FALLBACK_CUBEMAP->set_use_mipmaps(false);
-        FALLBACK_CUBEMAP->set_type(TextureType::TEXTURE_CUBE);
+        FALLBACK_CUBEMAP->set_type(TextureTypeFlagBits::TEXTURE_CUBE);
     }
     upload_texture_data(device, FALLBACK_CUBEMAP);
 

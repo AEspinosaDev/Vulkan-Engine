@@ -11,30 +11,28 @@ void ShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        att
 
     attachments[0] = Graphics::Attachment(m_depthFormat,
                                           1,
-                                          ImageLayoutType::DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                          ImageLayoutType::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                          AttachmentType::DEPTH_ATTACHMENT,
-                                          AspectType::DEPTH,
-                                          TextureType::TEXTURE_2D_ARRAY,
-                                          FilterType::LINEAR,
-                                          AddressMode::CLAMP_TO_BORDER);
+                                          LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                          DEPTH_ATTACHMENT,
+                                          ASPECT_DEPTH,
+                                          TEXTURE_2D_ARRAY,
+                                          FILTER_LINEAR,
+                                          ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
 
     dependencies.resize(2);
 
-    dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+    dependencies[0] = Graphics::SubPassDependency(
+        FRAGMENT_SHADER_STAGE, EARLY_FRAGMENT_TESTS_STAGE, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
 
-    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
 
-    dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+    dependencies[1] = Graphics::SubPassDependency(
+        LATE_FRAGMENT_TESTS_STAGE, FRAGMENT_SHADER_STAGE, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
 
-    dependencies[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[1].srcAccessMask = ACCESS_SHADER_READ;
     dependencies[1].srcSubpass    = 0;
     dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
 
@@ -58,8 +56,8 @@ void ShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
     LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
     LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    m_descriptorPool.set_layout(DescriptorLayoutType::GLOBAL_LAYOUT,
-                                {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
+    m_descriptorPool.set_layout(
+        GLOBAL_LAYOUT, {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
 
     // PER-OBJECT SET
     LayoutBinding objectBufferBinding(
@@ -70,13 +68,12 @@ void ShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         1);
-    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
+    m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     for (size_t i = 0; i < frames.size(); i++)
     {
         // Global
-        m_descriptorPool.allocate_descriptor_set(
-            DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[0],
                                               sizeof(CameraUniforms),
                                               0,
@@ -91,8 +88,7 @@ void ShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               1);
 
         // Per-object
-        m_descriptorPool.allocate_descriptor_set(
-            DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
+        m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[1],
                                               sizeof(ObjectUniforms),
                                               0,
@@ -112,14 +108,12 @@ void ShadowPass::setup_shader_passes() {
     // DEPTH PASSES
 
     PipelineSettings settings{};
-    settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                       {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                       {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                       {VertexAttributeType::NORMAL, false},
-                                       {VertexAttributeType::UV, false},
-                                       {VertexAttributeType::TANGENT, false},
-                                       {VertexAttributeType::COLOR, false}};
+    settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
+    settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                       {NORMAL_ATTRIBUTE, false},
+                                       {UV_ATTRIBUTE, false},
+                                       {TANGENT_ATTRIBUTE, false},
+                                       {COLOR_ATTRIBUTE, false}};
     settings.dynamicStates          = {VK_DYNAMIC_STATE_VIEWPORT,
                                        VK_DYNAMIC_STATE_SCISSOR,
                                        VK_DYNAMIC_STATE_DEPTH_BIAS,

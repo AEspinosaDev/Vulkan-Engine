@@ -26,7 +26,7 @@ void Application::init(Systems::RendererSettings settings, Systems::ForwardRende
 void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.samplesMSAA      = MSAASamples::_NONE;
+    settings.samplesMSAA      = MSAASamples::x1;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
@@ -86,7 +86,7 @@ void Application::setup() {
     toriiMat->set_albedo_texture(toriiT);
 
     Texture* toriiN = new Texture();
-    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TextureFormatType::NORMAL_FORMAT);
+    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
     toriiMat->set_normal_texture(toriiN);
 
     Texture* toriiM = new Texture();
@@ -109,7 +109,7 @@ void Application::setup() {
     Texture* floorText  = new Texture();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
     Texture* floorNormalText = new Texture();
-    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TextureFormatType::NORMAL_FORMAT);
+    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
     Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
@@ -130,7 +130,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
     stoneMat->set_albedo_texture(stonelanternT);
     Texture* stonelanternN = new Texture();
-    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "stone_normal.png", TextureFormatType::NORMAL_FORMAT);
+    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "stone_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
     stoneMat->set_normal_texture(stonelanternN);
     stoneMesh->push_material(stoneMat);
     stoneMesh->set_name("Lantern");

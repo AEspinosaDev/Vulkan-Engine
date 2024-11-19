@@ -13,16 +13,15 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
     Graphics::Attachment colorAttachment = Graphics::Attachment(
         m_colorFormat,
         samples,
-        m_isDefault ? (multisampled ? ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL : ImageLayoutType::PRESENT)
-                    : ImageLayoutType::SHADER_READ_ONLY_OPTIMAL,
-        ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL,
-        !m_isDefault ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-                     : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        AttachmentType::COLOR_ATTACHMENT,
-        AspectType::COLOR,
-        TextureType::TEXTURE_2D,
-        FilterType::LINEAR,
-        AddressMode::CLAMP_TO_BORDER);
+        m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
+                    : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        !m_isDefault ? USAGE_COLOR_ATTACHMENT | USAGE_SAMPLED : USAGE_TRANSIENT_ATTACHMENT | USAGE_COLOR_ATTACHMENT,
+        COLOR_ATTACHMENT,
+        ASPECT_COLOR,
+        TEXTURE_2D,
+        FILTER_LINEAR,
+        ADDRESS_MODE_CLAMP_TO_BORDER);
     colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
     attachments.push_back(colorAttachment);
 
@@ -32,35 +31,33 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
         resolveAttachment =
             Graphics::Attachment(m_colorFormat,
                                  1,
-                                 ImageLayoutType::PRESENT,
-                                 ImageLayoutType::COLOR_ATTACHMENT_OPTIMAL,
-                                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 AttachmentType::RESOLVE_ATTACHMENT,
-                                 AspectType::COLOR,
-                                 TextureType::TEXTURE_2D);
+                                 LAYOUT_PRESENT,
+                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 USAGE_TRANSIENT_ATTACHMENT | USAGE_COLOR_ATTACHMENT,
+                                 RESOLVE_ATTACHMENT,
+                                 ASPECT_COLOR,
+                                 TEXTURE_2D);
         resolveAttachment.isPresentImage = multisampled ? true : false;
         attachments.push_back(resolveAttachment);
     }
 
     Graphics::Attachment depthAttachment = Graphics::Attachment(m_depthFormat,
                                                                 samples,
-                                                                ImageLayoutType::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                ImageLayoutType::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                                                AttachmentType::DEPTH_ATTACHMENT,
-                                                                AspectType::DEPTH,
-                                                                TextureType::TEXTURE_2D);
+                                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                                                DEPTH_ATTACHMENT,
+                                                                ASPECT_DEPTH,
+                                                                TEXTURE_2D);
     attachments.push_back(depthAttachment);
 
     // Depdencies
     dependencies.resize(2);
 
-    dependencies[0] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-    dependencies[1] = Graphics::SubPassDependency(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+    dependencies[0] = Graphics::SubPassDependency(
+        COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[1] = Graphics::SubPassDependency(
+        EARLY_FRAGMENT_TESTS_STAGE, EARLY_FRAGMENT_TESTS_STAGE, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
 }
 void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
@@ -83,7 +80,7 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding accelBinding(UniformDataType::ACCELERATION_STRUCTURE, VK_SHADER_STAGE_FRAGMENT_BIT, 5);
     LayoutBinding noiseBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 6);
     m_descriptorPool.set_layout(
-        DescriptorLayoutType::GLOBAL_LAYOUT,
+        GLOBAL_LAYOUT,
         {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding, noiseBinding});
 
     // PER-OBJECT SET
@@ -95,7 +92,7 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         UniformDataType::DYNAMIC_UNIFORM_BUFFER,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         1);
-    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
+    m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     // MATERIAL TEXTURE SET
     LayoutBinding textureBinding1(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
@@ -103,14 +100,14 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding textureBinding3(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
     LayoutBinding textureBinding4(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
     LayoutBinding textureBinding5(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
-    m_descriptorPool.set_layout(DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT,
+    m_descriptorPool.set_layout(OBJECT_TEXTURE_LAYOUT,
                                 {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5});
 
     for (size_t i = 0; i < frames.size(); i++)
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(
-            DescriptorLayoutType::GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+            GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(CameraUniforms),
                                               0,
@@ -136,7 +133,7 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(
-            DescriptorLayoutType::OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
+            OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
                                               sizeof(ObjectUniforms),
                                               0,
@@ -174,56 +171,56 @@ void ForwardPass::setup_shader_passes() {
     // Setup shaderpasses
     m_shaderPasses["unlit"] =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/unlit.glsl");
-    m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                                {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                                {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["unlit"]->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                                {VertexAttributeType::NORMAL, false},
-                                                                {VertexAttributeType::UV, false},
-                                                                {VertexAttributeType::TANGENT, false},
-                                                                {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true},
+                                                                {OBJECT_LAYOUT, true},
+                                                                {OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["unlit"]->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                                {NORMAL_ATTRIBUTE, false},
+                                                                {UV_ATTRIBUTE, false},
+                                                                {TANGENT_ATTRIBUTE, false},
+                                                                {COLOR_ATTRIBUTE, false}};
     m_shaderPasses["unlit"]->settings.blendAttachments       = blendAttachments;
     m_shaderPasses["unlit"]->settings.dynamicStates          = dynamicStates;
     m_shaderPasses["unlit"]->settings.samples                = samples;
 
     m_shaderPasses["phong"] =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/phong.glsl");
-    m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                                {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                                {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["phong"]->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                                {VertexAttributeType::NORMAL, true},
-                                                                {VertexAttributeType::UV, true},
-                                                                {VertexAttributeType::TANGENT, false},
-                                                                {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true},
+                                                                {OBJECT_LAYOUT, true},
+                                                                {OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["phong"]->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                                {NORMAL_ATTRIBUTE, true},
+                                                                {UV_ATTRIBUTE, true},
+                                                                {TANGENT_ATTRIBUTE, false},
+                                                                {COLOR_ATTRIBUTE, false}};
     m_shaderPasses["phong"]->settings.blendAttachments       = blendAttachments;
     m_shaderPasses["phong"]->settings.dynamicStates          = dynamicStates;
     m_shaderPasses["phong"]->settings.samples                = samples;
 
     m_shaderPasses["physical"] =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/physically_based.glsl");
-    m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                                   {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                                   {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["physical"]->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                                   {VertexAttributeType::NORMAL, true},
-                                                                   {VertexAttributeType::UV, true},
-                                                                   {VertexAttributeType::TANGENT, true},
-                                                                   {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true},
+                                                                   {OBJECT_LAYOUT, true},
+                                                                   {OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["physical"]->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                                   {NORMAL_ATTRIBUTE, true},
+                                                                   {UV_ATTRIBUTE, true},
+                                                                   {TANGENT_ATTRIBUTE, true},
+                                                                   {COLOR_ATTRIBUTE, false}};
     m_shaderPasses["physical"]->settings.blendAttachments       = blendAttachments;
     m_shaderPasses["physical"]->settings.dynamicStates          = dynamicStates;
     m_shaderPasses["physical"]->settings.samples                = samples;
 
     m_shaderPasses["hairstr"] =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
-    m_shaderPasses["hairstr"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                                  {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                                  {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["hairstr"]->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                                  {VertexAttributeType::NORMAL, false},
-                                                                  {VertexAttributeType::UV, false},
-                                                                  {VertexAttributeType::TANGENT, true},
-                                                                  {VertexAttributeType::COLOR, true}};
+    m_shaderPasses["hairstr"]->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true},
+                                                                  {OBJECT_LAYOUT, true},
+                                                                  {OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["hairstr"]->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                                  {NORMAL_ATTRIBUTE, false},
+                                                                  {UV_ATTRIBUTE, false},
+                                                                  {TANGENT_ATTRIBUTE, true},
+                                                                  {COLOR_ATTRIBUTE, true}};
     m_shaderPasses["hairstr"]->settings.dynamicStates          = dynamicStates;
     m_shaderPasses["hairstr"]->settings.samples                = samples;
     m_shaderPasses["hairstr"]->settings.sampleShading          = false;
@@ -231,14 +228,14 @@ void ForwardPass::setup_shader_passes() {
 
     m_shaderPasses["hairstr2"] =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
-    m_shaderPasses["hairstr2"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                                   {DescriptorLayoutType::OBJECT_LAYOUT, true},
-                                                                   {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["hairstr2"]->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                                   {VertexAttributeType::NORMAL, false},
-                                                                   {VertexAttributeType::UV, false},
-                                                                   {VertexAttributeType::TANGENT, true},
-                                                                   {VertexAttributeType::COLOR, true}};
+    m_shaderPasses["hairstr2"]->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true},
+                                                                   {OBJECT_LAYOUT, true},
+                                                                   {OBJECT_TEXTURE_LAYOUT, true}};
+    m_shaderPasses["hairstr2"]->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                                   {NORMAL_ATTRIBUTE, false},
+                                                                   {UV_ATTRIBUTE, false},
+                                                                   {TANGENT_ATTRIBUTE, true},
+                                                                   {COLOR_ATTRIBUTE, true}};
     m_shaderPasses["hairstr2"]->settings.dynamicStates          = dynamicStates;
     m_shaderPasses["hairstr2"]->settings.samples                = samples;
     m_shaderPasses["hairstr2"]->settings.sampleShading          = false;
@@ -246,14 +243,14 @@ void ForwardPass::setup_shader_passes() {
 
     m_shaderPasses["skybox"] =
         new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
-    m_shaderPasses["skybox"]->settings.descriptorSetLayoutIDs = {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-                                                                 {DescriptorLayoutType::OBJECT_LAYOUT, false},
-                                                                 {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["skybox"]->settings.attributes             = {{VertexAttributeType::POSITION, true},
-                                                                 {VertexAttributeType::NORMAL, false},
-                                                                 {VertexAttributeType::UV, false},
-                                                                 {VertexAttributeType::TANGENT, false},
-                                                                 {VertexAttributeType::COLOR, false}};
+    m_shaderPasses["skybox"]->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true},
+                                                                 {OBJECT_LAYOUT, false},
+                                                                 {OBJECT_TEXTURE_LAYOUT, false}};
+    m_shaderPasses["skybox"]->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                                 {NORMAL_ATTRIBUTE, false},
+                                                                 {UV_ATTRIBUTE, false},
+                                                                 {TANGENT_ATTRIBUTE, false},
+                                                                 {COLOR_ATTRIBUTE, false}};
     m_shaderPasses["skybox"]->settings.dynamicStates          = dynamicStates;
     m_shaderPasses["skybox"]->settings.samples                = samples;
     m_shaderPasses["skybox"]->settings.blendAttachments       = blendAttachments;
@@ -315,7 +312,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
                                                 *shaderPass,
                                                 {objectOffset, objectOffset});
                         // TEXTURE LAYOUT BINDING
-                        if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
+                        if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
                             cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
 
                         // DRAW
@@ -401,7 +398,7 @@ void ForwardPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr
 void ForwardPass::setup_material_descriptor(IMaterial* mat) {
     if (!mat->get_texture_descriptor().allocated)
         m_descriptorPool.allocate_descriptor_set(
-            DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
+            OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
 
     auto textures = mat->get_textures();
     for (auto pair : textures)

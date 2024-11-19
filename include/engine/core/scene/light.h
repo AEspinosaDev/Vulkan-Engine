@@ -25,7 +25,7 @@ class Light : public Object3D
 
     // Shadow
     struct Shadow {
-        ShadowType type                = ShadowType::BASIC_SHADOW;
+        ShadowType type                = BASIC_SHADOW;
         bool       cast                = true;
         float      nearPlane           = .5f;
         float      farPlane            = 96.0f;
@@ -46,11 +46,11 @@ class Light : public Object3D
 
   public:
     Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
-        : Object3D(name, LIGHT)
+        : Object3D(name, ObjectType::LIGHT)
         , m_color(color)
         , m_intensity(intensity)
         , m_lighType(type) {
-        if (m_shadow.type != ShadowType::RAYTRACED_SHADOW)
+        if (m_shadow.type != RAYTRACED_SHADOW)
             m_nonRaytraceCount++;
     }
 
