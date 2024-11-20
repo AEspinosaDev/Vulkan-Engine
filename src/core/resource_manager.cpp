@@ -240,6 +240,7 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
             //Update Acceleration Structure if change in objects
             if (accel->instances < BLASInstances.size())
             {
+                device->wait();
                 accel->cleanup();
                 device->upload_TLAS(*accel, BLASInstances);
             }

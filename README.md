@@ -30,8 +30,9 @@ The main feautures of the library are:
 - Forward and Deferred pipelines support.
 - PBR, Phong and other types of materials abstractions.
 - Scene and scene objects abstractions.
-- Texture loading with mipmapping.
 - On the fly shader compiling.
+- Raytracing Support (Shadows, AO).
+- Texture loading with mipmapping.
 - Dynamic renderer states for some graphic features.
 - Multipass (depth pass for shadows, SSAO and post-processing).
 - Vulkan object and functionality abstraction.
@@ -163,7 +164,7 @@ int main()
 
         // Create the renderer, you can play with the settings here
         Systems::RendererSettings settings{};
-        settings.samplesMSAA = MSAASamples::MSAA_x4;
+        settings.samplesMSAA = MSAASamples::x4;
         settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
         Systems::BaseRenderer *renderer = new Systems::ForwardRenderer(window, settings, {});
 

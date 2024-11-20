@@ -405,14 +405,17 @@ Frame Device::create_frame(uint16_t id) {
 
     return frame;
 }
-RenderResult Device::prepare_frame(Frame& frame, uint32_t& imageIndex) {
+RenderResult Device::wait_frame(Frame& frame, uint32_t& imageIndex) {
 
     frame.renderFence.wait();
     RenderResult imageResult = aquire_present_image(frame.presentSemaphore, imageIndex);
+
+    return imageResult;
+}
+void Device::start_frame(Frame& frame) {
     frame.renderFence.reset();
     frame.commandBuffer.reset();
     frame.commandBuffer.begin();
-    return imageResult;
 }
 RenderResult Device::submit_frame(Frame& frame, uint32_t imageIndex) {
 

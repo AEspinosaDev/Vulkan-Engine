@@ -120,16 +120,19 @@ void BaseRenderer::render(Core::Scene* const scene) {
     if (!m_initialized)
         init();
 
-    on_before_render(scene);
-
     uint32_t     imageIndex;
-    RenderResult result = m_device.prepare_frame(m_frames[m_currentFrame], imageIndex);
+    RenderResult result = m_device.wait_frame(m_frames[m_currentFrame], imageIndex);
+
     if (result == RenderResult::ERROR_OUT_OF_DATE_KHR)
     {
         update_renderpasses();
         return;
     } else if (result != RenderResult::SUCCESS && result != RenderResult::SUBOPTIMAL_KHR)
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
+
+    on_before_render(scene);
+
+    m_device.start_frame(m_frames[m_currentFrame]);
 
     if (scene->get_skybox())
         Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame], scene);

@@ -146,10 +146,14 @@ class Device
     DRAWING
     -----------------------------------------------
     */
-    /*Setups frame for new rendering cicle, waits for the last one to finish and starts the command buffer*/
-    RenderResult prepare_frame(Frame& frame, uint32_t& imageIndex);
+   /*Waits for the frame to finish rendering*/
+    RenderResult wait_frame(Frame& frame, uint32_t& imageIndex);
+    /*Resets conmmand and control objects and starts command buffer for new render cicle*/
+    void start_frame(Frame& frame);
     /*Submits the frame to the graphic queue for presenting into the swapchain*/
     RenderResult submit_frame(Frame& frame, uint32_t imageIndex);
+
+
     RenderResult aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex);
     RenderResult present_image(Semaphore& signalSemaphore, uint32_t imageIndex);
     /*
