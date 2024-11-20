@@ -163,23 +163,78 @@ MarschnerLookupBSDF bsdf;
 layout(location = 0) out vec4 fragColor;
 
 
-float computeShadow(LightUniform light, int lightId) {
+// float computeShadow(LightUniform light, int lightId) {
 
-    vec4 posLightSpace = light.viewProj * vec4(g_modelPos, 1.0);
+//     vec4 posLightSpace = light.viewProj * vec4(g_modelPos, 1.0);
 
-    vec3 projCoords = posLightSpace.xyz / posLightSpace.w; //For x,y and Z
+//     vec3 projCoords = posLightSpace.xyz / posLightSpace.w; //For x,y and Z
 
-    projCoords.xy = projCoords.xy * 0.5 + 0.5;
+//     projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
-    if(projCoords.z > 1.0 || projCoords.z < 0.0)
-        return 1.0;
+//     if(projCoords.z > 1.0 || projCoords.z < 0.0)
+//         return 1.0;
 
-    vec3 lightDir = normalize(light.position.xyz - g_pos);
-    float bias = max(light.shadowData.x * 5.0 * (1.0 - dot(g_dir, lightDir)), light.shadowData.x);  //Modulate by angle of incidence
+//     vec3 lightDir = normalize(light.position.xyz - g_pos);
+//     float bias = max(light.shadowData.x * 5.0 * (1.0 - dot(g_dir, lightDir)), light.shadowData.x);  //Modulate by angle of incidence
 
-    // return 1.0 - filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
-  return 1.0 - filterPCF(shadowMap, lightId,int(light.shadowData.w), light.shadowData.y, projCoords, light.shadowData.x);
-}
+//     // return 1.0 - filterPCF(shadowMap,lightId,int(light.pcfKernel),  light.kernelRadius,projCoords, bias);
+//   return 1.0 - filterPCF(shadowMap, lightId,int(light.shadowData.w), light.shadowData.y, projCoords, light.shadowData.x);
+// }
+
+float bilinear( float v[4], vec2 f )
+	{
+		return mix( mix( v[0], v[1], f.x ), mix( v[2], v[3], f.x ), f.y );
+	}
+
+vec3 bilinear( vec3 v[4], vec2 f )
+	{
+		return mix( mix( v[0], v[1], f.x ), mix( v[2], v[3], f.x ), f.y );
+	}    
+vec3 hairShadow( out vec3 spread, out float directF, vec3 pShad, int lightId )
+	{
+        float hairDensity = 1.0;
+		ivec2 size = textureSize( shadowMap, 0 ).xy;
+		vec2 t = pShad.xy * vec2(size) + 0.5;
+		vec2 f = t - floor(t);
+		vec2 s = 0.5 / vec2(size);
+		
+		vec2 tcp[4];
+		tcp[0] = pShad.xy + vec2( -s.x, -s.y );
+		tcp[1] = pShad.xy + vec2(  s.x, -s.y );
+		tcp[2] = pShad.xy + vec2( -s.x,  s.y );
+		tcp[3] = pShad.xy + vec2(  s.x,  s.y );
+
+		const float coverage = 0.05;
+		const vec3 a_f = vec3( 0.507475266, 0.465571405, 0.394347166 );
+		const vec3 w_f = vec3( 0.028135575, 0.027669785, 0.027669785 );
+		float dir[4];
+		vec3 spr[4], t_d[4];
+		for ( int i=0; i<4; ++i ) {
+			float z = texture(shadowMap, vec3(tcp[i],lightId)).r;
+			//vis[i] = z < pShad.z ? 0.0 : 1.0;
+			float h = max( 0.0, pShad.z - z );
+			float n = h * hairDensity;
+			dir[i] = pow( 1.0 - coverage, n );
+			t_d[i] = pow( 1.0 - coverage*(1.0 - a_f), vec3(n,n,n) );
+			spr[i] = n * coverage * w_f;
+		}
+		
+		directF = bilinear( dir, f );
+		spread  = bilinear( spr, f );
+		return    bilinear( t_d, f );
+	}
+vec3 computeShadow(LightUniform light,int lightId, out vec3 spread, out float directF )
+	{
+          vec4 posLightSpace = light.viewProj * vec4(g_modelPos, 1.0);
+         vec3 projCoords = posLightSpace.xyz / posLightSpace.w; //For x,y and Z
+        projCoords.xy = projCoords.xy * 0.5 + 0.5;
+        // if(projCoords.z > 1.0 || projCoords.z < 0.0)
+        //     return 1.0;
+		// projCoords.z -= light.shadowData.x;
+		vec3 trans_direct = hairShadow( spread, directF, projCoords,lightId );
+		directF *= 0.5;
+		return trans_direct * 0.5;
+	}    
 
 
 vec3 computeAmbient(vec3 n) {
@@ -229,6 +284,13 @@ void main() {
         //If inside liught area influence
         if(isInAreaOfInfluence(scene.lights[i], g_pos)) {
 
+            vec3 shadow = vec3(1.0);
+            if(int(object.otherParams.y) == 1 && scene.lights[i].shadowCast == 1) {
+                if(scene.lights[i].shadowType == 0) //Classic
+                    shadow = computeShadow(scene.lights[i], i,bsdf.spread, bsdf.directFraction);
+                if(scene.lights[i].shadowType == 1) //VSM   
+                    shadow.x = computeVarianceShadow(shadowMap,scene.lights[i],i,g_modelPos);
+            }
             vec3 lighting = evalMarschnerLookupBSDF(
                 normalize(scene.lights[i].position.xyz - g_pos), 
                 normalize(-g_pos),
@@ -241,14 +303,8 @@ void main() {
                 material.tt, 
                 material.trt);
 
-            if(int(object.otherParams.y) == 1 && scene.lights[i].shadowCast == 1) {
-                if(scene.lights[i].shadowType == 0) //Classic
-                    lighting *= computeShadow(scene.lights[i], i);
-                if(scene.lights[i].shadowType == 1) //VSM   
-                    lighting *= computeVarianceShadow(shadowMap,scene.lights[i],i,g_modelPos);
-            }
 
-            color += lighting;
+            color += lighting * shadow;
         }
     }
 
@@ -268,6 +324,6 @@ void main() {
     }
 
 
-    fragColor = vec4(reindhartTonemap(color), 1.0);
+    fragColor = vec4(color, 1.0);
 
 }

@@ -247,12 +247,12 @@ class HairStrandMaterial2 : public HairStrandMaterial
         m_textures[GI]      = new Texture(settings);
         m_textures[MGI]     = new Texture(settings);
         Tools::Loaders::load_texture(
-            m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TEXTURE_FORMAT_TYPE_COLOR, false);
+            m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
         Tools::Loaders::load_texture(
-            m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TEXTURE_FORMAT_TYPE_COLOR, false);
+            m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
         Tools::Loaders::load_3D_texture(m_textures[GI], ENGINE_RESOURCES_PATH "textures/GI.png");
         Tools::Loaders::load_texture(
-            m_textures[MGI], ENGINE_RESOURCES_PATH "textures/M_GI.png", TEXTURE_FORMAT_TYPE_COLOR, false);
+            m_textures[MGI], ENGINE_RESOURCES_PATH "textures/M_GI.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
         m_textures[N1]->set_format(RGBA_8U);
         m_textures[N2]->set_format(RGBA_8U);
         m_textures[GI]->set_format(RGBA_8U);

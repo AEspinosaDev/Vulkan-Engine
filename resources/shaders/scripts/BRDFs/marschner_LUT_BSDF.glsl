@@ -30,6 +30,8 @@ struct                          MarschnerLookupBSDF{
     float                       Rpower;
     float                       TTpower;
     float                       TRTpower;
+    vec3                        spread;
+    float                       directFraction;
 };
 
 //Longitudinal TERM (Gaussian Distribution)
@@ -73,8 +75,10 @@ vec3 evalMarschnerLookupBSDF(
     //Phi   
     vec3 wiPerp         = normalize(wi - sin_thI * u);
     vec3 vPerp          = normalize(v - sin_thR * u);
-    float cos_phiH      = dot(vPerp,wiPerp)*inversesqrt(dot(vPerp,vPerp)*dot(wiPerp,wiPerp));
-    float phiH          = cos((asin(sin_thI)-asin(sin_thR))*0.5);
+    // float cos_phiH      = dot(vPerp,wiPerp)*inversesqrt(dot(vPerp,vPerp)*dot(wiPerp,wiPerp));
+    // float phiH          = cos((asin(sin_thI)-asin(sin_thR))*0.5);
+    float cos_phiH = dot( wiPerp, vPerp );
+	float phiH    = acos( cos_phiH );
 
     float randVal = rand( 2, 3 );
 	float phi_shift = ECCEN_SHIFT*(randVal-0.5f);
@@ -87,8 +91,8 @@ vec3 evalMarschnerLookupBSDF(
 	//////////////////////////////////////////////////////////////////////////
 
     // N
-    vec2 index1         = vec2( phiH * ONE_OVER_PI, 1-ix_th );
-	vec2 index2         = vec2( phiH * ONE_OVER_PI, 1-ix_th );
+    vec2 index1         = vec2( phiH * ONE_OVER_PI, ix_th );
+	vec2 index2         = vec2( phiH * ONE_OVER_PI, ix_th );
 
     vec4  N             = texture(texN, index1);
 	float NR            = SCALE_N_R   * N.a;
@@ -111,16 +115,15 @@ vec3 evalMarschnerLookupBSDF(
 	// Local Scattering
 	//////////////////////////////////////////////////////////////////////////
     float ix_thH = thH * ONE_OVER_PI * 0.5 + 0.5;
-    vec3  ix_spread  = sqrt(vec3(0.5)) * ONE_OVER_PI*0.5;
+    vec3  ix_spread  =  sqrt(bsdf.spread) * ONE_OVER_PI*0.5;
 
 	vec3 gi;
-	gi.r = DENSITY * texture( texGI, vec3( ix_spread.r, ix_thH, 1-ix_th ) ).r;
-	gi.g = DENSITY * texture( texGI, vec3( ix_spread.g, ix_thH, 1-ix_th ) ).g;
-	gi.b = DENSITY * texture( texGI, vec3( ix_spread.b, ix_thH, 1-ix_th ) ).b;
+	gi.r = DENSITY * texture( texGI, vec3( ix_spread.r, ix_thH, ix_th ) ).r;
+	gi.g = DENSITY * texture( texGI, vec3( ix_spread.g, ix_thH, ix_th ) ).g;
+	gi.b = DENSITY * texture( texGI, vec3( ix_spread.b, ix_thH, ix_th ) ).b;
 
-	//specular += gi;
-		
-	// specular *= directFraction;
+	specular += gi;
+	specular *= bsdf.directFraction;
 
 
     return              (specular) * irradiance * GLOBAL_SCALE;
