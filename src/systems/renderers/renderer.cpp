@@ -132,7 +132,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
 
     if (scene->get_skybox())
-       Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame],scene);
+        Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame], scene);
 
     m_renderPipeline.render(m_frames[m_currentFrame], scene, imageIndex);
 
@@ -199,8 +199,10 @@ void BaseRenderer::init_gui() {
 
         void* windowHandle;
         m_window->get_handle(windowHandle);
-        m_device.init_imgui(
-            windowHandle, m_window->get_windowing_system(), defaultPass->get_handle(), static_cast<uint16_t>(m_settings.samplesMSAA));
+        m_device.init_imgui(windowHandle,
+                            m_window->get_windowing_system(),
+                            defaultPass->get_handle(),
+                            static_cast<uint16_t>(m_settings.samplesMSAA));
     }
 }
 void BaseRenderer::init_resources() {
@@ -214,17 +216,15 @@ void BaseRenderer::init_resources() {
         // Global Buffer
         const size_t     globalStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
                                          m_device.pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
-        Graphics::Buffer globalBuffer     = m_device.create_buffer_VMA(globalStrideSize,
-                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                                   VMA_MEMORY_USAGE_CPU_TO_GPU,
-                                                                   (uint32_t)globalStrideSize);
+        Graphics::Buffer globalBuffer     = m_device.create_buffer_VMA(
+            globalStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
         m_frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
         const size_t     objectStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
                                          m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
         Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
-                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                   BUFFER_USAGE_UNIFORM_BUFFER,
                                                                    VMA_MEMORY_USAGE_CPU_TO_GPU,
                                                                    (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);

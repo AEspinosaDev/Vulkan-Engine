@@ -53,30 +53,6 @@ VkPresentModeKHR get(SyncType syncType) {
         throw std::invalid_argument("Unknown SyncType");
     }
 }
-
-// ShaderStageType -> VkShaderStageFlagBits
-VkShaderStageFlagBits get(ShaderStageType stageType) {
-    switch (stageType)
-    {
-    case ShaderStageType::VERTEX:
-        return VK_SHADER_STAGE_VERTEX_BIT;
-    case ShaderStageType::FRAGMENT:
-        return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case ShaderStageType::GEOMETRY:
-        return VK_SHADER_STAGE_GEOMETRY_BIT;
-    case ShaderStageType::TESS_CONTROL:
-        return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    case ShaderStageType::TESS_EVALUATION:
-        return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    case ShaderStageType::NONE_STAGE:
-        return static_cast<VkShaderStageFlagBits>(0);
-    // case ShaderStageType::ALL_STAGES:
-    //     return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    default:
-        throw std::invalid_argument("Unknown ShaderStageType");
-    }
-}
-
 // UniformDataType -> VkDescriptorType
 VkDescriptorType get(UniformDataType uniformDataType) {
     switch (uniformDataType)
@@ -205,25 +181,25 @@ VkDependencyFlags get(SubPassDependencyType dependencyFlags) {
 VkPipelineStageFlags get(PipelineStage stageFlags) {
     switch (stageFlags)
     {
-    case PipelineStage::TOP_OF_PIPE_STAGE:
+    case PipelineStage::STAGE_TOP_OF_PIPE:
         return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    case PipelineStage::BOTTOM_OF_PIPE_STAGE:
+    case PipelineStage::STAGE_BOTTOM_OF_PIPE:
         return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    case PipelineStage::COLOR_ATTACHMENT_OUTPUT_STAGE:
+    case PipelineStage::STAGE_COLOR_ATTACHMENT_OUTPUT:
         return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    case PipelineStage::EARLY_FRAGMENT_TESTS_STAGE:
+    case PipelineStage::STAGE_EARLY_FRAGMENT_TESTS:
         return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    case PipelineStage::LATE_FRAGMENT_TESTS_STAGE:
+    case PipelineStage::STAGE_LATE_FRAGMENT_TESTS:
         return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    case PipelineStage::ALL_GRAPHICS_STAGE:
+    case PipelineStage::STAGE_ALL_GRAPHICS:
         return VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-    case PipelineStage::TRANSFER_STAGE:
+    case PipelineStage::STAGE_TRANSFER:
         return VK_PIPELINE_STAGE_TRANSFER_BIT;
-    case PipelineStage::COMPUTE_SHADER_STAGE:
+    case PipelineStage::STAGE_COMPUTE_SHADER:
         return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-    case PipelineStage::ALL_COMMANDS_STAGE:
+    case PipelineStage::STAGE_ALL_COMMANDS:
         return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    case PipelineStage::FRAGMENT_SHADER_STAGE:
+    case PipelineStage::STAGE_FRAGMENT_SHADER:
         return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     default:
         throw std::invalid_argument("Unknown PipelineStageFlags");
@@ -336,35 +312,36 @@ VkBorderColor get(BorderColor borderColor) {
 VkImageUsageFlags get(ImageUsageFlags usageFlags) {
     VkImageUsageFlags vkFlags = 0;
 
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_SAMPLED))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_SAMPLED))
     {
         vkFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_STORAGE))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_STORAGE))
     {
         vkFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_TRANSFER_SRC))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_TRANSFER_SRC))
     {
         vkFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_TRANSFER_DST))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_TRANSFER_DST))
     {
         vkFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_COLOR_ATTACHMENT))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_COLOR_ATTACHMENT))
     {
         vkFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_DEPTH_STENCIL_ATTACHMENT))
+    if (static_cast<uint32_t>(usageFlags) &
+        static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT))
     {
         vkFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_TRANSIENT_ATTACHMENT))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_TRANSIENT_ATTACHMENT))
     {
         vkFlags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::USAGE_INPUT_ATTACHMENT))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_INPUT_ATTACHMENT))
     {
         vkFlags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     }
@@ -372,7 +349,199 @@ VkImageUsageFlags get(ImageUsageFlags usageFlags) {
 
     return vkFlags;
 }
+VkCommandPoolCreateFlags get(CommandPoolCreateFlags flags) {
+    switch (flags)
+    {
+    case CommandPoolCreateFlags::COMMAND_POOL_NONE:
+        return 0; // No flags
+    case CommandPoolCreateFlags::COMMAND_POOL_CREATE_TRANSIENT:
+        return VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    case CommandPoolCreateFlags::COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER:
+        return VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    default:
+        throw std::invalid_argument("Unknown CommandPoolCreateFlags");
+    }
+}
+VkCommandBufferLevel get(CommandBufferLevel level) {
+    switch (level)
+    {
+    case CommandBufferLevel::COMMAND_BUFFER_LEVEL_PRIMARY:
+        return VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    case CommandBufferLevel::COMMAND_BUFFER_LEVEL_SECONDARY:
+        return VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    default:
+        throw std::invalid_argument("Unknown CommandBufferLevel");
+    }
+}
+VkBufferUsageFlags get(BufferUsageFlags usageFlags) {
+    VkBufferUsageFlags vkFlags = 0;
 
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_TRANSFER_SRC))
+    {
+        vkFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_TRANSFER_DST))
+    {
+        vkFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_UNIFORM_TEXEL_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_STORAGE_TEXEL_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_UNIFORM_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_STORAGE_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_INDEX_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_VERTEX_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_INDIRECT_BUFFER))
+    {
+        vkFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) &
+        static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE))
+    {
+        vkFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_SHADER_DEVICE_ADDRESS))
+    {
+        vkFlags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    }
+    if (static_cast<uint32_t>(usageFlags) &
+        static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY))
+    {
+        vkFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+
+    return vkFlags;
+}
+VkMemoryPropertyFlags get(MemoryPropertyFlags memoryFlags) {
+    VkMemoryPropertyFlags vkFlags = 0;
+
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_LOCAL))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    }
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_HOST_VISIBLE))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    }
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_HOST_COHERENT))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    }
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_HOST_CACHED))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    }
+    if (static_cast<uint32_t>(memoryFlags) &
+        static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_LAZILY_ALLOCATED))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    }
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_PROTECTED))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_PROTECTED_BIT;
+    }
+    if (static_cast<uint32_t>(memoryFlags) &
+        static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_COHERENT))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD;
+    }
+    if (static_cast<uint32_t>(memoryFlags) &
+        static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_UNCACHED))
+    {
+        vkFlags |= VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+    }
+
+    return vkFlags;
+}
+VkShaderStageFlags get(ShaderStageFlags shaderStages) {
+    VkShaderStageFlags vkFlags = 0;
+
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_VERTEX))
+    {
+        vkFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+    }
+    if (static_cast<uint32_t>(shaderStages) &
+        static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TESSELLATION_CONTROL))
+    {
+        vkFlags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    }
+    if (static_cast<uint32_t>(shaderStages) &
+        static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TESSELLATION_EVALUATION))
+    {
+        vkFlags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_GEOMETRY))
+    {
+        vkFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_FRAGMENT))
+    {
+        vkFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_COMPUTE))
+    {
+        vkFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_ALL_GRAPHICS))
+    {
+        vkFlags |= VK_SHADER_STAGE_ALL_GRAPHICS;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_ALL))
+    {
+        vkFlags |= VK_SHADER_STAGE_ALL;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_RAYGEN))
+    {
+        vkFlags |= VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_ANY_HIT))
+    {
+        vkFlags |= VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_CLOSEST_HIT))
+    {
+        vkFlags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_MISS))
+    {
+        vkFlags |= VK_SHADER_STAGE_MISS_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_INTERSECTION))
+    {
+        vkFlags |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_CALLABLE))
+    {
+        vkFlags |= VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TASK))
+    {
+        vkFlags |= VK_SHADER_STAGE_TASK_BIT_EXT;
+    }
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_MESH))
+    {
+        vkFlags |= VK_SHADER_STAGE_MESH_BIT_EXT;
+    }
+
+    return vkFlags;
+}
 
 } // namespace Translator
 } // namespace Graphics

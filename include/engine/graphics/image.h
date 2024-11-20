@@ -19,7 +19,7 @@ namespace Graphics {
 
 struct ImageConfig {
     ColorFormatType format      = ColorFormatType::SRGBA_8;
-    ImageUsageFlags usageFlags  = USAGE_SAMPLED;
+    ImageUsageFlags usageFlags  = IMAGE_USAGE_SAMPLED;
     ImageAspect     aspectFlags = ASPECT_COLOR;
     TextureType     viewType    = TEXTURE_2D;
     uint16_t        samples     = 1U;

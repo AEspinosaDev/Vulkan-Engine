@@ -34,11 +34,9 @@ struct LayoutBinding {
 
     VkDescriptorSetLayoutBinding handle{};
 
-    LayoutBinding(UniformDataType    type,
-                  VkShaderStageFlags stageFlags,
-                  uint32_t           binding,
-                  uint32_t           descriptorCount = 1U) {
-        handle = Init::descriptorset_layout_binding(Translator::get(type), stageFlags, binding, descriptorCount);
+    LayoutBinding(UniformDataType type, ShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount = 1U) {
+        handle = Init::descriptorset_layout_binding(
+            Translator::get(type), Translator::get(stageFlags), binding, descriptorCount);
     }
 };
 
@@ -46,7 +44,6 @@ struct DescriptorPool {
     VkDescriptorPool                                    handle = VK_NULL_HANDLE;
     VkDevice                                            device = VK_NULL_HANDLE;
     std::unordered_map<uint32_t, VkDescriptorSetLayout> layouts;
-
 
     void set_layout(uint32_t                         layoutSetIndex,
                     std::vector<LayoutBinding>       bindings,

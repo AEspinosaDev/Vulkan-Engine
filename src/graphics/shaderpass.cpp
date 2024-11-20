@@ -31,7 +31,17 @@ ShaderSource ShaderSource::read_file(const std::string& filePath) {
 
     std::string       line;
     std::stringstream ss[4];
-    ShaderStageType   type = ShaderStageType::NONE_STAGE;
+    enum class StageType
+    {
+        NONE            = -1,
+        VERTEX          = 0,
+        FRAGMENT        = 1,
+        GEOMETRY        = 2,
+        TESS_CONTROL    = 3,
+        TESS_EVALUATION = 4,
+        ALL_STAGES      = 5
+    };
+    StageType type = StageType::NONE;
 
     while (getline(stream, line))
     {
@@ -39,15 +49,15 @@ ShaderSource ShaderSource::read_file(const std::string& filePath) {
         if (line.find("#shader") != std::string::npos)
         {
             if (line.find("vertex") != std::string::npos)
-                type = ShaderStageType::VERTEX;
+                type = StageType::VERTEX;
             else if (line.find("fragment") != std::string::npos)
-                type = ShaderStageType::FRAGMENT;
+                type = StageType::FRAGMENT;
             else if (line.find("geometry") != std::string::npos)
-                type = ShaderStageType::GEOMETRY;
+                type = StageType::GEOMETRY;
             else if (line.find("tesscontrol") != std::string::npos)
-                type = ShaderStageType::TESS_CONTROL;
+                type = StageType::TESS_CONTROL;
             else if (line.find("tesseval") != std::string::npos)
-                type = ShaderStageType::TESS_EVALUATION;
+                type = StageType::TESS_EVALUATION;
         }
         // CHECK MODULES INCLUDED
         else if (line.find("#include") != std::string::npos)

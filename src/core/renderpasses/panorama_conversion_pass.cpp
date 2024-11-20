@@ -13,7 +13,7 @@ void PanoramaConverterPass::setup_attachments(std::vector<Graphics::Attachment>&
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          USAGE_COLOR_ATTACHMENT | USAGE_SAMPLED,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
                                           COLOR_ATTACHMENT,
                                           ASPECT_COLOR,
                                           TEXTURE_CUBE,
@@ -24,13 +24,13 @@ void PanoramaConverterPass::setup_attachments(std::vector<Graphics::Attachment>&
     dependencies.resize(1);
 
     dependencies[0] =
-        Graphics::SubPassDependency(COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_NONE);
+        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
 }
 void PanoramaConverterPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {panoramaTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_panoramaDescriptorSet);

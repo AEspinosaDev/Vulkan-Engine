@@ -13,7 +13,7 @@ void IrrandianceComputePass::setup_attachments(std::vector<Graphics::Attachment>
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          USAGE_COLOR_ATTACHMENT | USAGE_SAMPLED,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
                                           COLOR_ATTACHMENT,
                                           ASPECT_COLOR,
                                           TEXTURE_CUBE,
@@ -24,14 +24,14 @@ void IrrandianceComputePass::setup_attachments(std::vector<Graphics::Attachment>
     dependencies.resize(1);
 
     dependencies[0] =
-        Graphics::SubPassDependency(COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_NONE);
+        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
 }
 void IrrandianceComputePass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-    LayoutBinding auxBufferBinding(UniformDataType::UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding auxBufferBinding(UniformDataType::UNIFORM_BUFFER, SHADER_STAGE_FRAGMENT, 1);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {panoramaTextureBinding, auxBufferBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_captureDescriptorSet);
@@ -85,7 +85,7 @@ void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const s
 
     const size_t BUFFER_SIZE = m_device->pad_uniform_buffer_size(sizeof(CaptureData));
     m_captureBuffer          = m_device->create_buffer_VMA(
-        BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+        BUFFER_SIZE, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
 
     m_captureBuffer.upload_data(&capture, sizeof(CaptureData));
 

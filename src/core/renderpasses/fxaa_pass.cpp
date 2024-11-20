@@ -13,7 +13,7 @@ void FXAAPass::setup_attachments(std::vector<Graphics::Attachment>&        attac
                                           1,
                                           m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          USAGE_TRANSIENT_ATTACHMENT | USAGE_COLOR_ATTACHMENT,
+                                          IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
                                           COLOR_ATTACHMENT,
                                           ASPECT_COLOR,
                                           TEXTURE_2D,
@@ -25,13 +25,13 @@ void FXAAPass::setup_attachments(std::vector<Graphics::Attachment>&        attac
     // Depdencies
     dependencies.resize(1);
 
-    dependencies[0] = Graphics::SubPassDependency(COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_NONE);
+    dependencies[0] = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
 }
 void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {outputTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptorSet);

@@ -17,25 +17,28 @@ namespace Graphics {
 // Translates engine flags to Vulkan types
 namespace Translator {
 
-VkFormat              get(ColorFormatType colorFormatType);
-VkPresentModeKHR      get(SyncType syncType);
-VkShaderStageFlagBits get(ShaderStageType stageType);
-VkDescriptorType      get(UniformDataType uniformDataType);
-VkImageUsageFlags     get(ImageUsageFlags usageFlags);
-VkImageLayout         get(ImageLayout layoutType);
-VkImageViewType       get(TextureTypeFlagBits viewType);
-VkFilter              get(FilterType filterType);
-VkSamplerAddressMode  get(AddressMode addressMode);
-VkClearValue          get(ClearValueType clearValueType);
-VkDependencyFlags     get(SubPassDependencyType dependencyFlags);
-VkPipelineStageFlags  get(PipelineStage stageFlags);
-VkAccessFlags         get(AccessFlags accessFlags);
-VkAttachmentStoreOp   get(AttachmentStoreOp storeOp);
-VkAttachmentLoadOp    get(AttachmentLoadOp loadOp);
-VkImageAspectFlags    get(ImageAspect aspectType);
-VkSamplerMipmapMode   get(MipmapMode mipmapMode);
-VkBorderColor         get(BorderColor borderColor);
-
+VkFormat                 get(ColorFormatType colorFormatType);
+VkPresentModeKHR         get(SyncType syncType);
+VkDescriptorType         get(UniformDataType uniformDataType);
+VkImageUsageFlags        get(ImageUsageFlags usageFlags);
+VkImageLayout            get(ImageLayout layoutType);
+VkImageViewType          get(TextureTypeFlagBits viewType);
+VkFilter                 get(FilterType filterType);
+VkSamplerAddressMode     get(AddressMode addressMode);
+VkClearValue             get(ClearValueType clearValueType);
+VkDependencyFlags        get(SubPassDependencyType dependencyFlags);
+VkPipelineStageFlags     get(PipelineStage stageFlags);
+VkAccessFlags            get(AccessFlags accessFlags);
+VkAttachmentStoreOp      get(AttachmentStoreOp storeOp);
+VkAttachmentLoadOp       get(AttachmentLoadOp loadOp);
+VkImageAspectFlags       get(ImageAspect aspectType);
+VkSamplerMipmapMode      get(MipmapMode mipmapMode);
+VkBorderColor            get(BorderColor borderColor);
+VkCommandPoolCreateFlags get(CommandPoolCreateFlags flags);
+VkCommandBufferLevel     get(CommandBufferLevel level);
+VkBufferUsageFlags       get(BufferUsageFlags usageFlags);
+VkMemoryPropertyFlags    get(MemoryPropertyFlags memoryFlags);
+VkShaderStageFlags       get(ShaderStageFlags shaderStages);
 
 } // namespace Translator
 } // namespace Graphics

@@ -65,8 +65,8 @@ struct Attachment {
 struct SubPassDependency {
     uint32_t              srcSubpass      = VK_SUBPASS_EXTERNAL;
     uint32_t              dstSubpass      = 0;
-    PipelineStage         srcStageMask    = COLOR_ATTACHMENT_OUTPUT_STAGE;
-    PipelineStage         dstStageMask    = COLOR_ATTACHMENT_OUTPUT_STAGE;
+    PipelineStage         srcStageMask    = STAGE_COLOR_ATTACHMENT_OUTPUT;
+    PipelineStage         dstStageMask    = STAGE_COLOR_ATTACHMENT_OUTPUT;
     AccessFlags           srcAccessMask   = AccessFlags::ACCESS_NONE;
     AccessFlags           dstAccessMask   = AccessFlags::ACCESS_COLOR_ATTACHMENT_WRITE;
     SubPassDependencyType dependencyFlags = SUBPASS_DEPENDENCY_NONE;

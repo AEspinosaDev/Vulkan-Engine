@@ -31,12 +31,12 @@ Vulkan API graphic context related data and functionality
 class Device
 {
     // Main items
-    VkDevice                               m_handle        = VK_NULL_HANDLE;
-    VkInstance                             m_instance      = VK_NULL_HANDLE;
-    VkPhysicalDevice                       m_gpu           = VK_NULL_HANDLE;
-    VmaAllocator                           m_allocator     = VK_NULL_HANDLE;
-    Swapchain                              m_swapchain     = {};
-    DescriptorPool                         m_guiPool       = {};
+    VkDevice                               m_handle    = VK_NULL_HANDLE;
+    VkInstance                             m_instance  = VK_NULL_HANDLE;
+    VkPhysicalDevice                       m_gpu       = VK_NULL_HANDLE;
+    VmaAllocator                           m_allocator = VK_NULL_HANDLE;
+    Swapchain                              m_swapchain = {};
+    DescriptorPool                         m_guiPool   = {};
     std::unordered_map<QueueType, VkQueue> m_queues;
     // GPU Properties
     VkPhysicalDeviceProperties       m_properties       = {};
@@ -54,8 +54,8 @@ class Device
                                                    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
                                                    VK_KHR_RAY_QUERY_EXTENSION_NAME};
     // Utils
-    Utils::UploadContext m_uploadContext = {};
-    Utils::QueueFamilyIndices              m_queueFamilies = {};
+    Utils::UploadContext      m_uploadContext = {};
+    Utils::QueueFamilyIndices m_queueFamilies = {};
 #ifdef NDEBUG
     const bool m_enableValidationLayers{false};
 #else
@@ -70,12 +70,11 @@ class Device
     inline VkDevice get_handle() {
         return m_handle;
     };
-   
-    
+
     inline Swapchain get_swapchain() const {
         return m_swapchain;
     }
-    
+
     /*
     INIT AND SHUTDOWN
     -----------------------------------------------
@@ -99,11 +98,11 @@ class Device
 
     /*Create Buffer using Vulkan Memory Allocator (VMA)*/
     Buffer
-    create_buffer_VMA(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize = 0);
+    create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize = 0);
     /*Create Buffer*/
     Buffer create_buffer(size_t                allocSize,
-                         VkBufferUsageFlags    usage,
-                         VkMemoryPropertyFlags memoryProperties,
+                         BufferUsageFlags      usage,
+                         MemoryPropertyFlags memoryProperties,
                          uint32_t              strideSize = 0);
     /*Create Image*/
     Image create_image(Extent3D       extent,
@@ -137,11 +136,11 @@ class Device
                                           uint32_t                       numIAttachment       = 0,
                                           VkDescriptorPoolCreateFlagBits flag                 = {});
     /*Create Command Pool*/
-    CommandPool create_command_pool(QueueType                QueueType,
-                                    VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    CommandPool create_command_pool(QueueType              QueueType,
+                                    CommandPoolCreateFlags flags = COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
     /*Create command buffer*/
-    CommandBuffer create_command_buffer(CommandPool          commandPool,
-                                        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    CommandBuffer create_command_buffer(CommandPool        commandPool,
+                                        CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY);
 
     /*
     DRAWING
@@ -171,13 +170,10 @@ class Device
     MISC
     -----------------------------------------------
     */
-    void     wait();
-    void     init_imgui(void*                 windowHandle,
-                        WindowingSystem       windowingSystem,
-                        VulkanRenderPass      renderPass,
-                        uint16_t samples);
-    void     destroy_imgui();
-    uint32_t get_memory_type(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32* memTypeFound = nullptr);
+    void wait();
+    void init_imgui(void* windowHandle, WindowingSystem windowingSystem, VulkanRenderPass renderPass, uint16_t samples);
+    void destroy_imgui();
+    uint32_t get_memory_type(uint32_t typeBits, MemoryPropertyFlags properties, uint32_t* memTypeFound = nullptr);
     /*
     Returns the size of the data having in mind the minimun alginment size per stride in the GPU
     */

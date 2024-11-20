@@ -244,16 +244,7 @@ enum AttachmentType
     DEPTH_ATTACHMENT   = 1,
     RESOLVE_ATTACHMENT = 2,
 };
-enum ShaderStageType
-{
-    NONE_STAGE      = -1,
-    VERTEX          = 0,
-    FRAGMENT        = 1,
-    GEOMETRY        = 2,
-    TESS_CONTROL    = 3,
-    TESS_EVALUATION = 4,
-    ALL_STAGES      = 5
-};
+
 enum UniformDataType
 {
     UNIFORM_BUFFER         = 0,
@@ -356,16 +347,16 @@ typedef enum SubPassDependencyTypeFlagsBits
 } SubPassDependencyType;
 typedef enum PipelineStageFlagsBits
 {
-    TOP_OF_PIPE_STAGE             = 0x00000001,
-    BOTTOM_OF_PIPE_STAGE          = 0x00000002,
-    COLOR_ATTACHMENT_OUTPUT_STAGE = 0x00000003,
-    EARLY_FRAGMENT_TESTS_STAGE    = 0x00000004,
-    LATE_FRAGMENT_TESTS_STAGE     = 0x00000005,
-    ALL_GRAPHICS_STAGE            = 0x00000006,
-    TRANSFER_STAGE                = 0x00000007,
-    COMPUTE_SHADER_STAGE          = 0x00000008,
-    FRAGMENT_SHADER_STAGE         = 0x00000009,
-    ALL_COMMANDS_STAGE            = 0x00000010,
+    STAGE_TOP_OF_PIPE             = 0x00000001,
+    STAGE_BOTTOM_OF_PIPE          = 0x00000002,
+    STAGE_COLOR_ATTACHMENT_OUTPUT = 0x00000003,
+    STAGE_EARLY_FRAGMENT_TESTS    = 0x00000004,
+    STAGE_LATE_FRAGMENT_TESTS     = 0x00000005,
+    STAGE_ALL_GRAPHICS            = 0x00000006,
+    STAGE_TRANSFER                = 0x00000007,
+    STAGE_COMPUTE_SHADER          = 0x00000008,
+    STAGE_FRAGMENT_SHADER         = 0x00000009,
+    STAGE_ALL_COMMANDS            = 0x00000010,
 } PipelineStage;
 typedef enum AccessFlagsBits
 {
@@ -408,16 +399,17 @@ typedef enum BindingTypeFlagBits
 
 typedef enum ImageUsageFlagsBits
 {
-    USAGE_NONE                     = 0x0,
-    USAGE_SAMPLED                  = 0x1,
-    USAGE_STORAGE                  = 0x2,
-    USAGE_TRANSFER_SRC             = 0x4,
-    USAGE_TRANSFER_DST             = 0x8,
-    USAGE_COLOR_ATTACHMENT         = 0x10,
-    USAGE_DEPTH_STENCIL_ATTACHMENT = 0x20,
-    USAGE_TRANSIENT_ATTACHMENT     = 0x40,
-    USAGE_INPUT_ATTACHMENT         = 0x80,
+    IMAGE_USAGE_NONE                     = 0x0,
+    IMAGE_USAGE_SAMPLED                  = 0x1,
+    IMAGE_USAGE_STORAGE                  = 0x2,
+    IMAGE_USAGE_TRANSFER_SRC             = 0x4,
+    IMAGE_USAGE_TRANSFER_DST             = 0x8,
+    IMAGE_USAGE_COLOR_ATTACHMENT         = 0x10,
+    IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT = 0x20,
+    IMAGE_USAGE_TRANSIENT_ATTACHMENT     = 0x40,
+    IMAGE_USAGE_INPUT_ATTACHMENT         = 0x80,
 } ImageUsageFlags;
+
 inline ImageUsageFlags operator|(ImageUsageFlags a, ImageUsageFlags b) {
     return static_cast<ImageUsageFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 }
@@ -435,6 +427,105 @@ inline ImageUsageFlags& operator&=(ImageUsageFlags& a, ImageUsageFlags b) {
 inline ImageUsageFlags operator~(ImageUsageFlags a) {
     return static_cast<ImageUsageFlags>(~static_cast<uint32_t>(a));
 }
+typedef enum CommandPoolCreateFlagsBits
+{
+    COMMAND_POOL_NONE                        = 0x0,
+    COMMAND_POOL_CREATE_TRANSIENT            = 0x1,
+    COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER = 0x2
+} CommandPoolCreateFlags;
+typedef enum CommandBufferLevelBits
+{
+    COMMAND_BUFFER_LEVEL_PRIMARY   = 0x0,
+    COMMAND_BUFFER_LEVEL_SECONDARY = 0x1
+} CommandBufferLevel;
+typedef enum BufferUsageFlagsBits
+{
+    BUFFER_USAGE_NONE                                         = 0x0,
+    BUFFER_USAGE_TRANSFER_SRC                                 = 0x1,
+    BUFFER_USAGE_TRANSFER_DST                                 = 0x2,
+    BUFFER_USAGE_UNIFORM_TEXEL_BUFFER                         = 0x4,
+    BUFFER_USAGE_STORAGE_TEXEL_BUFFER                         = 0x8,
+    BUFFER_USAGE_UNIFORM_BUFFER                               = 0x10,
+    BUFFER_USAGE_STORAGE_BUFFER                               = 0x20,
+    BUFFER_USAGE_INDEX_BUFFER                                 = 0x40,
+    BUFFER_USAGE_VERTEX_BUFFER                                = 0x80,
+    BUFFER_USAGE_INDIRECT_BUFFER                              = 0x100,
+    BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE               = 0x200,
+    BUFFER_USAGE_SHADER_DEVICE_ADDRESS                        = 0x400,
+    BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY = 0x800
+} BufferUsageFlags;
+inline BufferUsageFlags operator|(BufferUsageFlags lhs, BufferUsageFlags rhs) {
+    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+inline BufferUsageFlags& operator|=(BufferUsageFlags& lhs, BufferUsageFlags rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
+inline BufferUsageFlags operator&(BufferUsageFlags lhs, BufferUsageFlags rhs) {
+    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+inline bool operator&(BufferUsageFlags lhs, uint32_t rhs) {
+    return (static_cast<uint32_t>(lhs) & rhs) != 0;
+}
+typedef enum MemoryPropertyFlagsBits
+{
+    MEMORY_PROPERTY_NONE             = 0x0,
+    MEMORY_PROPERTY_DEVICE_LOCAL     = 0x1,
+    MEMORY_PROPERTY_HOST_VISIBLE     = 0x2,
+    MEMORY_PROPERTY_HOST_COHERENT    = 0x4,
+    MEMORY_PROPERTY_HOST_CACHED      = 0x8,
+    MEMORY_PROPERTY_LAZILY_ALLOCATED = 0x10,
+    MEMORY_PROPERTY_PROTECTED        = 0x20,
+    MEMORY_PROPERTY_DEVICE_COHERENT  = 0x40,
+    MEMORY_PROPERTY_DEVICE_UNCACHED  = 0x80
+} MemoryPropertyFlags;
+inline MemoryPropertyFlags operator|(MemoryPropertyFlags lhs, MemoryPropertyFlags rhs) {
+    return static_cast<MemoryPropertyFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+inline MemoryPropertyFlags& operator|=(MemoryPropertyFlags& lhs, MemoryPropertyFlags rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
+inline MemoryPropertyFlags operator&(MemoryPropertyFlags lhs, MemoryPropertyFlags rhs) {
+    return static_cast<MemoryPropertyFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+inline bool operator&(MemoryPropertyFlags lhs, uint32_t rhs) {
+    return (static_cast<uint32_t>(lhs) & rhs) != 0;
+}
+typedef enum ShaderStageFlagsBits
+{
+    SHADER_STAGE_NONE                    = 0x00000000,
+    SHADER_STAGE_VERTEX                  = 0x00000001,
+    SHADER_STAGE_TESSELLATION_CONTROL    = 0x00000002,
+    SHADER_STAGE_TESSELLATION_EVALUATION = 0x00000004,
+    SHADER_STAGE_GEOMETRY                = 0x00000008,
+    SHADER_STAGE_FRAGMENT                = 0x00000010,
+    SHADER_STAGE_COMPUTE                 = 0x00000020,
+    SHADER_STAGE_ALL_GRAPHICS            = 0x0000001F,
+    SHADER_STAGE_ALL                     = 0x7FFFFFFF,
+    SHADER_STAGE_RAYGEN                  = 0x00000100,
+    SHADER_STAGE_ANY_HIT                 = 0x00000200,
+    SHADER_STAGE_CLOSEST_HIT             = 0x00000400,
+    SHADER_STAGE_MISS                    = 0x00000800,
+    SHADER_STAGE_INTERSECTION            = 0x00001000,
+    SHADER_STAGE_CALLABLE                = 0x00002000,
+    SHADER_STAGE_TASK                    = 0x00000040,
+    SHADER_STAGE_MESH                    = 0x00000080
+} ShaderStageFlags;
+inline ShaderStageFlags operator|(ShaderStageFlags lhs, ShaderStageFlags rhs) {
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+inline ShaderStageFlags& operator|=(ShaderStageFlags& lhs, ShaderStageFlags rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
+inline ShaderStageFlags operator&(ShaderStageFlags lhs, ShaderStageFlags rhs) {
+    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+inline bool operator&(ShaderStageFlags lhs, uint32_t rhs) {
+    return (static_cast<uint32_t>(lhs) & rhs) != 0;
+}
+
 /*
 Graphic pipeline result info
 */

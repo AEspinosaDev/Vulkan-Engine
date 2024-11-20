@@ -13,7 +13,7 @@ void VarianceShadowPass::setup_attachments(std::vector<Graphics::Attachment>&   
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          USAGE_COLOR_ATTACHMENT | USAGE_SAMPLED,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
                                           COLOR_ATTACHMENT,
                                           ASPECT_COLOR,
                                           TEXTURE_2D_ARRAY,
@@ -24,7 +24,7 @@ void VarianceShadowPass::setup_attachments(std::vector<Graphics::Attachment>&   
                                           1,
                                           LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                           LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                          IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
                                           DEPTH_ATTACHMENT,
                                           ASPECT_DEPTH,
                                           TEXTURE_2D_ARRAY);
@@ -33,9 +33,9 @@ void VarianceShadowPass::setup_attachments(std::vector<Graphics::Attachment>&   
     dependencies.resize(2);
 
     dependencies[0] = Graphics::SubPassDependency(
-        COLOR_ATTACHMENT_OUTPUT_STAGE, COLOR_ATTACHMENT_OUTPUT_STAGE, ACCESS_COLOR_ATTACHMENT_WRITE);
+        STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[1] = Graphics::SubPassDependency(
-        EARLY_FRAGMENT_TESTS_STAGE, EARLY_FRAGMENT_TESTS_STAGE, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
+        STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
 
     m_isResizeable = false;
 }
@@ -46,29 +46,25 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
-    LayoutBinding camBufferBinding(
-        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0);
-    LayoutBinding sceneBufferBinding(
-        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        1);
-    LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2);
-    LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3);
-    LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4);
+    LayoutBinding camBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
+                                   SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
+                                   0);
+    LayoutBinding sceneBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
+                                     SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
+                                     1);
+    LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
     m_descriptorPool.set_layout(
         GLOBAL_LAYOUT, {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
 
     // PER-OBJECT SET
-    LayoutBinding objectBufferBinding(
-        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0);
-    LayoutBinding materialBufferBinding(
-        UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        1);
+    LayoutBinding objectBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
+                                      SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
+                                      0);
+    LayoutBinding materialBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
+                                        SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
+                                        1);
     m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     for (size_t i = 0; i < frames.size(); i++)

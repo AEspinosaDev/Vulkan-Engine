@@ -11,6 +11,7 @@
 
 #include <engine/graphics/pipeline.h>
 #include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/utilities/translator.h>
 
 #include <unordered_map>
 
