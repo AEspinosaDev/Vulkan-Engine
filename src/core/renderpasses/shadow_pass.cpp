@@ -161,7 +161,8 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
                 {
 
                     // Setup per object render state
-                    IMaterial* mat = m->get_material(i);
+                    Geometry*  g   = m->get_geometry(i);
+                    IMaterial* mat = m->get_material(g->get_material_ID());
 
                     ShaderPass* shaderPass =
                         mat->get_shaderpass_ID() != "hairstr" && mat->get_shaderpass_ID() != "hairstr2"
@@ -183,7 +184,6 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
                                             {objectOffset, objectOffset});
 
                     // DRAW
-                    Geometry* g = m->get_geometry(i);
                     cmd.draw_geometry(*get_VAO(g));
                 }
             }

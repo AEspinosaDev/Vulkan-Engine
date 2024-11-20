@@ -160,11 +160,12 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
             {
                 uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                for (size_t i = 0; i < 1; i++)
+                for (size_t i = 0; i < m->get_num_geometries(); i++)
                 {
 
                     // Setup per object render state
-                    IMaterial* mat = m->get_material(i);
+                    Geometry*  g   = m->get_geometry(i);
+                    IMaterial* mat = m->get_material(g->get_material_ID());
 
                     ShaderPass* shaderPass =
                         mat->get_shaderpass_ID() != "hairstr" && mat->get_shaderpass_ID() != "hairstr2"
@@ -186,7 +187,6 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
                                             {objectOffset, objectOffset});
 
                     // DRAW
-                    Geometry* g = m->get_geometry(i);
                     cmd.draw_geometry(*get_VAO(g));
                 }
             }
