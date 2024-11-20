@@ -29,6 +29,7 @@ struct Accel {
     bool              binded    = false;
     uint32_t          instances = 0;
     AccelGeometryType topology  = AccelGeometryType::TRIANGLES;
+    bool              dynamic   = false; // For real-time updating
 
     void cleanup();
 };

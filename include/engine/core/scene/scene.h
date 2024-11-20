@@ -153,6 +153,18 @@ class Scene : public Object3D
     inline void set_use_IBL(bool p) {
         m_useIBL = p;
     }
+    /*
+   Query if Acceleration Structure is dynamic. That means that AS will update the positions of the meshes.
+   */
+    inline bool dynamic_AS() const {
+        return m_accel.dynamic;
+    }
+    /*
+    Set if Acceleration Structure is dynamic. That means that AS will update the positions of the meshes.
+    */
+    inline void dynamic_AS(bool op) {
+        m_accel.dynamic = op;
+    }
 };
 void set_meshes(Scene* const scene, std::vector<Mesh*> meshes);
 

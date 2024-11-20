@@ -72,11 +72,26 @@ class Geometry
     inline const GeometricData* get_properties() const {
         return &m_properties;
     }
+    /*
+    Use Voxel Acceleration Structure
+    */
     inline bool create_voxel_AS() const {
         return m_BLAS.topology == AccelGeometryType::AABBs;
     }
     inline void create_voxel_AS(bool op) {
         m_BLAS.topology = op ? AccelGeometryType::AABBs : AccelGeometryType::TRIANGLES;
+    }
+    /*
+    Query if Acceleration Structure is dynamic. That means that AS will update the positions of the primitives.
+    */
+    inline bool dynamic_AS() const {
+        return m_BLAS.dynamic;
+    }
+    /*
+    Set if Acceleration Structure is dynamic. That means that AS will update the positions of the primitives.
+    */
+    inline void dynamic_AS(bool op) {
+        m_BLAS.dynamic = op;
     }
     ~Geometry() {
     }

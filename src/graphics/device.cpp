@@ -577,6 +577,8 @@ void Device::upload_texture_image(Image&        img,
 void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     if (!vao.loadedOnGPU)
         return;
+    if (accel.handle && !accel.dynamic)
+        accel.cleanup();
 
     // GEOMETRY -----------------------------------------------------------
     VkDeviceOrHostAddressConstKHR      vertexBufferDeviceAddress     = {};
@@ -624,7 +626,10 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
         Init::acceleration_structure_build_geometry_info();
     accelerationStructureBuildGeometryInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelerationStructureBuildGeometryInfo.flags         = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelerationStructureBuildGeometryInfo.flags         = accel.dynamic
+                                                               ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+                                                             VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                                                               : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     accelerationStructureBuildGeometryInfo.geometryCount = 1;
     accelerationStructureBuildGeometryInfo.pGeometries   = &accelerationStructureGeometry;
 
@@ -639,9 +644,10 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
                                          &accelerationStructureBuildSizesInfo);
 
     // CREATE ACCELERATION BUFFER -----------------------------------------------------------
-    accel.buffer = create_buffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
-                                 BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
-                                 MEMORY_PROPERTY_DEVICE_LOCAL);
+    if (!accel.handle)
+        accel.buffer = create_buffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
+                                     BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
+                                     MEMORY_PROPERTY_DEVICE_LOCAL);
 
     // CREATE ACCELERATION STRUCTURE -----------------------------------------------------------
     VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
@@ -663,8 +669,11 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
     accelerationBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelerationBuildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelerationBuildGeometryInfo.mode  = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    accelerationBuildGeometryInfo.flags = accel.dynamic ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+                                                              VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                                                        : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelerationBuildGeometryInfo.mode = accel.dynamic && accel.handle ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
+                                                                       : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     accelerationBuildGeometryInfo.dstAccelerationStructure  = accel.handle;
     accelerationBuildGeometryInfo.geometryCount             = 1;
     accelerationBuildGeometryInfo.pGeometries               = &accelerationStructureGeometry;
@@ -694,6 +703,8 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
 }
 
 void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) {
+    if (accel.handle && !accel.dynamic)
+        accel.cleanup();
 
     // Set up instance data for each BLAS
     accel.instances = BLASinstances.size();
@@ -737,7 +748,10 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
         Init::acceleration_structure_build_geometry_info();
     accelerationStructureBuildGeometryInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    accelerationStructureBuildGeometryInfo.flags         = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelerationStructureBuildGeometryInfo.flags         = accel.dynamic
+                                                               ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+                                                             VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                                                               : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     accelerationStructureBuildGeometryInfo.geometryCount = 1;
     accelerationStructureBuildGeometryInfo.pGeometries   = &accelerationStructureGeometry;
 
@@ -752,9 +766,10 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
                                          &accelerationStructureBuildSizesInfo);
 
     // CREATE ACCELERATION BUFFER
-    accel.buffer = create_buffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
-                                 BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
-                                 MEMORY_PROPERTY_DEVICE_LOCAL);
+    if (!accel.handle)
+        accel.buffer = create_buffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
+                                     BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
+                                     MEMORY_PROPERTY_DEVICE_LOCAL);
 
     VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
     accelerationStructureCreateInfo.sType  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -774,9 +789,12 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
 
     VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo =
         Init::acceleration_structure_build_geometry_info();
-    accelerationBuildGeometryInfo.type                      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    accelerationBuildGeometryInfo.flags                     = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelerationBuildGeometryInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    accelerationBuildGeometryInfo.flags = accel.dynamic ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+                                                              VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                                                        : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelerationBuildGeometryInfo.mode = accel.dynamic && accel.handle ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
+                                                                       : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     accelerationBuildGeometryInfo.dstAccelerationStructure  = accel.handle;
     accelerationBuildGeometryInfo.geometryCount             = 1;
     accelerationBuildGeometryInfo.pGeometries               = &accelerationStructureGeometry;
