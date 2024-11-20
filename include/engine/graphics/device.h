@@ -100,10 +100,10 @@ class Device
     Buffer
     create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize = 0);
     /*Create Buffer*/
-    Buffer create_buffer(size_t                allocSize,
-                         BufferUsageFlags      usage,
+    Buffer create_buffer(size_t              allocSize,
+                         BufferUsageFlags    usage,
                          MemoryPropertyFlags memoryProperties,
-                         uint32_t              strideSize = 0);
+                         uint32_t            strideSize = 0);
     /*Create Image*/
     Image create_image(Extent3D       extent,
                        ImageConfig    config,
@@ -146,13 +146,12 @@ class Device
     DRAWING
     -----------------------------------------------
     */
-   /*Waits for the frame to finish rendering*/
+    /*Waits for the frame to finish rendering*/
     RenderResult wait_frame(Frame& frame, uint32_t& imageIndex);
     /*Resets conmmand and control objects and starts command buffer for new render cicle*/
     void start_frame(Frame& frame);
     /*Submits the frame to the graphic queue for presenting into the swapchain*/
     RenderResult submit_frame(Frame& frame, uint32_t imageIndex);
-
 
     RenderResult aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex);
     RenderResult present_image(Semaphore& signalSemaphore, uint32_t imageIndex);
@@ -160,8 +159,13 @@ class Device
     DATA TRANSFER
     -----------------------------------------------
     */
-    void
-    upload_vertex_arrays(VertexArrays& vao, size_t vboSize, const void* vboData, size_t iboSize, const void* iboData);
+    void upload_vertex_arrays(VertexArrays& vao,
+                              size_t        vboSize,
+                              const void*   vboData,
+                              size_t        iboSize,
+                              const void*   iboData,
+                              size_t        voxelSize = 0,
+                              const void*   voxelData = nullptr);
     void upload_texture_image(Image&        img,
                               ImageConfig   config,
                               SamplerConfig samplerConfig,

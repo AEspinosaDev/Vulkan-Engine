@@ -19,11 +19,18 @@ namespace Graphics {
 Geometric Render Data
 */
 struct VertexArrays {
-    bool     loadedOnGPU = false;
+    bool loadedOnGPU = false;
+
     Buffer   vbo         = {};
     uint32_t vertexCount = 0;
     Buffer   ibo         = {};
     uint32_t indexCount  = 0;
+
+    /*
+    Optional, if the geometry need a proxy axis-aligned voxelized volume
+    */
+    Buffer   voxelBuffer   = {};
+    uint32_t voxelCount    = 0;
 };
 typedef VertexArrays VAO;
 /*
@@ -105,6 +112,19 @@ struct Vertex {
 
     bool operator!=(const Vertex& other) const {
         return !(*this == other);
+    }
+};
+/*
+Voxel data type configured as an Axis-Aligned-Box
+*/
+struct Voxel {
+    Vec3 minCoord = Vec3(0.0f);
+    Vec3 maxCoord = Vec3(0.0f);
+    Voxel() {
+    }
+    Voxel(Vec3 center, float radius) {
+        maxCoord = Vec3(center + radius);
+        minCoord = Vec3(center - radius);
     }
 };
 

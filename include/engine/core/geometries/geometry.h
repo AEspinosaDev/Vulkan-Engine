@@ -21,8 +21,9 @@ namespace Core {
 class Geometry;
 
 struct GeometricData {
-    std::vector<uint32_t>                vertexIndex;
+    std::vector<uint32_t>         vertexIndex;
     std::vector<Graphics::Vertex> vertexData;
+    std::vector<Graphics::Voxel>  voxelData;
 
     // Stats
     Vec3 maxCoords;
@@ -41,11 +42,11 @@ class Geometry
 {
 
   private:
-    Graphics::VAO  m_VAO{};
-    Graphics::BLAS m_BLAS{};
+    Graphics::VAO  m_VAO  = {};
+    Graphics::BLAS m_BLAS = {};
 
-    GeometricData m_properties{};
-    size_t        m_materialID{0};
+    GeometricData m_properties = {};
+    size_t        m_materialID = 0;
 
     friend Graphics::VertexArrays* const get_VAO(Geometry* g);
     friend Graphics::BLAS* const         get_BLAS(Geometry* g);
@@ -71,12 +72,19 @@ class Geometry
     inline const GeometricData* get_properties() const {
         return &m_properties;
     }
+    inline bool create_voxel_AS() const {
+        return m_BLAS.topology == AccelGeometryType::AABBs;
+    }
+    inline void create_voxel_AS(bool op) {
+        m_BLAS.topology = op ? AccelGeometryType::AABBs : AccelGeometryType::TRIANGLES;
+    }
     ~Geometry() {
     }
 
     void             fill(std::vector<Graphics::Vertex> vertexInfo);
     void             fill(std::vector<Graphics::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
     void             fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber);
+    void             fill_voxel_array(std::vector<Graphics::Voxel> voxels);
     static Geometry* create_quad();
     static Geometry* create_cube();
 };

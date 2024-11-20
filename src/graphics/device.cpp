@@ -129,11 +129,10 @@ Buffer Device::create_buffer(size_t              allocSize,
     memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
     memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo memoryAllocateInfo{};
-    memoryAllocateInfo.sType          = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.pNext          = &memoryAllocateFlagsInfo;
-    memoryAllocateInfo.allocationSize = memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex =
-        get_memory_type(memoryRequirements.memoryTypeBits, memoryProperties);
+    memoryAllocateInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.pNext           = &memoryAllocateFlagsInfo;
+    memoryAllocateInfo.allocationSize  = memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = get_memory_type(memoryRequirements.memoryTypeBits, memoryProperties);
 
     VK_CHECK(vkAllocateMemory(m_handle, &memoryAllocateInfo, nullptr, &buffer.memory));
     VK_CHECK(vkBindBufferMemory(m_handle, buffer.handle, buffer.memory, 0));
@@ -451,7 +450,9 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
                                   size_t        vboSize,
                                   const void*   vboData,
                                   size_t        iboSize,
-                                  const void*   iboData) {
+                                  const void*   iboData,
+                                  size_t        voxelSize,
+                                  const void*   voxelData) {
     PROFILING_EVENT()
     // Should be executed only once if geometry data is not changed
 
@@ -497,6 +498,28 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
         });
 
         iboStagingBuffer.cleanup();
+    }
+    if (vao.voxelCount > 0)
+    {
+        // Staging Voxel buffer (CPU only)
+        Buffer voxelStagingBuffer = create_buffer_VMA(voxelSize, BUFFER_USAGE_TRANSFER_SRC, VMA_MEMORY_USAGE_CPU_ONLY);
+        voxelStagingBuffer.upload_data(voxelData, voxelSize);
+
+        // GPU Voxel buffer
+        vao.voxelBuffer = create_buffer_VMA(voxelSize,
+                                            BUFFER_USAGE_TRANSFER_DST | BUFFER_USAGE_SHADER_DEVICE_ADDRESS |
+                                                BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
+                                            VMA_MEMORY_USAGE_GPU_ONLY);
+
+        m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
+            VkBufferCopy voxel_copy;
+            voxel_copy.dstOffset = 0;
+            voxel_copy.srcOffset = 0;
+            voxel_copy.size      = voxelSize;
+            vkCmdCopyBuffer(cmd, voxelStagingBuffer.handle, vao.voxelBuffer.handle, 1, &voxel_copy);
+        });
+
+        voxelStagingBuffer.cleanup();
     }
 
     vao.loadedOnGPU = true;
@@ -555,33 +578,49 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     if (!vao.loadedOnGPU)
         return;
 
-    VkDeviceOrHostAddressConstKHR vertexBufferDeviceAddress{};
-    VkDeviceOrHostAddressConstKHR indexBufferDeviceAddress{};
-
-    vertexBufferDeviceAddress.deviceAddress = vao.vbo.get_device_address();
-    if (vao.indexCount > 0)
-        indexBufferDeviceAddress.deviceAddress = vao.ibo.get_device_address();
-
-    // GEOMETRY
+    // GEOMETRY -----------------------------------------------------------
+    VkDeviceOrHostAddressConstKHR      vertexBufferDeviceAddress     = {};
+    VkDeviceOrHostAddressConstKHR      indexBufferDeviceAddress      = {};
+    VkDeviceOrHostAddressConstKHR      voxelBufferDeviceAddress      = {};
     VkAccelerationStructureGeometryKHR accelerationStructureGeometry = Init::acceleration_structure_geometry();
-    accelerationStructureGeometry.flags                              = VK_GEOMETRY_OPAQUE_BIT_KHR;
-    accelerationStructureGeometry.geometryType                       = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    accelerationStructureGeometry.geometry.triangles.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-    accelerationStructureGeometry.geometry.triangles.vertexData   = vertexBufferDeviceAddress;
-    accelerationStructureGeometry.geometry.triangles.maxVertex    = vao.vertexCount - 1;
-    accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(Vertex);
 
-    if (vao.indexCount > 0)
+    if (accel.topology == AccelGeometryType::TRIANGLES)
     {
-        accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
-        accelerationStructureGeometry.geometry.triangles.indexData = indexBufferDeviceAddress;
-    }
-    accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = 0;
-    accelerationStructureGeometry.geometry.triangles.transformData.hostAddress   = nullptr;
+        vertexBufferDeviceAddress.deviceAddress = vao.vbo.get_device_address();
+        if (vao.indexCount > 0)
+            indexBufferDeviceAddress.deviceAddress = vao.ibo.get_device_address();
 
-    // SIZE INFO
+        accelerationStructureGeometry.flags        = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+        accelerationStructureGeometry.geometry.triangles.sType =
+            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+        accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+        accelerationStructureGeometry.geometry.triangles.vertexData   = vertexBufferDeviceAddress;
+        accelerationStructureGeometry.geometry.triangles.maxVertex    = vao.vertexCount - 1;
+        accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(Vertex);
+
+        if (vao.indexCount > 0)
+        {
+            accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+            accelerationStructureGeometry.geometry.triangles.indexData = indexBufferDeviceAddress;
+        }
+        accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = 0;
+        accelerationStructureGeometry.geometry.triangles.transformData.hostAddress   = nullptr;
+    }
+    if (accel.topology == AccelGeometryType::AABBs)
+    {
+        voxelBufferDeviceAddress.deviceAddress = vao.voxelBuffer.get_device_address();
+
+        accelerationStructureGeometry.flags        = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+        accelerationStructureGeometry.geometry.aabbs.sType =
+            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+
+        accelerationStructureGeometry.geometry.aabbs.data.deviceAddress = vao.voxelBuffer.get_device_address();
+        accelerationStructureGeometry.geometry.aabbs.stride             = sizeof(Voxel); // Stride between AABBs
+    }
+
+    // SIZE INFO -----------------------------------------------------------
     VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
         Init::acceleration_structure_build_geometry_info();
     accelerationStructureBuildGeometryInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
@@ -592,19 +631,19 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo =
         Init::acceleration_structure_build_sizes_info();
 
-    const uint32_t numTriangles = vao.indexCount / 3;
+    const uint32_t numPrimitives = accel.topology == AccelGeometryType::TRIANGLES ? vao.indexCount / 3 : vao.voxelCount;
     vkGetAccelerationStructureBuildSizes(m_handle,
                                          VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                                          &accelerationStructureBuildGeometryInfo,
-                                         &numTriangles,
+                                         &numPrimitives,
                                          &accelerationStructureBuildSizesInfo);
 
-    // CREATE ACCELERATION BUFFER
+    // CREATE ACCELERATION BUFFER -----------------------------------------------------------
     accel.buffer = create_buffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
                                  BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
                                  MEMORY_PROPERTY_DEVICE_LOCAL);
 
-    // CREATE ACCELERATION STRUCTURE
+    // CREATE ACCELERATION STRUCTURE -----------------------------------------------------------
     VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
     accelerationStructureCreateInfo.sType  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
     accelerationStructureCreateInfo.buffer = accel.buffer.handle;
@@ -632,7 +671,7 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     accelerationBuildGeometryInfo.scratchData.deviceAddress = scratchBuffer.get_device_address();
 
     VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
-    accelerationStructureBuildRangeInfo.primitiveCount                                          = numTriangles;
+    accelerationStructureBuildRangeInfo.primitiveCount                                          = numPrimitives;
     accelerationStructureBuildRangeInfo.primitiveOffset                                         = 0;
     accelerationStructureBuildRangeInfo.firstVertex                                             = 0;
     accelerationStructureBuildRangeInfo.transformOffset                                         = 0;
@@ -677,7 +716,7 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
         instances[i].accelerationStructureReference         = BLASinstances[i].accel.deviceAdress;
     }
 
-    // Create a buffer for the instances
+    // Create a buffer for the instances -----------------------------------------------------------
     Buffer instanceBuffer =
         create_buffer(sizeof(VkAccelerationStructureInstanceKHR) * instances.size(),
                       BUFFER_USAGE_SHADER_DEVICE_ADDRESS | BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,

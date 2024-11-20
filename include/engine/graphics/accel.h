@@ -25,9 +25,10 @@ struct Accel {
     VkDevice                   device       = VK_NULL_HANDLE;
     VkDeviceAddress            deviceAdress = 0;
 
-    Buffer   buffer    = {};
-    bool     binded    = false;
-    uint32_t instances = 0;
+    Buffer            buffer    = {};
+    bool              binded    = false;
+    uint32_t          instances = 0;
+    AccelGeometryType topology  = AccelGeometryType::TRIANGLES;
 
     void cleanup();
 };

@@ -198,6 +198,12 @@ enum class LightType
     SPOT        = 2,
     AREA        = 3
 };
+enum class AccelGeometryType
+{
+    TRIANGLES = 0,
+    AABBs     = 1,
+    INSTANCES = 2
+};
 
 typedef enum VertexAttributeType
 {

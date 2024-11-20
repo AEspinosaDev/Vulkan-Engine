@@ -202,7 +202,7 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
                         // Object vertex buffer setup
                         Core::Geometry* g = m->get_geometry(i);
                         upload_geometry_data(device, g, enableRT && m->ray_hittable());
-                        //Add BLASS to instances list
+                        // Add BLASS to instances list
                         if (enableRT && m->ray_hittable() && get_BLAS(g)->handle)
                             BLASInstances.push_back({*get_BLAS(g), m->get_model_matrix()});
 
@@ -237,7 +237,7 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
             Graphics::TLAS* accel = get_TLAS(scene);
             if (!accel->handle)
                 device->upload_TLAS(*accel, BLASInstances);
-            //Update Acceleration Structure if change in objects
+            // Update Acceleration Structure if change in objects
             if (accel->instances < BLASInstances.size())
             {
                 device->wait();
@@ -286,13 +286,16 @@ void ResourceManager::upload_geometry_data(Graphics::Device* const device,
     Graphics::VertexArrays* rd = get_VAO(g);
     if (!rd->loadedOnGPU)
     {
-        const Core::GeometricData* gd      = g->get_properties();
-        size_t                     vboSize = sizeof(gd->vertexData[0]) * gd->vertexData.size();
-        size_t                     iboSize = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
-        rd->indexCount                     = gd->vertexIndex.size();
-        rd->vertexCount                    = gd->vertexIndex.size();
+        const Core::GeometricData* gd        = g->get_properties();
+        size_t                     vboSize   = sizeof(gd->vertexData[0]) * gd->vertexData.size();
+        size_t                     iboSize   = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
+        size_t                     voxelSize = sizeof(gd->voxelData[0]) * gd->voxelData.size();
+        rd->indexCount                       = gd->vertexIndex.size();
+        rd->vertexCount                      = gd->vertexData.size();
+        rd->voxelCount                       = gd->voxelData.size();
 
-        device->upload_vertex_arrays(*rd, vboSize, gd->vertexData.data(), iboSize, gd->vertexIndex.data());
+        device->upload_vertex_arrays(
+            *rd, vboSize, gd->vertexData.data(), iboSize, gd->vertexIndex.data(), voxelSize, gd->voxelData.data());
     }
     /*
     ACCELERATION STRUCTURE
@@ -311,6 +314,8 @@ void ResourceManager::destroy_geometry_data(Core::Geometry* const g) {
         rd->vbo.cleanup();
         if (rd->indexCount > 0)
             rd->ibo.cleanup();
+        if (rd->voxelCount > 0)
+            rd->voxelBuffer.cleanup();
 
         rd->loadedOnGPU = false;
         get_BLAS(g)->cleanup();

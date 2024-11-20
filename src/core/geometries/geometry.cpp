@@ -25,6 +25,9 @@ void Geometry::fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t v
     m_properties.loaded = true;
 }
 
+void Geometry::fill_voxel_array(std::vector<Graphics::Voxel> voxels) {
+    m_properties.voxelData = voxels;
+}
 void GeometricData::compute_statistics() {
     maxCoords = {0.0f, 0.0f, 0.0f};
     minCoords = {INFINITY, INFINITY, INFINITY};
