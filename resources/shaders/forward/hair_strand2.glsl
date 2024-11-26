@@ -156,7 +156,9 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 layout(set = 2, binding = 0) uniform sampler2D nTex1;
 layout(set = 2, binding = 1) uniform sampler2D nTex2;
 layout(set = 2, binding = 2) uniform sampler3D GITex;
-// layout(set = 2, binding = 3) uniform sampler2D mGITex;
+layout(set = 2, binding = 3) uniform sampler2D mGITex;
+layout(set = 2, binding = 4) uniform sampler2D nGITex1;
+layout(set = 2, binding = 5) uniform sampler2D nGITex2;
 
 MarschnerLookupBSDF bsdf;
 
@@ -228,6 +230,9 @@ void main() {
                 nTex1,
                 nTex2,
                 GITex,
+                mGITex,
+                nGITex1,
+                nGITex2,
                 shadow,
                 spread,
                 directFraction,

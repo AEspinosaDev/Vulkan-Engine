@@ -604,6 +604,22 @@ void ObjectExplorerWidget::render() {
                     }
                 }
 
+                Vec3 emission = mat->get_emissive_color();
+                if (ImGui::ColorEdit3("Emission", (float*)&emission))
+                {
+                    mat->set_emissive_color(emission);
+                };
+                if (mat->get_emissive_texture())
+                {
+                    float emissionW = mat->get_emissive_weight();
+                    if (ImGui::DragFloat("Emission Text Weight", &emissionW, 0.05f, 0.0f, 1.0f))
+                    {
+                        mat->set_emissive_weight(emissionW);
+                    }
+                    ImGui::Image(get_image(mat->get_emissive_texture())->GUIReadHandle, texSize);
+                }
+              
+
                 ImGui::Separator();
                 float tile_u = mat->get_tile().x;
                 float tile_v = mat->get_tile().y;
@@ -677,7 +693,7 @@ void ObjectExplorerWidget::render() {
                 }
 
                 float scatter = mat->get_scatter();
-                if (ImGui::DragFloat("Scatter", &scatter, 1.0f, 0.0f, 1000.0f))
+                if (ImGui::DragFloat("Density", &scatter, 1.0f, 0.0f, 100.0f))
                 {
                     mat->set_scatter(scatter); // Update scatter
                 }

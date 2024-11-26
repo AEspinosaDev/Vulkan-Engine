@@ -215,13 +215,20 @@ class HairStrandMaterial2 : public HairStrandMaterial
     enum Textures
     {
 
-        N1  = 0,
-        N2  = 1,
-        GI  = 2,
-        MGI = 3,
+        N1      = 0,
+        N2      = 1,
+        GI      = 2,
+        MGI     = 3,
+        NGI     = 4,
+        NGI_TRT = 5,
     };
 
-    std::unordered_map<int, ITexture*> m_textures{{N1, nullptr}, {N2, nullptr}, {GI, nullptr}, {MGI, nullptr}};
+    std::unordered_map<int, ITexture*> m_textures{{N1, nullptr},
+                                                  {N2, nullptr},
+                                                  {GI, nullptr},
+                                                  {MGI, nullptr},
+                                                  {NGI, nullptr},
+                                                  {NGI_TRT, nullptr}};
     virtual Graphics::MaterialUniforms get_uniforms() const;
 
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
@@ -250,17 +257,20 @@ class HairStrandMaterial2 : public HairStrandMaterial
         Tools::Loaders::load_texture(
             m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
         Tools::Loaders::load_3D_texture(m_textures[GI], ENGINE_RESOURCES_PATH "textures/GI.png");
+        m_textures[GI]->set_format(RGBA_8U);
         Tools::Loaders::load_texture(
             m_textures[MGI], ENGINE_RESOURCES_PATH "textures/M_GI.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
-        m_textures[N1]->set_format(RGBA_8U);
-        m_textures[N2]->set_format(RGBA_8U);
-        m_textures[GI]->set_format(RGBA_8U);
-        m_textures[MGI]->set_format(RGBA_8U);
-        m_textureBindingState[N1]  = false;
-        m_textureBindingState[N2]  = false;
-        m_textureBindingState[GI]  = false;
-        m_textureBindingState[MGI] = false;
-        m_isDirty                  = true;
+        Tools::Loaders::load_texture(
+            m_textures[NGI], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+        Tools::Loaders::load_texture(
+            m_textures[NGI_TRT], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+        m_textureBindingState[N1]      = false;
+        m_textureBindingState[N2]      = false;
+        m_textureBindingState[GI]      = false;
+        m_textureBindingState[MGI]     = false;
+        m_textureBindingState[NGI]     = false;
+        m_textureBindingState[NGI_TRT] = false;
+        m_isDirty                      = true;
     }
 };
 } // namespace Core
