@@ -21,17 +21,16 @@
 #define SCALE_N_TRT    0.25
 
 #define GLOBAL_SCALE    5.0
+#define DENSITY_SCALE   10000.0
 #define DENSITY         0.7
 
 
 struct                          MarschnerLookupBSDF{
     vec3                        tangent;
-    vec3                        baseColor;
     float                       Rpower;
     float                       TTpower;
     float                       TRTpower;
-    vec3                        spread;
-    float                       directFraction;
+    float                       density;
 };
 
 //Longitudinal TERM (Gaussian Distribution)
@@ -46,6 +45,61 @@ float rand( int n, int seed )
 	n = (n * (n * n * 15731 + 789221) + 1376312589) + n;
 	return float(n & 0x7fffffff) / 2147483648.0;
 }
+//////////////////////////////////////////////////////////////////////////
+// Spetial shadow mapping for hair for controlling density
+//////////////////////////////////////////////////////////////////////////
+float bilinear( float v[4], vec2 f )
+	{
+		return mix( mix( v[0], v[1], f.x ), mix( v[2], v[3], f.x ), f.y );
+	}
+
+vec3 bilinear( vec3 v[4], vec2 f )
+	{
+		return mix( mix( v[0], v[1], f.x ), mix( v[2], v[3], f.x ), f.y );
+	}    
+vec3 hairShadow( out vec3 spread, out float directF, vec3 pShad, sampler2DArray shadowMap, int lightId, float density)
+	{
+		ivec2 size = textureSize( shadowMap, 0 ).xy;
+		vec2 t = pShad.xy * vec2(size) + 0.5;
+		vec2 f = t - floor(t);
+		vec2 s = 0.5 / vec2(size);
+		
+		vec2 tcp[4];
+		tcp[0] = pShad.xy + vec2( -s.x, -s.y );
+		tcp[1] = pShad.xy + vec2(  s.x, -s.y );
+		tcp[2] = pShad.xy + vec2( -s.x,  s.y );
+		tcp[3] = pShad.xy + vec2(  s.x,  s.y );
+
+		const float coverage = 0.05;
+		const vec3 a_f = vec3( 0.507475266, 0.465571405, 0.394347166 );
+		const vec3 w_f = vec3( 0.028135575, 0.027669785, 0.027669785 );
+		float dir[4];
+		vec3 spr[4], t_d[4];
+		for ( int i=0; i<4; ++i ) {
+			float z = texture(shadowMap, vec3(tcp[i],lightId)).r;
+			float h = max( 0.0, pShad.z - z );
+			float n = h * density * DENSITY_SCALE;
+			dir[i] = pow( 1.0 - coverage, n );
+			t_d[i] = pow( 1.0 - coverage*(1.0 - a_f), vec3(n,n,n) );
+			spr[i] = n * coverage * w_f;
+		}
+		
+		directF = bilinear( dir, f );
+		spread  = bilinear( spr, f );
+		return    bilinear( t_d, f );
+	}
+
+vec3 computeHairShadow(LightUniform light,int lightId, sampler2DArray shadowMap, float density, vec3 pos, out vec3 spread, out float directF )
+	{
+        vec4 posLightSpace = light.viewProj * vec4(pos, 1.0);
+        vec3 projCoords = posLightSpace.xyz / posLightSpace.w; 
+        projCoords.xy = projCoords.xy * 0.5 + 0.5;
+       
+		vec3 transDirect = hairShadow( spread, directF, projCoords,shadowMap, lightId,density );
+		directF *= 0.5;
+		return transDirect * 0.5;
+	}    
+
 
 vec3 evalMarschnerLookupBSDF(
     vec3 wi,               //Light vector
@@ -55,6 +109,9 @@ vec3 evalMarschnerLookupBSDF(
     sampler2D texN,
     sampler2D texNTRT,
     sampler3D texGI,
+    vec3 transDirect,
+    vec3 spread,
+    float directFraction,
     bool r,
     bool tt, 
     bool trt) 
@@ -75,10 +132,8 @@ vec3 evalMarschnerLookupBSDF(
     //Phi   
     vec3 wiPerp         = normalize(wi - sin_thI * u);
     vec3 vPerp          = normalize(v - sin_thR * u);
-    // float cos_phiH      = dot(vPerp,wiPerp)*inversesqrt(dot(vPerp,vPerp)*dot(wiPerp,wiPerp));
-    // float phiH          = cos((asin(sin_thI)-asin(sin_thR))*0.5);
-    float cos_phiH = dot( wiPerp, vPerp );
-	float phiH    = acos( cos_phiH );
+    float cos_phiH      = dot( wiPerp, vPerp );
+	float phiH          = acos( cos_phiH );
 
     float randVal = rand( 2, 3 );
 	float phi_shift = ECCEN_SHIFT*(randVal-0.5f);
@@ -91,8 +146,8 @@ vec3 evalMarschnerLookupBSDF(
 	//////////////////////////////////////////////////////////////////////////
 
     // N
-    vec2 index1         = vec2( phiH * ONE_OVER_PI, ix_th );
-	vec2 index2         = vec2( phiH * ONE_OVER_PI, ix_th );
+    vec2 index1         = vec2( phiH * ONE_OVER_PI, 1-ix_th );
+	vec2 index2         = vec2( phiH * ONE_OVER_PI, 1-ix_th );
 
     vec4  N             = texture(texN, index1);
 	float NR            = SCALE_N_R   * N.a;
@@ -108,23 +163,31 @@ vec3 evalMarschnerLookupBSDF(
     vec3 TT             = tt ?  MTT  * NTT  *  bsdf.TTpower  : vec3(0.0); 
     vec3 TRT            = trt ? MTRT * NTRT * bsdf.TRTpower: vec3(0.0); 
 
-    vec3 specular       = R+TT+TRT;
-    vec3 albedo         = bsdf.baseColor;
+    vec3 color          = R+TT+TRT;
 
     //////////////////////////////////////////////////////////////////////////
 	// Local Scattering
 	//////////////////////////////////////////////////////////////////////////
+
     float ix_thH = thH * ONE_OVER_PI * 0.5 + 0.5;
-    vec3  ix_spread  =  sqrt(bsdf.spread) * ONE_OVER_PI*0.5;
+    vec3  ix_spread  =  sqrt(spread) * ONE_OVER_PI* 0.5;
 
 	vec3 gi;
-	gi.r = DENSITY * texture( texGI, vec3( ix_spread.r, ix_thH, ix_th ) ).r;
-	gi.g = DENSITY * texture( texGI, vec3( ix_spread.g, ix_thH, ix_th ) ).g;
-	gi.b = DENSITY * texture( texGI, vec3( ix_spread.b, ix_thH, ix_th ) ).b;
+	gi.r = DENSITY * texture( texGI, vec3( ix_spread.r, 1-ix_thH, ix_th ) ).r;
+	gi.g = DENSITY * texture( texGI, vec3( ix_spread.g, 1-ix_thH, ix_th ) ).g;
+	gi.b = DENSITY * texture( texGI, vec3( ix_spread.b, 1-ix_thH, ix_th ) ).b;
 
-	specular += gi;
-	specular *= bsdf.directFraction;
+	color += gi;
+	color *= directFraction;
+
+    //////////////////////////////////////////////////////////////////////////
+	// Global Scattering
+	//////////////////////////////////////////////////////////////////////////
 
 
-    return              (specular) * irradiance * GLOBAL_SCALE;
+
+
+	//////////////////////////////////////////////////////////////////////////
+
+    return              color * irradiance * GLOBAL_SCALE;
 }

@@ -31,7 +31,7 @@ void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding outputTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding outputTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {outputTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptorSet);
@@ -77,7 +77,7 @@ void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_
 
 void FXAAPass::connect_to_previous_images(std::vector<Image> images) {
     m_descriptorPool.set_descriptor_write(
-        &images[0], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+        &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
 
 } // namespace Core

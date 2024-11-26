@@ -58,17 +58,17 @@ struct DescriptorPool {
     /*
     Set writes for Uniform Buffers
     */
-    void set_descriptor_write(Buffer*          buffer,
-                              VkDeviceSize     dataSize,
-                              VkDeviceSize     readOffset,
-                              DescriptorSet*   descriptor,
-                              VkDescriptorType type,
-                              uint32_t         binding);
+    void set_descriptor_write(Buffer*         buffer,
+                              size_t          dataSize,
+                              size_t          readOffset,
+                              DescriptorSet*  descriptor,
+                              UniformDataType type,
+                              uint32_t        binding);
 
     /*
     Set writes for Images
     */
-    void set_descriptor_write(Image* image, VkImageLayout layout, DescriptorSet* descriptor, uint32_t binding);
+    void set_descriptor_write(Image* image, ImageLayout layout, DescriptorSet* descriptor, uint32_t binding);
     /*
     Set writes for Acceleration Structures
     */

@@ -46,25 +46,21 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
-    LayoutBinding camBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-                                   SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
-                                   0);
-    LayoutBinding sceneBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-                                     SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
-                                     1);
-    LayoutBinding shadowBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
-    LayoutBinding envBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
-    LayoutBinding iblBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
+    LayoutBinding camBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding sceneBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding shadowBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding envBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
     m_descriptorPool.set_layout(
         GLOBAL_LAYOUT, {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
 
     // PER-OBJECT SET
-    LayoutBinding objectBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-                                      SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
-                                      0);
-    LayoutBinding materialBufferBinding(UniformDataType::DYNAMIC_UNIFORM_BUFFER,
-                                        SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT,
-                                        1);
+    LayoutBinding objectBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding materialBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
     m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     for (size_t i = 0; i < frames.size(); i++)
@@ -75,13 +71,13 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               sizeof(CameraUniforms),
                                               0,
                                               &m_descriptors[i].globalDescritor,
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              UNIFORM_DYNAMIC_BUFFER,
                                               0);
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[0],
                                               sizeof(SceneUniforms),
                                               m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
                                               &m_descriptors[i].globalDescritor,
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              UNIFORM_DYNAMIC_BUFFER,
                                               1);
 
         // Per-object
@@ -90,13 +86,13 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               sizeof(ObjectUniforms),
                                               0,
                                               &m_descriptors[i].objectDescritor,
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              UNIFORM_DYNAMIC_BUFFER,
                                               0);
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[1],
                                               sizeof(MaterialUniforms),
                                               m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
                                               &m_descriptors[i].objectDescritor,
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              UNIFORM_DYNAMIC_BUFFER,
                                               1);
     }
 }

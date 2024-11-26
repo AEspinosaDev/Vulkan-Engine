@@ -4,7 +4,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-
 void DescriptorPool::set_layout(uint32_t                         layoutSetIndex,
                                 std::vector<LayoutBinding>       bindings,
                                 VkDescriptorSetLayoutCreateFlags flags) {
@@ -42,34 +41,35 @@ void DescriptorPool::allocate_descriptor_set(uint32_t layoutSetIndex, Descriptor
 
     descriptor->allocated = true;
 }
-void DescriptorPool::set_descriptor_write(Buffer*          buffer,
-                                          VkDeviceSize     dataSize,
-                                          VkDeviceSize     readOffset,
-                                          DescriptorSet*   descriptor,
-                                          VkDescriptorType type,
-                                          uint32_t         binding) {
+void DescriptorPool::set_descriptor_write(Buffer*         buffer,
+                                          size_t          dataSize,
+                                          size_t          readOffset,
+                                          DescriptorSet*  descriptor,
+                                          UniformDataType type,
+                                          uint32_t        binding) {
     VkDescriptorBufferInfo info;
     info.buffer = buffer->handle;
-    info.offset = readOffset;
-    info.range  = dataSize;
+    info.offset = static_cast<VkDeviceSize>(readOffset);
+    info.range  = static_cast<VkDeviceSize>(dataSize);
 
-    VkWriteDescriptorSet writeSetting = Init::write_descriptor_buffer(type, descriptor->handle, &info, binding);
+    VkWriteDescriptorSet writeSetting =
+        Init::write_descriptor_buffer(Translator::get(type), descriptor->handle, &info, binding);
 
     descriptor->bindings += 1;
     descriptor->binded_buffers.push_back(buffer);
-    descriptor->isDynamic = type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptor->isDynamic = type == UNIFORM_DYNAMIC_BUFFER;
 
     vkUpdateDescriptorSets(device, 1, &writeSetting, 0, nullptr);
 }
 void DescriptorPool::set_descriptor_write(Image*         image,
-                                          VkImageLayout  layout,
+                                          ImageLayout    layout,
                                           DescriptorSet* descriptor,
                                           uint32_t       binding) {
 
     VkDescriptorImageInfo imageBufferInfo;
     imageBufferInfo.sampler     = image->sampler;
     imageBufferInfo.imageView   = image->view;
-    imageBufferInfo.imageLayout = layout;
+    imageBufferInfo.imageLayout = Translator::get(layout);
 
     VkWriteDescriptorSet texture1 = Init::write_descriptor_image(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->handle, &imageBufferInfo, binding);

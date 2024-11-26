@@ -12,6 +12,7 @@ struct                  SchlickSmithBRDF{
     float               metalness;
     float               roughness;
     float               ao;
+    vec3                emission;
     vec3                F0;
 };
 

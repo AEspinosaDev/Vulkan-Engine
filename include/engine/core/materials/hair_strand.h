@@ -21,28 +21,27 @@ namespace Core {
 class HairStrandMaterial : public IMaterial
 {
   protected:
-    Vec4 m_baseColor{0.27f, 0.14f, 0.04f, 1.0f}; // w for opacity
+    Vec4 m_baseColor = {0.27f, 0.14f, 0.04f, 1.0f}; // w for opacity
 
-    float m_thickness{0.003f};
+    float m_thickness = 0.003f;
 
-    bool  m_R{true}; // Reflection
-    float m_Rpower{1.0f};
+    bool  m_R        = true; // Reflection
+    float m_Rpower   = 1.0f;
+    bool  m_TT       = true; // Transmitance
+    float m_TTpower  = 1.0f;
+    bool  m_TRT      = true; // Second reflection
+    float m_TRTpower = 3.0f;
 
-    bool  m_TT{true}; // Transmitance
-    float m_TTpower{1.0f};
+    float m_roughness = 0.4f;
+    float m_scatter   = 7.0f;
+    float m_shift     = 5.2f; // In radians (-5º to -10º) => 0.088 to 0.17 //Not with epic 0.02 does fine
+    float m_ior       = 1.55f;
 
-    bool  m_TRT{true}; // Second reflection
-    float m_TRTpower{3.0f};
-
-    float m_roughness{0.4f};
-    float m_scatter{500.0f};
-    float m_shift{5.2f}; // In radians (-5º to -10º) => 0.088 to 0.17 //Not with epic 0.02 does fine
-    float m_ior{1.55f};
-
-    bool m_glints{false};
-    bool m_useScatter{false};
-    bool m_coloredScatter{false};
-    bool m_occlusion{false};
+    // Query
+    bool m_glints         = false;
+    bool m_useScatter     = false;
+    bool m_coloredScatter = false;
+    bool m_occlusion      = false;
 
     std::unordered_map<int, ITexture*> m_textures;
 

@@ -30,7 +30,7 @@ void PanoramaConverterPass::setup_uniforms(std::vector<Graphics::Frame>& frames)
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding panoramaTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {panoramaTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_panoramaDescriptorSet);
@@ -77,7 +77,7 @@ void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const sc
         if (m_panoramaDescriptorSet.bindings == 0 || envMap->is_dirty())
         {
             m_descriptorPool.set_descriptor_write(
-                get_image(envMap), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_panoramaDescriptorSet, 0);
+                get_image(envMap), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_panoramaDescriptorSet, 0);
             envMap->set_dirty(false);
         }
     }

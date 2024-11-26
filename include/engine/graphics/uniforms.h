@@ -62,6 +62,7 @@ struct MaterialUniforms {
     Vec4 dataSlot4;
     Vec4 dataSlot5;
     Vec4 dataSlot6;
+    Vec4 dataSlot7;
 };
 
 struct SkyboxUniforms {

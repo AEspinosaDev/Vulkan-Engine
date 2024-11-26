@@ -41,6 +41,9 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool    hasMaskTexture;
     int     maskType;
     float   opacityWeight;
+    bool    hasEmissiveTexture;
+    vec3    emissiveColor;
+    float   emissiveWeight;
 } material;
 
 void main() {
@@ -125,12 +128,16 @@ layout(set = 1, binding = 1)    uniform MaterialUniforms {
     bool    hasMaskTexture;
     int     maskType;
     float   opacityWeight;
+    bool    hasEmissiveTexture;
+    vec3    emissiveColor;
+    float   emissiveWeight;
 } material;
 layout(set = 2, binding = 0) uniform sampler2D albedoTex;
 layout(set = 2, binding = 1) uniform sampler2D normalTex;
 layout(set = 2, binding = 2) uniform sampler2D maskRoughTex;
 layout(set = 2, binding = 3) uniform sampler2D metalTex;
 layout(set = 2, binding = 4) uniform sampler2D occlusionTex;
+layout(set = 2, binding = 5) uniform sampler2D emissiveTex;
 
 
 //BRDF Definiiton
@@ -165,6 +172,8 @@ void setupBRDFProperties(){
     }
     brdf.F0 = vec3(0.04);
     brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
+
+    brdf.emission =  material.hasEmissiveTexture ? mix(material.emissiveColor, texture(emissiveTex, v_uv).rgb, material.emissiveWeight) : material.emissiveColor;
 }
 
 

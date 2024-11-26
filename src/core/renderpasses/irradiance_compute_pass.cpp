@@ -30,7 +30,7 @@ void IrrandianceComputePass::setup_uniforms(std::vector<Graphics::Frame>& frames
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding panoramaTextureBinding(UniformDataType::COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding panoramaTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     LayoutBinding auxBufferBinding(UniformDataType::UNIFORM_BUFFER, SHADER_STAGE_FRAGMENT, 1);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {panoramaTextureBinding, auxBufferBinding});
 
@@ -90,10 +90,10 @@ void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const s
     m_captureBuffer.upload_data(&capture, sizeof(CaptureData));
 
     m_descriptorPool.set_descriptor_write(
-        &m_captureBuffer, BUFFER_SIZE, 0, &m_captureDescriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+        &m_captureBuffer, BUFFER_SIZE, 0, &m_captureDescriptorSet, UNIFORM_BUFFER, 1);
 }
 void IrrandianceComputePass::connect_env_cubemap(Graphics::Image env) {
-    m_descriptorPool.set_descriptor_write(&env, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_captureDescriptorSet, 0);
+    m_descriptorPool.set_descriptor_write(&env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_captureDescriptorSet, 0);
 }
 
 void IrrandianceComputePass::cleanup() {
