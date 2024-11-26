@@ -69,7 +69,7 @@ struct CommandPool {
     VkDevice      device = VK_NULL_HANDLE;
     VkQueue       queue  = VK_NULL_HANDLE;
 
-    CommandBuffer allocate_command_buffer(uint32_t count, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    CommandBuffer allocate_command_buffer(uint32_t count, CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY);
 
     void reset(VkCommandPoolResetFlags flags = 0) const;
 

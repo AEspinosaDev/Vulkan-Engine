@@ -1,343 +1,306 @@
-// #include <engine/graphics/renderpasses/geometry_pass.h>
+#include <engine/core/renderpasses/geometry_pass.h>
 
-// VULKAN_ENGINE_NAMESPACE_BEGIN
+VULKAN_ENGINE_NAMESPACE_BEGIN
+using namespace Graphics;
+namespace Core {
+void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                     std::vector<Graphics::SubPassDependency>& dependencies) {
 
-// void GeometryPass::init()
-// {
+    attachments.resize(6);
 
-//     std::array<VkAttachmentDescription, 5> attachmentsInfo = {};
+    // Positions
+    attachments[0] = Graphics::Attachment(SRGB_32F,
+                                          1,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Normals
+    attachments[1] = Graphics::Attachment(SRGB_32F,
+                                          1,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Albedo
+    attachments[2] = Graphics::Attachment(RGBA_8U,
+                                          1,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Material
+    attachments[3] = Graphics::Attachment(RGBA_8U,
+                                          1,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
-//     // Position attachment
-//     attachmentsInfo[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-//     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
-//     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     attachmentsInfo[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     attachmentsInfo[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    // Temporal
+    attachments[4] = Graphics::Attachment(SRGB_32F,
+                                          1,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Depth
+    attachments[5] = Graphics::Attachment(m_depthFormat,
+                                          1,
+                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                          DEPTH_ATTACHMENT,
+                                          ASPECT_DEPTH);
 
-//     m_attachments.push_back(
-//         Attachment(VK_FORMAT_R32G32B32A32_SFLOAT,
-//                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                    VK_IMAGE_ASPECT_COLOR_BIT,
-//                    VK_IMAGE_VIEW_TYPE_2D));
+    // Depdencies
+    dependencies.resize(2);
 
-//     VkAttachmentReference posRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    dependencies[0] = Graphics::SubPassDependency(
+        STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[1] = Graphics::SubPassDependency(
+        STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
+}
+void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
-//     // Normals attachment
-//     attachmentsInfo[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-//     attachmentsInfo[1].samples = VK_SAMPLE_COUNT_1_BIT;
-//     attachmentsInfo[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     attachmentsInfo[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     attachmentsInfo[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     attachmentsInfo[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     attachmentsInfo[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     attachmentsInfo[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    m_descriptorPool = m_device->create_descriptor_pool(
+        VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+    m_descriptors.resize(frames.size());
 
-//     m_attachments.push_back(
-//         Attachment(VK_FORMAT_R32G32B32A32_SFLOAT,
-//                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                    VK_IMAGE_ASPECT_COLOR_BIT,
-//                    VK_IMAGE_VIEW_TYPE_2D));
+    // GLOBAL SET
+    LayoutBinding camBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding sceneBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding shadowBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding envBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
+    LayoutBinding accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 5);
+    LayoutBinding noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 6);
+    m_descriptorPool.set_layout(
+        GLOBAL_LAYOUT,
+        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding, noiseBinding});
 
-//     VkAttachmentReference normalRef = init::attachment_reference(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    // PER-OBJECT SET
+    LayoutBinding objectBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding materialBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
+    m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
-//     // Albedo attachment
-//     attachmentsInfo[2].format = VK_FORMAT_R8G8B8A8_UNORM;
-//     attachmentsInfo[2].samples = VK_SAMPLE_COUNT_1_BIT;
-//     attachmentsInfo[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     attachmentsInfo[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     attachmentsInfo[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     attachmentsInfo[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     attachmentsInfo[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     attachmentsInfo[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    // MATERIAL TEXTURE SET
+    LayoutBinding textureBinding1(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding textureBinding2(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding textureBinding3(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding textureBinding4(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding textureBinding5(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
+    LayoutBinding textureBinding6(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
+    m_descriptorPool.set_layout(
+        OBJECT_TEXTURE_LAYOUT,
+        {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5, textureBinding6});
 
-//     m_attachments.push_back(
-//         Attachment(VK_FORMAT_R8G8B8A8_UNORM,
-//                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                    VK_IMAGE_ASPECT_COLOR_BIT,
-//                    VK_IMAGE_VIEW_TYPE_2D));
+    for (size_t i = 0; i < frames.size(); i++)
+    {
+        // Global
+        m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                              sizeof(CameraUniforms),
+                                              0,
+                                              &m_descriptors[i].globalDescritor,
+                                              UNIFORM_DYNAMIC_BUFFER,
+                                              0);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                              sizeof(SceneUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                              &m_descriptors[i].globalDescritor,
+                                              UNIFORM_DYNAMIC_BUFFER,
+                                              1);
 
-//     VkAttachmentReference albedoRef = init::attachment_reference(2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_TEXTURE),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              3);
 
-//     // Material attachment
-//     attachmentsInfo[3].format = VK_FORMAT_R8G8B8A8_UNORM;
-//     attachmentsInfo[3].samples = VK_SAMPLE_COUNT_1_BIT;
-//     attachmentsInfo[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     attachmentsInfo[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     attachmentsInfo[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     attachmentsInfo[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     attachmentsInfo[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     attachmentsInfo[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::BLUE_NOISE_TEXTURE),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              6);
 
-//     m_attachments.push_back(
-//         Attachment(VK_FORMAT_R8G8B8A8_UNORM,
-//                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                    VK_IMAGE_ASPECT_COLOR_BIT,
-//                    VK_IMAGE_VIEW_TYPE_2D));
+        // Per-object
+        m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                              sizeof(ObjectUniforms),
+                                              0,
+                                              &m_descriptors[i].objectDescritor,
+                                              UNIFORM_DYNAMIC_BUFFER,
+                                              0);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                              sizeof(MaterialUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                              &m_descriptors[i].objectDescritor,
+                                              UNIFORM_DYNAMIC_BUFFER,
+                                              1);
+        // Set up enviroment fallback texture
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              3);
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              4);
+    }
+}
+void GeometryPass::setup_shader_passes() {
 
-//     VkAttachmentReference materialRef = init::attachment_reference(3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    PipelineSettings settings{};
+    settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
+    settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                       {NORMAL_ATTRIBUTE, true},
+                                       {UV_ATTRIBUTE, true},
+                                       {TANGENT_ATTRIBUTE, true},
+                                       {COLOR_ATTRIBUTE, false}};
+    settings.dynamicStates          = {VK_DYNAMIC_STATE_VIEWPORT,
+                                       VK_DYNAMIC_STATE_SCISSOR,
+                                       VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+                                       VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                                       VK_DYNAMIC_STATE_CULL_MODE};
+    settings.blendAttachments       = {Init::color_blend_attachment_state(false),
+                                       Init::color_blend_attachment_state(false),
+                                       Init::color_blend_attachment_state(false),
+                                       Init::color_blend_attachment_state(false),
+                                       Init::color_blend_attachment_state(false)};
+    // Geometry
+    ShaderPass* geomPass =
+        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/geometry.glsl");
+    geomPass->settings = settings;
+    geomPass->build_shader_stages();
+    geomPass->build(m_handle, m_descriptorPool);
 
-//     // Depth attachment
-//     attachmentsInfo[4].format = static_cast<VkFormat>(m_depthFormat);
-//     attachmentsInfo[4].samples = VK_SAMPLE_COUNT_1_BIT;
-//     attachmentsInfo[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     attachmentsInfo[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     attachmentsInfo[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     attachmentsInfo[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     attachmentsInfo[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     attachmentsInfo[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    m_shaderPasses["geometry"] = geomPass;
+}
+void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+    PROFILING_EVENT()
 
-//     m_attachments.push_back(
-//         Attachment(static_cast<VkFormat>(m_depthFormat),
-//                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                    VK_IMAGE_ASPECT_DEPTH_BIT,
-//                    VK_IMAGE_VIEW_TYPE_2D));
+    CommandBuffer cmd = currentFrame.commandBuffer;
+    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_handle.extent);
 
-//     VkAttachmentReference depthRef = init::attachment_reference(4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    if (scene->get_active_camera() && scene->get_active_camera()->is_active())
+    {
 
-//     // Subpass
-//     VkSubpassDescription subpass = {};
-//     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-//     subpass.colorAttachmentCount = 4;
-//     std::array<VkAttachmentReference, 4> colorRefs = {posRef, normalRef, albedoRef, materialRef};
-//     subpass.pColorAttachments = colorRefs.data();
-//     subpass.pDepthStencilAttachment = &depthRef;
+        unsigned int mesh_idx = 0;
+        for (Mesh* m : scene->get_meshes())
+        {
+            if (m)
+            {
+                if (m->is_active() &&              // Check if is active
+                    m->get_num_geometries() > 0 && // Check if has geometry
+                    (scene->get_active_camera()->get_frustrum_culling() && m->get_bounding_volume()
+                         ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())
+                         : true)) // Check if is inside frustrum
+                {
+                    // Offset calculation
+                    uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-//     // Subpass dependencies for layout transitions
-//     std::array<VkSubpassDependency, 2> dependencies;
+                    for (size_t i = 0; i < m->get_num_geometries(); i++)
+                    {
+                        Geometry*  g   = m->get_geometry(i);
+                        IMaterial* mat = m->get_material(g->get_material_ID());
 
-//     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-//     dependencies[0].dstSubpass = 0;
-//     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-//     dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-//     dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-//     dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-//     dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+                        cmd.set_depth_test_enable(mat->get_parameters().depthTest);
+                        cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
+                        cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
+                                                                            : CullingMode::NO_CULLING);
 
-//     dependencies[1].srcSubpass = 0;
-//     dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-//     dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-//     dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-//     dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-//     dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-//     dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+                        ShaderPass* shaderPass = m_shaderPasses["geometry"];
 
-//     // Creation
-//     VkRenderPassCreateInfo renderPassInfo{};
-//     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentsInfo.size());
-//     renderPassInfo.pAttachments = attachmentsInfo.data();
-//     renderPassInfo.subpassCount = 1;
-//     renderPassInfo.pSubpasses = &subpass;
-//     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-//     renderPassInfo.pDependencies = dependencies.data();
+                        // Bind pipeline
+                        cmd.bind_shaderpass(*shaderPass);
+                        // GLOBAL LAYOUT BINDING
+                        cmd.bind_descriptor_set(
+                            m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                        // PER OBJECT LAYOUT BINDING
+                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
+                                                1,
+                                                *shaderPass,
+                                                {objectOffset, objectOffset});
+                        // TEXTURE LAYOUT BINDING
+                        if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
+                            cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
 
-//     if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
-//     {
-//         new VKException("failed to create renderpass!");
-//     }
+                        // DRAW
+                        cmd.draw_geometry(*get_VAO(g));
+                    }
+                }
+            }
+            mesh_idx++;
+        }
+        // Skybox
+        if (scene->get_skybox())
+        {
+            if (scene->get_skybox()->is_active())
+            {
 
-//     m_initiatized = true;
-// }
-// void GeometryPass::create_pipelines(DescriptorManager &descriptorManager)
-// {
-//     std::vector<VkDynamicState> dynamicStates = {
-//         VK_DYNAMIC_STATE_VIEWPORT,
-//         VK_DYNAMIC_STATE_SCISSOR,
-//         VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
-//         VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
-//         VK_DYNAMIC_STATE_CULL_MODE};
+                cmd.set_depth_test_enable(true);
+                cmd.set_depth_write_enable(true);
+                cmd.set_cull_mode(CullingMode::NO_CULLING);
 
-//     // Setup shaderpasses
+                ShaderPass* shaderPass = m_shaderPasses["skybox"];
 
-//     ShaderPass *geomPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/deferred.glsl");
-//     geomPass->settings.descriptorSetLayoutIDs =
-//         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-//          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-//          {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true}};
-//     geomPass->settings.attributes =
-//         {{VertexAttributeType::POSITION, true},
-//          {VertexAttributeType::NORMAL, true},
-//          {VertexAttributeType::UV, true},
-//          {VertexAttributeType::TANGENT, true},
-//          {VertexAttributeType::COLOR, false}};
-//     geomPass->settings.blending = true;
-//     geomPass->settings.blendAttachments = {
-//         init::color_blend_attachment_state(true),
-//         init::color_blend_attachment_state(true),
-//         init::color_blend_attachment_state(true),
-//         init::color_blend_attachment_state(true)};
+                // Bind pipeline
+                cmd.bind_shaderpass(*shaderPass);
 
-//     geomPass->settings.dynamicStates = dynamicStates;
+                // GLOBAL LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
-//     ShaderPass::build_shader_stages(m_context->device, *geomPass);
+                cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
+            }
+        }
+    }
 
-//     ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *geomPass);
+    cmd.end_renderpass();
+}
 
-//     m_shaderPasses["geometry"] = geomPass;
+void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
+    for (Mesh* m : scene->get_meshes())
+    {
+        if (m)
+        {
+            for (size_t i = 0; i < m->get_num_geometries(); i++)
+            {
+                Geometry*  g   = m->get_geometry(i);
+                IMaterial* mat = m->get_material(g->get_material_ID());
+                setup_material_descriptor(mat);
+            }
+        }
+    }
+}
+void GeometryPass::setup_material_descriptor(IMaterial* mat) {
+    if (!mat->get_texture_descriptor().allocated)
+        m_descriptorPool.allocate_descriptor_set(OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
 
-//     ShaderPass *strandPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/strand_deferred.glsl");
-//     strandPass->settings.descriptorSetLayoutIDs =
-//         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-//          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-//          {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, false}};
-//     strandPass->settings.attributes =
-//         {{VertexAttributeType::POSITION, true},
-//          {VertexAttributeType::NORMAL, false},
-//          {VertexAttributeType::UV, false},
-//          {VertexAttributeType::TANGENT, true},
-//          {VertexAttributeType::COLOR, true}};
-//     strandPass->settings.blending = true;
-//     strandPass->settings.blendAttachments = {
-//         init::color_blend_attachment_state(true),
-//         init::color_blend_attachment_state(true),
-//         init::color_blend_attachment_state(true),
-//         init::color_blend_attachment_state(true)};
-//     strandPass->settings.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    auto textures = mat->get_textures();
+    for (auto pair : textures)
+    {
+        ITexture* texture = pair.second;
+        if (texture && texture->loaded_on_GPU())
+        {
 
-//     strandPass->settings.dynamicStates = dynamicStates;
-
-//     ShaderPass::build_shader_stages(m_context->device, *strandPass);
-
-//     ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *strandPass);
-
-//     m_shaderPasses["hair"] = strandPass;
-// }
-// void GeometryPass::init_resources()
-// {
-//     create_g_buffer_samplers();
-// }
-// void GeometryPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
-// {
-//     set_g_buffer_clear_color(Vec4(0.0));
-
-//      VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
-
-//     begin(cmd, presentImageIndex);
-
-//     VkViewport viewport = init::viewport(m_extent);
-//     vkCmdSetViewport(cmd, 0, 1, &viewport);
-//     VkRect2D scissor{};
-//     scissor.offset = {0, 0};
-//     scissor.extent = m_extent;
-//     vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-//     // ShaderPass *shaderPass = m_shaderPasses["geometry"];
-
-//     // vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
-
-//     int mesh_idx = 0;
-//     for (Mesh *m : scene->get_meshes())
-//     {
-//         if (m)
-//         {
-//             if (m->is_active() &&                                                                                                                                   // Check if is active
-//                 m->get_num_geometries() > 0 &&                                                                                                                      // Check if has geometry
-//                 (scene->get_active_camera()->get_frustrum_culling() ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum()) : true)) // Check if is inside frustrum
-
-//             {
-
-//                 uint32_t objectOffset =  m_context->frames[frameIndex].objectUniformBuffer.strideSize * mesh_idx;
-//                 uint32_t globalOffset = 0;
-
-//                 for (size_t i = 0; i < m->get_num_geometries(); i++)
-//                 {
-
-//                     ShaderPass *shaderPass = m_shaderPasses[m->get_material(i)->get_shaderpass_ID() == "hair" ? "hair" : "geometry"];
-//                     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
-
-//                     // GLOBAL LAYOUT BINDING
-//                     uint32_t globalOffsets[] = {globalOffset, globalOffset};
-//                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, & m_context->frames[frameIndex].globalDescriptor.descriptorSet, 2, globalOffsets);
-
-//                     // PER OBJECT LAYOUT BINDING
-//                     uint32_t objectOffsets[] = {objectOffset, objectOffset};
-//                     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 1, 1,
-//                                             & m_context->frames[frameIndex].objectDescriptor.descriptorSet, 2, objectOffsets);
-
-//                     // TEXTURE LAYOUT BINDING
-//                     Geometry *g = m->get_geometry(i);
-//                     Material *mat = m->get_material(g->get_material_ID());
-
-//                     // // Setup per object render state
-//                     vkCmdSetDepthTestEnable(cmd, mat->get_parameters().depthTest);
-//                     vkCmdSetDepthWriteEnable(cmd, mat->get_parameters().depthWrite);
-//                     vkCmdSetCullMode(cmd, mat->get_parameters().faceCulling ? (VkCullModeFlags)mat->get_parameters().culling : VK_CULL_MODE_NONE);
-
-//                     if (shaderPass->settings.descriptorSetLayoutIDs[DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT])
-//                         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 2, 1, &mat->get_texture_descriptor().descriptorSet, 0, nullptr);
-
-//                     draw(cmd, g);
-//                 }
-//             }
-//             mesh_idx++;
-//         }
-//     }
-
-//     end(cmd);
-// }
-
-// void GeometryPass::update()
-// {
-//     RenderPass::update();
-
-//     create_g_buffer_samplers();
-//     set_g_buffer_clear_color(Vec4(0.0));
-// }
-
-// void GeometryPass::create_g_buffer_samplers()
-// {
-//     m_attachments[0].image.create_sampler(
-//         m_context->device,
-//         VK_FILTER_LINEAR,
-//         VK_SAMPLER_MIPMAP_MODE_LINEAR,
-//         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-//         0.0f,
-//         1.0f,
-//         false,
-//         1.0f,
-//         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-//     m_attachments[1].image.create_sampler(
-//         m_context->device,
-//         VK_FILTER_LINEAR,
-//         VK_SAMPLER_MIPMAP_MODE_LINEAR,
-//         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-//         0.0f,
-//         1.0f,
-//         false,
-//         1.0f,
-//         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-
-//     m_attachments[2].image.create_sampler(
-//         m_context->device,
-//         VK_FILTER_LINEAR,
-//         VK_SAMPLER_MIPMAP_MODE_LINEAR,
-//         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-//         0.0f,
-//         1.0f,
-//         false,
-//         1.0f,
-//         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-
-//     m_attachments[3].image.create_sampler(
-//         m_context->device,
-//         VK_FILTER_LINEAR,
-//         VK_SAMPLER_MIPMAP_MODE_LINEAR,
-//         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-//         0.0f,
-//         1.0f,
-//         false,
-//         1.0f,
-//         VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK);
-// }
-
-// void GeometryPass::set_g_buffer_clear_color(Vec4 color)
-// {
-//     set_attachment_clear_value({color.r, color.g, color.b, color.a}, 0);
-//     set_attachment_clear_value({color.r, color.g, color.b, color.a}, 1);
-//     set_attachment_clear_value({color.r, color.g, color.b, color.a}, 2);
-//     set_attachment_clear_value({color.r, color.g, color.b, color.a}, 3);
-// }
-// VULKAN_ENGINE_NAMESPACE_END
+            // Set texture write
+            if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
+            {
+                m_descriptorPool.set_descriptor_write(
+                    get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
+                mat->set_texture_binding_state(pair.first, true);
+                texture->set_dirty(false);
+            }
+        } else
+        {
+            // SET DUMMY TEXTURE
+            if (!mat->get_texture_binding_state()[pair.first])
+                m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_TEXTURE),
+                                                      LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                      &mat->get_texture_descriptor(),
+                                                      pair.first);
+            mat->set_texture_binding_state(pair.first, true);
+        }
+    }
+}
+} // namespace Core
+VULKAN_ENGINE_NAMESPACE_END

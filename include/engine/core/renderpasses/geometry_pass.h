@@ -1,40 +1,60 @@
-// /*
-//     This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
+/*
+    This file is part of Vulkan-Engine, a simple to use Vulkan based 3D library
 
-//     MIT License
+    MIT License
 
-//     Copyright (c) 2023 Antonio Espinosa Garcia
+    Copyright (c) 2023 Antonio Espinosa Garcia
 
-// */
-// #ifndef GEOMETRY_PASS_H
-// #define GEOMETRY_PASS_H
-// #include <engine/graphics/renderpass.h>
+*/
+#ifndef GEOMETRY_PASS_H
+#define GEOMETRY_PASS_H
+#include <engine/core/renderpasses/renderpass.h>
+#include <engine/core/resource_manager.h>
 
-// VULKAN_ENGINE_NAMESPACE_BEGIN
+VULKAN_ENGINE_NAMESPACE_BEGIN
 
-// class GeometryPass : public RenderPass
-// {
-//     DepthFormatType m_depthFormat;
+namespace Core {
 
-// public:
-//     GeometryPass(Context *ctx, VkExtent2D extent,
-//                  uint32_t framebufferCount,
-//                  DepthFormatType depthFormat) : RenderPass(ctx, extent, framebufferCount, 1),
-//                                                 m_depthFormat(depthFormat) {}
-//     void init();
+class GeometryPass : public RenderPass
+{
+    /*Setup*/
+    ColorFormatType m_colorFormat;
+    ColorFormatType m_depthFormat;
 
-//     void create_pipelines(DescriptorManager &descriptorManager);
+    /*Descriptors*/
+    struct FrameDescriptors {
+        Graphics::DescriptorSet globalDescritor;
+        Graphics::DescriptorSet objectDescritor;
+    };
+    std::vector<FrameDescriptors> m_descriptors;
 
-//     void init_resources();
+    void setup_material_descriptor(IMaterial* mat);
 
-//     void render( uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex = 0);
+  public:
+    GeometryPass(Graphics::Device* ctx,
+                 Extent2D          extent,
+                 uint32_t          framebufferCount,
+                 ColorFormatType   colorFormat,
+                 ColorFormatType   depthFormat,
+                 bool              isDefault = true)
+        : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
+        , m_colorFormat(colorFormat)
+        , m_depthFormat(depthFormat) {
+    }
 
-//     void update();
+    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                           std::vector<Graphics::SubPassDependency>& dependencies);
 
-//     void create_g_buffer_samplers();
+    void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
-//     void set_g_buffer_clear_color(Vec4 color);
-// };
-// VULKAN_ENGINE_NAMESPACE_END
+    void setup_shader_passes();
 
-// #endif
+    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+
+    void update_uniforms(uint32_t frameIndex, Scene* const scene);
+
+};
+} // namespace Core
+VULKAN_ENGINE_NAMESPACE_END
+
+#endif

@@ -30,13 +30,11 @@ struct MaterialSettings {
 class IMaterial
 {
   protected:
-    MaterialSettings m_settings{};
+    MaterialSettings        m_settings          = {};
+    std::string             m_shaderPassID      = {};
+    Graphics::DescriptorSet m_textureDescriptor = {};
 
-    std::string m_shaderPassID{};
-
-    Graphics::DescriptorSet m_textureDescriptor{};
-
-    bool m_isDirty{true};
+    bool  m_isDirty  = true;
 
     friend class Renderer;
 

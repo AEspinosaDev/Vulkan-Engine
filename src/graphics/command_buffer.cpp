@@ -4,12 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, VkCommandBufferLevel level) {
+CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, CommandBufferLevel level) {
     CommandBuffer cmd                        = {};
     cmd.device                               = device;
     cmd.pool                                 = handle;
     cmd.queue = queue;
-    VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(handle, 1, level);
+    VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(handle, 1, Translator::get(level));
     VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &cmd.handle));
     return cmd;
 }

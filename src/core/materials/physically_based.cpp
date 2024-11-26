@@ -13,6 +13,7 @@ Graphics::MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const {
     uniforms.dataSlot5 = {m_hasNormalTexture, m_hasRoughnessTexture, m_hasMetallicTexture, m_hasAOTexture};
     uniforms.dataSlot6 = {m_hasMaskTexture, m_maskType, m_opacityWeight, m_hasEmissiveTexture};
     uniforms.dataSlot7 = {m_emissionColor, m_emisionWeight};
+    uniforms.dataSlot8 = Vec4{0.0f}; //Shader ID
 
     return uniforms;
 }
