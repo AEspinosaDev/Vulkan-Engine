@@ -177,20 +177,27 @@ vec3 computeAmbient(vec3 n) {
                 s, 0.0, c);
         vec3 rotatedNormal = normalize(rotationY * n);
 
-        // ambient = evalMarschnerLookupBSDF(
-        //         rotatedNormal, 
-        //         normalize(-g_pos),
-        //         texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity,
-        //         bsdf, 
-        //         nTex1,
-        //         nTex2,
-        //         GITex,
-        //         material.r, 
-        //         false,  //Take oput transmitance
-        //         material.trt);
+        ambient = evalMarschnerLookupBSDF(
+                rotatedNormal, 
+                normalize(-g_pos),
+                texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity,
+                bsdf, 
+                nTex1,
+                nTex2,
+                GITex,
+                mGITex,
+                nGITex1,
+                nGITex2,
+                vec3(0.5),
+                vec3(0.5),
+                0.1,
+                material.r, 
+                false, 
+                material.trt,
+                material.useScatter);
 
 
-        ambient = (scene.ambientIntensity * scene.ambientColor) ;
+        // ambient = (scene.ambientIntensity * scene.ambientColor) ;
     }else{
         ambient = (scene.ambientIntensity * scene.ambientColor) ;
     }
@@ -238,7 +245,8 @@ void main() {
                 directFraction,
                 material.r, 
                 material.tt, 
-                material.trt);
+                material.trt,
+                material.useScatter);
 
             color += lighting;
         }

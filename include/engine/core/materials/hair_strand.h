@@ -30,7 +30,7 @@ class HairStrandMaterial : public IMaterial
     bool  m_TT       = true; // Transmitance
     float m_TTpower  = 1.0f;
     bool  m_TRT      = true; // Second reflection
-    float m_TRTpower = 3.0f;
+    float m_TRTpower = 2.0f;
 
     float m_roughness = 0.4f;
     float m_scatter   = 7.0f;
@@ -252,6 +252,8 @@ class HairStrandMaterial2 : public HairStrandMaterial
         m_textures[N2]      = new Texture(settings);
         m_textures[GI]      = new Texture(settings);
         m_textures[MGI]     = new Texture(settings);
+        m_textures[NGI]     = new Texture(settings);
+        m_textures[NGI_TRT] = new Texture(settings);
         Tools::Loaders::load_texture(
             m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
         Tools::Loaders::load_texture(
@@ -271,6 +273,7 @@ class HairStrandMaterial2 : public HairStrandMaterial
         m_textureBindingState[NGI]     = false;
         m_textureBindingState[NGI_TRT] = false;
         m_isDirty                      = true;
+        m_useScatter                   = true;
     }
 };
 } // namespace Core

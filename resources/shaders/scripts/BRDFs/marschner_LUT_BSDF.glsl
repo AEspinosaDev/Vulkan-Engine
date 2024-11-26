@@ -117,7 +117,8 @@ vec3 evalMarschnerLookupBSDF(
     float directFraction,
     bool r,
     bool tt, 
-    bool trt) 
+    bool trt,
+	bool scatter) 
     {
 
     //Theta
@@ -168,6 +169,7 @@ vec3 evalMarschnerLookupBSDF(
 
     vec3 color          = R+TT+TRT;
 
+	if(scatter){
     //////////////////////////////////////////////////////////////////////////
 	// Local Scattering
 	//////////////////////////////////////////////////////////////////////////
@@ -187,9 +189,28 @@ vec3 evalMarschnerLookupBSDF(
 	// Global Scattering
 	//////////////////////////////////////////////////////////////////////////
 
+	vec3 trans = transDirect - directFraction;
 
+	//N
+	vec4  N_GI 		= texture(texGI_N, index1 );
+	float NR_GI   	= N_GI.a;
+	vec3  NTT_GI  	= N_GI.rgb;
+	vec3  NTRT_GI 	= texture(texGI_NTRT, index2 ).rgb;
 
+	//M
+	vec3 M_GIr 		= texture(texGI_M, vec2(ix_spread.r, 1-ix_thH) ).xyz;
+	vec3 M_GIg 		= texture(texGI_M, vec2(ix_spread.g, 1-ix_thH) ).xyz;
+	vec3 M_GIb 		= texture(texGI_M, vec2(ix_spread.b, 1-ix_thH) ).xyz;
 
+	vec3 MR_GI   	= vec3( M_GIr.x, M_GIg.x, M_GIb.x );
+	vec3 MTT_GI  	= vec3( M_GIr.y, M_GIg.y, M_GIb.y );
+	vec3 MTRT_GI 	= vec3( M_GIr.z, M_GIg.z, M_GIb.z );
+
+	vec3 f_indir = trans * DENSITY * ( gi + MR_GI*NR_GI + MTT_GI*NTT_GI + MTRT_GI*NTRT_GI );	// N components already divided by PI
+	color +=  f_indir;
+	
+	// color += gi * 0.1; 
+	}
 	//////////////////////////////////////////////////////////////////////////
 
     return              color * irradiance * GLOBAL_SCALE;
