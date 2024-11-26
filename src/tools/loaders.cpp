@@ -422,7 +422,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh* const mesh, const char* fileNam
 #define HAIR_FILE_COLORS_BIT 16
 #define HAIR_FILE_INFO_SIZE 88
 
-    unsigned short* segments;
+    unsigned short* segments = nullptr;
     float*          points;
     float*          dirs;
     float*          thickness;

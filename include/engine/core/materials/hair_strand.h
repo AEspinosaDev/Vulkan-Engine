@@ -209,6 +209,11 @@ class HairStrandMaterial : public IMaterial
 /*
 Testing material
 */
+enum HairPigmentType
+{
+    BLONDE    = 0,
+    BRUNNETTE = 1,
+};
 class HairStrandMaterial2 : public HairStrandMaterial
 {
 
@@ -243,29 +248,35 @@ class HairStrandMaterial2 : public HairStrandMaterial
     }
 
   public:
-    HairStrandMaterial2(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f))
-        : HairStrandMaterial(baseColor, {}, "hairstr2") {
+    HairStrandMaterial2(HairPigmentType pigment = BLONDE)
+        : HairStrandMaterial(Vec4(0.0), {}, "hairstr2") {
         TextureSettings settings{};
-        settings.useMipmaps = false;
-        settings.adressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
-        m_textures[N1]      = new Texture(settings);
-        m_textures[N2]      = new Texture(settings);
-        m_textures[GI]      = new Texture(settings);
-        m_textures[MGI]     = new Texture(settings);
-        m_textures[NGI]     = new Texture(settings);
-        m_textures[NGI_TRT] = new Texture(settings);
+        settings.useMipmaps         = false;
+        settings.adressMode         = ADDRESS_MODE_CLAMP_TO_EDGE;
+        m_textures[N1]              = new Texture(settings);
+        m_textures[N2]              = new Texture(settings);
+        m_textures[GI]              = new Texture(settings);
+        m_textures[MGI]             = new Texture(settings);
+        m_textures[NGI]             = new Texture(settings);
+        m_textures[NGI_TRT]         = new Texture(settings);
+        std::string pigmentTypePath = pigment == BLONDE ? "textures/LUTs/blonde/" : "textures/LUTs/brown/";
         Tools::Loaders::load_texture(
-            m_textures[N1], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+            m_textures[N1], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
         Tools::Loaders::load_texture(
-            m_textures[N2], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
-        Tools::Loaders::load_3D_texture(m_textures[GI], ENGINE_RESOURCES_PATH "textures/GI.png");
+            m_textures[N2], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+        Tools::Loaders::load_3D_texture(m_textures[GI], ENGINE_RESOURCES_PATH + pigmentTypePath + "GI.png");
         m_textures[GI]->set_format(RGBA_8U);
+        m_textures[GI]->set_type(TEXTURE_3D);
         Tools::Loaders::load_texture(
-            m_textures[MGI], ENGINE_RESOURCES_PATH "textures/M_GI.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
-        Tools::Loaders::load_texture(
-            m_textures[NGI], ENGINE_RESOURCES_PATH "textures/N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
-        Tools::Loaders::load_texture(
-            m_textures[NGI_TRT], ENGINE_RESOURCES_PATH "textures/N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+            m_textures[MGI], ENGINE_RESOURCES_PATH + pigmentTypePath + "M_GI.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+        Tools::Loaders::load_texture(m_textures[NGI],
+                                     ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R_GI.png",
+                                     TEXTURE_FORMAT_TYPE_NORMAL,
+                                     false);
+        Tools::Loaders::load_texture(m_textures[NGI_TRT],
+                                     ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT_GI.png",
+                                     TEXTURE_FORMAT_TYPE_NORMAL,
+                                     false);
         m_textureBindingState[N1]      = false;
         m_textureBindingState[N2]      = false;
         m_textureBindingState[GI]      = false;
