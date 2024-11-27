@@ -151,7 +151,7 @@ void Application::setup() {
     sky->set_color_intensity(0.25f);
     m_scene->set_skybox(sky);
 
-    m_controller = new Tools::Controller(camera, m_window);
+    m_controller = new Tools::Controller(camera, m_window, ControllerMovementType::ORBITAL);
 }
 
 void Application::setup_gui() {
@@ -182,6 +182,7 @@ void Application::setup_gui() {
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
     explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));
+    explorerPanel->add_child(new Tools::ControllerWidget(m_controller));
     explorerPanel->add_child(new Tools::Separator());
     explorerPanel->add_child(new Tools::TextLine(" Application average"));
     explorerPanel->add_child(new Tools::Profiler());

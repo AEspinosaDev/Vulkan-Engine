@@ -63,6 +63,14 @@ struct CommandBuffer {
     void set_depth_test_enable(bool op);
     void set_depth_bias_enable(bool op);
     void set_depth_bias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor);
+
+    void pipeline_barrier(Image         img,
+                          ImageLayout   oldLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                          ImageLayout   newLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          AccessFlags   srcMask   = ACCESS_COLOR_ATTACHMENT_WRITE,
+                          AccessFlags   dstMask   = ACCESS_SHADER_READ,
+                          PipelineStage srcStage = STAGE_COLOR_ATTACHMENT_OUTPUT,
+                          PipelineStage dstStage = STAGE_FRAGMENT_SHADER);
 };
 struct CommandPool {
     VkCommandPool handle = VK_NULL_HANDLE;

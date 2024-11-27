@@ -8,7 +8,7 @@ CommandBuffer CommandPool::allocate_command_buffer(uint32_t count, CommandBuffer
     CommandBuffer cmd                        = {};
     cmd.device                               = device;
     cmd.pool                                 = handle;
-    cmd.queue = queue;
+    cmd.queue                                = queue;
     VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(handle, 1, Translator::get(level));
     VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &cmd.handle));
     return cmd;
@@ -204,5 +204,30 @@ void CommandBuffer::set_depth_bias(float depthBiasConstantFactor, float depthBia
     vkCmdSetDepthBias(handle, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
 }
 } // namespace Graphics
+
+void Graphics::CommandBuffer::pipeline_barrier(Image         img,
+                                               ImageLayout   oldLayout,
+                                               ImageLayout   newLayout,
+                                               AccessFlags   srcMask,
+                                               AccessFlags   dstMask,
+                                               PipelineStage srcStage,
+                                               PipelineStage dstStage) {
+
+    VkImageMemoryBarrier barrier            = {};
+    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout                       = Translator::get(oldLayout);
+    barrier.newLayout                       = Translator::get(newLayout);
+    barrier.srcAccessMask                   = Translator::get(srcMask);
+    barrier.dstAccessMask                   = Translator::get(dstMask);
+    barrier.image                           = img.handle;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.levelCount     = img.mipLevels;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = img.layers;
+
+    vkCmdPipelineBarrier(
+        handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
 
 VULKAN_ENGINE_NAMESPACE_END

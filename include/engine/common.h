@@ -188,8 +188,8 @@ enum class SyncType
 
 enum class ControllerMovementType
 {
-    ORBITAL,
-    WASD,
+    WASD    = 0,
+    ORBITAL = 1,
 };
 enum class LightType
 {
@@ -253,8 +253,8 @@ enum AttachmentType
 
 enum UniformDataType
 {
-    UNIFORM_BUFFER         = 0,
-    UNIFORM_DYNAMIC_BUFFER = 1,
+    UNIFORM_BUFFER                 = 0,
+    UNIFORM_DYNAMIC_BUFFER         = 1,
     UNIFORM_COMBINED_IMAGE_SAMPLER = 2,
     UNIFORM_ACCELERATION_STRUCTURE = 3,
 };

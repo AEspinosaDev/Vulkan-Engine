@@ -618,7 +618,6 @@ void ObjectExplorerWidget::render() {
                     }
                     ImGui::Image(get_image(mat->get_emissive_texture())->GUIReadHandle, texSize);
                 }
-              
 
                 ImGui::Separator();
                 float tile_u = mat->get_tile().x;
@@ -911,6 +910,42 @@ void ObjectExplorerWidget::render() {
         if (ImGui::Checkbox("Frustum Culling", &culling))
             cam->enable_frustrum_culling(culling);
     }
+}
+void ControllerWidget::render() {
+    if (!m_controller)
+        return;
+    ImGui::SeparatorText("Controller");
+
+    float speed = m_controller->get_speed();
+    if (ImGui::DragFloat("Speed", &speed, 0.05f, 0.0f, 100.0))
+        m_controller->set_speed(speed);
+    float sensitivity = m_controller->get_mouse_sensitivity();
+    if (ImGui::DragFloat("Sensitivity", &sensitivity, 0.05f, 0.0f, 100.0))
+        m_controller->set_mouse_sensitivity(sensitivity);
+    ImGui::Spacing();
+    const char* controllerType[] = {
+        "WASD",
+        "ORBITAL",
+    };
+    int currentType = static_cast<int>(m_controller->get_type());
+    if (ImGui::Combo("Type", &currentType, controllerType, IM_ARRAYSIZE(controllerType)))
+    {
+        switch (currentType)
+        {
+        case 0:
+            m_controller->set_type(ControllerMovementType::WASD);
+            break;
+        case 1:
+            m_controller->set_type(ControllerMovementType::ORBITAL);
+            break;
+        }
+    }
+
+    // float position[3] = {m_object->get_position().x, m_object->get_position().y, m_object->get_position().z};
+    // if (ImGui::DragFloat3("Position", position, 0.1f))
+    // {
+    //     m_object->set_position(Vec3(position[0], position[1], position[2]));
+    // };
 }
 } // namespace Tools
 

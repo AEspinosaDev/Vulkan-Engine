@@ -53,6 +53,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
 
     // Depdencies
     dependencies.resize(2);
+        // STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
 
     dependencies[0] = Graphics::SubPassDependency(
         STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);

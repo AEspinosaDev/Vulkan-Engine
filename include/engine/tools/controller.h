@@ -96,8 +96,11 @@ class Controller
         return m_enabled;
     }
 
-    inline ControllerMovementType get_type() {
+    inline ControllerMovementType get_type() const {
         return m_type;
+    }
+    inline void set_type(ControllerMovementType t) {
+        m_type = t;
     }
     inline float get_speed() const {
         return m_speed;

@@ -12,32 +12,54 @@ void Controller::handle_keyboard(int key, int action, const float deltaTime) {
 
     auto speed = m_speed * deltaTime;
 
-    if (m_type == ControllerMovementType::WASD)
+    ///////////////////////
+    // FORWARD AND BACWARD
+    ///////////////////////
+    if (glfwGetKey(window, m_mappings.moveForward) == PRESS)
+        m_objPtr->set_position(m_objPtr->get_position() + m_objPtr->get_transform().forward * speed);
+    if (glfwGetKey(window, m_mappings.moveBackward) == PRESS)
+        m_objPtr->set_position(m_objPtr->get_position() - m_objPtr->get_transform().forward * speed);
+    ///////////////////////
+    // LEFT AND RIGHT
+    ///////////////////////
+    if (glfwGetKey(window, m_mappings.moveLeft) == PRESS)
     {
-        if (glfwGetKey(window, m_mappings.moveForward) == PRESS)
-            m_objPtr->set_position(m_objPtr->get_position() + m_objPtr->get_transform().forward * speed);
-        if (glfwGetKey(window, m_mappings.moveBackward) == PRESS)
-            m_objPtr->set_position(m_objPtr->get_position() - m_objPtr->get_transform().forward * speed);
-        if (glfwGetKey(window, m_mappings.moveLeft) == PRESS)
-            m_objPtr->set_position(
-                m_objPtr->get_position() -
-                glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
-        if (glfwGetKey(window, m_mappings.moveRight) == PRESS)
-            m_objPtr->set_position(
-                m_objPtr->get_position() +
-                glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed);
-        if (glfwGetKey(window, m_mappings.moveDown) == PRESS)
-            m_objPtr->set_position(m_objPtr->get_position() - glm::normalize(m_objPtr->get_transform().up) * speed);
-        if (glfwGetKey(window, m_mappings.moveUp) == PRESS)
-            m_objPtr->set_position(m_objPtr->get_position() + glm::normalize(m_objPtr->get_transform().up) * speed);
-
-        if (glfwGetKey(window, m_mappings.reset) == PRESS)
-        {
-            m_objPtr->set_transform(m_initialState);
-        }
+        Vec3 direction =
+            glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed;
+        m_objPtr->set_position(m_objPtr->get_position() - direction);
+        if (m_type == ControllerMovementType::ORBITAL)
+            m_orbitalCenter -= direction;
     }
-    if (m_type == ControllerMovementType::ORBITAL)
+    if (glfwGetKey(window, m_mappings.moveRight) == PRESS)
     {
+        Vec3 direction =
+            glm::normalize(glm::cross(m_objPtr->get_transform().forward, m_objPtr->get_transform().up)) * speed;
+        m_objPtr->set_position(m_objPtr->get_position() + direction);
+        if (m_type == ControllerMovementType::ORBITAL)
+            m_orbitalCenter += direction;
+    }
+    ///////////////////////
+    // UP AND DOWN
+    ///////////////////////
+    if (glfwGetKey(window, m_mappings.moveDown) == PRESS)
+    {
+        Vec3 direction = glm::normalize(m_objPtr->get_transform().up) * speed;
+        m_objPtr->set_position(m_objPtr->get_position() - direction);
+        if (m_type == ControllerMovementType::ORBITAL)
+            m_orbitalCenter -= direction;
+    }
+    if (glfwGetKey(window, m_mappings.moveUp) == PRESS)
+    {
+        Vec3 direction = glm::normalize(m_objPtr->get_transform().up) * speed;
+        m_objPtr->set_position(m_objPtr->get_position() + direction);
+        if (m_type == ControllerMovementType::ORBITAL)
+            m_orbitalCenter += direction;
+    }
+    if (glfwGetKey(window, m_mappings.reset) == PRESS)
+    {
+        m_objPtr->set_transform(m_initialState);
+        if (m_type == ControllerMovementType::ORBITAL)
+            m_orbitalCenter = Vec3(0.0f);
     }
 }
 
@@ -68,38 +90,28 @@ void Controller::handle_mouse(float xpos, float ypos, bool constrainPitch) {
         m_mouseDeltaX *= m_mouseSensitivity;
         m_mouseDeltaY *= m_mouseSensitivity;
 
-        if (m_type == ControllerMovementType::WASD)
+        float yaw   = m_objPtr->get_rotation(true).x + m_mouseDeltaX;
+        float pitch = m_objPtr->get_rotation(true).y + m_mouseDeltaY;
+
+        if (constrainPitch)
         {
-
-            float yaw   = m_objPtr->get_rotation(true).x + m_mouseDeltaX;
-            float pitch = m_objPtr->get_rotation(true).y + m_mouseDeltaY;
-
-            if (constrainPitch)
-            {
-                if (pitch > 89.0f)
-                    pitch = 89.0f;
-                if (pitch < -89.0f)
-                    pitch = -89.0f;
-            }
-
-            m_objPtr->set_rotation({yaw, pitch, 0.0}, true);
+            if (pitch > 89.0f)
+                pitch = 89.0f;
+            if (pitch < -89.0f)
+                pitch = -89.0f;
         }
+
+        m_objPtr->set_rotation({yaw, pitch, 0.0}, true);
+
         if (m_type == ControllerMovementType::ORBITAL)
         {
 
-            float yaw   = m_objPtr->get_parent()->get_rotation(true).x + m_mouseDeltaX;
-            float pitch = m_objPtr->get_parent()->get_rotation(true).y + m_mouseDeltaY;
+            float radius = glm::distance(m_objPtr->get_position(), m_orbitalCenter);
+            float x      = m_orbitalCenter.x + radius * cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+            float y      = m_orbitalCenter.y + radius * sin(glm::radians(pitch));
+            float z      = m_orbitalCenter.z + radius * cos(glm::radians(pitch)) * sin(glm::radians(yaw));
 
-            if (constrainPitch)
-            {
-                if (pitch > 89.0f)
-                    pitch = 89.0f;
-                if (pitch < -89.0f)
-                    pitch = -89.0f;
-            }
-
-            // m_objPtr->get_parent()->set_rotation({0.0, 1.5, 0.0});
-            //   m_objPtr->get_parent()->set_rotation({yaw, pitch, 0.0});
+            m_objPtr->set_position({x, y, z});
         }
     }
     if (glfwGetMouseButton(window, m_mappings.mouseMiddle) == PRESS)

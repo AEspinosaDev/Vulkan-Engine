@@ -14,6 +14,7 @@
 #include <engine/core.h>
 #include <engine/systems/renderers/renderer.h>
 #include <engine/tools/loaders.h>
+#include <engine/tools/controller.h>
 #include <functional>
 #include <filesystem>
 
@@ -279,6 +280,25 @@ class TextLine : public Widget
     inline void set_text(char* t) {
         m_text = t;
     }
+};
+class ControllerWidget : public Widget{
+  protected:
+    Controller* m_controller;
+    virtual void    render();
+
+  public:
+    ControllerWidget(Controller* ctrl)
+        : Widget(ImVec2(0, 0), ImVec2(0, 0))
+        , m_controller(ctrl) {
+    }
+
+    inline Controller* get_controler() const {
+        return m_controller;
+    }
+    inline void set_controller(Controller* sc) {
+        m_controller = sc;
+    }
+
 };
 
 class SceneExplorerWidget : public Widget
