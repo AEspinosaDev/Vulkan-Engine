@@ -53,7 +53,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
 
     // Depdencies
     dependencies.resize(2);
-        // STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+    // STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
 
     dependencies[0] = Graphics::SubPassDependency(
         STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
@@ -63,7 +63,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
 void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_descriptorPool = m_device->create_descriptor_pool(
-        VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+        ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS);
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
@@ -396,10 +396,8 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
             // Set texture write
             if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
             {
-                m_descriptorPool.set_descriptor_write(get_image(texture),
-                                                      LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                      &mat->get_texture_descriptor(),
-                                                      pair.first);
+                m_descriptorPool.set_descriptor_write(
+                    get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
                 mat->set_texture_binding_state(pair.first, true);
                 texture->set_dirty(false);
             }

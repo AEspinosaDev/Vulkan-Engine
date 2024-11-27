@@ -39,7 +39,7 @@ struct SceneUniforms {
     Vec4          fogColorAndSSAO; // w is for enabling SSAO
     Vec4          fogParams;       // x for near, y for far, z for intensity, w enable.
     Vec4          ambientColor;    // w intensity
-    LightUniforms lightUniforms[VK_MAX_LIGHTS];
+    LightUniforms lightUniforms[ENGINE_MAX_LIGHTS];
     int           numLights;
     int           SSAOtype;
     int           emphasizeAO;

@@ -5,6 +5,7 @@
 
 #include <engine/core.h>
 #include <engine/systems/renderers/forward.h>
+#include <engine/systems/renderers/deferred.h>
 
 #include <engine/tools/controller.h>
 #include <engine/tools/gui.h>
@@ -48,7 +49,7 @@ class Application
     Time m_time{};
 
   public:
-    void init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2);
+    void init(Systems::RendererSettings settings);
 
     void run(int argc, char *argv[]);
 

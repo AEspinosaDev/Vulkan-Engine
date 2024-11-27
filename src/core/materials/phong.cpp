@@ -24,6 +24,7 @@ Graphics::MaterialUniforms PhongMaterial::get_uniforms() const
     uniforms.dataSlot1 = m_color;
     uniforms.dataSlot2 = {m_shininess, m_glossiness, m_tileUV.x, m_tileUV.y};
     uniforms.dataSlot3 = {m_hasColorTexture, m_hasNormalTexture, m_hasGlossinessTexture, 0.0f};
+    uniforms.dataSlot8 = Vec4{0.1f}; //Shader ID
 
     return uniforms;
 }

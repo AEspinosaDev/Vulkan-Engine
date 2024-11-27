@@ -1,19 +1,12 @@
 #shader vertex
 #version 460
+#include camera.glsl
 
-
+//INPUT
 layout(location = 0) in vec3 pos;
 layout(location = 2) in vec2 uv;
 
-layout(set = 0, binding = 0) uniform CameraUniforms {
-    mat4 view;
-    mat4 proj;
-    mat4 viewProj;
-    vec4 position;
-    vec2 screenExtent;
-} camera;
-
-
+//OUTPUT
 layout(location = 0) out vec2 v_uv;
 layout(location = 1) out mat4 v_camView; //For shadows
 
@@ -26,353 +19,172 @@ void main() {
 
 #shader fragment
 #version 460
-#define MAX_LIGHTS 50
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+#include material_defines.glsl
+#include camera.glsl
+#include light.glsl
+#include scene.glsl
+#include utils.glsl
+#include shadow_mapping.glsl
+#include fresnel.glsl
+#include ssao.glsl
+#include IBL.glsl
+#include reindhart.glsl
+#include BRDFs/schlick_smith_BRDF.glsl
+#include BRDFs/marschner_BSDF.glsl
+#include raytracing.glsl
 
+//INPUT
 layout(location = 0) in  vec2 v_uv;
 layout(location = 1) in mat4 v_camView; //For shadows
 
-
-struct LightUniform{
-   vec3 position;
-    int type;
-    vec3 color;
-    float intensity;
-    vec4 data;
-
-    mat4 viewProj;
-
-    float shadowBias;
-    bool apiBiasEnabled;
-    bool angleDependantBias;
-    float pcfKernel;
-};
-
-layout(set = 0, binding = 1) uniform SceneUniforms {
-    vec3 fogColor;
-
-    bool enableSSAO;
-
-    float fogMinDistance;
-    float fogMaxDistance;
-    float fogIntensity;
-
-    bool enableFog;
-
-    vec3 ambientColor;
-    float ambientIntensity;
-    LightUniform lights[MAX_LIGHTS];
-    int numLights;
-    int SSAOType;
-    bool emphasizeAO;
-} scene;
-
-layout(set = 0, binding = 2) uniform sampler2DArray shadowMap;
-layout(set = 0, binding = 3) uniform sampler2D ssaoMap;
-
-layout(set = 3, binding = 0) uniform sampler2D positionBuffer;
-layout(set = 3, binding = 1) uniform sampler2D normalBuffer;
-layout(set = 3, binding = 2) uniform sampler2D albedoBuffer;
-layout(set = 3, binding = 3) uniform sampler2D materialBuffer;
-layout(set = 3, binding = 4) uniform AuxUniforms {
-    vec4 outputType;
-} aux;
-
-
+//OUTPUT
 layout(location = 0) out vec4 outColor;
 
-//Constant
-const float PI = 3.14159265359;
+//UNIFORMS
+layout(set = 0, binding =   2) uniform sampler2DArray              shadowMap;
+layout(set = 0, binding =   4) uniform samplerCube                 irradianceMap;
+layout(set = 0,  binding =  5) uniform accelerationStructureEXT    TLAS;
+layout(set = 0,  binding =  6) uniform sampler2D                   blueNoiseMap;
+//G-BUFFER
+layout(set = 1, binding = 0) uniform sampler2D positionBuffer;
+layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
+layout(set = 1, binding = 2) uniform sampler2D albedoBuffer;
+layout(set = 1, binding = 3) uniform sampler2D materialBuffer;
+layout(set = 1, binding = 4) uniform sampler2D tempBuffer;
 
-//Surface properties
-vec3 g_pos;
-float g_depth;
-vec3 g_normal;
-vec3 g_albedo;
-vec4 g_material;
-float g_opacity;
-float g_ao;
-
-bool isInAreaOfInfluence(LightUniform light){
-    if(light.type == 0){ //Point Light
-        return length(light.position - g_pos) <= light.data.x;
-    }
-    else if(light.type == 2){ //Spot light
-        //TO DO...
-        return true;
-    }
-    return true; //Directional influence is total
-}
-
-float computeFog() {
-    float z = (2.0 * scene.fogMinDistance) / (scene.fogMaxDistance + scene.fogMinDistance - g_depth * (scene.fogMaxDistance - scene.fogMinDistance));
-    return exp(-scene.fogIntensity * 0.01 * z);
-}
-
-float computeAttenuation(LightUniform light) {
-    if(light.type != 0)
-        return 1.0;
-
-    float d = length(light.position - g_pos);
-    float influence = light.data.x;
-    float window = pow(max(1 - pow(d / influence, 2), 0), 2);
-
-    return pow(10 / max(d, 0.0001), 2) * window;
-}
-
-float filterPCF(int lightId ,int kernelSize, vec3 coords, float bias) {
-
-    int edge = kernelSize / 2;
-    vec3 texelSize = 1.0 / textureSize(shadowMap, 0);
-
-    float currentDepth = coords.z;
-
-    float shadow = 0.0;
-
-    for(int x = -edge; x <= edge; ++x) {
-        for(int y = -edge; y <= edge; ++y) {
-            float pcfDepth = texture(shadowMap, vec3(coords.xy + vec2(x, y) * texelSize.xy,lightId)).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-        }
-    }
-    return shadow /= (kernelSize * kernelSize);
-
-}
-
-float computeShadow(LightUniform light, int lightId) {
-
-    vec4 pos_lightSpace = light.viewProj * inverse(v_camView) * vec4(g_pos.xyz, 1.0);
-
-    vec3 projCoords = pos_lightSpace.xyz / pos_lightSpace.w;
-
-    projCoords.xy  = projCoords.xy * 0.5 + 0.5;
-
-    if(projCoords.z > 1.0 || projCoords.z < 0.0)
-        return 0.0;
-
-
-    return filterPCF(lightId,int(light.pcfKernel), projCoords, light.shadowBias);
-
-}
-
-//Fresnel
-vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-//Normal Distribution
-//Trowbridge - Reitz GGX
-float distributionGGX(vec3 N, vec3 H, float roughness) {
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
-
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-
-    return num / denom;
-}
-//Geometry
-//Schlick - GGX
-float geometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-
-    float num = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
-    return num / denom;
-}
-
-float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = geometrySchlickGGX(NdotV, roughness);
-    float ggx1 = geometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-vec3 cookTorrance(LightUniform light) {
-
-    //Vector setup
-    vec3 lightDir = light.type == 0 ? normalize(light.position - g_pos) : normalize(light.position);
-    vec3 viewDir = normalize(-g_pos);
-    vec3 halfVector = normalize(lightDir + viewDir); //normalize(viewDir + lightDir);
-
-	//Heuristic fresnel factor
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, g_albedo,  g_material.g);
-
-	//Radiance
-    vec3 radiance = light.color * computeAttenuation(light) * light.intensity;
-
-	// Cook-Torrance BRDF
-    float NDF = distributionGGX(g_normal, halfVector, g_material.r);
-    float G = geometrySmith(g_normal, viewDir, lightDir,  g_material.r);
-    vec3 F = fresnelSchlick(max(dot(halfVector, viewDir), 0.0), F0);
-
-    vec3 kD = vec3(1.0) - F;
-    kD *= 1.0 - g_material.g;
-
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(g_normal, viewDir), 0.0) * max(dot(g_normal, lightDir), 0.0) + 0.0001;
-    vec3 specular = numerator / denominator;
-
-	// Add to outgoing radiance result
-    float lambertian = max(dot(g_normal, lightDir), 0.0);
-    return (kD * g_albedo / PI + specular) * radiance * lambertian;
-
-}
-vec3 phong(LightUniform light) {
-
-    vec3 lightDir = light.type == 0 ? normalize(light.position - g_pos) : normalize(light.position);
-    vec3 viewDir = normalize(-g_pos);
-    vec3 halfVector = normalize(lightDir + viewDir); //normalize(viewDir + lightDir);
-
-    vec3 diffuse = clamp(dot(lightDir, g_normal), 0.0, 1.0) * light.color.rgb;
-
-    //Blinn specular term
-    vec3 specular = pow(max(dot(g_normal, halfVector), 0.0), 0.5) * 20 *  light.color.rgb;
-
-
-    // float att = computeAttenuation();
-
-    return (diffuse + specular) * g_albedo;
-
-}
-
-float linearizeDepth(float depth, float near, float far) {
-    float z = depth * 2.0 - 1.0; 
-    float linearZ = (2.0 * near * far) / (far + near - z * (far - near));
-    return (linearZ - near) / (far - near);
-}
-
-float UnsharpSSAO(){
-
-    const float kernelDimension = 15.0;
-    const ivec2 screenSize = textureSize(ssaoMap,0);
-
-    float occlusion = 0.0;
-
-    int i = int(gl_FragCoord.x);
-    int j = int(gl_FragCoord.y);
-
-    int maxX = i + int(floor(kernelDimension*0.5));
-    int maxY = j + int(floor(kernelDimension*0.5));
-
-    float sampX;
-    float sampY;
-
-    float neighborCount = 0;
-
-    for (int x = i - int(floor(kernelDimension*0.5)); x < maxX; x++) {
-    for (int y = j - int(floor(kernelDimension*0.5)); y < maxY; y++) {
-    
-    sampX = float(x) / screenSize.x;
-    sampY = float(y) / screenSize.y;
-
-    if (sampX >= 0.0 && sampX <= 1.0 && sampY >= 0.0 && sampY <= 1.0 &&
-    
-    abs( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a,0.1,100.0) -
-     linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a, 0.1,100.0)) < 0.02) {
-    occlusion +=   linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a,0.1,100.0);
-    neighborCount++;
-    }
-    }
-    }
-
-    occlusion = occlusion / neighborCount;
-     
-    occlusion = 20 * ( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a, 0.1,100.0) - max(0.0, occlusion));
-
-
-  return occlusion;
-
-}
-
+//SURFACE PROPERTIES
+vec3    g_pos; 
+float   g_depth; 
+vec3    g_normal; 
+vec3    g_albedo; 
+float   g_opacity;
+vec4    g_material; 
+vec4    g_temp; 
 
 void main()
 {
 
-    g_pos = texture(positionBuffer,v_uv).rgb;
-    g_depth = texture(positionBuffer,v_uv).w;
-    g_normal = normalize(texture(normalBuffer,v_uv).rgb);
-    g_albedo =  texture(albedoBuffer,v_uv).rgb;
-    g_material = texture(materialBuffer,v_uv);
-    // g_opacity = 1.0;
-   
+    g_pos       = texture(positionBuffer,v_uv).rgb;
+    g_depth     = texture(positionBuffer,v_uv).w;
+    g_normal    = normalize(texture(normalBuffer,v_uv).rgb);
+    g_albedo    =  texture(albedoBuffer,v_uv).rgb;
+    g_opacity   =  texture(albedoBuffer,v_uv).w;
+    g_material  = texture(materialBuffer,v_uv);
+    g_temp      = texture(tempBuffer,v_uv);
 
-
-   //Compute all lights
     vec3 color = vec3(0.0);
-    for(int i = 0; i < scene.numLights; i++) {
-        //If inside liught area influence
-        if(isInAreaOfInfluence(scene.lights[i])){
+    //////////////////////////////////////
+    // IF LIT MATERIAL
+    //////////////////////////////////////
+    if(g_material.w != UNLIT_MATERIAL){
 
-            vec3 lighting =cookTorrance(scene.lights[i]);
-            if( scene.lights[i].data.w == 1) {
-                lighting *= (1.0 - computeShadow(scene.lights[i],i));
+        vec3 direct = vec3(0.0);
+        vec3 ambient = vec3(0.0);
+        vec3 modelPos = (inverse(v_camView) * vec4(g_pos.xyz, 1.0)).xyz;
+        vec3 modelNormal = (inverse(v_camView) * vec4(g_normal.xyz, 0.0)).xyz;
+        //////////////////////////////////////
+        // PHYSICAL 
+        //////////////////////////////////////
+        if(g_material.w == PHYSICAL_MATERIAL){
+            //Populate BRDF ________________________
+            SchlickSmithBRDF brdf;
+            brdf.albedo = g_albedo;
+            brdf.opacity = g_opacity;
+            brdf.normal = g_normal;
+            brdf.roughness = g_material.x;
+            brdf.metalness = g_material.y;
+            brdf.ao = g_material.z;
+            // brdf.emission;
+            brdf.F0 = vec3(0.04);
+            brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
 
+            for(int i = 0; i < scene.numLights; i++) {
+                    //If inside liught area influence
+                    if(isInAreaOfInfluence(scene.lights[i], g_pos)){
+                        //Direct Component ________________________
+                        direct += evalSchlickSmithBRDF( 
+                            scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(scene.lights[i].position.xyz), //wi
+                            normalize(-g_pos),                                                                                           //wo
+                            scene.lights[i].color * computeAttenuation( scene.lights[i], g_pos) *  scene.lights[i].intensity,              //radiance
+                            brdf
+                            );
+                        //Shadow Component ________________________
+                        if(scene.lights[i].shadowCast == 1) {
+                            if(scene.lights[i].shadowType == 0) //Classic
+                                direct *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
+                            if(scene.lights[i].shadowType == 1) //VSM   
+                                direct *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
+                            if(scene.lights[i].shadowType == 2) //Raytraced  
+                                direct *= computeRaytracedShadow(
+                                    TLAS, 
+                                    blueNoiseMap,
+                                    modelPos, 
+                                    scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].shadowData.xyz - modelPos : scene.lights[i].shadowData.xyz,
+                                    int(scene.lights[i].shadowData.w), 
+                                    scene.lights[i].area, 
+                                    0);
+                        }
+                    }
             }
-
-        color += lighting;
+            //Ambient Component ________________________
+            if(scene.useIBL){
+                ambient = computeAmbient(
+                    irradianceMap,
+                    scene.envRotation,
+                    modelNormal,
+                    normalize(camera.position.xyz-modelPos),
+                    brdf.albedo,
+                    brdf.F0,
+                    brdf.metalness,
+                    brdf.roughness,
+                    scene.ambientIntensity);
+            }else{
+                ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
+            }
+            ambient *= brdf.ao;
         }
-    }
-  
-    //Ambient component
-    vec3 ambient = (scene.ambientIntensity * 0.01 * scene.ambientColor) * g_albedo;
-
-     //Ambient occlusion
-    float occ = 1.0;
-    if(scene.enableSSAO){
-        if (scene.SSAOType == 0) {
-            occ = texture(ssaoMap,v_uv).r;
+        //////////////////////////////////////
+        // PHONG 
+        //////////////////////////////////////
+        if(g_material.w == PHONG_MATERIAL){
+        
+            //TBD ....
         }
-        if (scene.SSAOType == 1){
-            occ = UnsharpSSAO();
-        }    
-    }
+        //////////////////////////////////////
+        // HAIR 
+        //////////////////////////////////////
+        if(g_material.w != HAIR_STRAND_MATERIAL){
+            //TBD ....
+        }
 
-    if(!scene.emphasizeAO){
-        color += ambient*occ;
+               
+                    
+
+    color = direct + ambient;
+            
+    //////////////////////////////////////
+    // IF UNLIT MATERIAL
+    //////////////////////////////////////
     }else{
-        color*=occ;
+        color = g_albedo;
     }
 
-	//Tone Up
-    color = color / (color + vec3(1.0));
-
-    if( scene.enableFog) {
-        float f = computeFog();
+    if(scene.enableFog){
+        float f = computeFog(g_depth);
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
-    float outOpacity = texture(normalBuffer,v_uv).w == 0.0 ? 0.0 : 1.0;
-    outColor = vec4(color, outOpacity);
 
-    float gamma = 2.2;
-    outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
 
-    //DIFFERENT G BUFFER OUTPUTS FOR DEBUGGING PURPOSES
-    switch(int(aux.outputType.x)){
-            case 1:
-                 outColor = vec4(texture(positionBuffer,v_uv).rgb,outOpacity);
-                break;
-            case 2:
-                 outColor = vec4(texture(normalBuffer,v_uv).rgb,outOpacity);
-                break;
-            case 3:
-                 outColor = vec4(texture(albedoBuffer,v_uv).rgb,outOpacity);
-                break;
-            case 4:
-                 outColor = vec4(texture(materialBuffer,v_uv).rgb,outOpacity);
-                break;
-            case 5:
-                 outColor = vec4(vec3(occ),outOpacity);
-                break;
-    }
+    // float outOpacity = texture(normalBuffer,v_uv).w == 0.0 ? 0.0 : 1.0;
+    // outColor = vec4(color, outOpacity);
+
+    outColor = vec4(reindhartTonemap(color),1.0);
+
+   
+    
 
 }
 

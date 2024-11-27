@@ -13,7 +13,7 @@
 
 #include <engine/systems/renderers/renderer.h>
 #include <engine/systems/renderers/forward.h>
-// #include <engine/systems/renderers/deferred.h>
+#include <engine/systems/renderers/deferred.h>
 
 
 

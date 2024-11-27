@@ -31,7 +31,7 @@ void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
 
-    LayoutBinding outputTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding outputTextureBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT, {outputTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptorSet);

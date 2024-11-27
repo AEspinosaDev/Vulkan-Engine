@@ -33,14 +33,14 @@ void main() {
 
     gl_Position = camera.viewProj * object.model * vec4(pos, 1.0);
 
-    v_uv = vec2(uv.x * material.tileUV.x, (1-uv.y) * material.tileUV.y);
+    v_uv = vec2(uv.x * material.slot2.x, (1-uv.y) * material.slot2.y); //Tiling
 
     mat4 mv = camera.view * object.model;
     v_pos = (mv * vec4(pos, 1.0)).xyz;
 
     v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
 
-    if(bool(material.slot6.x)) { //If has normal texture
+    if(int(material.slot5.x) == 1) { //If has normal texture
         vec3 T = -normalize(vec3(mv * vec4(tangent, 0.0)));
         vec3 N = normalize(vec3(mv * vec4(normal, 0.0)));
         vec3 B = cross(N, T);
@@ -82,7 +82,7 @@ layout(location = 2) out vec4 outAlbedo;
 layout(location = 3) out vec4 outMaterial;
 layout(location = 4) out vec4 outTemporal;
 
-#define EPSILON 0.1;
+#define EPSILON 0.1
 
 ///////////////////////////////////////////
 //Surface Global properties
@@ -98,11 +98,11 @@ void setupSurfaceProperties(){
     if(material.slot8.w == PHYSICAL_MATERIAL){
 
         //Setting input surface properties
-        g_albedo = bool(material.slot4.w) ? mix(material.slot1.rgb, texture(albedoTex, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
-        g_opacity = bool(material.slot4.w) ?  texture(albedoTex, v_uv).a :material.slot1.w;
-        g_normal = bool(material.slot5.x) ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize( v_normal );
+        g_albedo = int(material.slot4.w)== 1 ? mix(material.slot1.rgb, texture(albedoTex, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
+        g_opacity = int(material.slot4.w)== 1 ?  texture(albedoTex, v_uv).a :material.slot1.w;
+        g_normal = int(material.slot5.x)== 1 ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize( v_normal );
 
-        if(bool(material.slot6.x)) {
+        if(int(material.slot6.x)== 1) {
             vec4 mask = texture(materialText1, v_uv).rgba; //Correction linearize color
             if(int(material.slot6.y) == 0) { //HDRP UNITY
 	    	    //Unity HDRP uses glossiness not roughness pipeline, so it has to be inversed
@@ -117,20 +117,23 @@ void setupSurfaceProperties(){
                 // TO DO ...
             }
         } else {
-            g_material.r = material.slot5.y ? mix(material.slot3.w, texture(materialText1, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
-            g_material.g = material.slot5.z ? mix(material.slot3.y, texture(materialText2, v_uv).r, material.slot3.z) : material.slot3.y; //Metalness
-            g_material.b = material.slot5.w ? mix(material.slot4.y, texture(materialText3, v_uv).r, material.slot4.z) : material.slot4.y; //AO
+            g_material.r = material.slot5.y== 1 ? mix(material.slot3.w, texture(materialText1, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
+            g_material.g = material.slot5.z== 1 ? mix(material.slot3.y, texture(materialText2, v_uv).r, material.slot3.z) : material.slot3.y; //Metalness
+            g_material.b = material.slot5.w== 1 ? mix(material.slot4.y, texture(materialText3, v_uv).r, material.slot4.z) : material.slot4.y; //AO
         }
         g_material.w = PHYSICAL_MATERIAL;
     }
     if(material.slot8.w == UNLIT_MATERIAL){
-
+        g_albedo = int(material.slot2.w) == 1 ? texture(albedoTex, v_uv).rgb : material.slot1.rgb;
+        g_material.w = UNLIT_MATERIAL;
     }
     if(material.slot8.w == HAIR_STRAND_MATERIAL){
         // TBD .........
+        g_material.w = HAIR_STRAND_MATERIAL;
     }
     if(material.slot8.w == PHONG_MATERIAL){
         // TBD .........
+        g_material.w = PHONG_MATERIAL;
     }
 
 }
@@ -140,12 +143,14 @@ void main() {
         
     setupSurfaceProperties();
 
-    if(material.slot2.z) //Alpha test
-        if(g_opacity<1-EPSILON)discard;
+    if(int(material.slot2.z) == 1){
+        if(g_opacity<1-EPSILON) discard;
+    } //Alpha test
 
     outPos      = vec4(v_pos,gl_FragCoord.z);
     outNormal   = vec4( g_normal , 1.0f );
     outAlbedo   = vec4(g_albedo,g_opacity);
     outMaterial = g_material; //w material ID
+    outTemporal = vec4(0.0); //TBD
 
 }

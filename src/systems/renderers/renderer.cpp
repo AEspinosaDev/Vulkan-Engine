@@ -226,7 +226,7 @@ void BaseRenderer::init_resources() {
         // Object Buffer
         const size_t     objectStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
                                          m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
-        Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(VK_MAX_OBJECTS * objectStrideSize,
+        Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(ENGINE_MAX_OBJECTS * objectStrideSize,
                                                                    BUFFER_USAGE_UNIFORM_BUFFER,
                                                                    VMA_MEMORY_USAGE_CPU_TO_GPU,
                                                                    (uint32_t)objectStrideSize);

@@ -35,7 +35,8 @@ int main() {
         settings.samplesMSAA = MSAASamples::x4;
         settings.clearColor  = Vec4(0.0, 0.0, 0.0, 1.0);
 
-        Systems::BaseRenderer* renderer = new Systems::ForwardRenderer(window, settings, {});
+        Systems::BaseRenderer* renderer =
+            new Systems::ForwardRenderer(window, false, ShadowResolution::VERY_LOW, settings);
 
         Core::Camera* camera = new Core::Camera();
         camera->set_position(Vec3(0.0f, 0.15f, -1.0f));

@@ -1,184 +1,163 @@
-// #include <engine/graphics/renderpasses/composition_pass.h>
+#include <engine/core/renderpasses/composition_pass.h>
 
-// VULKAN_ENGINE_NAMESPACE_BEGIN
+VULKAN_ENGINE_NAMESPACE_BEGIN
+using namespace Graphics;
+namespace Core {
 
-// void CompositionPass::init()
-// {
+void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                        std::vector<Graphics::SubPassDependency>& dependencies) {
 
-//     std::array<VkAttachmentDescription, 1> attachmentsInfo = {};
+    attachments.resize(1);
 
-//     // Color attachment
-//     attachmentsInfo[0].format = static_cast<VkFormat>(m_colorFormat);
-//     attachmentsInfo[0].samples = VK_SAMPLE_COUNT_1_BIT;
-//     attachmentsInfo[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     attachmentsInfo[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     attachmentsInfo[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     attachmentsInfo[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     attachmentsInfo[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     attachmentsInfo[0].finalLayout = m_fxaa ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachments[0] = Graphics::Attachment(m_colorFormat,
+                                          1,
+                                          m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                                      : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                          COLOR_ATTACHMENT,
+                                          ASPECT_COLOR,
+                                          TEXTURE_2D,
+                                          FILTER_LINEAR,
+                                          ADDRESS_MODE_CLAMP_TO_BORDER);
 
-//     Attachment _colorAttachment(
-//         static_cast<VkFormat>(m_colorFormat),
-//         m_fxaa ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-//         VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D);
-//     _colorAttachment.isPresentImage = m_fxaa ? false : true;
-//     m_attachments.push_back(_colorAttachment);
+    attachments[0].isPresentImage = m_isDefault ? true : false;
 
-//     VkAttachmentReference colorRef = init::attachment_reference(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    // Depdencies
+    dependencies.resize(1);
 
-//     // Subpass
-//     VkSubpassDescription subpass = {};
-//     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-//     subpass.colorAttachmentCount = 1;
-//     subpass.pColorAttachments = &colorRef;
+    dependencies[0] =
+        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
+}
 
-//     // Depdencies
-//     std::array<VkSubpassDependency, 1> dependencies = {{}};
+void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
+    m_descriptorPool = m_device->create_descriptor_pool(
+        ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS);
+    m_descriptors.resize(frames.size());
 
-//     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-//     dependencies[0].dstSubpass = 0;
-//     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-//     dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-//     dependencies[0].srcAccessMask = 0;
+    // GLOBAL SET
+    LayoutBinding camBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding sceneBufferBinding(
+        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding shadowBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding envBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
+    LayoutBinding accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 5);
+    LayoutBinding noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 6);
+    m_descriptorPool.set_layout(
+        GLOBAL_LAYOUT,
+        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding, noiseBinding});
 
-//     // Creation
-//     VkRenderPassCreateInfo renderPassInfo{};
-//     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentsInfo.size());
-//     renderPassInfo.pAttachments = attachmentsInfo.data();
-//     renderPassInfo.subpassCount = 1;
-//     renderPassInfo.pSubpasses = &subpass;
-//     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-//     renderPassInfo.pDependencies = dependencies.data();
+    // G - BUFFER SET
+    LayoutBinding positionBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding normalBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding albedoBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding materialBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding tempBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
+    m_descriptorPool.set_layout(1, {positionBinding, normalBinding, albedoBinding, materialBinding, tempBinding});
 
-//     if (vkCreateRenderPass(m_context->device, &renderPassInfo, nullptr, &m_handle) != VK_SUCCESS)
-//     {
-//         new VKException("failed to create renderpass!");
-//     }
+    for (size_t i = 0; i < frames.size(); i++)
+    {
+        // Global
+        m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorPool.allocate_descriptor_set(1, &m_descriptors[i].gBufferDescritor);
 
-//     m_initiatized = true;
-// }
-// void CompositionPass::create_pipelines(DescriptorManager &descriptorManager)
-// {
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                              sizeof(CameraUniforms),
+                                              0,
+                                              &m_descriptors[i].globalDescritor,
+                                              UNIFORM_DYNAMIC_BUFFER,
+                                              0);
+        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                              sizeof(SceneUniforms),
+                                              m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                              &m_descriptors[i].globalDescritor,
+                                              UNIFORM_DYNAMIC_BUFFER,
+                                              1);
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              3);
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              4);
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::BLUE_NOISE_TEXTURE),
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].globalDescritor,
+                                              6);
+    }
+}
+void CompositionPass::setup_shader_passes() {
 
-//     ShaderPass *compPass = new ShaderPass(ENGINE_RESOURCES_PATH "shaders/composition.glsl");
-//     compPass->settings.descriptorSetLayoutIDs =
-//         {{DescriptorLayoutType::GLOBAL_LAYOUT, true},
-//          {DescriptorLayoutType::OBJECT_LAYOUT, true},
-//          {DescriptorLayoutType::OBJECT_TEXTURE_LAYOUT, true},
-//          {DescriptorLayoutType::G_BUFFER_LAYOUT, true}};
-//     compPass->settings.attributes =
-//         {{VertexAttributeType::POSITION, true},
-//          {VertexAttributeType::NORMAL, false},
-//          {VertexAttributeType::UV, true},
-//          {VertexAttributeType::TANGENT, false},
-//          {VertexAttributeType::COLOR, false}};
-//     compPass->settings.blending = true;
+    ShaderPass* compPass =
+        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
+    compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {1, true}};
+    compPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+                                                 {NORMAL_ATTRIBUTE, false},
+                                                 {UV_ATTRIBUTE, true},
+                                                 {TANGENT_ATTRIBUTE, false},
+                                                 {COLOR_ATTRIBUTE, false}};
 
-//     ShaderPass::build_shader_stages(m_context->device, *compPass);
+    compPass->build_shader_stages();
+    compPass->build(m_handle, m_descriptorPool);
 
-//     ShaderPass::build(m_context->device, m_handle, descriptorManager, m_extent, *compPass);
+    m_shaderPasses["composition"] = compPass;
+}
 
-//     m_shaderPasses["composition"] = compPass;
+void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
-//     // Allocate to global manager the gBuffer descritpro
-//     descriptorManager.allocate_descriptor_set(DescriptorLayoutType::G_BUFFER_LAYOUT, &m_GBufferDescriptor);
-// }
-// void CompositionPass::init_resources()
-// {
-//     const size_t BUFFER_SIZE = utils::pad_uniform_buffer_size(sizeof(Vec4), m_context->gpu);
-//     m_uniformBuffer.init(m_context->memory, BUFFER_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)BUFFER_SIZE);
+    CommandBuffer cmd = currentFrame.commandBuffer;
+    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_handle.extent);
 
-//     m_attachments[0].image.create_sampler(
-//         m_context->device,
-//         VK_FILTER_LINEAR,
-//         VK_SAMPLER_MIPMAP_MODE_LINEAR,
-//         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-//         0.0f,
-//         1.0f,
-//         false,
-//         1.0f,
-//         VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-// }
+    ShaderPass* shaderPass = m_shaderPasses["composition"];
 
-// void CompositionPass::render(uint32_t frameIndex, Scene *const scene, uint32_t presentImageIndex)
-// {
-//     VkCommandBuffer cmd = m_context->frames[frameIndex].commandBuffer;
+    cmd.bind_shaderpass(*shaderPass);
 
-//     begin(cmd, presentImageIndex);
+    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].gBufferDescritor, 1, *shaderPass);
 
-//     VkViewport viewport = init::viewport(m_extent);
-//     vkCmdSetViewport(cmd, 0, 1, &viewport);
-//     VkRect2D scissor{};
-//     scissor.offset = {0, 0};
-//     scissor.extent = m_extent;
-//     vkCmdSetScissor(cmd, 0, 1, &scissor);
+    Geometry* g = m_vignette->get_geometry();
+    cmd.draw_geometry(*get_VAO(g));
 
-//     ShaderPass *shaderPass = m_shaderPasses["composition"];
+    // Draw gui contents
+    if (m_isDefault && Frame::guiEnabled)
+        cmd.draw_gui_data();
 
-//     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+    cmd.end_renderpass();
+}
+void CompositionPass::connect_to_previous_images(std::vector<Graphics::Image> images) {
+    for (size_t i = 0; i < m_descriptors.size(); i++)
+    {
+        // SHADOWS
+        m_descriptorPool.set_descriptor_write(
+            &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+        // SET UP G-BUFFER
+        m_descriptorPool.set_descriptor_write(
+            &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
+        m_descriptorPool.set_descriptor_write(
+            &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
+        m_descriptorPool.set_descriptor_write(
+            &images[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 2);
+        m_descriptorPool.set_descriptor_write(
+            &images[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
+        m_descriptorPool.set_descriptor_write(
+            &images[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
+    }
+}
 
-//     // GLOBAL LAYOUT BINDING
-//     uint32_t globalOffset = 0;
-//     uint32_t globalOffsets[] = {globalOffset, globalOffset};
-//     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 0, 1, &m_context->frames[frameIndex].globalDescriptor.descriptorSet, 2, globalOffsets);
-//     // G BUFFER LAYOUT
-//     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipelineLayout, 3, 1, &m_GBufferDescriptor.descriptorSet, 0, VK_NULL_HANDLE);
+void CompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
+    if (!get_TLAS(scene)->binded)
+    {
+        for (size_t i = 0; i < m_descriptors.size(); i++)
+        {
+            m_descriptorPool.set_descriptor_write(get_TLAS(scene), &m_descriptors[i].globalDescritor, 5);
+        }
+        get_TLAS(scene)->binded = true;
+    }
+}
+} // namespace Core
 
-//     Geometry *g = m_vignette->get_geometry();
-//     draw(cmd, g);
-
-//     // Draw gui contents
-//     if (m_isDefault && Frame::guiEnabled)
-//         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-
-//     end(cmd);
-// }
-
-// void CompositionPass::set_g_buffer(Image position, Image normals, Image albedo, Image material, DescriptorManager &descriptorManager)
-// {
-//     m_Gbuffer.resize(4);
-
-//     m_Gbuffer[0] = position;
-//     m_Gbuffer[1] = normals;
-//     m_Gbuffer[2] = albedo;
-//     m_Gbuffer[3] = material;
-
-//     descriptorManager.set_descriptor_write(m_Gbuffer[0].sampler, m_Gbuffer[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 0);
-//     descriptorManager.set_descriptor_write(m_Gbuffer[1].sampler, m_Gbuffer[1].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 1);
-//     descriptorManager.set_descriptor_write(m_Gbuffer[2].sampler, m_Gbuffer[2].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 2);
-//     descriptorManager.set_descriptor_write(m_Gbuffer[3].sampler, m_Gbuffer[3].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_GBufferDescriptor, 3);
-//     descriptorManager.set_descriptor_write(&m_uniformBuffer, sizeof(Vec4), 0, &m_GBufferDescriptor, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4);
-// }
-// void CompositionPass::update_uniforms()
-// {
-//     struct AuxUniforms
-//     {
-//         Vec4 data;
-//     };
-//     AuxUniforms aux;
-//     aux.data = {m_outputType, 0.0f, 0.0f, 0.0f};
-//     m_uniformBuffer.upload_data(m_context->memory, &aux.data, sizeof(Vec4));
-// }
-
-// void CompositionPass::cleanup()
-// {
-//     RenderPass::cleanup();
-//     m_uniformBuffer.cleanup(m_context->memory);
-// }
-
-// void CompositionPass::update()
-// {
-//     RenderPass::update();
-//     m_attachments[0].image.create_sampler(
-//         m_context->device,
-//         VK_FILTER_LINEAR,
-//         VK_SAMPLER_MIPMAP_MODE_LINEAR,
-//         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-//         0.0f,
-//         1.0f,
-//         false,
-//         1.0f,
-//         VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE);
-// }
-// VULKAN_ENGINE_NAMESPACE_END
+VULKAN_ENGINE_NAMESPACE_END

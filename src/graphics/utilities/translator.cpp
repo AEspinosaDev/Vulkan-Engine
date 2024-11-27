@@ -33,7 +33,7 @@ VkFormat get(ColorFormatType colorFormatType) {
     case ColorFormatType::DEPTH_32F:
         return VK_FORMAT_D32_SFLOAT;
     default:
-        throw std::invalid_argument("Unknown ColorFormatType");
+        throw std::invalid_argument("VKEngine error: Unknown ColorFormatType");
     }
 }
 
@@ -50,7 +50,7 @@ VkPresentModeKHR get(SyncType syncType) {
     case SyncType::RELAXED_VERTICAL:
         return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
     default:
-        throw std::invalid_argument("Unknown SyncType");
+        throw std::invalid_argument("VKEngine error: Unknown SyncType");
     }
 }
 // UniformDataType -> VkDescriptorType
@@ -66,7 +66,7 @@ VkDescriptorType get(UniformDataType uniformDataType) {
     case UniformDataType::UNIFORM_ACCELERATION_STRUCTURE:
         return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     default:
-        throw std::invalid_argument("Unknown UniformDataType");
+        throw std::invalid_argument("VKEngine error: Unknown UniformDataType");
     }
 }
 
@@ -90,7 +90,7 @@ VkImageLayout get(ImageLayout layoutType) {
     case ImageLayout::LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     default:
-        throw std::invalid_argument("Unknown ImageLayoutType");
+        throw std::invalid_argument("VKEngine error: Unknown ImageLayoutType");
     }
 }
 
@@ -112,7 +112,7 @@ VkImageViewType get(TextureTypeFlagBits viewType) {
     case TextureTypeFlagBits::TEXTURE_CUBE_ARRAY:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     default:
-        throw std::invalid_argument("Unknown ImageViewType");
+        throw std::invalid_argument("VKEngine error: Unknown ImageViewType");
     }
 }
 
@@ -126,7 +126,7 @@ VkFilter get(FilterType filterType) {
     case FilterType::FILTER_CUBIC:
         return VK_FILTER_CUBIC_EXT;
     default:
-        throw std::invalid_argument("Unknown FilterType");
+        throw std::invalid_argument("VKEngine error: Unknown FilterType");
     }
 }
 
@@ -144,7 +144,7 @@ VkSamplerAddressMode get(AddressMode addressMode) {
     case AddressMode::ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
         return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     default:
-        throw std::invalid_argument("Unknown AddressMode");
+        throw std::invalid_argument("VKEngine error: Unknown AddressMode");
     }
 }
 
@@ -162,7 +162,7 @@ VkClearValue get(ClearValueType clearValueType) {
         return clearValue;
     }
     default:
-        throw std::invalid_argument("Unknown ClearValueType");
+        throw std::invalid_argument("VKEngine error: Unknown ClearValueType");
     }
 }
 
@@ -174,7 +174,7 @@ VkDependencyFlags get(SubPassDependencyType dependencyFlags) {
     case SubPassDependencyType::SUBPASS_DEPENDENCY_BY_REGION:
         return VK_DEPENDENCY_BY_REGION_BIT;
     default:
-        throw std::invalid_argument("Unknown SubPassDependencyFlags");
+        throw std::invalid_argument("VKEngine error: Unknown SubPassDependencyFlags");
     }
 }
 
@@ -202,7 +202,7 @@ VkPipelineStageFlags get(PipelineStage stageFlags) {
     case PipelineStage::STAGE_FRAGMENT_SHADER:
         return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     default:
-        throw std::invalid_argument("Unknown PipelineStageFlags");
+        throw std::invalid_argument("VKEngine error: Unknown PipelineStageFlags");
     }
 }
 
@@ -228,7 +228,7 @@ VkAccessFlags get(AccessFlags accessFlags) {
     case AccessFlags::ACCESS_SHADER_WRITE:
         return VK_ACCESS_SHADER_WRITE_BIT;
     default:
-        throw std::invalid_argument("Unknown AccessFlags");
+        throw std::invalid_argument("VKEngine error: Unknown AccessFlags");
     }
 }
 VkAttachmentStoreOp get(AttachmentStoreOp storeOp) {
@@ -245,7 +245,7 @@ VkAttachmentStoreOp get(AttachmentStoreOp storeOp) {
         throw std::invalid_argument("VK_ATTACHMENT_STORE_OP_NONE not supported in this Vulkan version");
 #endif
     default:
-        throw std::invalid_argument("Unknown AttachmentStoreOp");
+        throw std::invalid_argument("VKEngine error: Unknown AttachmentStoreOp");
     }
 }
 
@@ -259,7 +259,7 @@ VkAttachmentLoadOp get(AttachmentLoadOp loadOp) {
     case AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE:
         return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     default:
-        throw std::invalid_argument("Unknown AttachmentLoadOp");
+        throw std::invalid_argument("VKEngine error: Unknown AttachmentLoadOp");
     }
 }
 VkImageAspectFlags get(ImageAspect aspectType) {
@@ -274,7 +274,7 @@ VkImageAspectFlags get(ImageAspect aspectType) {
     case ImageAspect::ASPECT_METADATA:
         return VK_IMAGE_ASPECT_METADATA_BIT;
     default:
-        throw std::invalid_argument("Unknown Image AspectType");
+        throw std::invalid_argument("VKEngine error: Unknown Image AspectType");
     }
 }
 VkSamplerMipmapMode get(MipmapMode mipmapMode) {
@@ -285,7 +285,7 @@ VkSamplerMipmapMode get(MipmapMode mipmapMode) {
     case MipmapMode::MIPMAP_LINEAR:
         return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     default:
-        throw std::invalid_argument("Unknown SamplerMipmapMode");
+        throw std::invalid_argument("VKEngine error: Unknown SamplerMipmapMode");
     }
 }
 
@@ -305,7 +305,7 @@ VkBorderColor get(BorderColor borderColor) {
     case BorderColor::INT_OPAQUE_WHITE:
         return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
     default:
-        throw std::invalid_argument("Unknown BorderColor");
+        throw std::invalid_argument("VKEngine error: Unknown BorderColor");
     }
 }
 
@@ -359,7 +359,7 @@ VkCommandPoolCreateFlags get(CommandPoolCreateFlags flags) {
     case CommandPoolCreateFlags::COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER:
         return VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     default:
-        throw std::invalid_argument("Unknown CommandPoolCreateFlags");
+        throw std::invalid_argument("VKEngine error: Unknown CommandPoolCreateFlags");
     }
 }
 VkCommandBufferLevel get(CommandBufferLevel level) {
@@ -370,7 +370,7 @@ VkCommandBufferLevel get(CommandBufferLevel level) {
     case CommandBufferLevel::COMMAND_BUFFER_LEVEL_SECONDARY:
         return VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     default:
-        throw std::invalid_argument("Unknown CommandBufferLevel");
+        throw std::invalid_argument("VKEngine error: Unknown CommandBufferLevel");
     }
 }
 VkBufferUsageFlags get(BufferUsageFlags usageFlags) {

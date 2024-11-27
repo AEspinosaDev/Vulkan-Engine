@@ -15,6 +15,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+/*
+DEFERRED RENDERING GEOMETRY PASS
+*/
 class GeometryPass : public RenderPass
 {
     /*Setup*/
@@ -36,7 +39,7 @@ class GeometryPass : public RenderPass
                  uint32_t          framebufferCount,
                  ColorFormatType   colorFormat,
                  ColorFormatType   depthFormat,
-                 bool              isDefault = true)
+                 bool              isDefault = false)
         : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat) {

@@ -6,35 +6,38 @@ namespace Core {
 void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
                                      std::vector<Graphics::SubPassDependency>& dependencies) {
 
+    //////////////////////
+    // G - BUFFER
+    /////////////////////
     attachments.resize(6);
 
     // Positions
-    attachments[0] = Graphics::Attachment(SRGB_32F,
+    attachments[0] = Graphics::Attachment(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Normals
-    attachments[1] = Graphics::Attachment(SRGB_32F,
+    attachments[1] = Graphics::Attachment(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Albedo
-    attachments[2] = Graphics::Attachment(RGBA_8U,
+    attachments[2] = Graphics::Attachment(m_colorFormat,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Material
-    attachments[3] = Graphics::Attachment(RGBA_8U,
+    attachments[3] = Graphics::Attachment(m_colorFormat,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Temporal
-    attachments[4] = Graphics::Attachment(SRGB_32F,
+    attachments[4] = Graphics::Attachment(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -59,7 +62,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
 void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_descriptorPool = m_device->create_descriptor_pool(
-        VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+        ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS);
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
@@ -148,27 +151,26 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 }
 void GeometryPass::setup_shader_passes() {
 
-    PipelineSettings settings{};
-    settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    settings.attributes             = {{POSITION_ATTRIBUTE, true},
-                                       {NORMAL_ATTRIBUTE, true},
-                                       {UV_ATTRIBUTE, true},
-                                       {TANGENT_ATTRIBUTE, true},
-                                       {COLOR_ATTRIBUTE, false}};
-    settings.dynamicStates          = {VK_DYNAMIC_STATE_VIEWPORT,
-                                       VK_DYNAMIC_STATE_SCISSOR,
-                                       VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
-                                       VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
-                                       VK_DYNAMIC_STATE_CULL_MODE};
-    settings.blendAttachments       = {Init::color_blend_attachment_state(false),
-                                       Init::color_blend_attachment_state(false),
-                                       Init::color_blend_attachment_state(false),
-                                       Init::color_blend_attachment_state(false),
-                                       Init::color_blend_attachment_state(false)};
     // Geometry
     ShaderPass* geomPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/geometry.glsl");
-    geomPass->settings = settings;
+        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
+    geomPass->settings.descriptorSetLayoutIDs = {
+        {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
+    geomPass->settings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                           {NORMAL_ATTRIBUTE, true},
+                                           {UV_ATTRIBUTE, true},
+                                           {TANGENT_ATTRIBUTE, true},
+                                           {COLOR_ATTRIBUTE, false}};
+    geomPass->settings.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT,
+                                           VK_DYNAMIC_STATE_SCISSOR,
+                                           VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+                                           VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                                           VK_DYNAMIC_STATE_CULL_MODE};
+    geomPass->settings.blendAttachments = {Init::color_blend_attachment_state(false),
+                                           Init::color_blend_attachment_state(false),
+                                           Init::color_blend_attachment_state(false),
+                                           Init::color_blend_attachment_state(false),
+                                           Init::color_blend_attachment_state(false)};
     geomPass->build_shader_stages();
     geomPass->build(m_handle, m_descriptorPool);
 
@@ -232,26 +234,26 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
             mesh_idx++;
         }
         // Skybox
-        if (scene->get_skybox())
-        {
-            if (scene->get_skybox()->is_active())
-            {
+        // if (scene->get_skybox())
+        // {
+        //     if (scene->get_skybox()->is_active())
+        //     {
 
-                cmd.set_depth_test_enable(true);
-                cmd.set_depth_write_enable(true);
-                cmd.set_cull_mode(CullingMode::NO_CULLING);
+        //         cmd.set_depth_test_enable(true);
+        //         cmd.set_depth_write_enable(true);
+        //         cmd.set_cull_mode(CullingMode::NO_CULLING);
 
-                ShaderPass* shaderPass = m_shaderPasses["skybox"];
+        //         ShaderPass* shaderPass = m_shaderPasses["skybox"];
 
-                // Bind pipeline
-                cmd.bind_shaderpass(*shaderPass);
+        //         // Bind pipeline
+        //         cmd.bind_shaderpass(*shaderPass);
 
-                // GLOBAL LAYOUT BINDING
-                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+        //         // GLOBAL LAYOUT BINDING
+        //         cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
-                cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
-            }
-        }
+        //         cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
+        //     }
+        // }
     }
 
     cmd.end_renderpass();

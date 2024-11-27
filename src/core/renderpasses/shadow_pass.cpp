@@ -41,7 +41,7 @@ void ShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        att
 void ShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_descriptorPool = m_device->create_descriptor_pool(
-        VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS, VK_MAX_OBJECTS);
+        ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS);
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET

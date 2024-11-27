@@ -1,7 +1,7 @@
 #include "application.h"
 #include <filesystem>
 
-void Application::init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2) {
+void Application::init(Systems::RendererSettings settings) {
     m_window = new WindowGLFW("VK Engine", 1280, 1024);
 
     m_window->init();
@@ -17,7 +17,7 @@ void Application::init(Systems::RendererSettings settings, Systems::ForwardRende
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::ForwardRenderer(m_window, settings, settings2);
+    m_renderer = new Systems::ForwardRenderer(m_window, false, ShadowResolution::MEDIUM, settings);
 
     setup();
 
@@ -31,9 +31,6 @@ void Application::run(int argc, char* argv[]) {
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    Systems::ForwardRendererSettings settings2{};
-    settings2.shadowQuality = ShadowResolution::MEDIUM;
-    settings2.fxaa          = true;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
@@ -89,7 +86,7 @@ void Application::run(int argc, char* argv[]) {
                 settings.samplesMSAA = MSAASamples::x8;
             if (aaType == "fxaa")
             {
-                settings2.fxaa       = true;
+                // settings2.fxaa       = true;
                 settings.samplesMSAA = MSAASamples::x1;
             }
 
@@ -115,7 +112,7 @@ void Application::run(int argc, char* argv[]) {
         continue;
     }
 
-    init(settings, settings2);
+    init(settings);
     while (!m_window->get_window_should_close())
     {
 

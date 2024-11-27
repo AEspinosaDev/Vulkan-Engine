@@ -17,6 +17,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+/*
+STANDARD FORWARD LIGHTING PASS
+*/
 class ForwardPass : public RenderPass
 {
     /*Setup*/

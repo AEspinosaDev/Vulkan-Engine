@@ -49,7 +49,7 @@ class Application
     Time m_time{};
 
   public:
-    void init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2);
+    void init(Systems::RendererSettings settings);
 
     void run(int argc, char *argv[]);
 

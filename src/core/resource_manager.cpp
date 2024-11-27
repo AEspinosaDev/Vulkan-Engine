@@ -103,7 +103,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     sceneParams.time = window->get_time_elapsed();
 
     std::vector<Core::Light*> lights = scene->get_lights();
-    if (lights.size() > VK_MAX_LIGHTS)
+    if (lights.size() > ENGINE_MAX_LIGHTS)
         std::sort(lights.begin(), lights.end(), [=](Core::Light* a, Core::Light* b) {
             return math::length(a->get_position() - camera->get_position()) <
                    math::length(b->get_position() - camera->get_position());
@@ -121,7 +121,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
             sceneParams.lightUniforms[lightIdx].viewProj = depthProjectionMatrix * depthViewMatrix;
             lightIdx++;
         }
-        if (lightIdx >= VK_MAX_LIGHTS)
+        if (lightIdx >= ENGINE_MAX_LIGHTS)
             break;
     }
     sceneParams.numLights = static_cast<int>(lights.size());

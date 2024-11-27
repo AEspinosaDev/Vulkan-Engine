@@ -1,7 +1,7 @@
 #include "application.h"
 #include <filesystem>
 
-void Application::init(Systems::RendererSettings settings, Systems::ForwardRendererSettings settings2) {
+void Application::init(Systems::RendererSettings settings) {
     m_window = new WindowGLFW("Raytracing Example", 1280, 1024);
 
     m_window->init();
@@ -17,7 +17,7 @@ void Application::init(Systems::RendererSettings settings, Systems::ForwardRende
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::ForwardRenderer(m_window, settings, settings2);
+    m_renderer = new Systems::ForwardRenderer(m_window, true, ShadowResolution::LOW, settings);
 
     setup();
     setup_gui();
@@ -30,11 +30,8 @@ void Application::run(int argc, char* argv[]) {
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    Systems::ForwardRendererSettings settings2{};
-    settings2.shadowQuality = ShadowResolution::MEDIUM;
-    settings2.fxaa          = true;
 
-    init(settings, settings2);
+    init(settings);
     while (!m_window->get_window_should_close())
     {
 
@@ -73,7 +70,7 @@ void Application::setup() {
     light->set_shadow_fov(115.0f);
     light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
     light->set_area(0.5f);
-    light->add_child(lightDummy);
+    // light->add_child(lightDummy);
     light->set_name("Light");
 
     m_scene->add(light);
