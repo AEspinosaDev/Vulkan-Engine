@@ -18,7 +18,7 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::DeferredRenderer(m_window, true, ShadowResolution::LOW, settings);
+    m_renderer = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
 
     setup();
     setup_gui();
@@ -31,6 +31,7 @@ void Application::run(int argc, char* argv[]) {
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
+    settings.softwareAA       = true;
 
     init(settings);
     while (!m_window->get_window_should_close())

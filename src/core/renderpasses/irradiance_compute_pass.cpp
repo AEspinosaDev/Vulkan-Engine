@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/irradiance_compute_pass.h>
+#include <engine/core/passes/irradiance_compute_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -38,17 +38,17 @@ void IrrandianceComputePass::setup_uniforms(std::vector<Graphics::Frame>& frames
 }
 void IrrandianceComputePass::setup_shader_passes() {
 
-    ShaderPass* converterPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/misc/irradiance_compute.glsl");
+    GraphicShaderPass* converterPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/misc/irradiance_compute.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    converterPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+    converterPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                       {NORMAL_ATTRIBUTE, false},
                                                       {UV_ATTRIBUTE, false},
                                                       {TANGENT_ATTRIBUTE, false},
                                                       {COLOR_ATTRIBUTE, false}};
 
     converterPass->build_shader_stages();
-    converterPass->build(m_handle, m_descriptorPool);
+    converterPass->build(m_descriptorPool);
 
     m_shaderPasses["irr"] = converterPass;
 }
@@ -56,8 +56,8 @@ void IrrandianceComputePass::setup_shader_passes() {
 void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[0]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_renderpass.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["irr"];
     cmd.bind_shaderpass(*shaderPass);
@@ -89,15 +89,14 @@ void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const s
 
     m_captureBuffer.upload_data(&capture, sizeof(CaptureData));
 
-    m_descriptorPool.set_descriptor_write(
-        &m_captureBuffer, BUFFER_SIZE, 0, &m_captureDescriptorSet, UNIFORM_BUFFER, 1);
+    m_descriptorPool.set_descriptor_write(&m_captureBuffer, BUFFER_SIZE, 0, &m_captureDescriptorSet, UNIFORM_BUFFER, 1);
 }
 void IrrandianceComputePass::connect_env_cubemap(Graphics::Image env) {
     m_descriptorPool.set_descriptor_write(&env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_captureDescriptorSet, 0);
 }
 
 void IrrandianceComputePass::cleanup() {
-    RenderPass::cleanup();
+    BasePass::cleanup();
     m_captureBuffer.cleanup();
 }
 } // namespace Core

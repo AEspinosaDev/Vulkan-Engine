@@ -216,6 +216,7 @@ CommandBuffer Device::create_command_buffer(CommandPool commandPool, CommandBuff
     VK_CHECK(vkAllocateCommandBuffers(m_handle, &cmdAllocInfo, &cmd.handle));
     return cmd;
 }
+
 DescriptorPool Device::create_descriptor_pool(uint32_t                       maxSets,
                                               uint32_t                       numUBO,
                                               uint32_t                       numUBODynamic,
@@ -261,10 +262,10 @@ DescriptorPool Device::create_descriptor_pool(uint32_t                       max
     VK_CHECK(vkCreateDescriptorPool(m_handle, &pool_info, nullptr, &pool.handle));
     return pool;
 }
-VulkanRenderPass Device::create_render_pass(Extent2D                        extent,
+RenderPass Device::create_render_pass(Extent2D                        extent,
                                             std::vector<Attachment>&        attachments,
                                             std::vector<SubPassDependency>& dependencies) {
-    VulkanRenderPass rp = {};
+    RenderPass rp = {};
     // ATTACHMENT SETUP ----------------------------------
     rp.device = m_handle;
     rp.extent = extent;
@@ -351,7 +352,7 @@ VulkanRenderPass Device::create_render_pass(Extent2D                        exte
     return rp;
 } // namespace Graphics
 Framebuffer
-Device::create_framebuffer(VulkanRenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
+Device::create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
     Framebuffer fbo = {};
     fbo.device      = m_handle;
     fbo.layers      = layers;
@@ -829,7 +830,7 @@ void Device::wait() {
 
 void Device::init_imgui(void*            windowHandle,
                         WindowingSystem  windowingSystem,
-                        VulkanRenderPass renderPass,
+                        RenderPass renderPass,
                         uint16_t         samples) {
 
     m_guiPool = create_descriptor_pool(1000,

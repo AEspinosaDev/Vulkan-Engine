@@ -6,22 +6,17 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef GEOMETRY_PASS_H
-#define GEOMETRY_PASS_H
-#include <engine/core/renderpasses/renderpass.h>
-#include <engine/core/resource_manager.h>
+#ifndef SHADOW_PASS_H
+#define SHADOW_PASS_H
+#include <engine/core/passes/pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-/*
-DEFERRED RENDERING GEOMETRY PASS
-*/
-class GeometryPass : public RenderPass
+class ShadowPass : public GraphicPass
 {
-    /*Setup*/
-    ColorFormatType m_colorFormat;
+    /* Config  */
     ColorFormatType m_depthFormat;
 
     /*Descriptors*/
@@ -31,17 +26,13 @@ class GeometryPass : public RenderPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-    void setup_material_descriptor(IMaterial* mat);
-
   public:
-    GeometryPass(Graphics::Device* ctx,
-                 Extent2D          extent,
-                 uint32_t          framebufferCount,
-                 ColorFormatType   colorFormat,
-                 ColorFormatType   depthFormat,
-                 bool              isDefault = false)
-        : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
-        , m_colorFormat(colorFormat)
+    ShadowPass(Graphics::Device* ctx,
+               Extent2D          extent,
+               uint32_t          framebufferCount,
+               uint32_t          numLights,
+               ColorFormatType   depthFormat)
+        : BasePass(ctx, extent, framebufferCount, numLights)
         , m_depthFormat(depthFormat) {
     }
 
@@ -53,13 +44,10 @@ class GeometryPass : public RenderPass
     void setup_shader_passes();
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
-
-    void update_uniforms(uint32_t frameIndex, Scene* const scene);
-
-    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
-
 };
+
 } // namespace Core
+
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif

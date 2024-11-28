@@ -17,11 +17,15 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
+// GENERAL PIPELINE SETTINGS
 struct PipelineSettings {
 
-    std::unordered_map<int, bool> attributes;
     std::unordered_map<int, bool> descriptorSetLayoutIDs;
-
+    std::vector<PushConstant>     pushConstants = {};
+};
+// GRAPHIC PIPELINE SETTINGS
+struct GraphicPipelineSettings {
+    std::unordered_map<int, bool>                    attributes;
     VkPrimitiveTopology                              topology         = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkPolygonMode                                    poligonMode      = VK_POLYGON_MODE_FILL;
     VkCullModeFlagBits                               cullMode         = VK_CULL_MODE_NONE;
@@ -32,7 +36,6 @@ struct PipelineSettings {
     bool                                             depthTest        = true;
     bool                                             depthWrite       = true;
     VkCompareOp                                      depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
-    std::vector<PushConstant>                        pushConstants    = {};
     std::vector<VkDynamicState>                      dynamicStates    = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
@@ -52,8 +55,13 @@ void build_graphic_pipeline(VkPipeline&                                  pipelin
                             VkDevice                                     device,
                             VkRenderPass                                 renderPass,
                             VkExtent2D                                   extent,
-                            PipelineSettings&                            settings,
+                            GraphicPipelineSettings&                     settings,
                             std::vector<VkPipelineShaderStageCreateInfo> shaderStages);
+
+void build_compute_pipeline(VkPipeline&                     pipeline,
+                            VkPipelineLayout&               layout,
+                            VkDevice                        device,
+                            VkPipelineShaderStageCreateInfo computeStage);
 }; // namespace PipelineBuilder
 
 } // namespace Graphics

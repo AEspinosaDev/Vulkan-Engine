@@ -27,9 +27,10 @@ struct RendererSettings {
     MSAASamples     samplesMSAA      = MSAASamples::x4;
     BufferingType   bufferingType    = BufferingType::DOUBLE;
     SyncType        screenSync       = SyncType::MAILBOX;
-    ColorFormatType colorFormat      = SBGRA_8;
+    ColorFormatType colorFormat      = SRGBA_8;
     ColorFormatType depthFormat      = DEPTH_32F;
     Vec4            clearColor       = Vec4{0.0, 0.0, 0.0, 1.0};
+    bool            softwareAA       = false;
     bool            autoClearColor   = true;
     bool            autoClearDepth   = true;
     bool            autoClearStencil = true;
@@ -50,8 +51,8 @@ class BaseRenderer
 
     Core::IWindow* m_window;
 
-    RendererSettings               m_settings{};
-    std::vector<Core::RenderPass*> m_renderpasses;
+    RendererSettings             m_settings{};
+    std::vector<Core::BasePass*> m_passes;
 
     Graphics::Utils::DeletionQueue m_deletionQueue;
 
@@ -99,8 +100,8 @@ class BaseRenderer
     inline void set_enable_gui(bool op) {
         m_settings.enableUI = op;
     }
-    inline std::vector<Core::RenderPass*> get_render_passes() const {
-        return m_renderpasses;
+    inline std::vector<Core::BasePass*> get_render_passes() const {
+        return m_passes;
     }
     inline void enable_gui_overlay(bool op) {
         m_settings.enableUI;
@@ -173,7 +174,7 @@ class BaseRenderer
     /*
     Link images of previous passes to current pass
     */
-    void connect_renderpass(Core::RenderPass* const currentPass);
+    void connect_renderpass(Core::BasePass* const currentPass);
     /*
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context

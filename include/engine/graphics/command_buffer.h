@@ -16,7 +16,7 @@
 #include <engine/graphics/shaderpass.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/vao.h>
-#include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -41,7 +41,7 @@ struct CommandBuffer {
     /* COMMANDS */
     /****************************************** */
 
-    void begin_renderpass(VulkanRenderPass& renderpass,
+    void begin_renderpass(RenderPass& renderpass,
                           Framebuffer&      fbo,
                           VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
     void end_renderpass();
@@ -51,7 +51,7 @@ struct CommandBuffer {
                        int32_t       offset         = 0,
                        uint32_t      firstInstance  = 0);
     void draw_gui_data();
-    void bind_shaderpass(ShaderPass& pass, BindingType binding = BINDING_TYPE_GRAPHIC);
+    void bind_shaderpass(ShaderPass& pass);
     void bind_descriptor_set(DescriptorSet         descriptor,
                              uint32_t              ocurrence,
                              ShaderPass&           pass,
@@ -73,6 +73,8 @@ struct CommandBuffer {
                           PipelineStage dstStage  = STAGE_FRAGMENT_SHADER);
 
     void push_constants(ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset = 0);
+
+    void dispatch_compute(Extent3D grid);
 };
 struct CommandPool {
     VkCommandPool handle = VK_NULL_HANDLE;

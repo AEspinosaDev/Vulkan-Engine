@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/geometry_pass.h>
+#include <engine/core/passes/geometry_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -152,46 +152,46 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 void GeometryPass::setup_shader_passes() {
 
     // Geometry
-    ShaderPass* geomPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
+    GraphicShaderPass* geomPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
     geomPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    geomPass->settings.attributes       = {{POSITION_ATTRIBUTE, true},
-                                           {NORMAL_ATTRIBUTE, true},
-                                           {UV_ATTRIBUTE, true},
-                                           {TANGENT_ATTRIBUTE, true},
-                                           {COLOR_ATTRIBUTE, false}};
-    geomPass->settings.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT,
-                                           VK_DYNAMIC_STATE_SCISSOR,
-                                           VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
-                                           VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
-                                           VK_DYNAMIC_STATE_CULL_MODE};
-    geomPass->settings.blendAttachments = {Init::color_blend_attachment_state(false),
-                                           Init::color_blend_attachment_state(false),
-                                           Init::color_blend_attachment_state(false),
-                                           Init::color_blend_attachment_state(false),
-                                           Init::color_blend_attachment_state(false)};
+    geomPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                  {NORMAL_ATTRIBUTE, true},
+                                                  {UV_ATTRIBUTE, true},
+                                                  {TANGENT_ATTRIBUTE, true},
+                                                  {COLOR_ATTRIBUTE, false}};
+    geomPass->graphicSettings.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT,
+                                                  VK_DYNAMIC_STATE_SCISSOR,
+                                                  VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+                                                  VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                                                  VK_DYNAMIC_STATE_CULL_MODE};
+    geomPass->graphicSettings.blendAttachments = {Init::color_blend_attachment_state(false),
+                                                  Init::color_blend_attachment_state(false),
+                                                  Init::color_blend_attachment_state(false),
+                                                  Init::color_blend_attachment_state(false),
+                                                  Init::color_blend_attachment_state(false)};
 
     geomPass->build_shader_stages();
-    geomPass->build(m_handle, m_descriptorPool);
+    geomPass->build(m_descriptorPool);
 
     m_shaderPasses["geometry"] = geomPass;
 
-    ShaderPass* skyboxPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
+    GraphicShaderPass* skyboxPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
     skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
-    skyboxPass->settings.attributes       = {{POSITION_ATTRIBUTE, true},
-                                             {NORMAL_ATTRIBUTE, false},
-                                             {UV_ATTRIBUTE, false},
-                                             {TANGENT_ATTRIBUTE, false},
-                                             {COLOR_ATTRIBUTE, false}};
-    skyboxPass->settings.dynamicStates    = geomPass->settings.dynamicStates;
-    skyboxPass->settings.blendAttachments = geomPass->settings.blendAttachments;
-    skyboxPass->settings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
+    skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                    {NORMAL_ATTRIBUTE, false},
+                                                    {UV_ATTRIBUTE, false},
+                                                    {TANGENT_ATTRIBUTE, false},
+                                                    {COLOR_ATTRIBUTE, false}};
+    skyboxPass->graphicSettings.dynamicStates    = geomPass->graphicSettings.dynamicStates;
+    skyboxPass->graphicSettings.blendAttachments = geomPass->graphicSettings.blendAttachments;
+    skyboxPass->graphicSettings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
 
     skyboxPass->build_shader_stages();
-    skyboxPass->build(m_handle, m_descriptorPool);
+    skyboxPass->build(m_descriptorPool);
 
     m_shaderPasses["skybox"] = skyboxPass;
 }
@@ -199,8 +199,8 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_renderpass.extent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -331,7 +331,6 @@ void GeometryPass::setup_material_descriptor(IMaterial* mat) {
             mat->set_texture_binding_state(pair.first, true);
         }
     }
-
 }
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

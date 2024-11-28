@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/panorama_conversion_pass.h>
+#include <engine/core/passes/panorama_conversion_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -37,17 +37,17 @@ void PanoramaConverterPass::setup_uniforms(std::vector<Graphics::Frame>& frames)
 }
 void PanoramaConverterPass::setup_shader_passes() {
 
-    ShaderPass* converterPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
+    GraphicShaderPass* converterPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    converterPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+    converterPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                       {NORMAL_ATTRIBUTE, false},
                                                       {UV_ATTRIBUTE, true},
                                                       {TANGENT_ATTRIBUTE, false},
                                                       {COLOR_ATTRIBUTE, false}};
 
     converterPass->build_shader_stages();
-    converterPass->build(m_handle, m_descriptorPool);
+    converterPass->build(m_descriptorPool);
 
     m_shaderPasses["converter"] = converterPass;
 }
@@ -55,8 +55,8 @@ void PanoramaConverterPass::setup_shader_passes() {
 void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[0]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_renderpass.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["converter"];
     cmd.bind_shaderpass(*shaderPass);

@@ -112,9 +112,7 @@ void CommandBuffer::submit(Fence                  fence,
     }
 }
 
-void CommandBuffer::begin_renderpass(VulkanRenderPass& renderpass,
-                                     Framebuffer&      fbo,
-                                     VkSubpassContents subpassContents) {
+void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, VkSubpassContents subpassContents) {
 
     VkRenderPassBeginInfo renderPassInfo =
         Init::renderpass_begin_info(renderpass.handle, renderpass.extent, fbo.handle);
@@ -161,8 +159,19 @@ void CommandBuffer::draw_gui_data() {
     if (ImGui::GetDrawData())
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), handle);
 }
-void CommandBuffer::bind_shaderpass(ShaderPass& pass, BindingType binding) {
-    vkCmdBindPipeline(handle, static_cast<VkPipelineBindPoint>(binding), pass.get_pipeline());
+void CommandBuffer::bind_shaderpass(ShaderPass& pass) {
+    switch (pass.QUEUE_TYPE)
+    {
+    case GRAPHIC_QUEUE:
+        vkCmdBindPipeline(handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pass.pipeline);
+        break;
+    case COMPUTE_QUEUE:
+        vkCmdBindPipeline(handle, VK_PIPELINE_BIND_POINT_COMPUTE, pass.pipeline);
+        break;
+    case RT_QUEUE:
+        vkCmdBindPipeline(handle, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pass.pipeline);
+        break;
+    }
 }
 void CommandBuffer::bind_descriptor_set(DescriptorSet         descriptor,
                                         uint32_t              ocurrence,
@@ -171,7 +180,7 @@ void CommandBuffer::bind_descriptor_set(DescriptorSet         descriptor,
                                         BindingType           binding) {
     vkCmdBindDescriptorSets(handle,
                             static_cast<VkPipelineBindPoint>(binding),
-                            pass.get_layout(),
+                            pass.pipelineLayout,
                             ocurrence,
                             1,
                             &descriptor.handle,
@@ -234,7 +243,10 @@ void Graphics::CommandBuffer::push_constants(ShaderPass&      pass,
                                              const void*      data,
                                              uint32_t         size,
                                              uint32_t         offset) {
-    vkCmdPushConstants(handle, pass.get_layout(), Translator::get(stage), offset, size, data);
+    vkCmdPushConstants(handle, pass.pipelineLayout, Translator::get(stage), offset, size, data);
 }
 
+void Graphics::CommandBuffer::dispatch_compute(Extent3D grid) {
+    vkCmdDispatch(handle, grid.width, grid.height, grid.depth);
+}
 VULKAN_ENGINE_NAMESPACE_END

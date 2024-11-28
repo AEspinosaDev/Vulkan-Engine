@@ -6,8 +6,8 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef RENDERPASS_H
-#define RENDERPASS_H
+#ifndef PASS_H
+#define PASS_H
 
 #include <array>
 
@@ -17,60 +17,65 @@
 #include <engine/graphics/device.h>
 #include <engine/graphics/frame.h>
 #include <engine/graphics/framebuffer.h>
+#include <engine/graphics/renderpass.h>
 #include <engine/graphics/swapchain.h>
-#include <engine/graphics/vk_renderpass.h>
 
 #include <engine/core/scene/scene.h>
-
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
 /*
-Core abstract class needed for rendering.
-It controls the flow of the render state, what information and how it is being
-rendered. It also gives access to the framebuffers containing the rendered data.
-It can be inherited for full user control over the render pipeline.
+Core abstract class needed for a renderer to work.
+It controls the flow of the renderer state, what information and how it is being
+rendered/computed. It also gives access to the framebuffers containing the rendered data.
+It can be inherited for full user control over the render/compute pipeline.
 */
-class RenderPass
+class BasePass;
+typedef BasePass GraphicPass;   // Sintax for graphic passes that draw primitives and rasterized them onto framebuffers
+typedef BasePass ComputePass;   // Sintax for passes focused on GPGPU
+typedef BasePass RaytracedPass; // Sintax for passes that only use the raytracing mode.
+class BasePass
 {
   protected:
-    Graphics::Device*                                      m_device{nullptr};
-    Graphics::DescriptorPool                               m_descriptorPool{};
-    Graphics::VulkanRenderPass                             m_handle;
-    std::vector<Graphics::Framebuffer>                     m_framebuffers;
-    std::unordered_map<std::string, Graphics::ShaderPass*> m_shaderPasses;
-
-    uint32_t m_framebufferImageDepth; // The depth of the framebuffer image layers.
+    // Graphic Objects
+    Graphics::Device*                                          m_device         = nullptr;
+    Graphics::DescriptorPool                                   m_descriptorPool = {};
+    std::unordered_map<std::string, Graphics::BaseShaderPass*> m_shaderPasses;
+    // In case it is a graphical pass ... which is the most usual
+    Graphics::RenderPass               m_renderpass = {};
+    std::vector<Graphics::Framebuffer> m_framebuffers;
+    uint32_t                           m_framebufferImageDepth; // The depth of the framebuffer image layers.
 
     // Key: Renderpass ID
     // Value: Framebuffer's image ID inside renderpass
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
 
+    // Query
     bool m_initiatized  = false;
     bool m_isResizeable = true;
     bool m_enabled      = true;
     bool m_isDefault    = false;
+    bool m_isGraphical  = true;
 
-    virtual void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
-                                   std::vector<Graphics::SubPassDependency>& dependencies) = 0;
-    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames)                      = 0;
-    virtual void setup_shader_passes()                                                     = 0;
+    virtual void
+                 setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                                   std::vector<Graphics::SubPassDependency>& dependencies) = 0; // Only for graphical renderpasses
+    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) = 0;
+    virtual void setup_shader_passes()                                = 0;
 
   public:
-    // static std::vector<Graphics::Frame> frames;
-
-    RenderPass(Graphics::Device* ctx,
-               Extent2D          extent,
-               uint32_t          framebufferCount = 1,
-               uint32_t          framebufferDepth = 1,
-               bool              isDefault        = false)
+    BasePass(Graphics::Device* ctx,
+             Extent2D          extent,
+             uint32_t          framebufferCount = 1,
+             uint32_t          framebufferDepth = 1,
+             bool              isDefault        = false)
         : m_device(ctx)
         , m_framebufferImageDepth(framebufferDepth)
         , m_isDefault(isDefault) {
         m_framebuffers.resize(framebufferCount);
-        m_handle.extent = extent;
+        m_renderpass.extent = extent;
     }
 
 #pragma region Getters & Setters
@@ -83,24 +88,24 @@ class RenderPass
     }
 
     inline Extent2D get_extent() const {
-        return m_handle.extent;
+        return m_renderpass.extent;
     }
     inline void set_extent(Extent2D extent) {
-        m_handle.extent = extent;
+        m_renderpass.extent = extent;
     }
 
-    inline Graphics::VulkanRenderPass get_handle() const {
-        return m_handle;
+    inline Graphics::RenderPass get_handle() const {
+        return m_renderpass;
     }
     inline std::vector<Graphics::Framebuffer> const get_framebuffers() const {
         return m_framebuffers;
     }
 
     inline std::vector<Graphics::Attachment> get_attachments() {
-        return m_handle.attachments;
+        return m_renderpass.attachments;
     }
     inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) {
-        m_handle.attachments[attachmentLayout].clearValue = value;
+        m_renderpass.attachments[attachmentLayout].clearValue = value;
     }
 
     inline bool resizeable() const {
@@ -118,6 +123,9 @@ class RenderPass
     }
     inline bool initialized() const {
         return m_initiatized;
+    }
+    inline bool is_graphical() const {
+        return m_isGraphical;
     }
 
     inline std::unordered_map<std::string, Graphics::ShaderPass*> const get_shaderpasses() const {

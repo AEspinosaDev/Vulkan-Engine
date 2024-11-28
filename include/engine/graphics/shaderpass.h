@@ -10,7 +10,7 @@
 #define SHADER_H
 
 #include <engine/graphics/pipeline.h>
-#include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/renderpass.h>
 #include <engine/graphics/utilities/translator.h>
 
 #include <unordered_map>
@@ -34,6 +34,7 @@ struct ShaderSource {
     std::string geomSource;
     std::string tessControlSource;
     std::string tessEvalSource;
+    std::string computeSource;
 
     static ShaderSource read_file(const std::string& filePath);
 
@@ -45,37 +46,70 @@ struct ShaderSource {
     static ShaderStage
     create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code);
 };
+/*
+Base shader pass data structure
+*/
+struct BaseShaderPass {
 
-class ShaderPass
-{
-    const std::string        SHADER_FILE;
-    std::vector<ShaderStage> m_shaderStages;
+    const QueueType QUEUE_TYPE;
+    std::string     filePath;
 
-    VkDevice         m_device;
-    VkPipeline       m_pipeline       = VK_NULL_HANDLE;
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+    VkDevice         device         = VK_NULL_HANDLE;
+    VkPipeline       pipeline       = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
-  public:
-    PipelineSettings settings{};
+    PipelineSettings settings = {};
 
-    ShaderPass(VkDevice device, const std::string shaderFile)
-        : SHADER_FILE(shaderFile)
-        , m_device(device) {
-    }
-    ShaderPass(VkDevice device, const std::string shaderFile, PipelineSettings sett)
-        : SHADER_FILE(shaderFile)
-        , settings(sett)
-        , m_device(device) {
+    BaseShaderPass(VkDevice _device, const std::string shaderFile, QueueType type)
+        : filePath(shaderFile)
+        , device(_device)
+        , QUEUE_TYPE(type) {
     }
 
-    inline VkPipeline get_pipeline() const {
-        return m_pipeline;
+    virtual void
+    build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance) = 0;
+    virtual void build(DescriptorPool& descriptorManager)                                                 = 0;
+    virtual void cleanup();
+};
+/*
+Base shader pass data structure
+*/
+typedef BaseShaderPass ShaderPass;
+/*
+Standard ShaderPass for drawing purposes
+*/
+struct GraphicShaderPass : public ShaderPass {
+
+    std::vector<ShaderStage> shaderStages;
+    GraphicPipelineSettings  graphicSettings = {};
+    RenderPass*              renderpass      = nullptr;
+
+    GraphicShaderPass(VkDevice _device, RenderPass& renderPass, const std::string shaderFile)
+        : ShaderPass(_device, shaderFile, GRAPHIC_QUEUE)
+        , renderpass(&renderPass) {
     }
-    inline VkPipelineLayout get_layout() const {
-        return m_pipelineLayout;
-    }
+
     void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
-    void build(VulkanRenderPass renderPass, DescriptorPool& descriptorManager);
+
+    void build(DescriptorPool& descriptorManager);
+
+    void cleanup();
+};
+
+/*
+ShaderPass for GPGPU
+*/
+struct ComputeShaderPass : public ShaderPass {
+    ShaderStage computeStage = {};
+
+    ComputeShaderPass(VkDevice _device, const std::string shaderFile)
+        : ShaderPass(_device, shaderFile, COMPUTE_QUEUE) {
+    }
+
+    void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
+
+    void build(DescriptorPool& descriptorManager);
+
     void cleanup();
 };
 

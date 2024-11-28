@@ -11,7 +11,7 @@
 
 #include <engine/common.h>
 #include <engine/graphics/utilities/initializers.h>
-#include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

@@ -12,8 +12,8 @@
 
 #include <engine/common.h>
 #include <engine/core/materials/material.h>
-#include <engine/core/renderpasses/irradiance_compute_pass.h>
-#include <engine/core/renderpasses/panorama_conversion_pass.h>
+#include <engine/core/passes/irradiance_compute_pass.h>
+#include <engine/core/passes/panorama_conversion_pass.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>

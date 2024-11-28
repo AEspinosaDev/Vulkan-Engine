@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/shadow_pass.h>
+#include <engine/core/passes/shadow_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -99,36 +99,39 @@ void ShadowPass::setup_shader_passes() {
 
     // DEPTH PASSES
 
-    PipelineSettings settings{};
+    PipelineSettings        settings{};
+    GraphicPipelineSettings gfxSettings{};
     settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    settings.attributes             = {{POSITION_ATTRIBUTE, true},
+    gfxSettings.attributes          = {{POSITION_ATTRIBUTE, true},
                                        {NORMAL_ATTRIBUTE, false},
                                        {UV_ATTRIBUTE, false},
                                        {TANGENT_ATTRIBUTE, false},
                                        {COLOR_ATTRIBUTE, false}};
-    settings.dynamicStates          = {VK_DYNAMIC_STATE_VIEWPORT,
+    gfxSettings.dynamicStates       = {VK_DYNAMIC_STATE_VIEWPORT,
                                        VK_DYNAMIC_STATE_SCISSOR,
                                        VK_DYNAMIC_STATE_DEPTH_BIAS,
                                        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
                                        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
                                        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
                                        VK_DYNAMIC_STATE_CULL_MODE};
-    settings.blendAttachments       = {};
+    gfxSettings.blendAttachments    = {};
 
-    ShaderPass* depthPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/shadows_geom.glsl");
-    depthPass->settings = settings;
+    GraphicShaderPass* depthPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/shadows/shadows_geom.glsl");
+    depthPass->settings        = settings;
+    depthPass->graphicSettings = gfxSettings;
     depthPass->build_shader_stages();
-    depthPass->build(m_handle, m_descriptorPool);
+    depthPass->build(m_descriptorPool);
     m_shaderPasses["shadow"] = depthPass;
 
-    ShaderPass* depthLinePass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/shadows/shadows_line_geom.glsl");
-    depthLinePass->settings             = settings;
-    depthLinePass->settings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    depthLinePass->settings.poligonMode = VK_POLYGON_MODE_LINE;
+    GraphicShaderPass* depthLinePass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/shadows/shadows_line_geom.glsl");
+    depthLinePass->settings                    = settings;
+    depthLinePass->graphicSettings             = gfxSettings;
+    depthLinePass->graphicSettings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    depthLinePass->graphicSettings.poligonMode = VK_POLYGON_MODE_LINE;
     depthLinePass->build_shader_stages();
-    depthLinePass->build(m_handle, m_descriptorPool);
+    depthLinePass->build(m_descriptorPool);
     m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
@@ -136,8 +139,8 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_renderpass.extent);
 
     cmd.set_depth_bias_enable(true);
     float depthBiasConstant = 0.0;

@@ -6,8 +6,8 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef PASS_H
-#define PASS_H
+#ifndef RENDERPASS_H
+#define RENDERPASS_H
 
 #include <engine/common.h>
 #include <engine/graphics/image.h>
@@ -83,12 +83,11 @@ struct SubPassDependency {
     }
 };
 
-struct VulkanRenderPass {
+struct RenderPass {
     VkRenderPass handle = VK_NULL_HANDLE;
     VkDevice     device = VK_NULL_HANDLE;
 
-    Extent2D extent;
-
+    Extent2D                                 extent;
     std::vector<Graphics::Attachment>        attachments;
     std::vector<Graphics::SubPassDependency> dependencies;
 

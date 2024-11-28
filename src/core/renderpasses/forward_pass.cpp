@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/forward_pass.h>
+#include <engine/core/passes/forward_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -162,93 +162,99 @@ void ForwardPass::setup_shader_passes() {
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
     // Setup shaderpasses
-    m_shaderPasses["unlit"] =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/unlit.glsl");
-    m_shaderPasses["unlit"]->settings.descriptorSetLayoutIDs = {
+    GraphicShaderPass* unlitPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/unlit.glsl");
+    unlitPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["unlit"]->settings.attributes       = {{POSITION_ATTRIBUTE, true},
-                                                          {NORMAL_ATTRIBUTE, false},
-                                                          {UV_ATTRIBUTE, false},
-                                                          {TANGENT_ATTRIBUTE, false},
-                                                          {COLOR_ATTRIBUTE, false}};
-    m_shaderPasses["unlit"]->settings.blendAttachments = blendAttachments;
-    m_shaderPasses["unlit"]->settings.dynamicStates    = dynamicStates;
-    m_shaderPasses["unlit"]->settings.samples          = samples;
+    unlitPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                   {NORMAL_ATTRIBUTE, false},
+                                                   {UV_ATTRIBUTE, false},
+                                                   {TANGENT_ATTRIBUTE, false},
+                                                   {COLOR_ATTRIBUTE, false}};
+    unlitPass->graphicSettings.blendAttachments = blendAttachments;
+    unlitPass->graphicSettings.dynamicStates    = dynamicStates;
+    unlitPass->graphicSettings.samples          = samples;
+    m_shaderPasses["unlit"]                     = unlitPass;
 
-    m_shaderPasses["phong"] =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/phong.glsl");
-    m_shaderPasses["phong"]->settings.descriptorSetLayoutIDs = {
+    GraphicShaderPass* phongPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/phong.glsl");
+    phongPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["phong"]->settings.attributes       = {{POSITION_ATTRIBUTE, true},
-                                                          {NORMAL_ATTRIBUTE, true},
-                                                          {UV_ATTRIBUTE, true},
-                                                          {TANGENT_ATTRIBUTE, false},
-                                                          {COLOR_ATTRIBUTE, false}};
-    m_shaderPasses["phong"]->settings.blendAttachments = blendAttachments;
-    m_shaderPasses["phong"]->settings.dynamicStates    = dynamicStates;
-    m_shaderPasses["phong"]->settings.samples          = samples;
+    phongPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                   {NORMAL_ATTRIBUTE, true},
+                                                   {UV_ATTRIBUTE, true},
+                                                   {TANGENT_ATTRIBUTE, false},
+                                                   {COLOR_ATTRIBUTE, false}};
+    phongPass->graphicSettings.blendAttachments = blendAttachments;
+    phongPass->graphicSettings.dynamicStates    = dynamicStates;
+    phongPass->graphicSettings.samples          = samples;
+    m_shaderPasses["phong"]                     = phongPass;
 
-    m_shaderPasses["physical"] =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/physically_based.glsl");
-    m_shaderPasses["physical"]->settings.descriptorSetLayoutIDs = {
+    GraphicShaderPass* PBRPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/physically_based.glsl");
+    PBRPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["physical"]->settings.attributes       = {{POSITION_ATTRIBUTE, true},
-                                                             {NORMAL_ATTRIBUTE, true},
-                                                             {UV_ATTRIBUTE, true},
-                                                             {TANGENT_ATTRIBUTE, true},
-                                                             {COLOR_ATTRIBUTE, false}};
-    m_shaderPasses["physical"]->settings.blendAttachments = blendAttachments;
-    m_shaderPasses["physical"]->settings.dynamicStates    = dynamicStates;
-    m_shaderPasses["physical"]->settings.samples          = samples;
+    PBRPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                 {NORMAL_ATTRIBUTE, true},
+                                                 {UV_ATTRIBUTE, true},
+                                                 {TANGENT_ATTRIBUTE, true},
+                                                 {COLOR_ATTRIBUTE, false}};
+    PBRPass->graphicSettings.blendAttachments = blendAttachments;
+    PBRPass->graphicSettings.dynamicStates    = dynamicStates;
+    PBRPass->graphicSettings.samples          = samples;
+    m_shaderPasses["physical"]                = PBRPass;
 
-    m_shaderPasses["hairstr"] =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
-    m_shaderPasses["hairstr"]->settings.descriptorSetLayoutIDs = {
+    GraphicShaderPass* hairStrandPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
+    hairStrandPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["hairstr"]->settings.attributes    = {{POSITION_ATTRIBUTE, true},
-                                                         {NORMAL_ATTRIBUTE, false},
-                                                         {UV_ATTRIBUTE, false},
-                                                         {TANGENT_ATTRIBUTE, true},
-                                                         {COLOR_ATTRIBUTE, true}};
-    m_shaderPasses["hairstr"]->settings.dynamicStates = dynamicStates;
-    m_shaderPasses["hairstr"]->settings.samples       = samples;
-    m_shaderPasses["hairstr"]->settings.sampleShading = false;
-    m_shaderPasses["hairstr"]->settings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    hairStrandPass->graphicSettings.attributes    = {{POSITION_ATTRIBUTE, true},
+                                                     {NORMAL_ATTRIBUTE, false},
+                                                     {UV_ATTRIBUTE, false},
+                                                     {TANGENT_ATTRIBUTE, true},
+                                                     {COLOR_ATTRIBUTE, true}};
+    hairStrandPass->graphicSettings.dynamicStates = dynamicStates;
+    hairStrandPass->graphicSettings.samples       = samples;
+    hairStrandPass->graphicSettings.sampleShading = false;
+    hairStrandPass->graphicSettings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    m_shaderPasses["hairstr"]                     = hairStrandPass;
 
-    m_shaderPasses["hairstr2"] =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
-    m_shaderPasses["hairstr2"]->settings.descriptorSetLayoutIDs = {
+    GraphicShaderPass* hairStrandPass2 = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
+    hairStrandPass2->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    m_shaderPasses["hairstr2"]->settings.attributes    = {{POSITION_ATTRIBUTE, true},
-                                                          {NORMAL_ATTRIBUTE, false},
-                                                          {UV_ATTRIBUTE, false},
-                                                          {TANGENT_ATTRIBUTE, true},
-                                                          {COLOR_ATTRIBUTE, true}};
-    m_shaderPasses["hairstr2"]->settings.dynamicStates = dynamicStates;
-    m_shaderPasses["hairstr2"]->settings.samples       = samples;
-    m_shaderPasses["hairstr2"]->settings.sampleShading = false;
-    m_shaderPasses["hairstr2"]->settings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    hairStrandPass2->graphicSettings.attributes    = {{POSITION_ATTRIBUTE, true},
+                                                      {NORMAL_ATTRIBUTE, false},
+                                                      {UV_ATTRIBUTE, false},
+                                                      {TANGENT_ATTRIBUTE, true},
+                                                      {COLOR_ATTRIBUTE, true}};
+    hairStrandPass2->graphicSettings.dynamicStates = dynamicStates;
+    hairStrandPass2->graphicSettings.samples       = samples;
+    hairStrandPass2->graphicSettings.sampleShading = false;
+    hairStrandPass2->graphicSettings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    m_shaderPasses["hairstr2"]                     = hairStrandPass2;
 
-    m_shaderPasses["skybox"] =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
-    m_shaderPasses["skybox"]->settings.descriptorSetLayoutIDs = {
+    GraphicShaderPass* skyboxPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
+    skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
-    m_shaderPasses["skybox"]->settings.attributes       = {{POSITION_ATTRIBUTE, true},
-                                                           {NORMAL_ATTRIBUTE, false},
-                                                           {UV_ATTRIBUTE, false},
-                                                           {TANGENT_ATTRIBUTE, false},
-                                                           {COLOR_ATTRIBUTE, false}};
-    m_shaderPasses["skybox"]->settings.dynamicStates    = dynamicStates;
-    m_shaderPasses["skybox"]->settings.samples          = samples;
-    m_shaderPasses["skybox"]->settings.blendAttachments = blendAttachments;
-    m_shaderPasses["skybox"]->settings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
+    skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                    {NORMAL_ATTRIBUTE, false},
+                                                    {UV_ATTRIBUTE, false},
+                                                    {TANGENT_ATTRIBUTE, false},
+                                                    {COLOR_ATTRIBUTE, false}};
+    skyboxPass->graphicSettings.dynamicStates    = dynamicStates;
+    skyboxPass->graphicSettings.samples          = samples;
+    skyboxPass->graphicSettings.blendAttachments = blendAttachments;
+    skyboxPass->graphicSettings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
+    m_shaderPasses["skybox"]                     = skyboxPass;
 
     for (auto pair : m_shaderPasses)
     {
         ShaderPass* pass = pair.second;
 
         pass->build_shader_stages();
-        pass->build(m_handle, m_descriptorPool);
+        pass->build(m_descriptorPool);
     }
 }
 
@@ -256,8 +262,8 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_renderpass.extent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {

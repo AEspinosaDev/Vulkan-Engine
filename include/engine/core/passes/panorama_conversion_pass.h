@@ -6,23 +6,25 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef IRR_COMP_PASS_H
-#define IRR_COMP_PASS_H
-#include <engine/core/renderpasses/renderpass.h>
+#ifndef PAN_CONV_PASS_H
+#define PAN_CONV_PASS_H
+#include <engine/core/passes/pass.h>
+#include <engine/core/textures/textureHDR.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-class IrrandianceComputePass : public RenderPass
+class PanoramaConverterPass : public GraphicPass
 {
     ColorFormatType         m_format;
-    Graphics::DescriptorSet m_captureDescriptorSet;
-    Graphics::Buffer        m_captureBuffer;
+    Graphics::DescriptorSet m_panoramaDescriptorSet;
+    Mesh*                   m_vignette;
 
   public:
-    IrrandianceComputePass(Graphics::Device* ctx, ColorFormatType format, Extent2D extent)
-        : RenderPass(ctx, extent, 1, CUBEMAP_FACES, false)
+    PanoramaConverterPass(Graphics::Device* ctx, ColorFormatType format, Extent2D extent, Mesh* vignette)
+        : BasePass(ctx, extent, 1, CUBEMAP_FACES, false)
+        , m_vignette(vignette)
         , m_format(format) {
     }
 
@@ -37,9 +39,7 @@ class IrrandianceComputePass : public RenderPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void connect_env_cubemap(Graphics::Image env);
-
-    void cleanup();
+    void connect_to_previous_images(std::vector<Graphics::Image> images);
 };
 
 } // namespace Core

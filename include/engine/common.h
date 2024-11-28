@@ -87,9 +87,9 @@
 #define VULKAN_ENGINE_NAMESPACE_END }
 #define USING_VULKAN_ENGINE_NAMESPACE using namespace VKFW;
 
-//Max object ocurrence
-#define ENGINE_MAX_OBJECTS  100
-#define ENGINE_MAX_LIGHTS   50
+// Max object ocurrence
+#define ENGINE_MAX_OBJECTS 100
+#define ENGINE_MAX_LIGHTS 50
 
 // File terminations
 #define PLY "ply"

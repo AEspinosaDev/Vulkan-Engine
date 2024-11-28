@@ -6,40 +6,48 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef COMPOSITION_PASS_H
-#define COMPOSITION_PASS_H
-#include <engine/core/renderpasses/renderpass.h>
+#ifndef FORWARD_PASS_H
+#define FORWARD_PASS_H
+#include <engine/core/passes/pass.h>
+#include <engine/core/textures/texture.h>
+#include <engine/core/textures/textureLDR.h>
 #include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
 namespace Core {
 
 /*
-DEFERRED RENDERING LIGHTING PASS
+STANDARD FORWARD LIGHTING PASS
 */
-class CompositionPass : public RenderPass
+class ForwardPass : public GraphicPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
-    Mesh*           m_vignette;
+    ColorFormatType m_depthFormat;
+    MSAASamples     m_aa;
 
     /*Descriptors*/
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
-        Graphics::DescriptorSet gBufferDescritor;
+        Graphics::DescriptorSet objectDescritor;
     };
     std::vector<FrameDescriptors> m_descriptors;
 
+    void setup_material_descriptor(IMaterial* mat);
+
   public:
-    CompositionPass(Graphics::Device* ctx,
-                    VkExtent2D        extent,
-                    uint32_t          framebufferCount,
-                    ColorFormatType   colorFormat,
-                    Mesh*             vignette,
-                    bool              isDefault = true)
-        : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
+    ForwardPass(Graphics::Device* ctx,
+                Extent2D          extent,
+                uint32_t          framebufferCount,
+                ColorFormatType   colorFormat,
+                ColorFormatType   depthFormat,
+                MSAASamples       samples,
+                bool              isDefault = true)
+        : BasePass(ctx, extent, framebufferCount, 1, isDefault)
         , m_colorFormat(colorFormat)
-        , m_vignette(vignette) {
+        , m_depthFormat(depthFormat)
+        , m_aa(samples) {
     }
 
     void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
@@ -51,16 +59,15 @@ class CompositionPass : public RenderPass
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void connect_to_previous_images(std::vector<Graphics::Image> images);
-
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
+    void connect_to_previous_images(std::vector<Graphics::Image> images);
 
-    
-   
+    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
 };
+
 } // namespace Core
+
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif

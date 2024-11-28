@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/fxaa_pass.h>
+#include <engine/core/passes/fxaa_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -25,7 +25,8 @@ void FXAAPass::setup_attachments(std::vector<Graphics::Attachment>&        attac
     // Depdencies
     dependencies.resize(1);
 
-    dependencies[0] = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
+    dependencies[0] =
+        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
 }
 void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
@@ -38,9 +39,10 @@ void FXAAPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 }
 void FXAAPass::setup_shader_passes() {
 
-    ShaderPass* fxaaPass = new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl");
+    GraphicShaderPass* fxaaPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl");
     fxaaPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    fxaaPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+    fxaaPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                  {NORMAL_ATTRIBUTE, false},
                                                  {UV_ATTRIBUTE, true},
                                                  {TANGENT_ATTRIBUTE, false},
@@ -49,7 +51,7 @@ void FXAAPass::setup_shader_passes() {
     // fxaaPass->settings.blendAttachments = {};
 
     fxaaPass->build_shader_stages();
-    fxaaPass->build(m_handle, m_descriptorPool);
+    fxaaPass->build(m_descriptorPool);
 
     m_shaderPasses["fxaa"] = fxaaPass;
 }
@@ -57,8 +59,8 @@ void FXAAPass::setup_shader_passes() {
 void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_renderpass.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["fxaa"];
 
@@ -76,8 +78,7 @@ void FXAAPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_
 }
 
 void FXAAPass::connect_to_previous_images(std::vector<Image> images) {
-    m_descriptorPool.set_descriptor_write(
-        &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+    m_descriptorPool.set_descriptor_write(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
 
 } // namespace Core

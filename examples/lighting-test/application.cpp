@@ -18,7 +18,7 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::DeferredRenderer(m_window, true, ShadowResolution::VERY_LOW, settings);
+    m_renderer = new Systems::DeferredRenderer(m_window, ShadowResolution::VERY_LOW, settings);
 
     setup();
 
@@ -29,6 +29,7 @@ void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
     settings.samplesMSAA = MSAASamples::x1;
+    settings.softwareAA  = true;
     settings.clearColor  = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI    = true;
 

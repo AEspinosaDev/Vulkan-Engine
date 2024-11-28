@@ -42,7 +42,7 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
                                              VkDevice                                     device,
                                              VkRenderPass                                 renderPass,
                                              VkExtent2D                                   extent,
-                                             PipelineSettings&                            settings,
+                                             GraphicPipelineSettings&                     settings,
                                              std::vector<VkPipelineShaderStageCreateInfo> shaderStages) {
 
     // Vertex and geometry
@@ -130,6 +130,21 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
     {
         throw VKFW_Exception("Failed to create Grahic "
                              "Pipeline");
+    }
+}
+void PipelineBuilder::build_compute_pipeline(VkPipeline&                     pipeline,
+                                             VkPipelineLayout&               layout,
+                                             VkDevice                        device,
+                                             VkPipelineShaderStageCreateInfo computeStage) {
+
+    VkComputePipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.sType                       = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.stage                       = computeStage;
+    pipelineInfo.layout                      = layout;
+
+    if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+    {
+        throw VKFW_Exception("Failed to create compute pipeline!");
     }
 }
 } // namespace Graphics

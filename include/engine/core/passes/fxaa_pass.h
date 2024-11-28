@@ -8,7 +8,7 @@
 */
 #ifndef FXAA_PASS_H
 #define FXAA_PASS_H
-#include <engine/core/renderpasses/renderpass.h>
+#include <engine/core/passes/pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -16,7 +16,7 @@ namespace Core {
 /*
 Postprocess pass for antialasing final image using FXAA technique
 */
-class FXAAPass : public RenderPass
+class FXAAPass : public GraphicPass
 {
     ColorFormatType         m_colorFormat;
     Mesh*                   m_vignette;
@@ -29,7 +29,7 @@ class FXAAPass : public RenderPass
              ColorFormatType   colorFormat,
              Mesh*             vignette,
              bool              isDefault = true)
-        : RenderPass(ctx, extent, framebufferCount, 1, isDefault)
+        : BasePass(ctx, extent, framebufferCount, 1, isDefault)
         , m_colorFormat(colorFormat)
         , m_vignette(vignette) {
     }

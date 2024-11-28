@@ -1,9 +1,9 @@
 #ifndef FORWARD_H
 #define FORWARD_H
 
-#include <engine/core/renderpasses/forward_pass.h>
-#include <engine/core/renderpasses/fxaa_pass.h>
-#include <engine/core/renderpasses/variance_shadow_pass.h>
+#include <engine/core/passes/forward_pass.h>
+#include <engine/core/passes/fxaa_pass.h>
+#include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/systems/renderers/renderer.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -16,14 +16,13 @@ Renders a given scene data to a given window using forward rendering. Fully para
 class ForwardRenderer : public BaseRenderer
 {
 
-    enum RenderPasses
+    enum RendererPasses
     {
         SHADOW_PASS  = 0,
         FORWARD_PASS = 1,
         FXAA_PASS    = 2
     };
 
-    bool             m_softwareAA    = true; // FXAA for now
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
     bool             m_updateShadows = false;
 
@@ -32,11 +31,9 @@ class ForwardRenderer : public BaseRenderer
         : BaseRenderer(window) {
     }
     ForwardRenderer(Core::IWindow*   window,
-                    bool             softwareAA    = true,
                     ShadowResolution shadowQuality = ShadowResolution::MEDIUM,
                     RendererSettings settings      = {})
         : BaseRenderer(window, settings)
-        , m_softwareAA(softwareAA)
         , m_shadowQuality(shadowQuality) {
     }
 

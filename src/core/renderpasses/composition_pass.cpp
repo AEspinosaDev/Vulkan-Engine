@@ -1,4 +1,4 @@
-#include <engine/core/renderpasses/composition_pass.h>
+#include <engine/core/passes/composition_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
@@ -91,17 +91,17 @@ void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 }
 void CompositionPass::setup_shader_passes() {
 
-    ShaderPass* compPass =
-        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
+    GraphicShaderPass* compPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
     compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {1, true}};
-    compPass->settings.attributes             = {{POSITION_ATTRIBUTE, true},
+    compPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                  {NORMAL_ATTRIBUTE, false},
                                                  {UV_ATTRIBUTE, true},
                                                  {TANGENT_ATTRIBUTE, false},
                                                  {COLOR_ATTRIBUTE, false}};
 
     compPass->build_shader_stages();
-    compPass->build(m_handle, m_descriptorPool);
+    compPass->build(m_descriptorPool);
 
     m_shaderPasses["composition"] = compPass;
 }
@@ -109,8 +109,8 @@ void CompositionPass::setup_shader_passes() {
 void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_handle, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_handle.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
+    cmd.set_viewport(m_renderpass.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["composition"];
 

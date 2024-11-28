@@ -1,9 +1,9 @@
-#include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
-void VulkanRenderPass::cleanup() {
+void RenderPass::cleanup() {
     if (handle)
     {
         vkDestroyRenderPass(device, handle, nullptr);

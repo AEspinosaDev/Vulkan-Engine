@@ -20,7 +20,7 @@
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/utils.h>
-#include <engine/graphics/vk_renderpass.h>
+#include <engine/graphics/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -111,14 +111,14 @@ class Device
                        VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
     Framebuffer
-    create_framebuffer(VulkanRenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
+    create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
     Semaphore create_semaphore();
     Fence     create_fence();
     /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
-    VulkanRenderPass create_render_pass(Extent2D                        extent,
+    RenderPass create_render_pass(Extent2D                        extent,
                                         std::vector<Attachment>&        attachments,
                                         std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
@@ -141,6 +141,8 @@ class Device
     /*Create command buffer*/
     CommandBuffer create_command_buffer(CommandPool        commandPool,
                                         CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY);
+    /*Create shader pass*/
+    // ShaderPass build_shader_pass(const std::string shaderFile, PipelineSettings sett = {});
 
     /*
     DRAWING
@@ -179,7 +181,7 @@ class Device
     -----------------------------------------------
     */
     void wait();
-    void init_imgui(void* windowHandle, WindowingSystem windowingSystem, VulkanRenderPass renderPass, uint16_t samples);
+    void init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples);
     void destroy_imgui();
     uint32_t get_memory_type(uint32_t typeBits, MemoryPropertyFlags properties, uint32_t* memTypeFound = nullptr);
     /*
