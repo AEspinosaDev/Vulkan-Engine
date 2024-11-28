@@ -12,7 +12,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems {
 
 /*
-Renders a given scene data to a given window using forward rendering. Fully parametrizable.
+Renders a given scene data to a given window using deferred rendering. Fully parametrizable.
 */
 class DeferredRenderer : public BaseRenderer
 {

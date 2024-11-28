@@ -30,7 +30,7 @@ void BaseRenderer::init() {
     init_resources();
 
     create_renderpasses();
-    for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
+    for (Core::RenderPass* pass : m_renderpasses)
     {
         if (pass->is_active())
         {
@@ -39,7 +39,12 @@ void BaseRenderer::init() {
         }
     };
 
-    m_deletionQueue.push_function([=]() { m_renderPipeline.flush(); });
+    m_deletionQueue.push_function([=]() {
+        for (Core::RenderPass* pass : m_renderpasses)
+        {
+            pass->cleanup();
+        }
+    });
 
     if (m_settings.enableUI)
         init_gui();
@@ -74,7 +79,10 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
 
         if (m_settings.enableUI)
             m_device.destroy_imgui();
-        m_renderPipeline.flush_framebuffers();
+        for (Core::RenderPass* pass : m_renderpasses)
+        {
+            pass->clean_framebuffer();
+        }
         m_device.cleanup();
     }
 
@@ -91,7 +99,7 @@ void BaseRenderer::on_before_render(Core::Scene* const scene) {
     Core::ResourceManager::update_object_data(
         &m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
 
-    for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
+    for (Core::RenderPass* pass : m_renderpasses)
     {
         if (pass->is_active())
             pass->update_uniforms(m_currentFrame, scene);
@@ -137,7 +145,11 @@ void BaseRenderer::render(Core::Scene* const scene) {
     if (scene->get_skybox())
         Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame], scene);
 
-    m_renderPipeline.render(m_frames[m_currentFrame], scene, imageIndex);
+    for (Core::RenderPass* pass : m_renderpasses)
+    {
+        if (pass->is_active())
+            pass->render(m_frames[m_currentFrame], scene, imageIndex);
+    }
 
     RenderResult renderResult = m_device.submit_frame(m_frames[m_currentFrame], imageIndex);
 
@@ -151,7 +163,7 @@ void BaseRenderer::connect_renderpass(Core::RenderPass* const currentPass) {
     std::vector<Graphics::Image> images;
     for (auto pair : currentPass->get_image_dependace_table())
     {
-        std::vector<Graphics::Attachment> attachments = m_renderPipeline.renderpasses[pair.first]->get_attachments();
+        std::vector<Graphics::Attachment> attachments = m_renderpasses[pair.first]->get_attachments();
         for (size_t i = 0; i < pair.second.size(); i++)
         {
             images.push_back(attachments[pair.second[i]].image);
@@ -170,7 +182,7 @@ void BaseRenderer::update_renderpasses() {
                               m_settings.screenSync);
 
     // Renderpass framebuffer updating
-    for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
+    for (Core::RenderPass* pass : m_renderpasses)
     {
         if (pass->is_active())
         {
@@ -192,7 +204,7 @@ void BaseRenderer::init_gui() {
     {
         // Look for default pass
         Core::RenderPass* defaultPass = nullptr;
-        for (Core::RenderPass* pass : m_renderPipeline.renderpasses)
+        for (Core::RenderPass* pass : m_renderpasses)
         {
             if (pass->is_active() && pass->default_pass())
             {

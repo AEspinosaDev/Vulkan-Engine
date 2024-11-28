@@ -8,6 +8,7 @@
 */
 #ifndef DESCRIPTORS_H
 #define DESCRIPTORS_H
+// HERE YOU WILL ALSO FIND WRAPPER FOR PUSH CONSTANTS
 
 #include <engine/common.h>
 #include <engine/graphics/accel.h>
@@ -75,6 +76,18 @@ struct DescriptorPool {
     void set_descriptor_write(TLAS* accel, DescriptorSet* descriptor, uint32_t binding);
 
     void cleanup();
+};
+/*
+PUSH CONSTANTS
+*/
+struct PushConstant {
+    VkPushConstantRange handle{};
+
+    PushConstant(ShaderStageFlags stage, uint32_t size, uint32_t offset = 0) {
+        handle.stageFlags = Translator::get(stage);
+        handle.offset     = offset;
+        handle.size       = size;
+    }
 };
 
 } // namespace Graphics

@@ -17,7 +17,7 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::ForwardRenderer(m_window, true, ShadowResolution::LOW, settings);
+    m_renderer = new Systems::DeferredRenderer(m_window, true, ShadowResolution::LOW, settings);
 
     setup();
     setup_gui();
@@ -70,7 +70,7 @@ void Application::setup() {
     light->set_shadow_fov(115.0f);
     light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
     light->set_area(0.5f);
-    // light->add_child(lightDummy);
+    light->add_child(lightDummy);
     light->set_name("Light");
 
     m_scene->add(light);
@@ -212,6 +212,8 @@ void Application::update() {
         float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
 
         light->set_position({_x, light->get_position().y, _z});
+        static_cast<UnlitMaterial*>(static_cast<Mesh*>(light->get_children().front())->get_material(0))
+            ->set_color({light->get_color(), 1.0f});
     }
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());

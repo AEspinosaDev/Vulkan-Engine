@@ -5,6 +5,7 @@
 
 #include <engine/core.h>
 #include <engine/systems/renderers/forward.h>
+#include <engine/systems/renderers/deferred.h>
 
 #include <engine/tools/controller.h>
 #include <engine/tools/gui.h>

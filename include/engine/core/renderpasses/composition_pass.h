@@ -54,6 +54,10 @@ class CompositionPass : public RenderPass
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
+
+    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
+
+    
    
 };
 } // namespace Core

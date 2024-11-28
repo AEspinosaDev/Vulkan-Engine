@@ -24,49 +24,18 @@ Renderer Global Settings Data
 */
 struct RendererSettings {
 
-    MSAASamples     samplesMSAA          = MSAASamples::x4;
-    BufferingType   bufferingType        = BufferingType::DOUBLE;
-    SyncType        screenSync           = SyncType::MAILBOX;
-    ColorFormatType colorFormat          = SBGRA_8;
-    ColorFormatType depthFormat          = DEPTH_32F;
-    Vec4            clearColor           = Vec4{0.0, 0.0, 0.0, 1.0};
-    bool            autoClearColor       = true;
-    bool            autoClearDepth       = true;
-    bool            autoClearStencil     = true;
-    bool            enableUI             = false;
-    bool            enableRaytracing     = true;
+    MSAASamples     samplesMSAA      = MSAASamples::x4;
+    BufferingType   bufferingType    = BufferingType::DOUBLE;
+    SyncType        screenSync       = SyncType::MAILBOX;
+    ColorFormatType colorFormat      = SBGRA_8;
+    ColorFormatType depthFormat      = DEPTH_32F;
+    Vec4            clearColor       = Vec4{0.0, 0.0, 0.0, 1.0};
+    bool            autoClearColor   = true;
+    bool            autoClearDepth   = true;
+    bool            autoClearStencil = true;
+    bool            enableUI         = false;
+    bool            enableRaytracing = true;
 };
-/*
-Structure that contains a list of renderpasses. These renderpasses will render
-in the order they where added.
-*/
-struct RenderPipeline {
-    std::vector<Core::RenderPass*> renderpasses;
-
-    void push_renderpass(Core::RenderPass* pass) {
-        renderpasses.push_back(pass);
-    };
-    void render(Graphics::Frame& currentFrame, VKFW::Core::Scene* scene, uint32_t presentImageIndex = 0U) {
-        for (Core::RenderPass* pass : renderpasses)
-        {
-            if (pass->is_active())
-                pass->render(currentFrame, scene, presentImageIndex);
-        }
-    }
-    void flush() {
-        for (Core::RenderPass* pass : renderpasses)
-        {
-            pass->cleanup();
-        }
-    }
-    void flush_framebuffers() {
-        for (Core::RenderPass* pass : renderpasses)
-        {
-            pass->clean_framebuffer();
-        }
-    }
-};
-
 /**
  * Basic class. Renders a given scene data to a given window. Fully
  * parametrizable. It has to be inherited for achieving a higher end
@@ -81,8 +50,8 @@ class BaseRenderer
 
     Core::IWindow* m_window;
 
-    RendererSettings m_settings{};
-    RenderPipeline   m_renderPipeline;
+    RendererSettings               m_settings{};
+    std::vector<Core::RenderPass*> m_renderpasses;
 
     Graphics::Utils::DeletionQueue m_deletionQueue;
 
@@ -130,8 +99,8 @@ class BaseRenderer
     inline void set_enable_gui(bool op) {
         m_settings.enableUI = op;
     }
-    inline RenderPipeline get_render_pipeline() const {
-        return m_renderPipeline;
+    inline std::vector<Core::RenderPass*> get_render_passes() const {
+        return m_renderpasses;
     }
     inline void enable_gui_overlay(bool op) {
         m_settings.enableUI;

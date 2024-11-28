@@ -66,11 +66,7 @@ struct MaterialUniforms {
     Vec4 dataSlot8;
 };
 
-struct SkyboxUniforms {
-    float blurriness;
-    float intensity;
-    float rotation;
-};
+
 
 } // namespace Graphics
 

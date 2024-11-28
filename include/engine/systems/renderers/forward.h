@@ -18,9 +18,9 @@ class ForwardRenderer : public BaseRenderer
 
     enum RenderPasses
     {
-        SHADOW  = 0,
-        FORWARD = 1,
-        FXAA    = 2
+        SHADOW_PASS  = 0,
+        FORWARD_PASS = 1,
+        FXAA_PASS    = 2
     };
 
     bool             m_softwareAA    = true; // FXAA for now

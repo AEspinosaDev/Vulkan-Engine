@@ -104,7 +104,8 @@ void main()
                     //If inside liught area influence
                     if(isInAreaOfInfluence(scene.lights[i], g_pos)){
                         //Direct Component ________________________
-                        direct += evalSchlickSmithBRDF( 
+                        vec3 lighting = vec3(0.0);
+                        lighting = evalSchlickSmithBRDF( 
                             scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(scene.lights[i].position.xyz), //wi
                             normalize(-g_pos),                                                                                           //wo
                             scene.lights[i].color * computeAttenuation( scene.lights[i], g_pos) *  scene.lights[i].intensity,              //radiance
@@ -113,11 +114,11 @@ void main()
                         //Shadow Component ________________________
                         if(scene.lights[i].shadowCast == 1) {
                             if(scene.lights[i].shadowType == 0) //Classic
-                                direct *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
+                                lighting *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
                             if(scene.lights[i].shadowType == 1) //VSM   
-                                direct *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
+                                lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
                             if(scene.lights[i].shadowType == 2) //Raytraced  
-                                direct *= computeRaytracedShadow(
+                                lighting *= computeRaytracedShadow(
                                     TLAS, 
                                     blueNoiseMap,
                                     modelPos, 
@@ -126,6 +127,7 @@ void main()
                                     scene.lights[i].area, 
                                     0);
                         }
+                    direct += lighting;
                     }
             }
             //Ambient Component ________________________
@@ -155,14 +157,14 @@ void main()
         //////////////////////////////////////
         // HAIR 
         //////////////////////////////////////
-        if(g_material.w != HAIR_STRAND_MATERIAL){
+        if(g_material.w == HAIR_STRAND_MATERIAL){
             //TBD ....
         }
 
                
                     
 
-    color = direct + ambient;
+    color = reindhartTonemap(direct + ambient);
             
     //////////////////////////////////////
     // IF UNLIT MATERIAL
@@ -170,6 +172,7 @@ void main()
     }else{
         color = g_albedo;
     }
+    
 
     if(scene.enableFog){
         float f = computeFog(g_depth);
@@ -181,7 +184,7 @@ void main()
     // float outOpacity = texture(normalBuffer,v_uv).w == 0.0 ? 0.0 : 1.0;
     // outColor = vec4(color, outOpacity);
 
-    outColor = vec4(reindhartTonemap(color),1.0);
+    outColor = vec4(color,1.0);
 
    
     

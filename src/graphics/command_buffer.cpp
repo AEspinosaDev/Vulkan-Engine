@@ -229,5 +229,12 @@ void Graphics::CommandBuffer::pipeline_barrier(Image         img,
     vkCmdPipelineBarrier(
         handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
+void Graphics::CommandBuffer::push_constants(ShaderPass&      pass,
+                                             ShaderStageFlags stage,
+                                             const void*      data,
+                                             uint32_t         size,
+                                             uint32_t         offset) {
+    vkCmdPushConstants(handle, pass.get_layout(), Translator::get(stage), offset, size, data);
+}
 
 VULKAN_ENGINE_NAMESPACE_END

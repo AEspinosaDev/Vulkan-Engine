@@ -56,6 +56,8 @@ class GeometryPass : public RenderPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
+    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
+
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

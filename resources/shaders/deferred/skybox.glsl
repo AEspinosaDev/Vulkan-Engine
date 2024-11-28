@@ -33,21 +33,28 @@ void main()
 #include reindhart.glsl
 #include light.glsl
 #include scene.glsl
+#include material_defines.glsl
 
 layout(location = 0) in vec3 _uv;
 
-layout(location = 0) out vec4 fragColor;
+//Output
+layout(location = 0) out vec4 outPos;
+layout(location = 1) out vec4 outNormal;
+layout(location = 2) out vec4 outAlbedo;
+layout(location = 3) out vec4 outMaterial;
+layout(location = 4) out vec4 outTemporal;
 
+//Uniforms
 layout(set = 0, binding = 3) uniform samplerCube envMap;
 
 void main()
 {    
     vec3 color =texture(envMap, _uv).rgb * scene.envColorMultiplier;
     
-    if(scene.enableFog) {
-        float f = computeFog(gl_FragCoord.z);
-        color = f * color + (1 - f) * scene.fogColor.rgb;
-    }
-
-    fragColor = vec4(color,1.0);
+    outPos      = vec4(_uv,gl_FragCoord.z);
+    outNormal   = vec4(0.0);
+    outAlbedo   = vec4(color,1.0);
+    outMaterial = vec4(0.0); //w material ID
+    outMaterial.w = UNLIT_MATERIAL; //w material ID
+    outTemporal = vec4(0.0); //TBD
 }

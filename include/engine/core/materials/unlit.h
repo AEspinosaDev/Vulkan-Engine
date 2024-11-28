@@ -13,8 +13,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 
 class UnlitMaterial : public IMaterial
 {
@@ -25,61 +24,65 @@ class UnlitMaterial : public IMaterial
 
     bool m_hasColorTexture{false};
 
-    std::unordered_map<int, ITexture *> m_textures;
+    enum Textures
+    {
+        COLOR = 0,
+    };
+
+    std::unordered_map<int, ITexture*> m_textures{{COLOR, nullptr},
+                                                  {1, nullptr},
+                                                  {2, nullptr},
+                                                  {3, nullptr},
+                                                  {4, nullptr},
+                                                  {5, nullptr}};
+
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual Graphics::MaterialUniforms get_uniforms() const;
-    virtual inline std::unordered_map<int, ITexture *> get_textures() const
-    {
+    virtual Graphics::MaterialUniforms                get_uniforms() const;
+    virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
     }
 
-    virtual std::unordered_map<int, bool> get_texture_binding_state() const
-    {
+    virtual std::unordered_map<int, bool> get_texture_binding_state() const {
         return m_textureBindingState;
     }
-    virtual void set_texture_binding_state(int id, bool state)
-    {
+    virtual void set_texture_binding_state(int id, bool state) {
         m_textureBindingState[id] = state;
     }
 
   public:
-    UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0)) : IMaterial("unlit"), m_color(color)
-    {
+    UnlitMaterial(glm::vec4 color = glm::vec4(1.0, 1.0, 0.5, 1.0))
+        : IMaterial("unlit")
+        , m_color(color) {
     }
-    UnlitMaterial(glm::vec4 color, MaterialSettings params) : IMaterial("unlit", params), m_color(color)
-    {
+    UnlitMaterial(glm::vec4 color, MaterialSettings params)
+        : IMaterial("unlit", params)
+        , m_color(color) {
     }
 
-    inline glm::vec2 get_tile() const
-    {
+    inline glm::vec2 get_tile() const {
         return m_tileUV;
     }
-    inline void set_tile(glm::vec2 tile)
-    {
-        m_tileUV = tile;
+    inline void set_tile(glm::vec2 tile) {
+        m_tileUV  = tile;
         m_isDirty = true;
     }
 
-    inline void set_color(glm::vec4 c)
-    {
-        m_color = c;
+    inline void set_color(glm::vec4 c) {
+        m_color   = c;
         m_isDirty = true;
     }
-    inline glm::vec4 get_color() const
-    {
+    inline glm::vec4 get_color() const {
         return m_color;
     }
 
     // Texture must have A channel reserved for OPACITY
-    inline void set_color_texture(ITexture *t)
-    {
-        m_textures[0] = t;
-        m_isDirty = true;
+    inline void set_color_texture(ITexture* t) {
+        m_textures[COLOR] = t;
+        m_isDirty         = true;
     }
-    inline ITexture *get_color_texture()
-    {
-        return m_textures[0];
+    inline ITexture* get_color_texture() {
+        return m_textures[COLOR];
     }
 };
 } // namespace Core

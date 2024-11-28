@@ -171,10 +171,29 @@ void GeometryPass::setup_shader_passes() {
                                            Init::color_blend_attachment_state(false),
                                            Init::color_blend_attachment_state(false),
                                            Init::color_blend_attachment_state(false)};
+
     geomPass->build_shader_stages();
     geomPass->build(m_handle, m_descriptorPool);
 
     m_shaderPasses["geometry"] = geomPass;
+
+    ShaderPass* skyboxPass =
+        new ShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
+    skyboxPass->settings.descriptorSetLayoutIDs = {
+        {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
+    skyboxPass->settings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                             {NORMAL_ATTRIBUTE, false},
+                                             {UV_ATTRIBUTE, false},
+                                             {TANGENT_ATTRIBUTE, false},
+                                             {COLOR_ATTRIBUTE, false}};
+    skyboxPass->settings.dynamicStates    = geomPass->settings.dynamicStates;
+    skyboxPass->settings.blendAttachments = geomPass->settings.blendAttachments;
+    skyboxPass->settings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
+
+    skyboxPass->build_shader_stages();
+    skyboxPass->build(m_handle, m_descriptorPool);
+
+    m_shaderPasses["skybox"] = skyboxPass;
 }
 void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
@@ -185,6 +204,8 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
+
+        ShaderPass* shaderPass = m_shaderPasses["geometry"];
 
         unsigned int mesh_idx = 0;
         for (Mesh* m : scene->get_meshes())
@@ -210,8 +231,6 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
                         cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
                                                                             : CullingMode::NO_CULLING);
 
-                        ShaderPass* shaderPass = m_shaderPasses["geometry"];
-
                         // Bind pipeline
                         cmd.bind_shaderpass(*shaderPass);
                         // GLOBAL LAYOUT BINDING
@@ -234,26 +253,26 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
             mesh_idx++;
         }
         // Skybox
-        // if (scene->get_skybox())
-        // {
-        //     if (scene->get_skybox()->is_active())
-        //     {
+        if (scene->get_skybox())
+        {
+            if (scene->get_skybox()->is_active())
+            {
 
-        //         cmd.set_depth_test_enable(true);
-        //         cmd.set_depth_write_enable(true);
-        //         cmd.set_cull_mode(CullingMode::NO_CULLING);
+                cmd.set_depth_test_enable(true);
+                cmd.set_depth_write_enable(true);
+                cmd.set_cull_mode(CullingMode::NO_CULLING);
 
-        //         ShaderPass* shaderPass = m_shaderPasses["skybox"];
+                ShaderPass* shaderPass = m_shaderPasses["skybox"];
 
-        //         // Bind pipeline
-        //         cmd.bind_shaderpass(*shaderPass);
+                // Bind pipeline
+                cmd.bind_shaderpass(*shaderPass);
 
-        //         // GLOBAL LAYOUT BINDING
-        //         cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                // GLOBAL LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
-        //         cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
-        //     }
-        // }
+                cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
+            }
+        }
     }
 
     cmd.end_renderpass();
@@ -271,6 +290,15 @@ void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
                 setup_material_descriptor(mat);
             }
         }
+    }
+}
+void GeometryPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr) {
+    for (size_t i = 0; i < m_descriptors.size(); i++)
+    {
+        m_descriptorPool.set_descriptor_write(
+            &env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorPool.set_descriptor_write(
+            &irr, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
     }
 }
 void GeometryPass::setup_material_descriptor(IMaterial* mat) {
@@ -303,6 +331,7 @@ void GeometryPass::setup_material_descriptor(IMaterial* mat) {
             mat->set_texture_binding_state(pair.first, true);
         }
     }
+
 }
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

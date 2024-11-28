@@ -87,10 +87,10 @@ layout(location = 4) out vec4 outTemporal;
 ///////////////////////////////////////////
 //Surface Global properties
 ///////////////////////////////////////////
-vec3    g_albedo;
-float   g_opacity;
-vec3    g_normal;
-vec4    g_material;
+vec3    g_albedo    = vec3(0.0);
+float   g_opacity   = 1.0;
+vec3    g_normal    = vec3(0.0);
+vec4    g_material  = vec4(0.0);
 
 void setupSurfaceProperties(){
 
@@ -135,6 +135,7 @@ void setupSurfaceProperties(){
         // TBD .........
         g_material.w = PHONG_MATERIAL;
     }
+    
 
 }
 

@@ -32,7 +32,7 @@ struct PipelineSettings {
     bool                                             depthTest        = true;
     bool                                             depthWrite       = true;
     VkCompareOp                                      depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
-    std::vector<VkPushConstantRange>                 pushConstants    = {};
+    std::vector<PushConstant>                        pushConstants    = {};
     std::vector<VkDynamicState>                      dynamicStates    = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
@@ -43,15 +43,15 @@ struct PipelineSettings {
 */
 namespace PipelineBuilder {
 void build_pipeline_layout(VkPipelineLayout& layout,
-                           VkDevice         device,
-                           DescriptorPool   descriptorManager,
+                           VkDevice          device,
+                           DescriptorPool    descriptorManager,
                            PipelineSettings& settings);
 
 void build_graphic_pipeline(VkPipeline&                                  pipeline,
                             VkPipelineLayout&                            layout,
-                            VkDevice                                    device,
-                            VkRenderPass                                renderPass,
-                            VkExtent2D                                  extent,
+                            VkDevice                                     device,
+                            VkRenderPass                                 renderPass,
+                            VkExtent2D                                   extent,
                             PipelineSettings&                            settings,
                             std::vector<VkPipelineShaderStageCreateInfo> shaderStages);
 }; // namespace PipelineBuilder

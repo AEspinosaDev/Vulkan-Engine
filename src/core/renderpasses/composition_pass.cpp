@@ -158,6 +158,15 @@ void CompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
         get_TLAS(scene)->binded = true;
     }
 }
+void CompositionPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr) {
+    for (size_t i = 0; i < m_descriptors.size(); i++)
+    {
+        m_descriptorPool.set_descriptor_write(
+            &env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorPool.set_descriptor_write(
+            &irr, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+    }
+}
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

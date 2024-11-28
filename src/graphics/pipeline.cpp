@@ -5,8 +5,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 void PipelineBuilder::build_pipeline_layout(VkPipelineLayout& layout,
-                                            VkDevice         device,
-                                            DescriptorPool   descriptorManager,
+                                            VkDevice          device,
+                                            DescriptorPool    descriptorManager,
                                             PipelineSettings& settings) {
     std::vector<VkDescriptorSetLayout> descriptorLayouts;
     for (auto& layoutID : settings.descriptorSetLayoutIDs)
@@ -19,23 +19,29 @@ void PipelineBuilder::build_pipeline_layout(VkPipelineLayout& layout,
     pipelineLayoutInfo.setLayoutCount             = (uint32_t)descriptorLayouts.size();
     pipelineLayoutInfo.pSetLayouts                = descriptorLayouts.data();
 
+    std::vector<VkPushConstantRange> pushConstantsRanges;
     if (!settings.pushConstants.empty())
     {
-        pipelineLayoutInfo.pushConstantRangeCount = settings.pushConstants.size();
-        pipelineLayoutInfo.pPushConstantRanges    = settings.pushConstants.data();
+        pushConstantsRanges.resize(settings.pushConstants.size());
+        for (size_t i = 0; i < settings.pushConstants.size(); i++)
+        {
+            pushConstantsRanges[i] = settings.pushConstants[i].handle;
+        }
+        pipelineLayoutInfo.pushConstantRangeCount = pushConstantsRanges.size();
+        pipelineLayoutInfo.pPushConstantRanges    = pushConstantsRanges.data();
     }
 
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
     {
         throw new VKFW_Exception("failed to create pipeline "
-                              "layout!");
+                                 "layout!");
     }
 }
 void PipelineBuilder::build_graphic_pipeline(VkPipeline&                                  pipeline,
                                              VkPipelineLayout&                            layout,
-                                             VkDevice                                    device,
-                                             VkRenderPass                                renderPass,
-                                             VkExtent2D                                  extent,
+                                             VkDevice                                     device,
+                                             VkRenderPass                                 renderPass,
+                                             VkExtent2D                                   extent,
                                              PipelineSettings&                            settings,
                                              std::vector<VkPipelineShaderStageCreateInfo> shaderStages) {
 
@@ -49,10 +55,10 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
 
     auto attributeDescriptions =
         Vertex::getAttributeDescriptions(settings.attributes[VertexAttributeType::POSITION_ATTRIBUTE],
-                                                settings.attributes[VertexAttributeType::NORMAL_ATTRIBUTE],
-                                                settings.attributes[VertexAttributeType::TANGENT_ATTRIBUTE],
-                                                settings.attributes[VertexAttributeType::UV_ATTRIBUTE],
-                                                settings.attributes[VertexAttributeType::COLOR_ATTRIBUTE]);
+                                         settings.attributes[VertexAttributeType::NORMAL_ATTRIBUTE],
+                                         settings.attributes[VertexAttributeType::TANGENT_ATTRIBUTE],
+                                         settings.attributes[VertexAttributeType::UV_ATTRIBUTE],
+                                         settings.attributes[VertexAttributeType::COLOR_ATTRIBUTE]);
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
 
@@ -123,7 +129,7 @@ void PipelineBuilder::build_graphic_pipeline(VkPipeline&                        
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     {
         throw VKFW_Exception("Failed to create Grahic "
-                          "Pipeline");
+                             "Pipeline");
     }
 }
 } // namespace Graphics

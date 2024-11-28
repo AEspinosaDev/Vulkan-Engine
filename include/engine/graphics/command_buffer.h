@@ -69,8 +69,10 @@ struct CommandBuffer {
                           ImageLayout   newLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                           AccessFlags   srcMask   = ACCESS_COLOR_ATTACHMENT_WRITE,
                           AccessFlags   dstMask   = ACCESS_SHADER_READ,
-                          PipelineStage srcStage = STAGE_COLOR_ATTACHMENT_OUTPUT,
-                          PipelineStage dstStage = STAGE_FRAGMENT_SHADER);
+                          PipelineStage srcStage  = STAGE_COLOR_ATTACHMENT_OUTPUT,
+                          PipelineStage dstStage  = STAGE_FRAGMENT_SHADER);
+
+    void push_constants(ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset = 0);
 };
 struct CommandPool {
     VkCommandPool handle = VK_NULL_HANDLE;
