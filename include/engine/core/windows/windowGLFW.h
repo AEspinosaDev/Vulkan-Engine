@@ -9,47 +9,41 @@
 #ifndef WINDOW_GLFW_H
 #define WINDOW_GLFW_H
 
+#include <stb_image.h>
 #include <engine/core/windows/window.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Core
-{
+namespace Core {
 /**
  * GLFW as windowing manage system.
  */
 class WindowGLFW : public IWindow
 {
   private:
-    GLFWwindow *m_handle{nullptr};
+    GLFWwindow* m_handle{nullptr};
 
   public:
     WindowGLFW(const std::string t, uint32_t w, uint32_t h, bool resizable = true, bool fullscreen = false)
-        : IWindow(t, w, h, resizable, fullscreen)
-    {
+        : IWindow(t, w, h, resizable, fullscreen) {
     }
 
     void init();
 
-    inline void destroy()
-    {
+    inline void destroy() {
         glfwDestroyWindow(m_handle);
     }
-    inline void get_handle(void * &handlePtr) const
-    {
+    inline void get_handle(void*& handlePtr) const {
         handlePtr = m_handle;
     }
-    inline WindowingSystem get_windowing_system() const
-    {
+    inline WindowingSystem get_windowing_system() const {
         return WindowingSystem::GLFW;
     }
-    inline int get_window_should_close() const
-    {
+    inline int get_window_should_close() const {
         return glfwWindowShouldClose(m_handle);
     }
 
-    inline void set_window_should_close(bool op)
-    {
+    inline void set_window_should_close(bool op) {
         glfwSetWindowShouldClose(m_handle, op);
     }
 
@@ -57,26 +51,23 @@ class WindowGLFW : public IWindow
 
     void update_framebuffer();
 
-    inline void set_title(const char *title)
-    {
+    inline void set_title(const char* title) {
         IWindow::set_title(title);
         glfwSetWindowTitle(m_handle, title);
     }
-    inline void set_position(math::ivec2 p)
-    {
+    inline void set_position(math::ivec2 p) {
         IWindow::set_position(p);
         glfwSetWindowPos(m_handle, p.x, p.y);
     }
 
-    inline void poll_events()
-    {
+    inline void poll_events() {
         glfwPollEvents();
     }
 
-    inline double get_time_elapsed()
-    {
+    inline double get_time_elapsed() {
         return glfwGetTime();
     }
+     void set_window_icon(const char* iconPath);
 };
 
 } // namespace Core

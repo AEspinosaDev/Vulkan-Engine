@@ -5,6 +5,7 @@ void Application::init(Systems::RendererSettings settings) {
     m_window = new WindowGLFW("Lighting Test", 1280, 1024);
 
     m_window->init();
+    m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
 
     m_window->set_window_size_callback(
         std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));

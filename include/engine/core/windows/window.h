@@ -67,6 +67,8 @@ class IWindow
 
     virtual WindowingSystem get_windowing_system() const = 0;
 
+    virtual void set_window_icon(const char* iconPath) = 0;
+
     virtual bool get_key_state(int keyCode, int state) const{return 0;}
 
     virtual inline void set_position(math::ivec2 p)
