@@ -5,6 +5,7 @@
 #include <engine/core/passes/fxaa_pass.h>
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
+#include <engine/core/passes/tonemapping_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -22,7 +23,8 @@ class DeferredRenderer : public BaseRenderer
         SHADOW_PASS      = 0,
         GEOMETRY_PASS    = 1,
         COMPOSITION_PASS = 2,
-        FXAA_PASS        = 3
+        TONEMAPPIN_PASS  = 3,
+        FXAA_PASS        = 4,
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;

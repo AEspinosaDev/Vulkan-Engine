@@ -43,7 +43,7 @@ void DeferredRenderer::create_renderpasses() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(4, nullptr);
+    m_passes.resize(5, nullptr);
     // Shadow Pass
     m_passes[SHADOW_PASS] = new Core::VarianceShadowPass(
         &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
@@ -54,21 +54,28 @@ void DeferredRenderer::create_renderpasses() {
 
     // Composition Pass
     m_passes[COMPOSITION_PASS] = new Core::CompositionPass(&m_device,
-                                                                 m_window->get_extent(),
-                                                                 totalImagesInFlight,
-                                                                 m_settings.colorFormat,
-                                                                 Core::ResourceManager::VIGNETTE,
-                                                                 m_settings.softwareAA ? false : true);
+                                                           m_window->get_extent(),
+                                                           totalImagesInFlight,
+                                                           m_settings.colorFormat,
+                                                           Core::ResourceManager::VIGNETTE,
+                                                           m_settings.softwareAA ? false : true);
     m_passes[COMPOSITION_PASS]->set_image_dependace_table({{SHADOW_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3, 4}}});
-
+    // Tonemapping
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(&m_device,
+                                                          m_window->get_extent(),
+                                                          totalImagesInFlight,
+                                                          m_settings.colorFormat,
+                                                          Core::ResourceManager::VIGNETTE,
+                                                          false);
+    m_passes[TONEMAPPIN_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0}}});
     // FXAA Pass
     m_passes[FXAA_PASS] = new Core::FXAAPass(&m_device,
-                                                   m_window->get_extent(),
-                                                   totalImagesInFlight,
-                                                   m_settings.colorFormat,
-                                                   Core::ResourceManager::VIGNETTE,
-                                                   m_settings.softwareAA);
-    m_passes[FXAA_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0}}});
+                                             m_window->get_extent(),
+                                             totalImagesInFlight,
+                                             m_settings.colorFormat,
+                                             Core::ResourceManager::VIGNETTE,
+                                             m_settings.softwareAA);
+    m_passes[FXAA_PASS]->set_image_dependace_table({{TONEMAPPIN_PASS, {0}}});
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);
 }

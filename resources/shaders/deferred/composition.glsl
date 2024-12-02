@@ -164,7 +164,8 @@ void main()
                
                     
 
-    color = reindhartTonemap(direct + ambient);
+    //color = reindhartTonemap(direct + ambient);
+    color = direct + ambient;
             
     //////////////////////////////////////
     // IF UNLIT MATERIAL
