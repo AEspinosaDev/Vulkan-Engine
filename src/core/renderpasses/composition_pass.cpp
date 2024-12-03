@@ -24,10 +24,16 @@ void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&      
     attachments[0].isPresentImage = m_isDefault ? true : false;
 
     // Depdencies
-    dependencies.resize(1);
+    dependencies.resize(2);
 
     dependencies[0] =
-        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
+        Graphics::SubPassDependency(STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
+    dependencies[1] =
+        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+    dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
 }
 
 void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {

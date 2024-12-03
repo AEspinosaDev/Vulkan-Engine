@@ -48,6 +48,8 @@ class BasePass
     std::vector<Graphics::Framebuffer> m_framebuffers;
     uint32_t                           m_framebufferImageDepth; // The depth of the framebuffer image layers.
 
+    std::string m_name;
+
     // Key: Renderpass ID
     // Value: Framebuffer's image ID inside renderpass
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
@@ -70,10 +72,12 @@ class BasePass
              Extent2D          extent,
              uint32_t          framebufferCount = 1,
              uint32_t          framebufferDepth = 1,
-             bool              isDefault        = false)
+             bool              isDefault        = false,
+             std::string       name             = "Graphic Pass")
         : m_device(ctx)
         , m_framebufferImageDepth(framebufferDepth)
-        , m_isDefault(isDefault) {
+        , m_isDefault(isDefault)
+        , m_name(name) {
         m_framebuffers.resize(framebufferCount);
         m_renderpass.extent = extent;
     }

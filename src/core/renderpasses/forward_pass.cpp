@@ -59,6 +59,8 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
         STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[1] = Graphics::SubPassDependency(
         STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
+
+        
 }
 void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 

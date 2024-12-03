@@ -55,9 +55,15 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
     dependencies.resize(2);
 
     dependencies[0] = Graphics::SubPassDependency(
-        STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
-    dependencies[1] = Graphics::SubPassDependency(
-        STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
+        STAGE_BOTTOM_OF_PIPE, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[0].srcAccessMask = ACCESS_MEMORY_READ;
+    dependencies[1] =
+        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_BOTTOM_OF_PIPE, ACCESS_MEMORY_READ);
+    dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
+    dependencies[1].srcSubpass    = 0;
+    dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
+
+  
 }
 void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
@@ -152,8 +158,8 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 void GeometryPass::setup_shader_passes() {
 
     // Geometry
-    GraphicShaderPass* geomPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
+    GraphicShaderPass* geomPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
     geomPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     geomPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -177,8 +183,8 @@ void GeometryPass::setup_shader_passes() {
 
     m_shaderPasses["geometry"] = geomPass;
 
-    GraphicShaderPass* skyboxPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
+    GraphicShaderPass* skyboxPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
     skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},

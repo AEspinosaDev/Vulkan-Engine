@@ -10,6 +10,7 @@
 #define RENDERPASS_H
 
 #include <engine/common.h>
+#include <engine/graphics/extensions.h>
 #include <engine/graphics/image.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -91,6 +92,9 @@ struct RenderPass {
     std::vector<Graphics::Attachment>        attachments;
     std::vector<Graphics::SubPassDependency> dependencies;
 
+    const char* debbugName = nullptr;
+
+    void set_debug_name(const char* name);
     void cleanup();
 };
 

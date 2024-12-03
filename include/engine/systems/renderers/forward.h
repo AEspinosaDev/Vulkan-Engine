@@ -2,8 +2,9 @@
 #define FORWARD_H
 
 #include <engine/core/passes/forward_pass.h>
-#include <engine/core/passes/fxaa_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
+#include <engine/core/passes/postprocess_pass.h>
+
 #include <engine/systems/renderers/renderer.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

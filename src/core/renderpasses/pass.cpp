@@ -10,8 +10,10 @@ void BasePass::setup(std::vector<Graphics::Frame>& frames) {
     setup_attachments(attachments, dependencies);
 
     if (!attachments.empty())
+    {
         m_renderpass = m_device->create_render_pass(m_renderpass.extent, attachments, dependencies);
-    else
+        m_renderpass.set_debug_name(m_name.c_str());
+    } else
         m_isGraphical = false;
     m_initiatized = true;
 
@@ -47,8 +49,10 @@ void BasePass::create_framebuffer() {
         if (!m_renderpass.attachments[i].isPresentImage) // If its not default renderpass
         {
             m_renderpass.attachments[i].imageConfig.layers = m_framebufferImageDepth;
-            m_renderpass.attachments[i].image              = m_device->create_image(
-                {m_renderpass.extent.width, m_renderpass.extent.height, 1}, m_renderpass.attachments[i].imageConfig, false);
+            m_renderpass.attachments[i].image =
+                m_device->create_image({m_renderpass.extent.width, m_renderpass.extent.height, 1},
+                                       m_renderpass.attachments[i].imageConfig,
+                                       false);
             m_renderpass.attachments[i].image.create_view(m_renderpass.attachments[i].imageConfig);
             m_renderpass.attachments[i].image.create_sampler(m_renderpass.attachments[i].samplerConfig);
 
@@ -64,7 +68,8 @@ void BasePass::create_framebuffer() {
         if (m_isDefault) // If its default need swapchain PRESENT images
             framebufferAttachments[presentViewIndex].image = m_device->get_swapchain().get_present_images()[fb];
 
-        m_framebuffers[fb] = m_device->create_framebuffer(m_renderpass, framebufferAttachments, m_framebufferImageDepth);
+        m_framebuffers[fb] =
+            m_device->create_framebuffer(m_renderpass, framebufferAttachments, m_framebufferImageDepth);
     }
 }
 

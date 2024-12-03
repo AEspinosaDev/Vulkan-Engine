@@ -72,6 +72,7 @@ std::vector<const char*> Booter::get_required_extensions(bool validation) {
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supported_extensions.data());
     Utils::log_available_extensions(supported_extensions);
 #endif
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     return extensions;
 }
 #pragma region GPU

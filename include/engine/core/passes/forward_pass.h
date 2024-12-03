@@ -44,7 +44,7 @@ class ForwardPass : public GraphicPass
                 ColorFormatType   depthFormat,
                 MSAASamples       samples,
                 bool              isDefault = true)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault)
+        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "FORWARD")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat)
         , m_aa(samples) {

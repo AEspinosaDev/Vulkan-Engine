@@ -29,7 +29,8 @@ extern PFN_vkGetAccelerationStructureBuildSizesKHR    vkGetAccelerationStructure
 extern PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddress;
 extern PFN_vkCmdBuildAccelerationStructuresKHR        vkCmdBuildAccelerationStructures;
 extern PFN_vkBuildAccelerationStructuresKHR           vkBuildAccelerationStructures;
+extern PFN_vkSetDebugUtilsObjectNameEXT               vkSetDebugUtilsObjectName;
 
-void load_extensions(VkDevice& device);
+void load_extensions(VkDevice& device, VkInstance& instance);
 
 #endif

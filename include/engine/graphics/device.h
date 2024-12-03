@@ -16,11 +16,11 @@
 #include <engine/graphics/extensions.h>
 #include <engine/graphics/frame.h>
 #include <engine/graphics/framebuffer.h>
+#include <engine/graphics/renderpass.h>
 #include <engine/graphics/swapchain.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/utils.h>
-#include <engine/graphics/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -46,13 +46,13 @@ class Device
     VkDebugUtilsMessengerEXT       m_debugMessenger   = VK_NULL_HANDLE;
     const std::vector<const char*> m_validationLayers = {"VK_LAYER_KHRONOS_validation"};
     // Extensions
-    std::vector<const char*> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                                                   "VK_EXT_extended_dynamic_state",
-                                                   VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-                                                   VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-                                                   VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                                                   VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-                                                   VK_KHR_RAY_QUERY_EXTENSION_NAME};
+    std::vector<const char*> m_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                             "VK_EXT_extended_dynamic_state",
+                                             VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+                                             VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+                                             VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                             VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+                                             VK_KHR_RAY_QUERY_EXTENSION_NAME};
     // Utils
     Utils::UploadContext      m_uploadContext = {};
     Utils::QueueFamilyIndices m_queueFamilies = {};
@@ -110,17 +110,16 @@ class Device
                        bool           useMipmaps,
                        VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
-    Framebuffer
-    create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
-    Semaphore create_semaphore();
-    Fence     create_fence();
+    Framebuffer create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
+    Semaphore   create_semaphore();
+    Fence       create_fence();
     /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
     RenderPass create_render_pass(Extent2D                        extent,
-                                        std::vector<Attachment>&        attachments,
-                                        std::vector<SubPassDependency>& dependencies);
+                                  std::vector<Attachment>&        attachments,
+                                  std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
     DescriptorPool create_descriptor_pool(uint32_t                       maxSets,
                                           uint32_t                       numUBO,
@@ -180,9 +179,9 @@ class Device
     MISC
     -----------------------------------------------
     */
-    void wait();
-    void init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples);
-    void destroy_imgui();
+    void     wait();
+    void     init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples);
+    void     destroy_imgui();
     uint32_t get_memory_type(uint32_t typeBits, MemoryPropertyFlags properties, uint32_t* memTypeFound = nullptr);
     /*
     Returns the size of the data having in mind the minimun alginment size per stride in the GPU

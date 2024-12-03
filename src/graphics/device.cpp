@@ -20,7 +20,7 @@ void Device::init(void*           windowHandle,
     // Surface
     Extent2D actualExtent = m_swapchain.create_surface(m_instance, windowHandle, windowingSystem);
     // Get gpu
-    m_gpu = Booter::pick_graphics_card_device(m_instance, m_swapchain.get_surface(), m_deviceExtensions);
+    m_gpu = Booter::pick_graphics_card_device(m_instance, m_swapchain.get_surface(), m_extensions);
     // Create logical device
     m_handle = Booter::create_logical_device(m_queues,
                                              m_gpu,
@@ -42,7 +42,7 @@ void Device::init(void*           windowHandle,
 
     m_uploadContext.init(m_handle, m_gpu, m_swapchain.get_surface());
 
-    load_extensions(m_handle);
+    load_extensions(m_handle, m_instance);
 
     // Get properties
     vkGetPhysicalDeviceProperties(m_gpu, &m_properties);

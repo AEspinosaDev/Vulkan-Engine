@@ -40,7 +40,7 @@ class GeometryPass : public GraphicPass
                  ColorFormatType   colorFormat,
                  ColorFormatType   depthFormat,
                  bool              isDefault = false)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault)
+        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "GEOMETRY")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat) {
     }

@@ -33,7 +33,7 @@ class VarianceShadowPass : public GraphicPass
                        uint32_t          framebufferCount,
                        uint32_t          numLights,
                        ColorFormatType   depthFormat)
-        : BasePass(ctx, extent, framebufferCount, numLights)
+        : BasePass(ctx, extent, framebufferCount, numLights, false, "SHADOWS")
         , m_depthFormat(depthFormat) {
     }
 

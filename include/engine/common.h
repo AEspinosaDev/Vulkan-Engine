@@ -376,7 +376,8 @@ typedef enum AccessFlagsBits
     ACCESS_TRANSFER_WRITE                 = 0x00000006,
     ACCESS_SHADER_READ                    = 0x00000007,
     ACCESS_SHADER_WRITE                   = 0x00000008,
-    ACCESS_MAX                            = 0x00000009
+    ACCESS_MEMORY_READ                    = 0x00000009,
+    ACCESS_MAX                            = 0x00000010
 } AccessFlags;
 typedef enum AttachmentStoreOpFlagsBits
 {

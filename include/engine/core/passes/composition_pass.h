@@ -37,7 +37,7 @@ class CompositionPass : public GraphicPass
                     ColorFormatType   colorFormat,
                     Mesh*             vignette,
                     bool              isDefault = true)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault)
+        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "COMPOSITION")
         , m_colorFormat(colorFormat)
         , m_vignette(vignette) {
     }

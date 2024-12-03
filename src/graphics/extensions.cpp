@@ -8,8 +8,9 @@ PFN_vkGetAccelerationStructureBuildSizesKHR    vkGetAccelerationStructureBuildSi
 PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddress = nullptr;
 PFN_vkCmdBuildAccelerationStructuresKHR        vkCmdBuildAccelerationStructures        = nullptr;
 PFN_vkBuildAccelerationStructuresKHR           vkBuildAccelerationStructures           = nullptr;
+PFN_vkSetDebugUtilsObjectNameEXT               vkSetDebugUtilsObjectName               = nullptr;
 
-void load_extensions(VkDevice& device) {
+void load_extensions(VkDevice& device, VkInstance& instance) {
 
     vkCmdSetPolygonMode = (PFN_vkCmdSetPolygonModeEXT)vkGetDeviceProcAddr(device, "vkCmdSetPolygonModeEXT");
 
@@ -67,5 +68,12 @@ void load_extensions(VkDevice& device) {
     if (!vkBuildAccelerationStructures)
     {
         ERR_LOG("Failed to load vkBuildAccelerationStructuresKHR!");
+    }
+
+    vkSetDebugUtilsObjectName =
+        reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT"));
+    if (!vkSetDebugUtilsObjectName)
+    {
+        ERR_LOG("Failed to load vkSetDebugUtilsObjectNameEXT!");
     }
 }

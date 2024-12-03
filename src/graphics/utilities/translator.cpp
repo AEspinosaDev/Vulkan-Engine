@@ -227,6 +227,8 @@ VkAccessFlags get(AccessFlags accessFlags) {
         return VK_ACCESS_SHADER_READ_BIT;
     case AccessFlags::ACCESS_SHADER_WRITE:
         return VK_ACCESS_SHADER_WRITE_BIT;
+    case AccessFlags::ACCESS_MEMORY_READ:
+        return VK_ACCESS_MEMORY_READ_BIT;
     default:
         throw std::invalid_argument("VKEngine error: Unknown AccessFlags");
     }

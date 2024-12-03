@@ -58,23 +58,27 @@ void DeferredRenderer::create_renderpasses() {
                                                            totalImagesInFlight,
                                                            m_settings.colorFormat,
                                                            Core::ResourceManager::VIGNETTE,
-                                                           m_settings.softwareAA ? false : true);
+                                                           false);
     m_passes[COMPOSITION_PASS]->set_image_dependace_table({{SHADOW_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3, 4}}});
     // Tonemapping
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(&m_device,
+    m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,
                                                           m_window->get_extent(),
                                                           totalImagesInFlight,
                                                           m_settings.colorFormat,
                                                           Core::ResourceManager::VIGNETTE,
-                                                          false);
+                                                          ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
+                                                          "TONEMAPPING",
+                                                          m_settings.softwareAA ? false : true);
     m_passes[TONEMAPPIN_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0}}});
     // FXAA Pass
-    m_passes[FXAA_PASS] = new Core::FXAAPass(&m_device,
-                                             m_window->get_extent(),
-                                             totalImagesInFlight,
-                                             m_settings.colorFormat,
-                                             Core::ResourceManager::VIGNETTE,
-                                             m_settings.softwareAA);
+    m_passes[FXAA_PASS] = new Core::PostProcessPass(&m_device,
+                                                    m_window->get_extent(),
+                                                    totalImagesInFlight,
+                                                    m_settings.colorFormat,
+                                                    Core::ResourceManager::VIGNETTE,
+                                                    ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
+                                                    "FXAA",
+                                                    m_settings.softwareAA);
     m_passes[FXAA_PASS]->set_image_dependace_table({{TONEMAPPIN_PASS, {0}}});
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);

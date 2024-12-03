@@ -2,10 +2,9 @@
 #define DEFERRED_H
 
 #include <engine/core/passes/composition_pass.h>
-#include <engine/core/passes/fxaa_pass.h>
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
-#include <engine/core/passes/tonemapping_pass.h>
+#include <engine/core/passes/postprocess_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
