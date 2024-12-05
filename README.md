@@ -37,8 +37,10 @@ The main feautures of the library are:
 - Multipass (depth pass for shadows, SSAO and post-processing).
 - Vulkan object and functionality abstraction.
 - IBL.
+- Physically Based Bloom.
 - Simple to use user interface.
 - Easy to distribute source code.
+- Global Illumination with Voxel Cone Tracing (wip)
 
 This project is a work in progress. It has a long way until becoming a decent library, there are no fancy features for now, but all the basics are here. Eventually, with time, I will be adding more advanced functionality.
 

@@ -31,11 +31,13 @@ void PostProcessPass::setup_attachments(std::vector<Graphics::Attachment>&      
         dependencies[0] = Graphics::SubPassDependency(
             STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
         dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
+        dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
         dependencies[1] =
             Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
         dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
         dependencies[1].srcSubpass    = 0;
         dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
+        dependencies[1].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
     } else
     {
         dependencies.resize(1);
@@ -43,6 +45,7 @@ void PostProcessPass::setup_attachments(std::vector<Graphics::Attachment>&      
         // dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
         dependencies[0] = Graphics::SubPassDependency(
             STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
     }
 }
 void PostProcessPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {

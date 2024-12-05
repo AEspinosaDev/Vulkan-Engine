@@ -180,7 +180,7 @@ void Application::setup_gui() {
     m_interface.scene           = new Tools::SceneExplorerWidget(m_scene);
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
-    explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));
+    explorerPanel->add_child(new Tools::DeferredRendererWidget(static_cast<Systems::DeferredRenderer*>(m_renderer)));
     explorerPanel->add_child(new Tools::ControllerWidget(m_controller));
     explorerPanel->add_child(new Tools::Separator());
     explorerPanel->add_child(new Tools::TextLine(" Application average"));
@@ -214,9 +214,9 @@ void Application::update() {
         float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
 
         light->set_position({_x, light->get_position().y, _z});
-        static_cast<UnlitMaterial*>(static_cast<Mesh*>(light->get_children().front())->get_material(0))
-            ->set_color({light->get_color(), 1.0f});
     }
+    static_cast<UnlitMaterial*>(static_cast<Mesh*>(light->get_children().front())->get_material(0))
+        ->set_color({light->get_color() * light->get_intensity(), 1.0f});
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());
 }

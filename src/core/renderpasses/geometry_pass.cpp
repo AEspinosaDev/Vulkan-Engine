@@ -24,7 +24,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Albedo
-    attachments[2] = Graphics::Attachment(m_colorFormat,
+    attachments[2] = Graphics::Attachment(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -37,7 +37,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Temporal
-    attachments[4] = Graphics::Attachment(SRGBA_32F,
+    attachments[4] = Graphics::Attachment(m_colorFormat,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,

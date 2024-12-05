@@ -44,10 +44,26 @@ class DeferredRenderer : public BaseRenderer
         , m_shadowQuality(shadowQuality) {
     }
 
+    inline ShadowResolution get_shadow_quality() const {
+        return m_shadowQuality;
+    }
     inline void set_shadow_quality(ShadowResolution quality) {
         m_shadowQuality = quality;
         if (m_initialized)
             m_updateShadows = true;
+    }
+    inline float get_bloom_strength() const {
+        if (m_passes[BLOOM_PASS])
+        {
+            return static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->get_bloom_strength();
+        }
+        return 0.0f;
+    }
+    inline void set_bloom_strength(float st) {
+        if (m_passes[BLOOM_PASS])
+        {
+            static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(st);
+        }
     }
 
   protected:

@@ -23,8 +23,15 @@ layout(set = 0, binding = 0) uniform sampler2D inputImage;
 layout(location = 0) out vec4 outputImage;
 
 
+
 void main()
 {
-    // outputImage = vec4(reindhartTonemap(texture(inputImage,v_uv).rgb),1.0);
-    outputImage = vec4(texture(inputImage,v_uv).rgb,1.0); //WIP
+    vec3 result = texture(inputImage,v_uv).rgb;
+    result = vec3(1.0) - exp(-result * 1.0);
+
+    // // also gamma correct while we're at it
+    // const float GAMMA = 2.2;
+    // result = pow(result, vec3(1.0 / GAMMA));
+
+    outputImage = vec4(result,1.0); //WIP
 }

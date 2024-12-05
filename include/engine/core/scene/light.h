@@ -45,7 +45,7 @@ class Light : public Object3D
     static uint16_t m_nonRaytraceCount;
 
   public:
-    Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
+    Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 5.0f)
         : Object3D(name, ObjectType::LIGHT)
         , m_color(color)
         , m_intensity(intensity)
@@ -179,7 +179,7 @@ class PointLight : public Light
     static int m_instanceCount;
 
   public:
-    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
+    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 5.0f)
         : Light("Point Light #" + std::to_string(PointLight::m_instanceCount), LightType::POINT, color, intensity)
         , m_effectArea(12.0f) {
         PointLight::m_instanceCount++;
@@ -204,7 +204,7 @@ class DirectionalLight : public Light
     static int m_instanceCount;
 
   public:
-    DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 1.0f)
+    DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 5.0f)
         : Light("Directional Light#" + std::to_string(DirectionalLight::m_instanceCount),
                 LightType::DIRECTIONAL,
                 color,

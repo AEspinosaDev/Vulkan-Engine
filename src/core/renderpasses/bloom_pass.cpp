@@ -60,10 +60,13 @@ void BloomPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 }
 void BloomPass::setup_shader_passes() {
 
+    const uint32_t MIPMAP_UNIFORM_SIZE   = sizeof(uint32_t) * 2.0f;
+    const uint32_t SETTINGS_UNIFORM_SIZE = sizeof(float);
+
     ComputeShaderPass* downsamplePass =
         new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/compute/downsample.glsl");
     downsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    downsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, sizeof(uint32_t) * 2.0f));
+    downsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
     downsamplePass->build_shader_stages();
     downsamplePass->build(m_descriptorPool);
@@ -73,7 +76,7 @@ void BloomPass::setup_shader_passes() {
     ComputeShaderPass* upsamplePass =
         new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/compute/upsample.glsl");
     upsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    upsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, sizeof(uint32_t) * 2.0f));
+    upsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
     upsamplePass->build_shader_stages();
     upsamplePass->build(m_descriptorPool);
@@ -88,6 +91,7 @@ void BloomPass::setup_shader_passes() {
                                                   {UV_ATTRIBUTE, true},
                                                   {TANGENT_ATTRIBUTE, false},
                                                   {COLOR_ATTRIBUTE, false}};
+    bloomPass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_FRAGMENT, SETTINGS_UNIFORM_SIZE));
 
     bloomPass->build_shader_stages();
     bloomPass->build(m_descriptorPool);
@@ -97,12 +101,19 @@ void BloomPass::setup_shader_passes() {
 
 void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
-    CommandBuffer cmd = currentFrame.computeCommandBuffer;
+    CommandBuffer cmd;
+
+    if (m_bloomStrength == 0.0f)
+        goto paintBloom;
+
+    cmd = currentFrame.computeCommandBuffer;
 
     struct Mipmap {
         uint32_t srcLevel;
         uint32_t dstLevel;
     };
+
+    const uint32_t WORK_GROUP_SIZE = 16;
 
     cmd.begin();
 
@@ -139,7 +150,9 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
         // Dispatch the compute shader
         uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> i);
         uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> i);
-        cmd.dispatch_compute({(mipWidth + 31) / 32, (mipHeight + 31) / 32, 1});
+        cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                              (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                              1});
 
         cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
                              LAYOUT_GENERAL,
@@ -167,7 +180,7 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
     for (int32_t i = MIPMAP_LEVELS - 2; i >= 0; i--)
     {
 
-        Mipmap mipmap = {i + 1, i};
+        Mipmap mipmap = {(uint32_t)i + 1, (uint32_t)i};
 
         cmd.push_constants(*upSamplePass, SHADER_STAGE_COMPUTE, &mipmap, sizeof(mipmap));
 
@@ -176,7 +189,9 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
         // Dispatch the compute shader
         uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> i);
         uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> i);
-        cmd.dispatch_compute({(mipWidth + 31) / 32, (mipHeight + 31) / 32, 1});
+        cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                              (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                              1});
 
         cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
                              LAYOUT_GENERAL,
@@ -203,16 +218,20 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
 
     m_descriptorPool.set_descriptor_write(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 3);
 
-    ////////////////////////////////////////////////////////////
-    // ADD BLOOM
-    ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+// ADD BLOOM
+////////////////////////////////////////////////////////////
+paintBloom:
+
     cmd = currentFrame.commandBuffer;
+
     cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
     cmd.set_viewport(m_renderpass.extent);
 
     ShaderPass* shaderPass = m_shaderPasses["bloom"];
 
     cmd.bind_shaderpass(*shaderPass);
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_bloomStrength, sizeof(float));
     cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
     Geometry* g = m_vignette->get_geometry();
@@ -263,7 +282,6 @@ void BloomPass::update() {
         img.sampler = VK_NULL_HANDLE;
         img.cleanup();
     }
-
 }
 
 void BloomPass::cleanup() {

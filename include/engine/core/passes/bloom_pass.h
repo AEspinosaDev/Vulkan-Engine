@@ -15,6 +15,20 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+/*
+Physically Based Bloom Pass.
+
+The method that inspired this article was presented at ACM Siggraph in 2014 by Jorge Jimenez for Call of Duty: Advanced
+Warfare.
+
+The algorithm follows this recipe:
+- Run a shader which downsamples (downscales) the HDR buffer containing per-pixel color with light and shadows applied.
+This shader is run a fixed number of times to continually produce a smaller image, each time with half resolution in
+both X and Y axes.
+- We then run a small 3x3 filter kernel on each downsampled image, and progressively upsample them until we reach image
+A (first downsampled image).
+- Finally, we mix the overall bloom contribution into the HDR source image, with a strong bias towards the HDR source.
+*/
 class BloomPass : public BasePass
 {
   protected:
@@ -23,10 +37,14 @@ class BloomPass : public BasePass
 
     Graphics::DescriptorSet m_imageDescriptorSet;
 
-    const uint32_t               MIPMAP_LEVELS = 6;
+    const uint32_t MIPMAP_LEVELS = 6;
+
+    // Settings
+    float m_bloomStrength = 0.05f;
+
+    // Resources
     Graphics::Image              m_originalImage;
     Graphics::Image              m_brightImage;
-
     Graphics::Image              m_bloomImage;
     std::vector<Graphics::Image> m_bloomMipmaps;
 
@@ -34,6 +52,13 @@ class BloomPass : public BasePass
     BloomPass(Graphics::Device* ctx, Extent2D extent, uint32_t framebufferCount, Mesh* vignette, bool isDefault = false)
         : BasePass(ctx, extent, framebufferCount, 1, isDefault, "BLOOM")
         , m_vignette(vignette) {
+    }
+
+    inline float get_bloom_strength() const {
+        return m_bloomStrength;
+    }
+    inline void set_bloom_strength(float st) {
+        m_bloomStrength = st;
     }
 
     void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
@@ -48,10 +73,8 @@ class BloomPass : public BasePass
     void connect_to_previous_images(std::vector<Graphics::Image> images);
 
     void update();
-    
+
     void cleanup();
-
-
 };
 
 } // namespace Core
