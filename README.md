@@ -7,6 +7,7 @@ A Vulkan based 3D library that acts as a wrapper for the most verbose Vulkan par
 	
 ![Screenshot (76)](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/6240417a-d655-4bb5-a0d5-03406a71668a)
 ![Screenshot (85)](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/c3f468cc-10e4-456f-86bc-eb4f0a6d0c05)
+![Screenshot (120)](https://github.com/user-attachments/assets/a900593f-6f6b-4089-95c0-7e37d5d18226)
 
 <p align="center">
   <img src="https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/3d926089-8889-4e7f-8cab-109cf7ff17b3" alt="Screenshot (82)" width="33%" />
