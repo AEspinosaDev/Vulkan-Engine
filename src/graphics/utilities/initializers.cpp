@@ -306,7 +306,8 @@ VkImageViewCreateInfo Init::imageview_create_info(VkFormat           format,
                                                   VkImageViewType    viewType,
                                                   VkImageAspectFlags aspectFlags,
                                                   uint32_t           mipLevels,
-                                                  uint32_t           layers) {
+                                                  uint32_t           layers,
+                                                  uint32_t           baseMipLevel) {
     // build a image-view for the depth image to use for rendering
     VkImageViewCreateInfo info = {};
     info.sType                 = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -315,7 +316,7 @@ VkImageViewCreateInfo Init::imageview_create_info(VkFormat           format,
     info.viewType                        = viewType;
     info.image                           = image;
     info.format                          = format;
-    info.subresourceRange.baseMipLevel   = 0;
+    info.subresourceRange.baseMipLevel   = baseMipLevel;
     info.subresourceRange.levelCount     = mipLevels;
     info.subresourceRange.baseArrayLayer = 0;
     info.subresourceRange.layerCount     = layers;
@@ -355,7 +356,8 @@ Init::sampler_create_info(VkFilter             filters,
 }
 VkWriteDescriptorSet Init::write_descriptor_image(VkDescriptorType       type,
                                                   VkDescriptorSet        dstSet,
-                                                  VkDescriptorImageInfo* imageInfo,
+                                                  VkDescriptorImageInfo* imageInfos,
+                                                  uint32_t               imageCount,
                                                   uint32_t               binding) {
     VkWriteDescriptorSet write = {};
     write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -363,9 +365,9 @@ VkWriteDescriptorSet Init::write_descriptor_image(VkDescriptorType       type,
 
     write.dstBinding      = binding;
     write.dstSet          = dstSet;
-    write.descriptorCount = 1;
+    write.descriptorCount = imageCount;
     write.descriptorType  = type;
-    write.pImageInfo      = imageInfo;
+    write.pImageInfo      = imageInfos;
 
     return write;
 }

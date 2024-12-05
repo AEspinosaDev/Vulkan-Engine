@@ -12,6 +12,7 @@ void Frame::cleanup() {
         buffer.cleanup();
     }
     commandPool.cleanup();
+    computeCommandPool.cleanup();
     renderFence.cleanup();
     renderSemaphore.cleanup();
     presentSemaphore.cleanup();

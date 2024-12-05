@@ -18,13 +18,14 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 struct ImageConfig {
-    ColorFormatType format      = ColorFormatType::SRGBA_8;
-    ImageUsageFlags usageFlags  = IMAGE_USAGE_SAMPLED;
-    ImageAspect     aspectFlags = ASPECT_COLOR;
-    TextureType     viewType    = TEXTURE_2D;
-    uint16_t        samples     = 1U;
-    uint32_t        mipLevels   = 1U;
-    uint32_t        layers      = 1U;
+    ColorFormatType format       = ColorFormatType::SRGBA_8;
+    ImageUsageFlags usageFlags   = IMAGE_USAGE_SAMPLED;
+    ImageAspect     aspectFlags  = ASPECT_COLOR;
+    TextureType     viewType     = TEXTURE_2D;
+    uint16_t        samples      = 1U;
+    uint32_t        mipLevels    = 1U;
+    uint32_t        baseMipLevel = 0;
+    uint32_t        layers       = 1U;
 };
 
 struct SamplerConfig {
@@ -48,9 +49,10 @@ struct Image {
     VkSampler       sampler       = VK_NULL_HANDLE;
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
-    Extent3D extent    = {0, 0, 1}; // Depth for 3D Textures
-    uint32_t layers    = 1;         // Layers for Cubemaps and Arrays
-    uint32_t mipLevels = 1;
+    Extent3D extent       = {0, 0, 1}; // Depth for 3D Textures
+    uint32_t layers       = 1;         // Layers for Cubemaps and Arrays
+    uint32_t mipLevels    = 1;
+    uint32_t baseMipLevel = 0;
 
     bool loadedOnCPU{false};
     bool loadedOnGPU{false};
@@ -66,6 +68,8 @@ struct Image {
     void generate_mipmaps(VkCommandBuffer& cmd);
 
     void cleanup(bool destroySampler = true);
+
+    Image clone() const;
 };
 
 } // namespace Graphics

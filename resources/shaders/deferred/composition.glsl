@@ -41,6 +41,7 @@ layout(location = 1) in mat4 v_camView; //For shadows
 
 //OUTPUT
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outBrightColor;
 
 //UNIFORMS
 layout(set = 0, binding =   2) uniform sampler2DArray              shadowMap;
@@ -181,11 +182,15 @@ void main()
     }
 
 
-
-    // float outOpacity = texture(normalBuffer,v_uv).w == 0.0 ? 0.0 : 1.0;
-    // outColor = vec4(color, outOpacity);
-
     outColor = vec4(color,1.0);
+
+      // check whether result is higher than some threshold, if so, output as bloom threshold color
+    float brightness = dot(color*5, vec3(0.2126, 0.7152, 0.0722));
+
+    if(brightness > 1.0)
+        outBrightColor = vec4(color*5, 1.0);
+    else
+        outBrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 
    
     

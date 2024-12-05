@@ -63,8 +63,9 @@ VkImageViewCreateInfo        imageview_create_info(VkFormat           format,
                                                    VkImage            image,
                                                    VkImageViewType    viewType,
                                                    VkImageAspectFlags aspectFlags,
-                                                   uint32_t           mipLevels = 1,
-                                                   uint32_t           layers    = 1);
+                                                   uint32_t           mipLevels    = 1,
+                                                   uint32_t           layers       = 1,
+                                                   uint32_t           baseMipLevel = 0);
 VkSamplerCreateInfo          sampler_create_info(VkFilter             filters,
                                                  VkSamplerMipmapMode  mipmapMode,
                                                  float                minLod,
@@ -74,7 +75,8 @@ VkSamplerCreateInfo          sampler_create_info(VkFilter             filters,
                                                  VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
 VkWriteDescriptorSet         write_descriptor_image(VkDescriptorType       type,
                                                     VkDescriptorSet        dstSet,
-                                                    VkDescriptorImageInfo* imageInfo,
+                                                    VkDescriptorImageInfo* imageInfos,
+                                                    uint32_t               imageCount,
                                                     uint32_t               binding);
 VkAttachmentReference        attachment_reference(uint32_t slot, VkImageLayout layout);
 VkViewport viewport(VkExtent2D extent, float minDepth = 0.0f, float maxDepth = 1.0f, float x = 0.0f, float y = 0.0f);

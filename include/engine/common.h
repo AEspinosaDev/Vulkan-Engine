@@ -258,6 +258,7 @@ enum UniformDataType
     UNIFORM_DYNAMIC_BUFFER         = 1,
     UNIFORM_COMBINED_IMAGE_SAMPLER = 2,
     UNIFORM_ACCELERATION_STRUCTURE = 3,
+    UNIFORM_STORAGE_IMAGE          = 4,
 };
 enum BorderColor
 {

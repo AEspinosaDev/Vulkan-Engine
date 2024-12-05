@@ -111,6 +111,7 @@ class Device
                        VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
     Framebuffer create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
+    Framebuffer create_framebuffer(RenderPass& renderpass, Image& img);
     Semaphore   create_semaphore();
     Fence       create_fence();
     /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
@@ -180,6 +181,7 @@ class Device
     -----------------------------------------------
     */
     void     wait();
+    void     wait_queue(QueueType queueType);
     void     init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples);
     void     destroy_imgui();
     uint32_t get_memory_type(uint32_t typeBits, MemoryPropertyFlags properties, uint32_t* memTypeFound = nullptr);

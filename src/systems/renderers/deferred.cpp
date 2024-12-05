@@ -43,7 +43,8 @@ void DeferredRenderer::create_renderpasses() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(5, nullptr);
+    m_passes.resize(6, nullptr);
+
     // Shadow Pass
     m_passes[SHADOW_PASS] = new Core::VarianceShadowPass(
         &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
@@ -53,23 +54,26 @@ void DeferredRenderer::create_renderpasses() {
         &m_device, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_settings.depthFormat);
 
     // Composition Pass
-    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(&m_device,
-                                                           m_window->get_extent(),
-                                                           totalImagesInFlight,
-                                                           m_settings.colorFormat,
-                                                           Core::ResourceManager::VIGNETTE,
-                                                           false);
+    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(
+        &m_device, m_window->get_extent(), totalImagesInFlight, SRGBA_32F, Core::ResourceManager::VIGNETTE, false);
     m_passes[COMPOSITION_PASS]->set_image_dependace_table({{SHADOW_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3, 4}}});
+
+    // Bloom Pass
+    m_passes[BLOOM_PASS] =
+        new Core::BloomPass(&m_device, m_window->get_extent(), totalImagesInFlight, Core::ResourceManager::VIGNETTE);
+    m_passes[BLOOM_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0, 1}}});
+
     // Tonemapping
     m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,
                                                           m_window->get_extent(),
                                                           totalImagesInFlight,
-                                                          m_settings.colorFormat,
+                                                          SRGBA_32F,
                                                           Core::ResourceManager::VIGNETTE,
                                                           ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
                                                           "TONEMAPPING",
                                                           m_settings.softwareAA ? false : true);
-    m_passes[TONEMAPPIN_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0}}});
+    m_passes[TONEMAPPIN_PASS]->set_image_dependace_table({{BLOOM_PASS, {0}}});
+
     // FXAA Pass
     m_passes[FXAA_PASS] = new Core::PostProcessPass(&m_device,
                                                     m_window->get_extent(),

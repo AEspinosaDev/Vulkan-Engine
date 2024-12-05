@@ -7,7 +7,7 @@ namespace Core {
 void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
                                         std::vector<Graphics::SubPassDependency>& dependencies) {
 
-    attachments.resize(1);
+    attachments.resize(m_isDefault ? 1 : 2);
 
     attachments[0] = Graphics::Attachment(m_colorFormat,
                                           1,
@@ -23,17 +23,29 @@ void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&      
 
     attachments[0].isPresentImage = m_isDefault ? true : false;
 
+    if (!m_isDefault) //Bright color buffer. m_colorFormat should be in floating point.
+        attachments[1] = Graphics::Attachment(m_colorFormat,
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                              COLOR_ATTACHMENT,
+                                              ASPECT_COLOR,
+                                              TEXTURE_2D,
+                                              FILTER_LINEAR,
+                                              ADDRESS_MODE_CLAMP_TO_BORDER);
+
     // Depdencies
     dependencies.resize(2);
 
-    dependencies[0] =
-        Graphics::SubPassDependency(STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[0] = Graphics::SubPassDependency(
+        STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
     dependencies[1] =
         Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
     dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
-    dependencies[1].srcSubpass = 0;
-    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcSubpass    = 0;
+    dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
 }
 
 void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
@@ -99,12 +111,14 @@ void CompositionPass::setup_shader_passes() {
 
     GraphicShaderPass* compPass = new GraphicShaderPass(
         m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
-    compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {1, true}};
-    compPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
-                                                 {NORMAL_ATTRIBUTE, false},
-                                                 {UV_ATTRIBUTE, true},
-                                                 {TANGENT_ATTRIBUTE, false},
-                                                 {COLOR_ATTRIBUTE, false}};
+    compPass->settings.descriptorSetLayoutIDs  = {{GLOBAL_LAYOUT, true}, {1, true}};
+    compPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                  {NORMAL_ATTRIBUTE, false},
+                                                  {UV_ATTRIBUTE, true},
+                                                  {TANGENT_ATTRIBUTE, false},
+                                                  {COLOR_ATTRIBUTE, false}};
+    compPass->graphicSettings.blendAttachments = {
+        Init::color_blend_attachment_state(false), Init::color_blend_attachment_state(false)};
 
     compPass->build_shader_stages();
     compPass->build(m_descriptorPool);

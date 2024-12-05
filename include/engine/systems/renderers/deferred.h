@@ -1,10 +1,11 @@
 #ifndef DEFERRED_H
 #define DEFERRED_H
 
+#include <engine/core/passes/bloom_pass.h>
 #include <engine/core/passes/composition_pass.h>
 #include <engine/core/passes/geometry_pass.h>
-#include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
+#include <engine/core/passes/variance_shadow_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -22,8 +23,9 @@ class DeferredRenderer : public BaseRenderer
         SHADOW_PASS      = 0,
         GEOMETRY_PASS    = 1,
         COMPOSITION_PASS = 2,
-        TONEMAPPIN_PASS  = 3,
-        FXAA_PASS        = 4,
+        BLOOM_PASS       = 3,
+        TONEMAPPIN_PASS  = 4,
+        FXAA_PASS        = 5,
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;

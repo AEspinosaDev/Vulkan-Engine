@@ -185,7 +185,7 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
     Utils::QueueFamilyIndices            queueFamilies = Utils::find_queue_families(gpu, surface);
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t>                   uniqueQueueFamilies = {
-        queueFamilies.graphicsFamily.value(), queueFamilies.presentFamily.value()};
+        queueFamilies.graphicsFamily.value(), queueFamilies.presentFamily.value(), queueFamilies.computeFamily.value()};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -316,6 +316,7 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
     vkGetDeviceQueue(device, queueFamilies.graphicsFamily.value(), 0, &queues[QueueType::GRAPHIC_QUEUE]);
     vkGetDeviceQueue(device, queueFamilies.presentFamily.value(), 0, &queues[QueueType::PRESENT_QUEUE]);
+    vkGetDeviceQueue(device, queueFamilies.computeFamily.value(), 0, &queues[QueueType::COMPUTE_QUEUE]);
 
     return device;
 }

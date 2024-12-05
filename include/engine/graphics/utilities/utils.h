@@ -32,9 +32,7 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> sparseBindingFamily;
 
     inline bool isComplete() const {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-        // && computeFamily.has_value() &&
-        //        transferFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value();
     }
 };
 
@@ -91,8 +89,6 @@ class ManualTimer
     }
 };
 
-
-
 struct memory_buffer : public std::streambuf {
     char*  p_start{nullptr};
     char*  p_end{nullptr};
@@ -146,7 +142,6 @@ inline std::vector<uint8_t> read_file_binary(const std::string& pathToFile) {
         throw std::runtime_error("could not open binary ifstream to path " + pathToFile);
     return fileBufferBytes;
 }
-
 
 VkPhysicalDeviceProperties get_gpu_properties(VkPhysicalDevice gpu);
 
@@ -219,13 +214,9 @@ void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 
 Vec3 get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, glm::vec2& uv1, glm::vec2& uv2, glm::vec2& uv3, Vec3 normal);
 
-
-
-
 }; // namespace Utils
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
-
 
 #endif

@@ -32,7 +32,7 @@ class PostProcessPass : public GraphicPass
                     ColorFormatType   colorFormat,
                     Mesh*             vignette,
                     std::string       shaderPath,
-                    std::string       name      = "Post Process",
+                    std::string       name      = "POST-PROCESS",
                     bool              isDefault = true)
         : BasePass(ctx, extent, framebufferCount, 1, isDefault, name)
         , m_colorFormat(colorFormat)

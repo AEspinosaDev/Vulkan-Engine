@@ -24,8 +24,10 @@ struct Frame {
     Semaphore renderSemaphore  = {};
     Fence     renderFence      = {};
     // Command
-    CommandPool   commandPool   = {};
-    CommandBuffer commandBuffer = {};
+    CommandPool   commandPool          = {};
+    CommandBuffer commandBuffer        = {};
+    CommandPool   computeCommandPool   = {};
+    CommandBuffer computeCommandBuffer = {};
     // Uniforms
     std::vector<Buffer> uniformBuffers;
     uint32_t            index = 0;

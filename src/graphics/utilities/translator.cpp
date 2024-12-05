@@ -65,6 +65,8 @@ VkDescriptorType get(UniformDataType uniformDataType) {
         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     case UniformDataType::UNIFORM_ACCELERATION_STRUCTURE:
         return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    case UniformDataType::UNIFORM_STORAGE_IMAGE:
+        return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     default:
         throw std::invalid_argument("VKEngine error: Unknown UniformDataType");
     }
@@ -89,6 +91,8 @@ VkImageLayout get(ImageLayout layoutType) {
         return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     case ImageLayout::LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    case ImageLayout::LAYOUT_GENERAL:
+        return VK_IMAGE_LAYOUT_GENERAL;
     default:
         throw std::invalid_argument("VKEngine error: Unknown ImageLayoutType");
     }

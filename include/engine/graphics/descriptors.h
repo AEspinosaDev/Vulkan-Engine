@@ -69,7 +69,19 @@ struct DescriptorPool {
     /*
     Set writes for Images
     */
-    void set_descriptor_write(Image* image, ImageLayout layout, DescriptorSet* descriptor, uint32_t binding);
+    void set_descriptor_write(Image*          image,
+                              ImageLayout     layout,
+                              DescriptorSet*  descriptor,
+                              uint32_t        binding,
+                              UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER);
+    /*
+    Set writes for Image Array
+    */
+    void set_descriptor_write(std::vector<Image>& images,
+                              ImageLayout         layout,
+                              DescriptorSet*      descriptor,
+                              uint32_t            binding,
+                              UniformDataType     type = UNIFORM_COMBINED_IMAGE_SAMPLER);
     /*
     Set writes for Acceleration Structures
     */

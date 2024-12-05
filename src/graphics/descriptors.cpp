@@ -61,22 +61,44 @@ void DescriptorPool::set_descriptor_write(Buffer*         buffer,
 
     vkUpdateDescriptorSets(device, 1, &writeSetting, 0, nullptr);
 }
-void DescriptorPool::set_descriptor_write(Image*         image,
-                                          ImageLayout    layout,
-                                          DescriptorSet* descriptor,
-                                          uint32_t       binding) {
+void DescriptorPool::set_descriptor_write(Image*          image,
+                                          ImageLayout     layout,
+                                          DescriptorSet*  descriptor,
+                                          uint32_t        binding,
+                                          UniformDataType type) {
 
     VkDescriptorImageInfo imageBufferInfo;
     imageBufferInfo.sampler     = image->sampler;
     imageBufferInfo.imageView   = image->view;
     imageBufferInfo.imageLayout = Translator::get(layout);
 
-    VkWriteDescriptorSet texture1 = Init::write_descriptor_image(
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, descriptor->handle, &imageBufferInfo, binding);
+    VkWriteDescriptorSet texture1 =
+        Init::write_descriptor_image(Translator::get(type), descriptor->handle, &imageBufferInfo, 1, binding);
 
     descriptor->bindings += 1;
 
     vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
+}
+void DescriptorPool::set_descriptor_write(std::vector<Image>& images,
+                                          ImageLayout         layout,
+                                          DescriptorSet*      descriptor,
+                                          uint32_t            binding,
+                                          UniformDataType     type) {
+
+    std::vector<VkDescriptorImageInfo> descriptorImageInfos(images.size());
+    for (size_t i = 0; i < images.size(); i++)
+    {
+        descriptorImageInfos[i].sampler     = images[i].sampler;
+        descriptorImageInfos[i].imageView   = images[i].view;
+        descriptorImageInfos[i].imageLayout = Translator::get(layout);
+    }
+
+    VkWriteDescriptorSet imageArray = Init::write_descriptor_image(
+        Translator::get(type), descriptor->handle, descriptorImageInfos.data(), images.size(), binding);
+
+    descriptor->bindings += 1;
+
+    vkUpdateDescriptorSets(device, 1, &imageArray, 0, nullptr);
 }
 void DescriptorPool::set_descriptor_write(TLAS* accel, DescriptorSet* descriptor, uint32_t binding) {
 

@@ -10,14 +10,15 @@ void Image::create_view(ImageConfig config) {
                                                                    Translator::get(config.viewType),
                                                                    Translator::get(config.aspectFlags),
                                                                    mipLevels,
-                                                                   layers);
+                                                                   layers,
+                                                                   baseMipLevel);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 }
 void Image::create_sampler(SamplerConfig config) {
     VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(Translator::get(config.filters),
                                                                 VK_SAMPLER_MIPMAP_MODE_LINEAR,
                                                                 config.minLod,
-                                                                config.maxLod <= mipLevels ? config.maxLod : mipLevels,
+                                                                config.maxLod <= mipLevels ? config.maxLod : mipLevels+baseMipLevel,
                                                                 config.anysotropicFilter,
                                                                 config.maxAnysotropy,
                                                                 Translator::get(config.samplerAddressMode));
@@ -239,5 +240,22 @@ void Image::cleanup(bool destroySampler) {
     }
 }
 
+Image Image::clone() const {
+    Image img         = {};
+    img.handle        = handle;
+    img.device        = device;
+    img.memory        = memory;
+    img.allocation    = allocation;
+    img.view          = view;
+    img.sampler       = sampler;
+    img.GUIReadHandle = GUIReadHandle;
+
+    img.extent       = extent;
+    img.layers       = layers;
+    img.mipLevels    = mipLevels;
+    img.baseMipLevel = baseMipLevel;
+
+    return img;
+}
 } // namespace Graphics
 VULKAN_ENGINE_NAMESPACE_END

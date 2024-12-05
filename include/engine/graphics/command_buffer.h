@@ -12,11 +12,11 @@
 #include <engine/common.h>
 #include <engine/graphics/buffer.h>
 #include <engine/graphics/framebuffer.h>
+#include <engine/graphics/renderpass.h>
 #include <engine/graphics/semaphore.h>
 #include <engine/graphics/shaderpass.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/vao.h>
-#include <engine/graphics/renderpass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -34,14 +34,15 @@ struct CommandBuffer {
     void begin(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     void end();
     void reset();
-    void submit(Fence fence, std::vector<Semaphore> waitSemaphores = {}, std::vector<Semaphore> signalSemaphores = {});
+    void
+    submit(Fence fence = {}, std::vector<Semaphore> waitSemaphores = {}, std::vector<Semaphore> signalSemaphores = {});
     void cleanup();
 
     /****************************************** */
     /* COMMANDS */
     /****************************************** */
 
-    void begin_renderpass(RenderPass& renderpass,
+    void begin_renderpass(RenderPass&       renderpass,
                           Framebuffer&      fbo,
                           VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
     void end_renderpass();
@@ -65,6 +66,15 @@ struct CommandBuffer {
     void set_depth_bias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor);
 
     void pipeline_barrier(Image         img,
+                          ImageLayout   oldLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                          ImageLayout   newLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          AccessFlags   srcMask   = ACCESS_COLOR_ATTACHMENT_WRITE,
+                          AccessFlags   dstMask   = ACCESS_SHADER_READ,
+                          PipelineStage srcStage  = STAGE_COLOR_ATTACHMENT_OUTPUT,
+                          PipelineStage dstStage  = STAGE_FRAGMENT_SHADER);
+    void pipeline_barrier(Image         img,
+                          uint32_t      baseMipLevel,
+                          uint32_t      mipLevels,
                           ImageLayout   oldLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                           ImageLayout   newLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                           AccessFlags   srcMask   = ACCESS_COLOR_ATTACHMENT_WRITE,

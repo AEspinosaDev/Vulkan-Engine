@@ -155,9 +155,11 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage                   = memoryUsage;
 
-    img.mipLevels =
-        useMipmaps ? static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1 : 1;
-    img.layers = config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
+    uint32_t maxMip = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
+    img.mipLevels   = useMipmaps ? config.mipLevels <= maxMip ? config.mipLevels : maxMip : 1;
+
+    img.baseMipLevel = config.baseMipLevel;
+    img.layers       = config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
 
     VkImageType imageType = VK_IMAGE_TYPE_2D;
     if (config.viewType == TextureTypeFlagBits::TEXTURE_3D)
@@ -263,8 +265,8 @@ DescriptorPool Device::create_descriptor_pool(uint32_t                       max
     return pool;
 }
 RenderPass Device::create_render_pass(Extent2D                        extent,
-                                            std::vector<Attachment>&        attachments,
-                                            std::vector<SubPassDependency>& dependencies) {
+                                      std::vector<Attachment>&        attachments,
+                                      std::vector<SubPassDependency>& dependencies) {
     RenderPass rp = {};
     // ATTACHMENT SETUP ----------------------------------
     rp.device = m_handle;
@@ -351,8 +353,7 @@ RenderPass Device::create_render_pass(Extent2D                        extent,
     rp.dependencies = dependencies;
     return rp;
 } // namespace Graphics
-Framebuffer
-Device::create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
+Framebuffer Device::create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
     Framebuffer fbo = {};
     fbo.device      = m_handle;
     fbo.layers      = layers;
@@ -380,6 +381,23 @@ Device::create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& atta
     return fbo;
 }
 
+Framebuffer Device::create_framebuffer(RenderPass& renderpass, Image& img) {
+    Framebuffer fbo = {};
+    fbo.device      = m_handle;
+    fbo.layers      = img.layers;
+
+    VkFramebufferCreateInfo fbInfo =
+        Init::framebuffer_create_info(renderpass.handle, {img.extent.width, img.extent.height});
+    fbInfo.pAttachments    = &img.view;
+    fbInfo.attachmentCount = 1;
+    fbInfo.layers          = img.layers;
+
+    if (vkCreateFramebuffer(m_handle, &fbInfo, nullptr, &fbo.handle) != VK_SUCCESS)
+    {
+        throw VKFW_Exception("failed to create framebuffer!");
+    }
+    return fbo;
+}
 Semaphore Device::create_semaphore() {
     Semaphore semaphore                       = {};
     semaphore.device                          = m_handle;
@@ -395,13 +413,15 @@ Fence Device::create_fence() {
     return fence;
 }
 Frame Device::create_frame(uint16_t id) {
-    Frame frame            = {};
-    frame.index            = id;
-    frame.commandPool      = create_command_pool(QueueType::GRAPHIC_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
-    frame.commandBuffer    = create_command_buffer(frame.commandPool);
-    frame.renderFence      = create_fence();
-    frame.renderSemaphore  = create_semaphore();
-    frame.presentSemaphore = create_semaphore();
+    Frame frame              = {};
+    frame.index              = id;
+    frame.commandPool        = create_command_pool(QueueType::GRAPHIC_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
+    frame.commandBuffer      = create_command_buffer(frame.commandPool);
+    frame.computeCommandPool = create_command_pool(QueueType::COMPUTE_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
+    frame.computeCommandBuffer = create_command_buffer(frame.computeCommandPool);
+    frame.renderFence          = create_fence();
+    frame.renderSemaphore      = create_semaphore();
+    frame.presentSemaphore     = create_semaphore();
 
     return frame;
 }
@@ -828,10 +848,10 @@ void Device::wait() {
     VK_CHECK(vkDeviceWaitIdle(m_handle));
 }
 
-void Device::init_imgui(void*            windowHandle,
-                        WindowingSystem  windowingSystem,
-                        RenderPass renderPass,
-                        uint16_t         samples) {
+void Device::wait_queue(QueueType queueType) {
+    VK_CHECK(vkQueueWaitIdle(m_queues[queueType]));
+}
+void Device::init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples) {
 
     m_guiPool = create_descriptor_pool(1000,
                                        1000,

@@ -106,7 +106,7 @@ void CommandBuffer::submit(Fence                  fence,
         submitInfo.pSignalSemaphores    = signalSemaphoreHandles.data();
     }
 
-    if (vkQueueSubmit(queue, 1, &submitInfo, fence.handle) != VK_SUCCESS)
+    if (vkQueueSubmit(queue, 1, &submitInfo, fence.handle ? fence.handle : VK_NULL_HANDLE) != VK_SUCCESS)
     {
         throw VKFW_Exception("Failed to submit command buffer!");
     }
@@ -230,8 +230,34 @@ void Graphics::CommandBuffer::pipeline_barrier(Image         img,
     barrier.dstAccessMask                   = Translator::get(dstMask);
     barrier.image                           = img.handle;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.baseMipLevel   = img.baseMipLevel;
     barrier.subresourceRange.levelCount     = img.mipLevels;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = img.layers;
+
+    vkCmdPipelineBarrier(
+        handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+void Graphics::CommandBuffer::pipeline_barrier(Image         img,
+                                               uint32_t      baseMipLevel,
+                                               uint32_t      mipLevels,
+                                               ImageLayout   oldLayout,
+                                               ImageLayout   newLayout,
+                                               AccessFlags   srcMask,
+                                               AccessFlags   dstMask,
+                                               PipelineStage srcStage,
+                                               PipelineStage dstStage) {
+
+    VkImageMemoryBarrier barrier            = {};
+    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout                       = Translator::get(oldLayout);
+    barrier.newLayout                       = Translator::get(newLayout);
+    barrier.srcAccessMask                   = Translator::get(srcMask);
+    barrier.dstAccessMask                   = Translator::get(dstMask);
+    barrier.image                           = img.handle;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel   = baseMipLevel;
+    barrier.subresourceRange.levelCount     = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = img.layers;
 
