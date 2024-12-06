@@ -609,6 +609,11 @@ void ObjectExplorerWidget::render() {
                 {
                     mat->set_emissive_color(emission);
                 };
+                float emissionIntensity = mat->get_emission_intensity();
+                if (ImGui::DragFloat("Emission Intensity", &emissionIntensity, 0.5f, 0.0f, 50.0f))
+                {
+                    mat->set_emission_intensity(emissionIntensity);
+                }
                 if (mat->get_emissive_texture())
                 {
                     float emissionW = mat->get_emissive_weight();

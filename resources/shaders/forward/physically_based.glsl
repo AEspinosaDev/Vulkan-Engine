@@ -44,6 +44,7 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     bool    hasEmissiveTexture;
     vec3    emissiveColor;
     float   emissiveWeight;
+    float   emissionIntensity;
 } material;
 
 void main() {
@@ -131,6 +132,7 @@ layout(set = 1, binding = 1)    uniform MaterialUniforms {
     bool    hasEmissiveTexture;
     vec3    emissiveColor;
     float   emissiveWeight;
+    float   emissionIntensity;
 } material;
 layout(set = 2, binding = 0) uniform sampler2D albedoTex;
 layout(set = 2, binding = 1) uniform sampler2D normalTex;
@@ -174,6 +176,7 @@ void setupBRDFProperties(){
     brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
 
     brdf.emission =  material.hasEmissiveTexture ? mix(material.emissiveColor, texture(emissiveTex, v_uv).rgb, material.emissiveWeight) : material.emissiveColor;
+    brdf.emission *= material.emissionIntensity;
 }
 
 
@@ -236,9 +239,10 @@ void main() {
     }else{
         ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
     }
+    //Emission ___________________________________________________________________
+    color += brdf.emission;
     //Ambient occlusion ___________________________________________________________________
-    color+=ambient * brdf.ao;
-
+    color += ambient * brdf.ao;
     //Fog ___________________________________________________________________
     if(int(object.otherParams.x) == 1 && scene.enableFog) {
         float f = computeFog(gl_FragCoord.z);

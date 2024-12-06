@@ -80,7 +80,8 @@ layout(location = 0) out vec4 outPos;
 layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outAlbedo;
 layout(location = 3) out vec4 outMaterial;
-layout(location = 4) out vec4 outTemporal;
+layout(location = 4) out vec4 outEmission;
+// layout(location = 5) out vec4 outTemporal;
 
 #define EPSILON 0.1
 
@@ -91,6 +92,7 @@ vec3    g_albedo    = vec3(0.0);
 float   g_opacity   = 1.0;
 vec3    g_normal    = vec3(0.0);
 vec4    g_material  = vec4(0.0);
+vec3    g_emisison  = vec3(0.0);
 
 void setupSurfaceProperties(){
 
@@ -121,7 +123,12 @@ void setupSurfaceProperties(){
             g_material.g = material.slot5.z== 1 ? mix(material.slot3.y, texture(materialText2, v_uv).r, material.slot3.z) : material.slot3.y; //Metalness
             g_material.b = material.slot5.w== 1 ? mix(material.slot4.y, texture(materialText3, v_uv).r, material.slot4.z) : material.slot4.y; //AO
         }
+
+        g_emisison = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(materialText4, v_uv).rgb, material.slot7.w) : material.slot7.rgb;
+        g_emisison *= material.slot8.x;
+
         g_material.w = PHYSICAL_MATERIAL;
+
     }
     if(material.slot8.w == UNLIT_MATERIAL){
         g_albedo = int(material.slot2.w) == 1 ? texture(albedoTex, v_uv).rgb : material.slot1.rgb;
@@ -152,6 +159,7 @@ void main() {
     outNormal   = vec4( g_normal , 1.0f );
     outAlbedo   = vec4(g_albedo,g_opacity);
     outMaterial = g_material; //w material ID
-    outTemporal = vec4(0.0); //TBD
+    outEmission = vec4(g_emisison,0.0); 
+    // outTemporal = vec4(0.0); //TBD
 
 }

@@ -26,6 +26,8 @@ VkFormat get(ColorFormatType colorFormatType) {
         return VK_FORMAT_R16G16B16A16_SFLOAT;
     case ColorFormatType::SRGBA_32F:
         return VK_FORMAT_R32G32B32A32_SFLOAT;
+    case ColorFormatType::SRGB_32F:
+        return VK_FORMAT_R32G32B32_SFLOAT;
     case ColorFormatType::RGBA_8U:
         return VK_FORMAT_R8G8B8A8_UNORM;
     case ColorFormatType::DEPTH_16F:

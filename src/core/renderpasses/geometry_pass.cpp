@@ -30,18 +30,25 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Material
-    attachments[3] = Graphics::Attachment(m_colorFormat,
+    attachments[3] = Graphics::Attachment(RGBA_8U,
+                                          1,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Emissive
+    attachments[4] = Graphics::Attachment(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Temporal
-    attachments[4] = Graphics::Attachment(m_colorFormat,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // attachments[5] = Graphics::Attachment(m_colorFormat,
+    //                                       1,
+    //                                       LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    //                                       LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //                                       IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+
     // Depth
     attachments[5] = Graphics::Attachment(m_depthFormat,
                                           1,
@@ -54,16 +61,14 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
     // Depdencies
     dependencies.resize(2);
 
-    dependencies[0] = Graphics::SubPassDependency(
-        STAGE_BOTTOM_OF_PIPE, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[0] =
+        Graphics::SubPassDependency(STAGE_BOTTOM_OF_PIPE, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[0].srcAccessMask = ACCESS_MEMORY_READ;
     dependencies[1] =
         Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_BOTTOM_OF_PIPE, ACCESS_MEMORY_READ);
     dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
     dependencies[1].srcSubpass    = 0;
     dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
-
-  
 }
 void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 

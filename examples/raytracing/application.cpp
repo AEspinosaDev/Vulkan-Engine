@@ -72,6 +72,7 @@ void Application::setup() {
     light->set_shadow_fov(115.0f);
     light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
     light->set_area(0.5f);
+    light->set_shadow_ray_samples(8);
     light->add_child(lightDummy);
     light->set_name("Light");
 
@@ -139,6 +140,31 @@ void Application::setup() {
     stoneMat->set_roughness(0.5f);
     stoneMat->set_metalness(0.0f);
     m_scene->add(stoneMesh);
+
+    Mesh* droidMesh = new Mesh();
+    Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid2.obj", false);
+    auto     droidMat   = new PhysicallyBasedMaterial();
+    Texture* droidText0 = new Texture();
+    Tools::Loaders::load_texture(droidText0, TEXTURE_PATH + "DROID_Body_BaseColor.jpg");
+    droidMat->set_albedo_texture(droidText0);
+    Texture* droidText1 = new Texture();
+    Tools::Loaders::load_texture(droidText1, TEXTURE_PATH + "DROID_Body_Emissive.jpg");
+    droidMat->set_emissive_texture(droidText1);
+    Texture* droidText2 = new Texture();
+    Tools::Loaders::load_texture(droidText2, TEXTURE_PATH + "DROID_Body_Normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
+    droidMat->set_normal_texture(droidText2);
+    droidMesh->push_material(droidMat);
+    auto     droidMat1   = new PhysicallyBasedMaterial();
+    Texture* droidText10 = new Texture();
+    Tools::Loaders::load_texture(droidText10, TEXTURE_PATH + "DROID_Misc_Emissive.jpg");
+    droidMat1->set_emissive_texture(droidText0);
+    droidMesh->push_material(droidMat1);
+    // droidMesh->set_material_ID(0, 1);
+    droidMesh->set_name("Droid");
+    droidMesh->set_position({-0.7f, -2.3f, -1.6f});
+    droidMesh->set_rotation({0.0, -136.0f, 0.0f});
+    droidMesh->set_scale(.7f);
+    m_scene->add(droidMesh);
 
     m_scene->add(plane);
 

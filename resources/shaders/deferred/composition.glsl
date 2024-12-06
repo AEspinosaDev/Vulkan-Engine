@@ -53,7 +53,8 @@ layout(set = 1, binding = 0) uniform sampler2D positionBuffer;
 layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
 layout(set = 1, binding = 2) uniform sampler2D albedoBuffer;
 layout(set = 1, binding = 3) uniform sampler2D materialBuffer;
-layout(set = 1, binding = 4) uniform sampler2D tempBuffer;
+layout(set = 1, binding = 4) uniform sampler2D emissionBuffer;
+// layout(set = 1, binding = 5) uniform sampler2D tempBuffer;
 
 //SURFACE PROPERTIES
 vec3    g_pos; 
@@ -62,6 +63,7 @@ vec3    g_normal;
 vec3    g_albedo; 
 float   g_opacity;
 vec4    g_material; 
+vec3    g_emission; 
 vec4    g_temp; 
 
 void main()
@@ -70,10 +72,12 @@ void main()
     g_pos       = texture(positionBuffer,v_uv).rgb;
     g_depth     = texture(positionBuffer,v_uv).w;
     g_normal    = normalize(texture(normalBuffer,v_uv).rgb);
-    g_albedo    =  texture(albedoBuffer,v_uv).rgb;
-    g_opacity   =  texture(albedoBuffer,v_uv).w;
+    g_albedo    = texture(albedoBuffer,v_uv).rgb;
+    g_opacity   = texture(albedoBuffer,v_uv).w;
     g_material  = texture(materialBuffer,v_uv);
-    g_temp      = texture(tempBuffer,v_uv);
+    g_emission  = texture(emissionBuffer,v_uv).rgb;
+    // g_temp      = texture(tempBuffer,v_uv);
+    g_temp      = vec4(0.0);
 
     vec3 color = vec3(0.0);
     //////////////////////////////////////
@@ -100,6 +104,7 @@ void main()
             // brdf.emission;
             brdf.F0 = vec3(0.04);
             brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
+            brdf.emission = g_emission;
 
             for(int i = 0; i < scene.numLights; i++) {
                     //If inside liught area influence
@@ -131,6 +136,8 @@ void main()
                     direct += lighting;
                     }
             }
+            //Emission Component ________________________
+            direct += brdf.emission;
             //Ambient Component ________________________
             if(scene.useIBL){
                 ambient = computeAmbient(

@@ -20,7 +20,6 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
 
     m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
-    
 }
 
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
@@ -68,7 +67,7 @@ void DeferredRenderer::create_renderpasses() {
     m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,
                                                           m_window->get_extent(),
                                                           totalImagesInFlight,
-                                                          SRGBA_32F,
+                                                          RGBA_8U,
                                                           Core::ResourceManager::VIGNETTE,
                                                           ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
                                                           "TONEMAPPING",

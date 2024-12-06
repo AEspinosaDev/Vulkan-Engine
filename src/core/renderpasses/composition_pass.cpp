@@ -23,7 +23,7 @@ void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&      
 
     attachments[0].isPresentImage = m_isDefault ? true : false;
 
-    if (!m_isDefault) //Bright color buffer. m_colorFormat should be in floating point.
+    if (!m_isDefault) // Bright color buffer. m_colorFormat should be in floating point.
         attachments[1] = Graphics::Attachment(m_colorFormat,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -72,8 +72,9 @@ void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding normalBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
     LayoutBinding albedoBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
     LayoutBinding materialBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
-    LayoutBinding tempBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
-    m_descriptorPool.set_layout(1, {positionBinding, normalBinding, albedoBinding, materialBinding, tempBinding});
+    LayoutBinding emissionBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
+    // LayoutBinding tempBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
+    m_descriptorPool.set_layout(1, {positionBinding, normalBinding, albedoBinding, materialBinding, emissionBinding});
 
     for (size_t i = 0; i < frames.size(); i++)
     {
@@ -165,6 +166,8 @@ void CompositionPass::connect_to_previous_images(std::vector<Graphics::Image> im
             &images[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
         m_descriptorPool.set_descriptor_write(
             &images[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
+        // m_descriptorPool.set_descriptor_write(
+        //     &images[6], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 5);  //Temoporal
     }
 }
 

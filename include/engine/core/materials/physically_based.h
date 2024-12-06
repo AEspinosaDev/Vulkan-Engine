@@ -35,8 +35,9 @@ class PhysicallyBasedMaterial : public IMaterial
     float m_occlusion       = 1.0f;
     float m_occlusionWeight = 1.0f; // Weight between parameter and occlusion texture
 
-    Vec3  m_emissionColor = {0.0f, 0.0f, 0.0f};
-    float m_emisionWeight = 1.0f; // Weight between parameter and emi texture
+    Vec3  m_emissionColor     = {0.0f, 0.0f, 0.0f};
+    float m_emisionWeight     = 1.0f; // Weight between parameter and emi texture
+    float m_emissionIntensity = 1.0f;
 
     // Query
     bool m_hasAlbedoTexture    = false;
@@ -251,6 +252,12 @@ class PhysicallyBasedMaterial : public IMaterial
     };
     inline void set_emissive_weight(float w) {
         m_emisionWeight = w;
+    };
+    inline float get_emission_intensity() const {
+        return m_emissionIntensity;
+    };
+    inline void set_emission_intensity(float i) {
+        m_emissionIntensity = i;
     };
     inline Vec3 get_emissive_color() const {
         return m_emissionColor;

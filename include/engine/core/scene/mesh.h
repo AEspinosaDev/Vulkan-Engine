@@ -195,6 +195,13 @@ class Mesh : public Object3D
         m_fileRoute = r;
     }
 
+    inline size_t get_material_ID(size_t geometrySlot) const {
+        return m_geometry[geometrySlot]->get_material_ID();
+    }
+    inline void set_material_ID(size_t geometrySlot, size_t materialSlot) {
+        m_geometry[geometrySlot]->set_material_ID(materialSlot);
+    }
+
     Mesh* clone() const;
 };
 } // namespace Core

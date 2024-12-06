@@ -48,7 +48,7 @@ void ForwardRenderer::create_renderpasses() {
     m_passes[FORWARD_PASS] = new Core::ForwardPass(&m_device,
                                                    m_window->get_extent(),
                                                    totalImagesInFlight,
-                                                   m_settings.colorFormat,
+                                                   RGBA_8U,
                                                    m_settings.depthFormat,
                                                    m_settings.samplesMSAA,
                                                    m_settings.softwareAA ? false : true);
