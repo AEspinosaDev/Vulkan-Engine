@@ -28,11 +28,11 @@ void Application::init(Systems::RendererSettings settings) {
 void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.samplesMSAA      = MSAASamples::x8;
+    settings.samplesMSAA      = MSAASamples::x1;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    settings.softwareAA       = false;
+    settings.softwareAA       = true;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
