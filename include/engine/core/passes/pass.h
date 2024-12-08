@@ -46,7 +46,7 @@ class BasePass
     // In case it is a graphical pass ... which is the most usual
     Graphics::RenderPass               m_renderpass = {};
     std::vector<Graphics::Framebuffer> m_framebuffers;
-    uint32_t                           m_framebufferImageDepth; // The depth of the framebuffer image layers.
+    uint32_t                           m_framebufferImageDepth; // In case if multilayered rendering.
 
     std::string m_name;
 

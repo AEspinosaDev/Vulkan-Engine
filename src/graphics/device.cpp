@@ -279,7 +279,7 @@ RenderPass Device::create_render_pass(Extent2D                        extent,
     bool                               hasDepthAttachment = false;
     VkAttachmentReference              depthAttachmentRef;
     bool                               hasResolveAttachment = false;
-    VkAttachmentReference              resolveAttachemtRef;
+    std::vector<VkAttachmentReference> resolveAttachemtRefs;
 
     for (size_t i = 0; i < attachmentsInfo.size(); i++)
     {
@@ -304,7 +304,8 @@ RenderPass Device::create_render_pass(Extent2D                        extent,
             break;
         case AttachmentType::RESOLVE_ATTACHMENT:
             hasResolveAttachment = true;
-            resolveAttachemtRef  = Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout));
+            resolveAttachemtRefs.push_back(
+                Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout)));
             break;
         }
     }
@@ -316,7 +317,7 @@ RenderPass Device::create_render_pass(Extent2D                        extent,
     if (hasDepthAttachment)
         subpass.pDepthStencilAttachment = &depthAttachmentRef;
     if (hasResolveAttachment)
-        subpass.pResolveAttachments = &resolveAttachemtRef;
+        subpass.pResolveAttachments = resolveAttachemtRefs.data();
 
     // SUBPASS DEPENDENCIES SETUP ----------------------------------
 

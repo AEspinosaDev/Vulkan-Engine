@@ -217,7 +217,7 @@ void BaseRenderer::init_gui() {
         m_device.init_imgui(windowHandle,
                             m_window->get_windowing_system(),
                             defaultPass->get_handle(),
-                            static_cast<uint16_t>(m_settings.samplesMSAA));
+                            defaultPass->get_attachments()[0].imageConfig.samples);
     }
 }
 void BaseRenderer::init_resources() {

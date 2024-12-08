@@ -10,7 +10,9 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
     uint16_t samples      = static_cast<uint16_t>(m_aa);
     bool     multisampled = samples > 1;
 
-    Graphics::Attachment colorAttachment =
+    attachments.resize(multisampled ? 4 : 2);
+
+    attachments[0] =
         Graphics::Attachment(m_colorFormat,
                              samples,
                              m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
@@ -22,23 +24,47 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
                              ASPECT_COLOR,
                              TEXTURE_2D,
                              FILTER_LINEAR,
-                             ADDRESS_MODE_CLAMP_TO_BORDER);
-    colorAttachment.isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
-    attachments.push_back(colorAttachment);
+                             ADDRESS_MODE_CLAMP_TO_EDGE);
+
+    attachments[0].isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
+
+    // Bright color buffer. m_colorFormat should be in floating point.
+    attachments[1] = Graphics::Attachment(m_colorFormat,
+                                          samples,
+                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                          COLOR_ATTACHMENT,
+                                          ASPECT_COLOR,
+                                          TEXTURE_2D,
+                                          FILTER_LINEAR,
+                                          ADDRESS_MODE_CLAMP_TO_EDGE);
 
     Graphics::Attachment resolveAttachment;
     if (multisampled)
     {
-        resolveAttachment                = Graphics::Attachment(m_colorFormat,
-                                                 1,
-                                                 LAYOUT_PRESENT,
-                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                 IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-                                                 RESOLVE_ATTACHMENT,
-                                                 ASPECT_COLOR,
-                                                 TEXTURE_2D);
-        resolveAttachment.isPresentImage = multisampled ? true : false;
-        attachments.push_back(resolveAttachment);
+        attachments[2] =
+            Graphics::Attachment(m_colorFormat,
+                                 1,
+                                 m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
+                                              : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
+                                 RESOLVE_ATTACHMENT,
+                                 ASPECT_COLOR,
+                                 TEXTURE_2D);
+        attachments[2].isPresentImage = m_isDefault ? true : false;
+
+        attachments[3] = Graphics::Attachment(m_colorFormat,
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                              RESOLVE_ATTACHMENT,
+                                              ASPECT_COLOR,
+                                              TEXTURE_2D,
+                                              FILTER_LINEAR,
+                                              ADDRESS_MODE_CLAMP_TO_EDGE);
     }
 
     Graphics::Attachment depthAttachment = Graphics::Attachment(m_depthFormat,
@@ -59,8 +85,6 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
         STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[1] = Graphics::SubPassDependency(
         STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
-
-        
 }
 void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
@@ -159,7 +183,8 @@ void ForwardPass::setup_shader_passes() {
                                                                       VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
                                                                       VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
                                                                       VK_DYNAMIC_STATE_CULL_MODE};
-    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{Init::color_blend_attachment_state(true)};
+    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments{
+        Init::color_blend_attachment_state(true), Init::color_blend_attachment_state(true)};
 
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
@@ -216,6 +241,7 @@ void ForwardPass::setup_shader_passes() {
                                                      {TANGENT_ATTRIBUTE, true},
                                                      {COLOR_ATTRIBUTE, true}};
     hairStrandPass->graphicSettings.dynamicStates = dynamicStates;
+    hairStrandPass->graphicSettings.blendAttachments = blendAttachments;
     hairStrandPass->graphicSettings.samples       = samples;
     hairStrandPass->graphicSettings.sampleShading = false;
     hairStrandPass->graphicSettings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -233,11 +259,12 @@ void ForwardPass::setup_shader_passes() {
     hairStrandPass2->graphicSettings.dynamicStates = dynamicStates;
     hairStrandPass2->graphicSettings.samples       = samples;
     hairStrandPass2->graphicSettings.sampleShading = false;
+    hairStrandPass2->graphicSettings.blendAttachments = blendAttachments;
     hairStrandPass2->graphicSettings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     m_shaderPasses["hairstr2"]                     = hairStrandPass2;
 
-    GraphicShaderPass* skyboxPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
+    GraphicShaderPass* skyboxPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
     skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},

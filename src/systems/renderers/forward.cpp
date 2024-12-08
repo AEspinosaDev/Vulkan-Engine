@@ -39,7 +39,7 @@ void ForwardRenderer::create_renderpasses() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(3, nullptr);
+    m_passes.resize(5, nullptr);
     // Shadow Pass
     m_passes[SHADOW_PASS] = new Core::VarianceShadowPass(
         &m_device, {SHADOW_RES, SHADOW_RES}, totalImagesInFlight, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
@@ -48,11 +48,28 @@ void ForwardRenderer::create_renderpasses() {
     m_passes[FORWARD_PASS] = new Core::ForwardPass(&m_device,
                                                    m_window->get_extent(),
                                                    totalImagesInFlight,
-                                                   RGBA_8U,
+                                                   SRGBA_32F,
                                                    m_settings.depthFormat,
                                                    m_settings.samplesMSAA,
-                                                   m_settings.softwareAA ? false : true);
+                                                   false);
     m_passes[FORWARD_PASS]->set_image_dependace_table({{SHADOW_PASS, {0}}});
+
+    // Bloom Pass
+    m_passes[BLOOM_PASS] =
+        new Core::BloomPass(&m_device, m_window->get_extent(), totalImagesInFlight, Core::ResourceManager::VIGNETTE);
+    m_passes[BLOOM_PASS]->set_image_dependace_table({{FORWARD_PASS,
+                                                      {m_settings.samplesMSAA > MSAASamples::x1 ? (uint32_t)2 : 0,
+                                                       m_settings.samplesMSAA > MSAASamples::x1 ? (uint32_t)3 : 1}}});
+    // Tonemapping
+    m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,
+                                                          m_window->get_extent(),
+                                                          totalImagesInFlight,
+                                                          m_settings.colorFormat,
+                                                          Core::ResourceManager::VIGNETTE,
+                                                          ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
+                                                          "TONEMAPPING",
+                                                          m_settings.softwareAA ? false : true);
+    m_passes[TONEMAPPIN_PASS]->set_image_dependace_table({{BLOOM_PASS, {0}}});
 
     // FXAA Pass
     m_passes[FXAA_PASS] = new Core::PostProcessPass(&m_device,
@@ -63,7 +80,7 @@ void ForwardRenderer::create_renderpasses() {
                                                     ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
                                                     "FXAA",
                                                     m_settings.softwareAA);
-    m_passes[FXAA_PASS]->set_image_dependace_table({{FORWARD_PASS, {0}}});
+    m_passes[FXAA_PASS]->set_image_dependace_table({{TONEMAPPIN_PASS, {0}}});
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);
 }

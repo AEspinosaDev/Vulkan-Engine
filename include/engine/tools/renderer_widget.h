@@ -58,6 +58,26 @@ class DeferredRendererWidget : public Widget
         m_renderer = r;
     }
 };
+class ForwardRendererWidget : public Widget
+{
+
+  protected:
+    Systems::ForwardRenderer* m_renderer;
+    virtual void               render();
+
+  public:
+    ForwardRendererWidget(Systems::ForwardRenderer* r)
+        : Widget(ImVec2(0, 0), ImVec2(0, 0))
+        , m_renderer(r) {
+    }
+
+    inline Systems::ForwardRenderer* get_renderer() const {
+        return m_renderer;
+    }
+    inline void set_renderer(Systems::ForwardRenderer* r) {
+        m_renderer = r;
+    }
+};
 
 } // namespace Tools
 

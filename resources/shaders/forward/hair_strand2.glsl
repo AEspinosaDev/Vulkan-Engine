@@ -163,7 +163,7 @@ layout(set = 2, binding = 5) uniform sampler2D nGITex2;
 MarschnerLookupBSDF bsdf;
 
 layout(location = 0) out vec4 fragColor;
-
+layout(location = 1) out vec4 outBrightColor;
 
 vec3 computeAmbient(vec3 n) {
 
@@ -269,6 +269,12 @@ void main() {
 
 
     fragColor = vec4(color, 1.0);
-    // fragColor = vec4(reindhartTonemap(color), 1.0);
+     // check whether result is higher than some threshold, if so, output as bloom threshold color
+    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        outBrightColor = vec4(color, 1.0);
+    else
+        outBrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+    
 
 }

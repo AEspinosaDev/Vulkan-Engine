@@ -92,6 +92,7 @@ layout(location = 6) in vec3 v_modelPos;
 
 //Output
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outBrightColor;
 
 layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 fogColor;
@@ -214,7 +215,11 @@ void main() {
 
     outColor = vec4(color, 1.0);
 
-    float gamma = 2.2;
-    outColor.rgb = pow(outColor.rgb, vec3(1.0 / gamma));
+    // check whether result is higher than some threshold, if so, output as bloom threshold color
+    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        outBrightColor = vec4(color, 1.0);
+    else
+        outBrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 
 }

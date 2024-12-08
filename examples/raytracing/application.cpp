@@ -124,25 +124,25 @@ void Application::setup() {
     plane->set_scale(5.0f);
 
     Mesh* stoneMesh = new Mesh();
-    Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
+    Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "moisturizer.obj", false);
     auto     stoneMat      = new PhysicallyBasedMaterial();
     Texture* stonelanternT = new Texture();
-    Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
+    Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "moisturizer_color.png");
     stoneMat->set_albedo_texture(stonelanternT);
     Texture* stonelanternN = new Texture();
-    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "stone_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "moisturizer_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
     stoneMat->set_normal_texture(stonelanternN);
     stoneMesh->push_material(stoneMat);
     stoneMesh->set_name("Lantern");
     stoneMesh->set_position({2.0f, -2.3f, -2.3f});
     stoneMesh->set_rotation({0.0, 126.0f, 0.0f});
-    stoneMesh->set_scale(1.5);
+    // stoneMesh->set_scale(1.5);
     stoneMat->set_roughness(0.5f);
     stoneMat->set_metalness(0.0f);
     m_scene->add(stoneMesh);
 
     Mesh* droidMesh = new Mesh();
-    Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid2.obj", false);
+    Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid.obj", false);
     auto     droidMat   = new PhysicallyBasedMaterial();
     Texture* droidText0 = new Texture();
     Tools::Loaders::load_texture(droidText0, TEXTURE_PATH + "DROID_Body_BaseColor.jpg");

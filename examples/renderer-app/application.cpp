@@ -28,11 +28,11 @@ void Application::init(Systems::RendererSettings settings) {
 void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.samplesMSAA      = MSAASamples::x1;
+    settings.samplesMSAA      = MSAASamples::x8;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    settings.softwareAA       = true;
+    settings.softwareAA       = false;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;
@@ -155,10 +155,10 @@ void Application::setup() {
     m_scene->get_lights()[2]->set_shadow_target({1.1f, 0.0f, 9.5f});
     m_scene->get_lights()[2]->set_shadow_fov(110.0f);
     m_scene->get_lights()[2]->set_color({0.25, 0.13, 0});
-    m_scene->get_lights()[2]->set_intensity(0.6);
     PointLight* light2 = new PointLight();
     light2->set_area_of_effect(0.440);
     m_scene->add(light2);
+    m_scene->get_lights()[3]->set_intensity(0.075);
     m_scene->get_lights()[3]->set_position({2.5f, -1.6f, 9.4f});
     m_scene->get_lights()[3]->set_color({0.25, 0.13, 0});
     m_scene->get_lights()[3]->set_cast_shadows(false);
@@ -353,7 +353,7 @@ void Application::setup_gui() {
     m_interface.scene           = new Tools::SceneExplorerWidget(m_scene);
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
-    explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));
+    explorerPanel->add_child(new Tools::ForwardRendererWidget(static_cast<Systems::ForwardRenderer*>(m_renderer)));
     explorerPanel->add_child(new Tools::Separator());
     explorerPanel->add_child(new Tools::TextLine(" Application average"));
     explorerPanel->add_child(new Tools::Profiler());

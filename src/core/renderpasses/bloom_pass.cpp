@@ -49,12 +49,18 @@ void BloomPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 4, 1, 1, 1, 1);
 
-    LayoutBinding brightBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_COMPUTE, 0);
-    LayoutBinding sampleBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_COMPUTE, 1, MIPMAP_LEVELS);
-    LayoutBinding imageBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
-    LayoutBinding bloomBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding brightBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_COMPUTE, 0); // HDR input bright image
+    LayoutBinding imageBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1); // HDR input color image
 
-    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {brightBinding, sampleBinding, imageBinding, bloomBinding});
+    LayoutBinding bloomMipsImgBinding(
+        UNIFORM_STORAGE_IMAGE, SHADER_STAGE_COMPUTE, 2, MIPMAP_LEVELS); // Bloom image mipmaps
+    LayoutBinding bloomMipsSamplBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_COMPUTE, 3, MIPMAP_LEVELS);
+
+    LayoutBinding bloomBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4); // Resolved bloom image
+                                                                                          // binding
+
+    m_descriptorPool.set_layout(
+        GLOBAL_LAYOUT, {brightBinding, imageBinding, bloomMipsImgBinding, bloomMipsSamplBinding, bloomBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptorSet);
 }
@@ -218,7 +224,7 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
 
     m_device->wait_queue(QueueType::COMPUTE_QUEUE);
 
-    m_descriptorPool.set_descriptor_write(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 3);
+    m_descriptorPool.set_descriptor_write(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
 
 ////////////////////////////////////////////////////////////
 // ADD BLOOM
@@ -254,9 +260,10 @@ void BloomPass::connect_to_previous_images(std::vector<Image> images) {
     config.format       = m_colorFormat;
     m_bloomImage        = m_device->create_image(m_brightImage.extent, config, true);
     m_bloomImage.create_view(config);
-    SamplerConfig samplerConfig = {};
-    samplerConfig.minLod        = 0;
-    samplerConfig.maxLod        = 0;
+    SamplerConfig samplerConfig      = {};
+    samplerConfig.minLod             = 0;
+    samplerConfig.maxLod             = MIPMAP_LEVELS;
+    samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
     m_bloomImage.create_sampler(samplerConfig);
 
     m_bloomMipmaps.resize(MIPMAP_LEVELS);
@@ -270,9 +277,11 @@ void BloomPass::connect_to_previous_images(std::vector<Image> images) {
     }
 
     m_descriptorPool.set_descriptor_write(&m_brightImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+    m_descriptorPool.set_descriptor_write(&m_originalImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
+
     m_descriptorPool.set_descriptor_write(
-        m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 1, UNIFORM_STORAGE_IMAGE);
-    m_descriptorPool.set_descriptor_write(&m_originalImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 2);
+        m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
+    m_descriptorPool.set_descriptor_write(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
 }
 
 void BloomPass::update() {

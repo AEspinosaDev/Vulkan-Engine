@@ -17,8 +17,8 @@ void main() {
 
 layout(location = 0) in  vec2 v_uv;
 
-layout(set = 0, binding = 2) uniform sampler2D srcImage;    //F32
-layout(set = 0, binding = 3) uniform sampler2D bloomImage;  //F32
+layout(set = 0, binding = 1) uniform sampler2D srcImage;    //F32
+layout(set = 0, binding = 4) uniform sampler2D bloomImage;  //F32
 
 layout(location = 0) out vec4 outputImage;
 
