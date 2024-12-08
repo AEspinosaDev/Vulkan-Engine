@@ -65,14 +65,14 @@ struct CommandBuffer {
     void set_depth_bias_enable(bool op);
     void set_depth_bias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor);
 
-    void pipeline_barrier(Image         img,
+    void pipeline_barrier(Image&        img,
                           ImageLayout   oldLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                           ImageLayout   newLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                           AccessFlags   srcMask   = ACCESS_COLOR_ATTACHMENT_WRITE,
                           AccessFlags   dstMask   = ACCESS_SHADER_READ,
                           PipelineStage srcStage  = STAGE_COLOR_ATTACHMENT_OUTPUT,
                           PipelineStage dstStage  = STAGE_FRAGMENT_SHADER);
-    void pipeline_barrier(Image         img,
+    void pipeline_barrier(Image&        img,
                           uint32_t      baseMipLevel,
                           uint32_t      mipLevels,
                           ImageLayout   oldLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -81,6 +81,12 @@ struct CommandBuffer {
                           AccessFlags   dstMask   = ACCESS_SHADER_READ,
                           PipelineStage srcStage  = STAGE_COLOR_ATTACHMENT_OUTPUT,
                           PipelineStage dstStage  = STAGE_FRAGMENT_SHADER);
+
+    void clear_image(Image&      img,
+                     ImageLayout layout,
+                     ImageAspect aspect     = ASPECT_COLOR,
+                     Vec4        clearColor = Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    //   void blit_image();
 
     void push_constants(ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset = 0);
 

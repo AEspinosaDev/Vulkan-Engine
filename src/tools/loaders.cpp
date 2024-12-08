@@ -28,13 +28,12 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
         return;
     }
 
-    std::vector<Graphics::Vertex>                  vertices;
-    std::vector<uint32_t>                          indices;
-    std::unordered_map<Graphics::Vertex, uint32_t> uniqueVertices;
-
     size_t shape_id = 0;
     for (const tinyobj::shape_t& shape : shapes)
     {
+        std::vector<Graphics::Vertex>                  vertices;
+        std::vector<uint32_t>                          indices;
+        std::unordered_map<Graphics::Vertex, uint32_t> uniqueVertices;
         if (!shape.mesh.indices.empty())
         {
             // IS INDEXED
@@ -129,15 +128,15 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
             compute_tangents_gram_smidt(vertices, indices);
         }
 
-        if (overrideGeometry)
-        {
-            Core::Geometry* oldGeom = mesh->get_geometry(shape_id);
-            if (oldGeom)
-            {
-                oldGeom->fill(vertices, indices);
-                continue;
-            }
-        }
+        // if (overrideGeometry)
+        // {
+        //     Core::Geometry* oldGeom = mesh->get_geometry(shape_id);
+        //     if (oldGeom)
+        //     {
+        //         oldGeom->fill(vertices, indices);
+        //         continue;
+        //     }
+        // }
 
         Core::Geometry* g = new Core::Geometry();
         g->fill(vertices, indices);

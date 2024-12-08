@@ -234,6 +234,7 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
+                        if( i==2 ) continue;
                         Geometry*  g   = m->get_geometry(i);
                         IMaterial* mat = m->get_material(g->get_material_ID());
 

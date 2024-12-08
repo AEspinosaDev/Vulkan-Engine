@@ -19,7 +19,7 @@ void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&      
                                           ASPECT_COLOR,
                                           TEXTURE_2D,
                                           FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_BORDER);
+                                          ADDRESS_MODE_CLAMP_TO_EDGE);
 
     attachments[0].isPresentImage = m_isDefault ? true : false;
 
@@ -33,7 +33,7 @@ void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&      
                                               ASPECT_COLOR,
                                               TEXTURE_2D,
                                               FILTER_LINEAR,
-                                              ADDRESS_MODE_CLAMP_TO_BORDER);
+                                              ADDRESS_MODE_CLAMP_TO_EDGE);
 
     // Depdencies
     dependencies.resize(2);

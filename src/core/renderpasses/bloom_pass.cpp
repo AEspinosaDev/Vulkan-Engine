@@ -132,6 +132,8 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
                          STAGE_COMPUTE_SHADER,
                          STAGE_COMPUTE_SHADER);
 
+    cmd.clear_image(m_bloomImage, LAYOUT_GENERAL);
+
     ////////////////////////////////////////////////////////////
     // DOWNSAMPLE
     ////////////////////////////////////////////////////////////
@@ -177,18 +179,18 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
     ShaderPass* upSamplePass = m_shaderPasses["upsample"];
     cmd.bind_shaderpass(*upSamplePass);
 
-    for (int32_t i = MIPMAP_LEVELS - 2; i >= 0; i--)
+    for (int32_t i = MIPMAP_LEVELS - 1; i > 0; i--)
     {
 
-        Mipmap mipmap = {(uint32_t)i + 1, (uint32_t)i};
+        Mipmap mipmap = {(uint32_t)i, (uint32_t)i - 1};
 
         cmd.push_constants(*upSamplePass, SHADER_STAGE_COMPUTE, &mipmap, sizeof(mipmap));
 
         cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *upSamplePass, {}, BINDING_TYPE_COMPUTE);
 
         // Dispatch the compute shader
-        uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> i);
-        uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> i);
+        uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> (i - 1));
+        uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> (i - 1));
         cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
                               (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
                               1});
@@ -223,18 +225,18 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
 ////////////////////////////////////////////////////////////
 paintBloom:
 
+    ShaderPass* shaderPass = m_shaderPasses["bloom"];
+    Geometry*   g          = m_vignette->get_geometry();
+
     cmd = currentFrame.commandBuffer;
 
     cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
     cmd.set_viewport(m_renderpass.extent);
 
-    ShaderPass* shaderPass = m_shaderPasses["bloom"];
-
     cmd.bind_shaderpass(*shaderPass);
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_bloomStrength, sizeof(float));
     cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
-    Geometry* g = m_vignette->get_geometry();
     cmd.draw_geometry(*get_VAO(g));
 
     cmd.end_renderpass();
@@ -246,7 +248,7 @@ void BloomPass::connect_to_previous_images(std::vector<Image> images) {
     m_brightImage   = images[1];
 
     ImageConfig config  = {};
-    config.usageFlags   = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_STORAGE;
+    config.usageFlags   = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_STORAGE | IMAGE_USAGE_TRANSFER_DST;
     config.mipLevels    = MIPMAP_LEVELS;
     config.baseMipLevel = 0;
     config.format       = m_colorFormat;

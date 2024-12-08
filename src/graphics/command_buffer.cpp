@@ -214,7 +214,7 @@ void CommandBuffer::set_depth_bias(float depthBiasConstantFactor, float depthBia
 }
 } // namespace Graphics
 
-void Graphics::CommandBuffer::pipeline_barrier(Image         img,
+void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
                                                ImageLayout   oldLayout,
                                                ImageLayout   newLayout,
                                                AccessFlags   srcMask,
@@ -238,7 +238,7 @@ void Graphics::CommandBuffer::pipeline_barrier(Image         img,
     vkCmdPipelineBarrier(
         handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
-void Graphics::CommandBuffer::pipeline_barrier(Image         img,
+void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
                                                uint32_t      baseMipLevel,
                                                uint32_t      mipLevels,
                                                ImageLayout   oldLayout,
@@ -263,6 +263,23 @@ void Graphics::CommandBuffer::pipeline_barrier(Image         img,
 
     vkCmdPipelineBarrier(
         handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+void Graphics::CommandBuffer::clear_image(Image& img, ImageLayout layout, ImageAspect aspect, Vec4 clearColor) {
+
+    VkClearColorValue vclearColor = {};
+    vclearColor.float32[0]        = clearColor.r;
+    vclearColor.float32[1]        = clearColor.g;
+    vclearColor.float32[2]        = clearColor.b;
+    vclearColor.float32[3]        = clearColor.a;
+
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask              = Translator::get(aspect);
+    subresourceRange.baseMipLevel            = img.baseMipLevel;
+    subresourceRange.levelCount              = img.mipLevels;
+    subresourceRange.baseArrayLayer          = 0;
+    subresourceRange.layerCount              = img.layers;
+
+    vkCmdClearColorImage(handle, img.handle, Translator::get(layout), &vclearColor, 1, &subresourceRange);
 }
 void Graphics::CommandBuffer::push_constants(ShaderPass&      pass,
                                              ShaderStageFlags stage,

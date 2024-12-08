@@ -154,17 +154,20 @@ void Application::setup() {
     Tools::Loaders::load_texture(droidText2, TEXTURE_PATH + "DROID_Body_Normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
     droidMat->set_normal_texture(droidText2);
     droidMesh->push_material(droidMat);
-    auto     droidMat1   = new PhysicallyBasedMaterial();
-    Texture* droidText10 = new Texture();
-    Tools::Loaders::load_texture(droidText10, TEXTURE_PATH + "DROID_Misc_Emissive.jpg");
-    droidMat1->set_emissive_texture(droidText0);
-    droidMesh->push_material(droidMat1);
-    // droidMesh->set_material_ID(0, 1);
     droidMesh->set_name("Droid");
     droidMesh->set_position({-0.7f, -2.3f, -1.6f});
     droidMesh->set_rotation({0.0, -136.0f, 0.0f});
     droidMesh->set_scale(.7f);
+    Mesh* eyesMesh = new Mesh();
+    Tools::Loaders::load_3D_file(eyesMesh, MESH_PATH + "eyes.obj", false);
+    auto     droidMat1   = new PhysicallyBasedMaterial();
+    droidMat1->set_emissive_color(Vec3(1.0));
+    droidMat1->set_emission_intensity(10.0);
+    eyesMesh->push_material(droidMat1);
+    eyesMesh->set_name("Eyes");
+    droidMesh->add_child(eyesMesh);
     m_scene->add(droidMesh);
+
 
     m_scene->add(plane);
 
