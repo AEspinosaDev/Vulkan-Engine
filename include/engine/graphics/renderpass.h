@@ -46,7 +46,7 @@ struct Attachment {
                ImageAspect         aspect         = ASPECT_COLOR,
                TextureTypeFlagBits viewType       = TEXTURE_2D,
                FilterType          filter         = FILTER_LINEAR,
-               AddressMode         addressMode    = ADDRESS_MODE_REPEAT,
+               AddressMode         addressMode    = ADDRESS_MODE_CLAMP_TO_EDGE,
                ClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
         : finalLayout(final_Layout)
         , attachmentLayout(attach_layout)

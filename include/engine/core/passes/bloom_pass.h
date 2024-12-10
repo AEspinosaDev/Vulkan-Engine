@@ -43,9 +43,9 @@ class BloomPass : public BasePass
     float m_bloomStrength = 0.05f;
 
     // Resources
-    Graphics::Image m_originalImage;
-    Graphics::Image m_brightImage;
-    Graphics::Image              m_bloomImage;
+    Graphics::Image                    m_originalImage;
+    Graphics::Image                    m_brightImage;
+    Graphics::Image                    m_bloomImage;
     std::vector<Graphics::Image>       m_bloomMipmaps;
     std::vector<Graphics::Framebuffer> m_bloomFramebuffers;
 

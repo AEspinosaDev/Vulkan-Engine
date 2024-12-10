@@ -114,7 +114,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
-    terrainMat->set_normal_texture(floorNormalText);
+    // terrainMat->set_normal_texture(floorNormalText);
     terrainMat->set_roughness_texture(floorRoughText);
     terrainMat->set_tile({3.0f, 3.0f});
     plane->push_material(terrainMat);

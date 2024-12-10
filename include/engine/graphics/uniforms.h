@@ -19,6 +19,9 @@ struct CameraUniforms {
     Mat4  view;
     Mat4  proj;
     Mat4  viewProj;
+    Mat4  invView;
+    Mat4  invProj;
+    Mat4  invViewProj;
     Vec4  position;
     Vec2  screenExtent;
     float nearPlane;

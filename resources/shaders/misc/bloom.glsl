@@ -31,6 +31,5 @@ void main()
 {
     vec3 hdrColor = texture(srcImage, v_uv).rgb;
     vec3 bloomColor = texture(bloomImage, v_uv).rgb;
-    outputImage =  vec4(mix(hdrColor, bloomColor, settings.bloomStrenght),1.0); 
-    // outputImage =  vec4(hdrColor,1.0); 
+    outputImage =  vec4(mix(hdrColor, bloomColor, settings.bloomStrenght),1.0);  
 }

@@ -29,7 +29,6 @@ void main()
     vec3 result = texture(inputImage,v_uv).rgb;
     result = vec3(1.0) - exp(-result * 1.0);
     //  result = result / (result + vec3(1.0));
-    // Gamma Correction is applied outside 
 
     outputImage = vec4(result,1.0); //WIP
 }

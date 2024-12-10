@@ -74,9 +74,14 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     if (camera->is_dirty())
         camera->set_projection(window->get_extent().width, window->get_extent().height);
     Graphics::CameraUniforms camData;
-    camData.view         = camera->get_view();
-    camData.proj         = camera->get_projection();
-    camData.viewProj     = camera->get_projection() * camera->get_view();
+    camData.view     = camera->get_view();
+    camData.proj     = camera->get_projection();
+    camData.viewProj = camera->get_projection() * camera->get_view();
+    /*Inversed*/
+    camData.invView     = math::inverse(camData.view);
+    camData.invProj     = math::inverse(camData.proj);
+    camData.invViewProj = math::inverse(camData.viewProj);
+    /*Other intersting Camera Data*/
     camData.position     = Vec4(camera->get_position(), 0.0f);
     camData.screenExtent = {window->get_extent().width, window->get_extent().height};
     camData.nearPlane    = camera->get_near();

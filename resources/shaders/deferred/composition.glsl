@@ -8,13 +8,11 @@ layout(location = 2) in vec2 uv;
 
 //OUTPUT
 layout(location = 0) out vec2 v_uv;
-layout(location = 1) out mat4 v_camView; //For shadows
 
 void main() {
     gl_Position = vec4(pos, 1.0);
 
     v_uv = uv;
-    v_camView = camera.view;
 }
 
 #shader fragment
@@ -37,7 +35,6 @@ void main() {
 
 //INPUT
 layout(location = 0) in  vec2 v_uv;
-layout(location = 1) in mat4 v_camView; //For shadows
 
 //OUTPUT
 layout(location = 0) out vec4 outColor;
@@ -51,7 +48,7 @@ layout(set = 0,  binding =  6) uniform sampler2D                   blueNoiseMap;
 //G-BUFFER
 layout(set = 1, binding = 0) uniform sampler2D positionBuffer;
 layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
-layout(set = 1, binding = 2) uniform sampler2D albedoBuffer;
+layout(set = 1, binding = 2) uniform sampler2D colorBuffer;
 layout(set = 1, binding = 3) uniform sampler2D materialBuffer;
 layout(set = 1, binding = 4) uniform sampler2D emissionBuffer;
 // layout(set = 1, binding = 5) uniform sampler2D tempBuffer;
@@ -69,14 +66,18 @@ vec4    g_temp;
 void main()
 {
 
-    g_pos       = texture(positionBuffer,v_uv).rgb;
-    g_depth     = texture(positionBuffer,v_uv).w;
+    //////////////////////////////////////
+    // SETUP SURFACE
+    //////////////////////////////////////
+    vec4 positionData = texture(positionBuffer,v_uv);
+    g_pos       = positionData.rgb;
+    g_depth     = positionData.w;
     g_normal    = normalize(texture(normalBuffer,v_uv).rgb);
-    g_albedo    = texture(albedoBuffer,v_uv).rgb;
-    g_opacity   = texture(albedoBuffer,v_uv).w;
+    vec4 colorData = texture(colorBuffer,v_uv);
+    g_albedo    = colorData.rgb;
+    g_opacity   = colorData.w;
     g_material  = texture(materialBuffer,v_uv);
     g_emission  = texture(emissionBuffer,v_uv).rgb;
-    // g_temp      = texture(tempBuffer,v_uv);
     g_temp      = vec4(0.0);
 
     vec3 color = vec3(0.0);
@@ -87,8 +88,8 @@ void main()
 
         vec3 direct = vec3(0.0);
         vec3 ambient = vec3(0.0);
-        vec3 modelPos = (inverse(v_camView) * vec4(g_pos.xyz, 1.0)).xyz;
-        vec3 modelNormal = (inverse(v_camView) * vec4(g_normal.xyz, 0.0)).xyz;
+        vec3 modelPos = (camera.invView * vec4(g_pos.xyz, 1.0)).xyz;
+        vec3 modelNormal = (camera.invView  * vec4(g_normal.xyz, 0.0)).xyz;
         //////////////////////////////////////
         // PHYSICAL 
         //////////////////////////////////////
