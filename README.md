@@ -7,7 +7,8 @@ A Vulkan based 3D library that acts as a wrapper for the most verbose Vulkan par
 	
 ![Screenshot (76)](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/6240417a-d655-4bb5-a0d5-03406a71668a)
 ![Screenshot (85)](https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/c3f468cc-10e4-456f-86bc-eb4f0a6d0c05)
-![Screenshot (120)](https://github.com/user-attachments/assets/a900593f-6f6b-4089-95c0-7e37d5d18226)
+![Screenshot (124)](https://github.com/user-attachments/assets/3e1237a0-edbf-4c67-8deb-b3222d48d043)
+![image](https://github.com/user-attachments/assets/bed71066-f39c-4590-bc1b-b197848dd114)
 
 <p align="center">
   <img src="https://github.com/AEspinosaDev/Vulkan-Engine/assets/79087129/3d926089-8889-4e7f-8cab-109cf7ff17b3" alt="Screenshot (82)" width="33%" />
@@ -39,6 +40,7 @@ The main feautures of the library are:
 - Vulkan object and functionality abstraction.
 - IBL.
 - Physically Based Bloom.
+- Ray Marched SSR.
 - Simple to use user interface.
 - Easy to distribute source code.
 - Global Illumination with Voxel Cone Tracing (wip)
