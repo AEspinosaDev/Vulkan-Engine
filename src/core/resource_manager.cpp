@@ -81,6 +81,26 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     camData.invView     = math::inverse(camData.view);
     camData.invProj     = math::inverse(camData.proj);
     camData.invViewProj = math::inverse(camData.viewProj);
+    /*Windowed*/
+    const glm::mat4 W{
+        window->get_extent().width / 2.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        window->get_extent().height / 2.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        1.0f,
+        0.0f,
+        window->get_extent().width / 2.0f,
+        window->get_extent().height / 2.0f,
+        0.0f,
+        1.0f,
+    };
+    camData.unormProj = W * camData.proj;
     /*Other intersting Camera Data*/
     camData.position     = Vec4(camera->get_position(), 0.0f);
     camData.screenExtent = {window->get_extent().width, window->get_extent().height};

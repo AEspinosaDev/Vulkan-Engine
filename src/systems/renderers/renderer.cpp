@@ -28,13 +28,21 @@ void BaseRenderer::init() {
                   m_settings.screenSync);
     // Init resources
     init_resources();
-
+    // User defined renderpasses
     create_renderpasses();
+    // Init renderpasses
     for (Core::BasePass* pass : m_passes)
     {
         if (pass->is_active())
         {
             pass->setup(m_frames);
+        }
+    };
+    // Connect renderpasses
+    for (Core::BasePass* pass : m_passes)
+    {
+        if (pass->is_active())
+        {
             connect_renderpass(pass);
         }
     };

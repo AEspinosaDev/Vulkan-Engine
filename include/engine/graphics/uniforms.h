@@ -22,6 +22,7 @@ struct CameraUniforms {
     Mat4  invView;
     Mat4  invProj;
     Mat4  invViewProj;
+    Mat4  unormProj;
     Vec4  position;
     Vec2  screenExtent;
     float nearPlane;
@@ -49,7 +50,7 @@ struct SceneUniforms {
     int           useIBL;
     float         envRotation;
     float         envColorMultiplier;
-    float           time;
+    float         time;
 };
 
 struct ObjectUniforms {
@@ -68,8 +69,6 @@ struct MaterialUniforms {
     Vec4 dataSlot7;
     Vec4 dataSlot8;
 };
-
-
 
 } // namespace Graphics
 

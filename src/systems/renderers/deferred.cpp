@@ -65,11 +65,11 @@ void DeferredRenderer::create_renderpasses() {
     m_passes[BLOOM_PASS] =
         new Core::BloomPass(&m_device, m_window->get_extent(), totalImagesInFlight, Core::ResourceManager::VIGNETTE);
     m_passes[BLOOM_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0, 1}}});
-    // m_passes[BLOOM_PASS]->set_image_dependace_table({{SSR_PASS,
-    //                                                   {
-    //                                                       0,
-    //                                                   }},
-    //                                                  {COMPOSITION_PASS, {1}}});
+    m_passes[BLOOM_PASS]->set_image_dependace_table({{SSR_PASS,
+                                                      {
+                                                          0,
+                                                      }},
+                                                     {COMPOSITION_PASS, {1}}});
 
     // Tonemapping
     m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,

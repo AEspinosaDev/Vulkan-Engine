@@ -85,7 +85,8 @@ class Camera : public Object3D
     }
     inline void set_projection(int width, int height) {
         m_aspect = (float)width / (float)height;
-        m_proj   = math::perspective(math::radians(m_fov), m_aspect, m_near, m_far);
+        // m_proj   = math::perspective(math::radians(m_fov), m_aspect, m_near, m_far);
+        m_proj   = math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
     inline Mat4 get_projection() const {

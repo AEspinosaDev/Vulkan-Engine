@@ -104,6 +104,7 @@ void Application::setup() {
     m_scene->add(toriiMesh);
 
     Mesh* plane = new Mesh();
+    // Tools::Loaders::load_3D_file(plane, MESH_PATH + "torii.obj", false);
     plane->push_geometry(Geometry::create_quad());
     auto     terrainMat = new PhysicallyBasedMaterial();
     Texture* floorText  = new Texture();
@@ -133,7 +134,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "moisturizer_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
     stoneMat->set_normal_texture(stonelanternN);
     stoneMesh->push_material(stoneMat);
-    stoneMesh->set_name("Lantern");
+    stoneMesh->set_name("Tower");
     stoneMesh->set_position({2.0f, -2.3f, -2.3f});
     stoneMesh->set_rotation({0.0, 126.0f, 0.0f});
     // stoneMesh->set_scale(1.5);
@@ -160,7 +161,7 @@ void Application::setup() {
     droidMesh->set_scale(.7f);
     Mesh* eyesMesh = new Mesh();
     Tools::Loaders::load_3D_file(eyesMesh, MESH_PATH + "eyes.obj", false);
-    auto     droidMat1   = new PhysicallyBasedMaterial();
+    auto droidMat1 = new PhysicallyBasedMaterial();
     droidMat1->set_emissive_color(Vec3(1.0));
     droidMat1->set_emission_intensity(10.0);
     eyesMesh->push_material(droidMat1);
@@ -168,6 +169,35 @@ void Application::setup() {
     droidMesh->add_child(eyesMesh);
     m_scene->add(droidMesh);
 
+    Mesh* stormtrooper = new Mesh();
+    Tools::Loaders::load_3D_file(stormtrooper, MESH_PATH + "stormtrooper.obj", false);
+    auto     stormtrooperMat  = new PhysicallyBasedMaterial();
+    Texture* stormtrooperText = new Texture();
+    Tools::Loaders::load_texture(stormtrooperText, TEXTURE_PATH + "stormtrooper_color.png");
+    stormtrooperMat->set_albedo_texture(stormtrooperText);
+    Texture* stormtrooperText1 = new Texture();
+    Tools::Loaders::load_texture(
+        stormtrooperText1, TEXTURE_PATH + "stormtrooper_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    stormtrooperMat->set_normal_texture(stormtrooperText1);
+    Texture* stormtrooperText2 = new Texture();
+    Tools::Loaders::load_texture(stormtrooperText2, TEXTURE_PATH + "stormtrooper_mask.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    stormtrooperMat->set_mask_texture(stormtrooperText2, MaskType::UNREAL_ENGINE);
+    stormtrooper->push_material(stormtrooperMat);
+    stormtrooper->set_name("Trooper");
+    stormtrooper->set_position({-1.8f, -2.3f, 0.4f});
+    stormtrooper->set_rotation({0.0, -136.0f, 0.0f});
+    stormtrooper->set_scale(.7f);
+    // stormtrooper->push_material(new PhysicallyBasedMaterial(Vec4(1.0,0.0,0.0,1.0)));
+    // stormtrooper->set_material_ID(1,1);
+    // Mesh* eyesMesh = new Mesh();
+    // Tools::Loaders::load_3D_file(eyesMesh, MESH_PATH + "eyes.obj", false);
+    // auto     droidMat1   = new PhysicallyBasedMaterial();
+    // droidMat1->set_emissive_color(Vec3(1.0));
+    // droidMat1->set_emission_intensity(10.0);
+    // eyesMesh->push_material(droidMat1);
+    // eyesMesh->set_name("Eyes");
+    // droidMesh->add_child(eyesMesh);
+    m_scene->add(stormtrooper);
 
     m_scene->add(plane);
 
