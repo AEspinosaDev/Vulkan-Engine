@@ -176,6 +176,7 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
         img.layers,
         imageType,
         config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
+    img_info.initialLayout = Translator::get(config.layout);
 
     VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
 

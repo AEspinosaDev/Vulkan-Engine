@@ -45,7 +45,7 @@ struct CommandBuffer {
     void begin_renderpass(RenderPass&       renderpass,
                           Framebuffer&      fbo,
                           VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
-    void end_renderpass();
+    void end_renderpass(RenderPass& renderpass);
     void draw_geometry(VertexArrays& vao,
                        uint32_t      instanceCount  = 1,
                        uint32_t      firstOcurrence = 0,
@@ -86,7 +86,26 @@ struct CommandBuffer {
                      ImageLayout layout,
                      ImageAspect aspect     = ASPECT_COLOR,
                      Vec4        clearColor = Vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    //   void blit_image();
+
+    /*Copy the entire extent of the image*/
+    void blit_image(Image&      srcImage,
+                    Image&      dstImage,
+                    FilterType  filter    = FILTER_LINEAR,
+                    uint32_t    mipLevel = 0,
+                    ImageAspect srcAspect = ASPECT_COLOR,
+                    ImageAspect dstAspect = ASPECT_COLOR);
+
+    /*Copy a custom extent of the image*/
+    void blit_image(Image&      srcImage,
+                    Image&      dstImage,
+                    Extent2D    srcOrigin,
+                    Extent2D    dstOrigin,
+                    Extent2D    srcExtent,
+                    Extent2D    dstExtent,
+                    FilterType  filter    = FILTER_LINEAR,
+                    uint32_t    mipLevel = 0,
+                    ImageAspect srcAspect = ASPECT_COLOR,
+                    ImageAspect dstAspect = ASPECT_COLOR);
 
     void push_constants(ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset = 0);
 

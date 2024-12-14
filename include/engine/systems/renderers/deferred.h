@@ -1,12 +1,11 @@
 #ifndef DEFERRED_H
 #define DEFERRED_H
 
-#include <engine/core/passes/variance_shadow_pass.h>
-#include <engine/core/passes/composition_pass.h>
-#include <engine/core/passes/postprocess_pass.h>
-#include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/bloom_pass.h>
-#include <engine/core/passes/SSR_pass.h>
+#include <engine/core/passes/composition_pass.h>
+#include <engine/core/passes/geometry_pass.h>
+#include <engine/core/passes/postprocess_pass.h>
+#include <engine/core/passes/variance_shadow_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -24,10 +23,10 @@ class DeferredRenderer : public BaseRenderer
         SHADOW_PASS      = 0,
         GEOMETRY_PASS    = 1,
         COMPOSITION_PASS = 2,
-        SSR_PASS         = 3,
-        BLOOM_PASS       = 4,
-        TONEMAPPIN_PASS  = 5,
-        FXAA_PASS        = 6,
+        // SSR_PASS         = 3,
+        BLOOM_PASS      = 3,
+        TONEMAPPIN_PASS = 4,
+        FXAA_PASS       = 5,
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
@@ -66,6 +65,18 @@ class DeferredRenderer : public BaseRenderer
         {
             static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(st);
         }
+    }
+    inline void set_SSR_settings(Core::SSRSettings settings) {
+        static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_SSR_settings(settings);
+    };
+    inline Core::SSRSettings get_SSR_settings() const {
+        return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_SSR_settings();
+    };
+    inline void set_shading_output(Core::OutputBuffer output) {
+        static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_output_buffer(output);
+    }
+    inline Core::OutputBuffer get_shading_output() const {
+        return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_output_buffer();
     }
 
   protected:

@@ -243,7 +243,11 @@ void SceneExplorerWidget::render() {
             m_scene->set_fog_intensity(fogDensity);
         }
     }
-    ImGui::Separator();
+    ImGui::SeparatorText("Accel. Structures");
+    if (ImGui::Button("Update"))
+    {
+        m_scene->update_AS(true);
+    }
     ImGui::Spacing();
     ImGui::Separator();
 }
@@ -504,6 +508,11 @@ void ObjectExplorerWidget::render() {
                     {
                         mat->set_opacity_weight(weight);
                     }
+                }
+                bool refl = mat->reflective();
+                if (ImGui::Checkbox("Is Refelctive", &refl))
+                {
+                    mat->reflective(refl);
                 }
                 ImGui::Spacing();
                 if (mat->get_normal_texture())

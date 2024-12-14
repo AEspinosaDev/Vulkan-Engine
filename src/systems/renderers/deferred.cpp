@@ -43,7 +43,7 @@ void DeferredRenderer::create_renderpasses() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(7, nullptr);
+    m_passes.resize(6, nullptr);
 
     // Shadow Pass
     m_passes[SHADOW_PASS] = new Core::VarianceShadowPass(
@@ -57,19 +57,10 @@ void DeferredRenderer::create_renderpasses() {
     m_passes[COMPOSITION_PASS] = new Core::CompositionPass(
         &m_device, m_window->get_extent(), totalImagesInFlight, SRGBA_32F, Core::ResourceManager::VIGNETTE, false);
     m_passes[COMPOSITION_PASS]->set_image_dependace_table({{SHADOW_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3, 4}}});
-    // SSR Pass
-    m_passes[SSR_PASS] = new Core::SSRPass(
-        &m_device, m_window->get_extent(), totalImagesInFlight, SRGBA_32F, Core::ResourceManager::VIGNETTE);
-    m_passes[SSR_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3}}});
     // Bloom Pass
     m_passes[BLOOM_PASS] =
         new Core::BloomPass(&m_device, m_window->get_extent(), totalImagesInFlight, Core::ResourceManager::VIGNETTE);
     m_passes[BLOOM_PASS]->set_image_dependace_table({{COMPOSITION_PASS, {0, 1}}});
-    m_passes[BLOOM_PASS]->set_image_dependace_table({{SSR_PASS,
-                                                      {
-                                                          0,
-                                                      }},
-                                                     {COMPOSITION_PASS, {1}}});
 
     // Tonemapping
     m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,

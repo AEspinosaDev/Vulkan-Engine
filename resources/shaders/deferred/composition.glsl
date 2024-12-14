@@ -32,6 +32,8 @@ void main() {
 #include BRDFs/schlick_smith_BRDF.glsl
 #include BRDFs/marschner_BSDF.glsl
 #include raytracing.glsl
+#include hashing.glsl
+#include SSR.glsl
 
 //INPUT
 layout(location = 0) in  vec2 v_uv;
@@ -51,7 +53,12 @@ layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
 layout(set = 1, binding = 2) uniform sampler2D colorBuffer;
 layout(set = 1, binding = 3) uniform sampler2D materialBuffer;
 layout(set = 1, binding = 4) uniform sampler2D emissionBuffer;
-// layout(set = 1, binding = 5) uniform sampler2D tempBuffer;
+layout(set = 1, binding = 5) uniform sampler2D prevBuffer;
+//SETTINGS
+layout(push_constant) uniform Settings {
+    uint    bufferOutput;
+    SSR     ssr;
+} settings;
 
 //SURFACE PROPERTIES
 vec3    g_pos; 
@@ -61,6 +68,7 @@ vec3    g_albedo;
 float   g_opacity;
 vec4    g_material; 
 vec3    g_emission; 
+int     g_isReflective;
 vec4    g_temp; 
 
 void main()
@@ -77,17 +85,22 @@ void main()
     g_albedo    = colorData.rgb;
     g_opacity   = colorData.w;
     g_material  = texture(materialBuffer,v_uv);
-    g_emission  = texture(emissionBuffer,v_uv).rgb;
+    vec4 emissionFresnelThreshold = texture(emissionBuffer,v_uv);
+    g_emission  = emissionFresnelThreshold.rgb;
+    g_isReflective = int(emissionFresnelThreshold.w);
     g_temp      = vec4(0.0);
 
-    vec3 color = vec3(0.0);
+    vec3 color            = vec3(0.0);
+    vec3 reflectedColor   = vec3(0.0);
+    if(settings.bufferOutput == 0){
     //////////////////////////////////////
     // IF LIT MATERIAL
     //////////////////////////////////////
     if(g_material.w != UNLIT_MATERIAL){
 
-        vec3 direct = vec3(0.0);
-        vec3 ambient = vec3(0.0);
+        vec3 direct     = vec3(0.0);
+        vec3 ambient    = vec3(0.0);
+
         vec3 modelPos = (camera.invView * vec4(g_pos.xyz, 1.0)).xyz;
         vec3 modelNormal = (camera.invView  * vec4(g_normal.xyz, 0.0)).xyz;
         //////////////////////////////////////
@@ -155,6 +168,37 @@ void main()
                 ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
             }
             ambient *= brdf.ao;
+            //SSR ________________________________
+            vec3 fresnel = fresnelSchlick(max(dot(g_normal, normalize(g_pos)), 0.0), brdf.F0);
+            if(settings.ssr.enabled == 1 && g_isReflective == 1){
+                // Reflection vector
+                vec3 refl = normalize(reflect(normalize(g_pos), g_normal));
+
+                //False Importance Sampling of BRDF Roughness
+                vec3 modelPos   = vec3(camera.invView * vec4(g_pos, 1.0));
+                vec3 jitt       = mix(vec3(0.0), vec3(hash0(modelPos,vec3(.8, .8, .8),19.19)), brdf.roughness);
+                
+                //Raymarch through depth buffer
+                vec3 hitPos             = g_pos; vec2 hitCoord = vec2(0.0);
+                bool hit                = raymarchVCS(settings.ssr, positionBuffer, g_pos, refl, hitCoord, hitPos);
+                hitCoord                = hit ? hitCoord / textureSize(positionBuffer, 0) : vec2(-1.0f);
+                // hitCoord = clamp(hitCoord,vec2(0,0),vec2(1.0));
+                vec3 reflectionColour   = hit ? texture(prevBuffer, hitCoord).rgb : vec3(0.0f);
+
+                //Control edges
+                vec2 dCoords            = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - hitCoord.xy));
+                float screenEdgefactor  = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);
+                vec3 reflectionPower    = pow(brdf.metalness, REFLECTION_FALLOFF_EXP) * screenEdgefactor * -refl.z * fresnel;
+                // vec3 reflectionPower    = fresnel * -refl.z* screenEdgefactor;
+                
+                // mat3 rotY = rotationY(radians(scene.envRotation));
+                // reflectionColour += !hit && scene.useIBL ?  texture(irradianceMap, normalize(rotY*(camera.invView*vec4(refl,0.0)).xyz)).rgb*scene.ambientIntensity : vec3(0.0);
+
+                reflectedColor = clamp(reflectionPower, 0.0, 0.9) * reflectionColour;
+                // direct =  reflectionColour;
+                // direct = vec3(hitCoord,hit);
+            }
+
         }
         //////////////////////////////////////
         // PHONG 
@@ -173,9 +217,8 @@ void main()
                
                     
 
-    //color = reindhartTonemap(direct + ambient);
-    color = direct + ambient;
-            
+    color = direct + ambient + reflectedColor;
+      
     //////////////////////////////////////
     // IF UNLIT MATERIAL
     //////////////////////////////////////
@@ -189,18 +232,28 @@ void main()
         color = f * color + (1 - f) * scene.fogColor.rgb;
     }
 
-
     outColor = vec4(color,1.0);
+
+    }
+    else{ //DEBUG MODE
+        if(settings.bufferOutput == 1) //Albedo
+            outColor = vec4(g_albedo,1.0);
+        if(settings.bufferOutput == 2) //Normals
+            outColor = vec4(g_normal,1.0);
+        if(settings.bufferOutput == 3) //Position
+            outColor = vec4(g_pos,1.0);
+        if(settings.bufferOutput == 4) //Material
+            outColor = g_material;
+        if(settings.bufferOutput == 5) //SSR
+            outColor = vec4(reflectedColor,1.0);
+        }
 
     // check whether result is higher than some threshold, if so, output as bloom threshold color
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0)
+    if(brightness > 1.0 && settings.bufferOutput == 0)
         outBrightColor = vec4(color, 1.0);
     else
         outBrightColor = vec4(0.0, 0.0, 0.0, 1.0);
-
-   
-    
 
 }
 

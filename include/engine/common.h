@@ -309,6 +309,7 @@ typedef enum ImageLayoutFlagBits
     LAYOUT_TRANSFER_DST_OPTIMAL             = 0x00000006,
     LAYOUT_PRESENT                          = 0x00000007,
     LAYOUT_GENERAL                          = 0x00000008,
+    LAYOUT_PREINITIALIZED                   = 0x00000009
 } ImageLayout;
 typedef enum ImageAspectFlagBits
 {

@@ -91,7 +91,7 @@ void PostProcessPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     if (m_isDefault && Frame::guiEnabled)
         cmd.draw_gui_data();
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 void PostProcessPass::connect_to_previous_images(std::vector<Image> images) {

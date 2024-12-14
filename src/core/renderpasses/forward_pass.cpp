@@ -371,7 +371,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
     if (m_isDefault && Frame::guiEnabled)
         cmd.draw_gui_data();
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

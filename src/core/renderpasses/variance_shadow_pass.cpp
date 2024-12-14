@@ -193,7 +193,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
         }
     }
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 } // namespace Core

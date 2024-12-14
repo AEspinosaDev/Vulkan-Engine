@@ -66,7 +66,7 @@ void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const 
     Geometry* g = scene->get_skybox()->get_box();
     cmd.draw_geometry(*get_VAO(g));
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

@@ -79,8 +79,8 @@ layout(set = 2, binding = 5) uniform sampler2D materialText4;
 layout(location = 0) out vec4 outPos;
 layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outAlbedo;
-layout(location = 3) out vec4 outMaterial;
-layout(location = 4) out vec4 outEmission;
+layout(location = 3) out vec4 outMaterial; //U8
+layout(location = 4) out vec4 outEmissionF; //F32
 // layout(location = 5) out vec4 outTemporal;
 
 #define EPSILON 0.1
@@ -88,11 +88,12 @@ layout(location = 4) out vec4 outEmission;
 ///////////////////////////////////////////
 //Surface Global properties
 ///////////////////////////////////////////
-vec3    g_albedo    = vec3(0.0);
-float   g_opacity   = 1.0;
-vec3    g_normal    = vec3(0.0);
-vec4    g_material  = vec4(0.0);
-vec3    g_emisison  = vec3(0.0);
+vec3    g_albedo            = vec3(0.0);
+float   g_opacity           = 1.0;
+vec3    g_normal            = vec3(0.0);
+vec4    g_material          = vec4(0.0);
+vec3    g_emisison          = vec3(0.0);
+float   g_fresnelThreshold  = 0.0;
 
 void setupSurfaceProperties(){
 
@@ -127,6 +128,8 @@ void setupSurfaceProperties(){
         g_emisison = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(materialText4, v_uv).rgb, material.slot7.w) : material.slot7.rgb;
         g_emisison *= material.slot8.x;
 
+        g_fresnelThreshold =  material.slot8.y;
+
         g_material.w = PHYSICAL_MATERIAL;
 
     }
@@ -159,7 +162,7 @@ void main() {
     outNormal   = vec4( g_normal , 1.0f );
     outAlbedo   = vec4(g_albedo,g_opacity);
     outMaterial = g_material; //w material ID
-    outEmission = vec4(g_emisison,0.0); 
+    outEmissionF = vec4(g_emisison,g_fresnelThreshold); //w Fresnel Threshold 
     // outTemporal = vec4(0.0); //TBD
 
 }

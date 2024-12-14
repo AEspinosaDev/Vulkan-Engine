@@ -27,7 +27,9 @@ class Scene : public Object3D
     std::vector<Light*>  m_lights;
     Skybox*              m_skybox = nullptr;
 
-    Graphics::TLAS m_accel = {};
+    bool           m_updateAccel  = false;
+    Graphics::TLAS m_accel        = {};
+    // Graphics::TLAS m_dynamicAccel = {};
 
     // ENVIROMENT & FOG
     bool  m_useIBL           = false;
@@ -164,6 +166,12 @@ class Scene : public Object3D
     */
     inline void dynamic_AS(bool op) {
         m_accel.dynamic = op;
+    }
+    inline bool update_AS() const {
+        return m_updateAccel;
+    }
+    inline void update_AS(bool op) {
+        m_updateAccel = op;
     }
 };
 void set_meshes(Scene* const scene, std::vector<Mesh*> meshes);

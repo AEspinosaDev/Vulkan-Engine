@@ -64,7 +64,7 @@ void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const s
 
     Geometry* g = m_vignette->get_geometry();
     cmd.draw_geometry(*get_VAO(g));
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

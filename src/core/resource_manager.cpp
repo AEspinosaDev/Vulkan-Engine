@@ -256,17 +256,18 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
             }
             mesh_idx++;
         }
-        // CREATE TOP LEVEL ACCELERATION STRUCTURE
+        // CREATE TOP LEVEL (STATIC) ACCELERATION STRUCTURE
         if (enableRT)
         {
             Graphics::TLAS* accel = get_TLAS(scene);
             if (!accel->handle)
                 device->upload_TLAS(*accel, BLASInstances);
             // Update Acceleration Structure if change in objects
-            if (accel->instances < BLASInstances.size() || accel->dynamic)
+            if (accel->instances < BLASInstances.size() || scene->update_AS())
             {
                 device->wait();
                 device->upload_TLAS(*accel, BLASInstances);
+                scene->update_AS(false);
             }
         }
     }

@@ -59,7 +59,7 @@ void Application::setup() {
     m_scene = new Scene(camera);
 
     Mesh* lightDummy = new Mesh();
-    Tools::Loaders::load_3D_file(lightDummy, ENGINE_MESH_PATH + "sphere.obj", false);
+    Tools::Loaders::load_3D_file(lightDummy, ENGINE_MESH_PATH + "sphere.obj");
     lightDummy->push_material(new UnlitMaterial());
     lightDummy->set_scale(0.5f);
     lightDummy->ray_hittable(false);
@@ -96,7 +96,7 @@ void Application::setup() {
     toriiMat->set_roughness(0.5);
     toriiMesh->push_material(toriiMat);
 
-    Tools::Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj", false);
+    Tools::Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj");
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
     toriiMesh->set_position({0.0, -2.3, 0.0});
@@ -115,17 +115,19 @@ void Application::setup() {
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
-    // terrainMat->set_normal_texture(floorNormalText);
-    terrainMat->set_roughness_texture(floorRoughText);
-    terrainMat->set_tile({3.0f, 3.0f});
+    terrainMat->set_normal_texture(floorNormalText);
+    // terrainMat->set_roughness_texture(floorRoughText);
+    terrainMat->set_roughness(0.2f);
+    terrainMat->set_tile({10.0f, 10.0f});
+    terrainMat->reflective(true);
     plane->push_material(terrainMat);
     plane->set_name("Floor");
     plane->set_position({0.0, -2.3, 0.0});
     plane->set_rotation({-90.0f, 0.0f, 0.0f});
-    plane->set_scale(5.0f);
+    plane->set_scale(20.0f);
 
     Mesh* stoneMesh = new Mesh();
-    Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "moisturizer.obj", false);
+    Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "moisturizer.obj");
     auto     stoneMat      = new PhysicallyBasedMaterial();
     Texture* stonelanternT = new Texture();
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "moisturizer_color.png");
@@ -143,7 +145,7 @@ void Application::setup() {
     m_scene->add(stoneMesh);
 
     Mesh* droidMesh = new Mesh();
-    Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid.obj", false);
+    Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid.obj");
     auto     droidMat   = new PhysicallyBasedMaterial();
     Texture* droidText0 = new Texture();
     Tools::Loaders::load_texture(droidText0, TEXTURE_PATH + "DROID_Body_BaseColor.jpg");
@@ -170,7 +172,7 @@ void Application::setup() {
     m_scene->add(droidMesh);
 
     Mesh* stormtrooper = new Mesh();
-    Tools::Loaders::load_3D_file(stormtrooper, MESH_PATH + "stormtrooper.obj", false);
+    Tools::Loaders::load_3D_file(stormtrooper, MESH_PATH + "stormtrooper.obj");
     auto     stormtrooperMat  = new PhysicallyBasedMaterial();
     Texture* stormtrooperText = new Texture();
     Tools::Loaders::load_texture(stormtrooperText, TEXTURE_PATH + "stormtrooper_color.png");
@@ -187,17 +189,24 @@ void Application::setup() {
     stormtrooper->set_position({-1.8f, -2.3f, 0.4f});
     stormtrooper->set_rotation({0.0, -136.0f, 0.0f});
     stormtrooper->set_scale(.7f);
-    // stormtrooper->push_material(new PhysicallyBasedMaterial(Vec4(1.0,0.0,0.0,1.0)));
-    // stormtrooper->set_material_ID(1,1);
-    // Mesh* eyesMesh = new Mesh();
-    // Tools::Loaders::load_3D_file(eyesMesh, MESH_PATH + "eyes.obj", false);
-    // auto     droidMat1   = new PhysicallyBasedMaterial();
-    // droidMat1->set_emissive_color(Vec3(1.0));
-    // droidMat1->set_emission_intensity(10.0);
-    // eyesMesh->push_material(droidMat1);
-    // eyesMesh->set_name("Eyes");
-    // droidMesh->add_child(eyesMesh);
+    Mesh* stormtrooperHead = new Mesh();
+    Tools::Loaders::load_3D_file(stormtrooperHead, MESH_PATH + "stormtrooper_helm.obj", false);
+    auto stormtrooperMat1 = new PhysicallyBasedMaterial();
+    Texture* stormtrooperText11 = new Texture();
+    Tools::Loaders::load_texture(stormtrooperText11, TEXTURE_PATH + "stormtrooper_head_color.png");
+    stormtrooperMat1->set_albedo_texture(stormtrooperText11);
+    Texture* stormtrooperText12 = new Texture();
+    Tools::Loaders::load_texture(
+        stormtrooperText12, TEXTURE_PATH + "stormtrooper_head_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    stormtrooperMat1->set_normal_texture(stormtrooperText12);
+    Texture* stormtrooperText13 = new Texture();
+    Tools::Loaders::load_texture(stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    stormtrooperMat1->set_mask_texture(stormtrooperText13, MaskType::UNREAL_ENGINE);
+    stormtrooperHead->push_material(stormtrooperMat1);
+    stormtrooperHead->set_name("Head");
+    stormtrooper->add_child(stormtrooperHead);
     m_scene->add(stormtrooper);
+    
 
     m_scene->add(plane);
 

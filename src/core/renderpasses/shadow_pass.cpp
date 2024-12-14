@@ -190,7 +190,7 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
         }
     }
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 } // namespace Core

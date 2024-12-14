@@ -95,6 +95,8 @@ VkImageLayout get(ImageLayout layoutType) {
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     case ImageLayout::LAYOUT_GENERAL:
         return VK_IMAGE_LAYOUT_GENERAL;
+    case ImageLayout::LAYOUT_PREINITIALIZED:
+        return VK_IMAGE_LAYOUT_PREINITIALIZED;
     default:
         throw std::invalid_argument("VKEngine error: Unknown ImageLayoutType");
     }

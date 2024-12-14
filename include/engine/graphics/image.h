@@ -26,6 +26,7 @@ struct ImageConfig {
     uint32_t        mipLevels    = 1U;
     uint32_t        baseMipLevel = 0;
     uint32_t        layers       = 1U;
+    ImageLayout     layout       = LAYOUT_UNDEFINED;
 };
 
 struct SamplerConfig {
@@ -49,10 +50,12 @@ struct Image {
     VkSampler       sampler       = VK_NULL_HANDLE;
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
-    Extent3D extent       = {0, 0, 1}; // Depth for 3D Textures
-    uint32_t layers       = 1;         // Layers for Cubemaps and Arrays
-    uint32_t mipLevels    = 1;
-    uint32_t baseMipLevel = 0;
+    /*State parameters*/
+    Extent3D    extent        = {0, 0, 1}; // Depth for 3D Textures
+    ImageLayout currentLayout = LAYOUT_UNDEFINED;
+    uint32_t    layers        = 1; // Layers for Cubemaps and Arrays
+    uint32_t    mipLevels     = 1;
+    uint32_t    baseMipLevel  = 0;
 
     bool loadedOnCPU{false};
     bool loadedOnGPU{false};

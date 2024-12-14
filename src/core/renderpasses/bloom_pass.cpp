@@ -245,7 +245,7 @@ paintBloom:
 
     cmd.draw_geometry(*get_VAO(g));
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 void BloomPass::connect_to_previous_images(std::vector<Image> images) {

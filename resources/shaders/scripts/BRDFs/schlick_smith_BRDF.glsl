@@ -14,6 +14,7 @@ struct                  SchlickSmithBRDF{
     float               ao;
     vec3                emission;
     vec3                F0;
+    vec3                F;
 };
 
 //Normal Distribution 
@@ -73,8 +74,16 @@ vec3 evalSchlickSmithBRDF(
     float denominator       = 4.0 * max(dot(brdf.normal, wo), 0.0) * max(dot(brdf.normal, wi), 0.0) + 0.0001;
     vec3 specular           = numerator / denominator;
 
+    //Clamp specular value
+    float roughnessThreshold = 0.1;  
+    float smoothness = 1.0 - smoothstep(0.0, roughnessThreshold, brdf.roughness);
+    float specularScale = 1.0 - smoothness * 0.1;  // Scaling factor reduces specular at low roughness
+    specular *= specularScale;
+
 	// Add to outgoing radiance result
     float lambertian        = max(dot(brdf.normal, wi), 0.0);
+    //Store fresnel value
+    brdf.F = F;
     
     return (kD * brdf.albedo / PI + specular) * radiance * lambertian;
 

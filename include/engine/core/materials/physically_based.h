@@ -39,6 +39,9 @@ class PhysicallyBasedMaterial : public IMaterial
     float m_emisionWeight     = 1.0f; // Weight between parameter and emi texture
     float m_emissionIntensity = 1.0f;
 
+    //Whether to if casts SSR
+    bool m_isReflective = false;
+
     // Query
     bool m_hasAlbedoTexture    = false;
     bool m_hasNormalTexture    = false;
@@ -130,6 +133,12 @@ class PhysicallyBasedMaterial : public IMaterial
     virtual inline void set_opacity_weight(float w) {
         m_opacityWeight = w;
         m_isDirty       = true;
+    }
+    inline bool reflective() const {
+        return m_isReflective;
+    }
+    inline void reflective(bool op) {
+        m_isReflective = op;
     }
 
     inline float get_metalness() const {

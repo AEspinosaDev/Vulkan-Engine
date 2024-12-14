@@ -17,6 +17,25 @@ namespace Core {
 /*
 DEFERRED RENDERING LIGHTING PASS
 */
+enum class OutputBuffer
+{
+    LIGHTING = 0,
+    ALBEDO   = 1,
+    NORMAL   = 2,
+    POSITION = 3,
+    MATERIAL = 4,
+    EMISSIVE = 5,
+    SSR      = 6,
+    SSAO     = 7
+};
+struct SSRSettings {
+    uint32_t maxSteps              = 64;
+    float    stride                = 0.1f;
+    uint32_t binaryRefinementSteps = 6;
+    float    thickness             = 0.2f;
+    float    jitter                = 0.1f;
+    int      enabled               = 1;
+};
 class CompositionPass : public GraphicPass
 {
     /*Setup*/
@@ -30,6 +49,16 @@ class CompositionPass : public GraphicPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
+    Graphics::Image m_prevFrame;
+
+    struct Settings {
+        OutputBuffer outputBuffer = OutputBuffer::LIGHTING;
+        SSRSettings  ssr          = {};
+    };
+    Settings m_settings = {};
+
+    void create_prev_frame_image();
+
   public:
     CompositionPass(Graphics::Device* ctx,
                     VkExtent2D        extent,
@@ -41,6 +70,19 @@ class CompositionPass : public GraphicPass
         , m_colorFormat(colorFormat)
         , m_vignette(vignette) {
     }
+
+    inline void set_SSR_settings(SSRSettings settings) {
+        m_settings.ssr = settings;
+    };
+    inline SSRSettings get_SSR_settings() const {
+        return m_settings.ssr;
+    };
+    inline void set_output_buffer(OutputBuffer buffer) {
+        m_settings.outputBuffer = buffer;
+    };
+    inline OutputBuffer get_output_buffer() const {
+        return m_settings.outputBuffer;
+    };
 
     void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
@@ -57,8 +99,9 @@ class CompositionPass : public GraphicPass
 
     void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
 
-    
-   
+    void update();
+
+    void cleanup();
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

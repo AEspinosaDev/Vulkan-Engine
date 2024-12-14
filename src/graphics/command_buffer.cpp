@@ -121,6 +121,7 @@ void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, V
     clearValues.reserve(renderpass.attachments.size());
     for (size_t i = 0; i < renderpass.attachments.size(); i++)
     {
+        renderpass.attachments[i].image.currentLayout = renderpass.attachments[i].initialLayout;
         clearValues.push_back(renderpass.attachments[i].clearValue);
     }
 
@@ -129,8 +130,11 @@ void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, V
 
     vkCmdBeginRenderPass(handle, &renderPassInfo, subpassContents);
 }
-void CommandBuffer::end_renderpass() {
-
+void CommandBuffer::end_renderpass(RenderPass& renderpass) {
+    for (size_t i = 0; i < renderpass.attachments.size(); i++)
+    {
+        renderpass.attachments[i].image.currentLayout = renderpass.attachments[i].finalLayout;
+    }
     vkCmdEndRenderPass(handle);
 }
 void CommandBuffer::draw_geometry(VertexArrays& vao,
@@ -237,6 +241,8 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
 
     vkCmdPipelineBarrier(
         handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    img.currentLayout = newLayout;
 }
 void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
                                                uint32_t      baseMipLevel,
@@ -263,6 +269,8 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
 
     vkCmdPipelineBarrier(
         handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    img.currentLayout = newLayout;
 }
 void Graphics::CommandBuffer::clear_image(Image& img, ImageLayout layout, ImageAspect aspect, Vec4 clearColor) {
 
@@ -280,6 +288,73 @@ void Graphics::CommandBuffer::clear_image(Image& img, ImageLayout layout, ImageA
     subresourceRange.layerCount              = img.layers;
 
     vkCmdClearColorImage(handle, img.handle, Translator::get(layout), &vclearColor, 1, &subresourceRange);
+}
+void Graphics::CommandBuffer::blit_image(Image&      srcImage,
+                                         Image&      dstImage,
+                                         FilterType  filter,
+                                         uint32_t    mipLevel,
+                                         ImageAspect srcAspect,
+                                         ImageAspect dstAspect) {
+    VkImageBlit blitRegion   = {};
+    blitRegion.srcOffsets[0] = {0, 0, 0};
+    blitRegion.srcOffsets[1] = {
+        static_cast<int32_t>(srcImage.extent.width), static_cast<int32_t>(srcImage.extent.height), 1};
+    blitRegion.srcSubresource.aspectMask     = Translator::get(srcAspect);
+    blitRegion.srcSubresource.mipLevel       = mipLevel;
+    blitRegion.srcSubresource.baseArrayLayer = 0;
+    blitRegion.srcSubresource.layerCount     = 1;
+
+    blitRegion.dstOffsets[0] = {0, 0, 0};
+    blitRegion.dstOffsets[1] = {
+        static_cast<int32_t>(dstImage.extent.width), static_cast<int32_t>(dstImage.extent.height), 1};
+    blitRegion.dstSubresource.aspectMask     = Translator::get(dstAspect);
+    blitRegion.dstSubresource.mipLevel       = mipLevel;
+    blitRegion.dstSubresource.baseArrayLayer = 0;
+    blitRegion.dstSubresource.layerCount     = 1;
+
+    vkCmdBlitImage(handle,
+                   srcImage.handle,
+                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                   dstImage.handle,
+                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                   1,
+                   &blitRegion,
+                   Translator::get(filter));
+}
+void Graphics::CommandBuffer::blit_image(Image&      srcImage,
+                                         Image&      dstImage,
+                                         Extent2D    srcOrigin,
+                                         Extent2D    dstOrigin,
+                                         Extent2D    srcExtent,
+                                         Extent2D    dstExtent,
+                                         FilterType  filter,
+                                         uint32_t    mipLevel,
+                                         ImageAspect srcAspect,
+                                         ImageAspect dstAspect) {
+
+    VkImageBlit blitRegion   = {};
+    blitRegion.srcOffsets[0] = {static_cast<int32_t>(srcOrigin.width), static_cast<int32_t>(srcOrigin.height), 0};
+    blitRegion.srcOffsets[1] = {static_cast<int32_t>(srcExtent.width), static_cast<int32_t>(srcExtent.height), 1};
+    blitRegion.srcSubresource.aspectMask     = Translator::get(srcAspect);
+    blitRegion.srcSubresource.mipLevel       = mipLevel;
+    blitRegion.srcSubresource.baseArrayLayer = 0;
+    blitRegion.srcSubresource.layerCount     = 1;
+
+    blitRegion.dstOffsets[0] = {static_cast<int32_t>(dstOrigin.width), static_cast<int32_t>(dstOrigin.height), 0};
+    blitRegion.dstOffsets[1] = {static_cast<int32_t>(dstExtent.width), static_cast<int32_t>(dstExtent.height), 1};
+    blitRegion.dstSubresource.aspectMask     = Translator::get(dstAspect);
+    blitRegion.dstSubresource.mipLevel       = mipLevel;
+    blitRegion.dstSubresource.baseArrayLayer = 0;
+    blitRegion.dstSubresource.layerCount     = 1;
+
+    vkCmdBlitImage(handle,
+                   srcImage.handle,
+                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                   dstImage.handle,
+                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                   1,
+                   &blitRegion,
+                   Translator::get(filter));
 }
 void Graphics::CommandBuffer::push_constants(ShaderPass&      pass,
                                              ShaderStageFlags stage,

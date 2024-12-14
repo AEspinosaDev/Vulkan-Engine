@@ -286,7 +286,7 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
         }
     }
 
-    cmd.end_renderpass();
+    cmd.end_renderpass(m_renderpass);
 }
 
 void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
