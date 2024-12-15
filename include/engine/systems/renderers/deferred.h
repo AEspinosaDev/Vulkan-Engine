@@ -5,6 +5,7 @@
 #include <engine/core/passes/composition_pass.h>
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
+#include <engine/core/passes/precomposition_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
@@ -20,13 +21,13 @@ class DeferredRenderer : public BaseRenderer
 {
     enum RendererPasses
     {
-        SHADOW_PASS      = 0,
-        GEOMETRY_PASS    = 1,
-        COMPOSITION_PASS = 2,
-        // SSR_PASS         = 3,
-        BLOOM_PASS      = 3,
-        TONEMAPPIN_PASS = 4,
-        FXAA_PASS       = 5,
+        SHADOW_PASS         = 0,
+        GEOMETRY_PASS       = 1,
+        PRECOMPOSITION_PASS = 2,
+        COMPOSITION_PASS    = 3,
+        BLOOM_PASS          = 4,
+        TONEMAPPIN_PASS     = 5,
+        FXAA_PASS           = 6,
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
@@ -72,11 +73,23 @@ class DeferredRenderer : public BaseRenderer
     inline Core::SSRSettings get_SSR_settings() const {
         return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_SSR_settings();
     };
+    inline void set_SSAO_settings(Core::SSAOSettings settings) {
+        static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->enable_AO(settings.enabled);
+        static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->set_SSAO_settings(settings);
+    };
+    inline Core::SSAOSettings get_SSAO_settings() const {
+        return static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->get_SSAO_settings();
+    };
     inline void set_shading_output(Core::OutputBuffer output) {
         static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_output_buffer(output);
     }
     inline Core::OutputBuffer get_shading_output() const {
         return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_output_buffer();
+    }
+    inline void set_clearcolor(Vec4 c) {
+        BaseRenderer::set_clearcolor(c);
+        m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
+            {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
     }
 
   protected:

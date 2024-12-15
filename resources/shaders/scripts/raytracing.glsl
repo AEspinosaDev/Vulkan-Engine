@@ -1,33 +1,16 @@
+
+//////////////////////////
+// NEEDS warp.glsl TO WORK
+//////////////////////////
+
 #ifndef PI 
 #define PI              3.1415926535897932384626433832795
 #endif
 #ifndef EPSILON 
 #define EPSILON         0.001
 #endif  
-#ifndef GOLDEN_RATIO 
-#define GOLDEN_RATIO 2.118033988749895
-#endif  
 
-vec2 whiteNoiseSample(vec3 p3) {
-	p3 = fract(p3 * vec3(.1031, .1030, .0973));
-    p3 += dot(p3, p3.yzx+33.33);
-    return fract((p3.xx+p3.yz)*p3.zy);
-}
-
-vec4 blueNoiseSample(sampler2D blueNoiseMap,int i, int ditherFactor) {
-    vec2 blueNoiseSize = textureSize(blueNoiseMap, 0);
-    ivec2 fragUV = ivec2(mod(gl_FragCoord.xy, blueNoiseSize));
-    return fract(texelFetch(blueNoiseMap, fragUV, 0)+ GOLDEN_RATIO *(128*i + ditherFactor) );
-	
-}
-
-vec2 diskSample(vec2 rng, float radius) {
-    float pointRadius = radius*sqrt(rng.x);
-    float pointAngle = rng.y * 2.0f * PI;
-    return vec2(pointRadius*cos(pointAngle), pointRadius*sin(pointAngle));
-}
-
-float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D blueNoiseMap, vec3 O, vec3 L, int numSamples, float area, int ditherFactor){
+float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D randomPool, vec3 O, vec3 L, int numSamples, float area, int ditherFactor){
 	if(numSamples == 0) return 1.0;
 
 	//Shadow occlusion contribution
@@ -39,7 +22,7 @@ float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D blueNoiseM
 	float radius = area*0.5;
 	for(int i = 0; i < numSamples; i++) {
 		//Get random value
-		vec2 rng = blueNoiseSample(blueNoiseMap,i,ditherFactor).rg;
+		vec2 rng = blueNoiseSample(randomPool,i,ditherFactor).rg;
 		vec2 dsample = diskSample(rng,radius);
 
 		float tMax = length(L);
@@ -54,4 +37,32 @@ float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D blueNoiseM
 	}
 	return 1.0 - (shadow / numSamples);
 
+}
+
+float computeRaytracedAO(accelerationStructureEXT TLAS, sampler2D randomPool, vec3 O, vec3 N, int numSamples, float tMin, float tMax, int ditherFactor) {
+    if(numSamples == 0) return 1.0;
+
+	//Ambient Occlusion contribution
+    float occlusion = 0;
+	//Create Surface Frame
+    vec3 STangent = abs(N.z) > 0.5 ? vec3(0.0, -N.z, N.y) : vec3(-N.y, N.x, 0.0);
+    vec3 SBitangent = cross(N, STangent);
+
+    for(int i = 0; i < numSamples; i++) {
+
+		//Get random value
+		vec2 rng = blueNoiseSample(randomPool,i,ditherFactor).rg;
+        vec3 randomVec = cosineWeightedHemisphereSample(rng);
+        vec3 dir = STangent*randomVec.x + SBitangent*randomVec.y + N*randomVec.z;
+
+		rayQueryEXT rayQuery;
+		rayQueryInitializeEXT(rayQuery, TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, O, tMin, dir, tMax); 
+		rayQueryProceedEXT(rayQuery);
+        while(rayQueryProceedEXT(rayQuery)) {}
+		if (rayQueryGetIntersectionTypeEXT(rayQuery, true) == gl_RayQueryCommittedIntersectionNoneEXT ) {
+            occlusion += 1.0;
+		}
+       
+    }
+    return occlusion/numSamples;
 }

@@ -85,9 +85,6 @@ class BaseRenderer
     inline void set_settings(RendererSettings settings) {
         m_settings = settings;
     }
-    inline void set_clearcolor(Vec4 c) {
-        m_settings.clearColor = c;
-    }
     inline void set_antialiasing(MSAASamples msaa) {
         m_settings.samplesMSAA = msaa;
     }
@@ -110,6 +107,9 @@ class BaseRenderer
         m_settings.screenSync = sync;
         if (m_initialized)
             m_updateFramebuffers = true;
+    }
+    virtual inline void set_clearcolor(Vec4 c) {
+        m_settings.clearColor = c;
     }
 
 #pragma endregion

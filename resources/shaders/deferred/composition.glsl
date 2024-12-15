@@ -26,14 +26,14 @@ void main() {
 #include utils.glsl
 #include shadow_mapping.glsl
 #include fresnel.glsl
-#include ssao.glsl
 #include IBL.glsl
-#include reindhart.glsl
 #include BRDFs/schlick_smith_BRDF.glsl
 #include BRDFs/marschner_BSDF.glsl
+#include warp.glsl
 #include raytracing.glsl
 #include hashing.glsl
 #include SSR.glsl
+
 
 //INPUT
 layout(location = 0) in  vec2 v_uv;
@@ -53,12 +53,24 @@ layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
 layout(set = 1, binding = 2) uniform sampler2D colorBuffer;
 layout(set = 1, binding = 3) uniform sampler2D materialBuffer;
 layout(set = 1, binding = 4) uniform sampler2D emissionBuffer;
-layout(set = 1, binding = 5) uniform sampler2D prevBuffer;
+layout(set = 1, binding = 5) uniform sampler2D preCompositionBuffer;
+
+layout(set = 1, binding = 6) uniform sampler2D prevBuffer;
+
 //SETTINGS
 layout(push_constant) uniform Settings {
     uint    bufferOutput;
+    uint    enableAO;
     SSR     ssr;
 } settings;
+
+// DEBUGGING QUERIES
+#define LIGHTING_MODE   settings.bufferOutput == 0
+#define ALBEDO_OUTPUT   settings.bufferOutput == 1
+#define NORMALS_OUTPUT  settings.bufferOutput == 2
+#define POSITION_OUTPUT settings.bufferOutput == 3
+#define MATERIAL_OUTPUT settings.bufferOutput == 4
+#define SSAO_OUTPUT     settings.bufferOutput == 5
 
 //SURFACE PROPERTIES
 vec3    g_pos; 
@@ -70,6 +82,7 @@ vec4    g_material;
 vec3    g_emission; 
 int     g_isReflective;
 vec4    g_temp; 
+
 
 void main()
 {
@@ -89,10 +102,18 @@ void main()
     g_emission  = emissionFresnelThreshold.rgb;
     g_isReflective = int(emissionFresnelThreshold.w);
     g_temp      = vec4(0.0);
+    ///////////////////////////////////
+    // PRE-COMPUTED DATA
+    ///////////////////////////////////
+    vec2 preComputedData    = texture(preCompositionBuffer,v_uv).rg;
+    float SSAO              = preComputedData.r;
+    float rtShadow          = preComputedData.g;
+
 
     vec3 color            = vec3(0.0);
     vec3 reflectedColor   = vec3(0.0);
-    if(settings.bufferOutput == 0){
+
+    if(LIGHTING_MODE){
     //////////////////////////////////////
     // IF LIT MATERIAL
     //////////////////////////////////////
@@ -137,6 +158,9 @@ void main()
                                 lighting *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
                             if(scene.lights[i].shadowType == 1) //VSM   
                                 lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
+                            // if(scene.lights[i].shadowType == 2) //Raytraced 
+                            //     lighting *= texture(preCompositionBuffer,v_uv).g; 
+                            
                             if(scene.lights[i].shadowType == 2) //Raytraced  
                                 lighting *= computeRaytracedShadow(
                                     TLAS, 
@@ -167,7 +191,7 @@ void main()
             }else{
                 ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
             }
-            ambient *= brdf.ao;
+            ambient *= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao;
             //SSR ________________________________
             vec3 fresnel = fresnelSchlick(max(dot(g_normal, normalize(g_pos)), 0.0), brdf.F0);
             if(settings.ssr.enabled == 1 && g_isReflective == 1){
@@ -226,7 +250,7 @@ void main()
         color = g_albedo;
     }
     
-
+    //Fog ________________________________
     if(scene.enableFog){
         float f = computeFog(g_depth);
         color = f * color + (1 - f) * scene.fogColor.rgb;
@@ -236,21 +260,21 @@ void main()
 
     }
     else{ //DEBUG MODE
-        if(settings.bufferOutput == 1) //Albedo
+        if(ALBEDO_OUTPUT) 
             outColor = vec4(g_albedo,1.0);
-        if(settings.bufferOutput == 2) //Normals
-            outColor = vec4(g_normal,1.0);
-        if(settings.bufferOutput == 3) //Position
-            outColor = vec4(g_pos,1.0);
-        if(settings.bufferOutput == 4) //Material
+        if(NORMALS_OUTPUT)
+            outColor = vec4((camera.invView  * vec4(g_normal.xyz, 0.0)).xyz,1.0);
+        if(POSITION_OUTPUT)
+            outColor = vec4((camera.invView * vec4(g_pos.xyz, 1.0)).xyz,1.0);
+        if(MATERIAL_OUTPUT)
             outColor = g_material;
-        if(settings.bufferOutput == 5) //SSR
-            outColor = vec4(reflectedColor,1.0);
-        }
+        if(SSAO_OUTPUT) 
+            outColor = vec4(SSAO,SSAO,SSAO,1.0);
+    }
 
     // check whether result is higher than some threshold, if so, output as bloom threshold color
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0 && settings.bufferOutput == 0)
+    if(brightness > 1.0 && LIGHTING_MODE)
         outBrightColor = vec4(color, 1.0);
     else
         outBrightColor = vec4(0.0, 0.0, 0.0, 1.0);

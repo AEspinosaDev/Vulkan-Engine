@@ -18,8 +18,7 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
                                         Core::ResourceManager::irradianceComputePass->get_attachments()[0].image);
     }
 
-    m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
-        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
+  
 }
 
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
@@ -43,7 +42,7 @@ void DeferredRenderer::create_renderpasses() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(6, nullptr);
+    m_passes.resize(7, nullptr);
 
     // Shadow Pass
     m_passes[SHADOW_PASS] = new Core::VarianceShadowPass(
@@ -53,10 +52,16 @@ void DeferredRenderer::create_renderpasses() {
     m_passes[GEOMETRY_PASS] = new Core::GeometryPass(
         &m_device, m_window->get_extent(), totalImagesInFlight, m_settings.colorFormat, m_settings.depthFormat);
 
+    // Pre-Composition Pass
+    m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(
+        &m_device, m_window->get_extent(), totalImagesInFlight, Core::ResourceManager::VIGNETTE);
+    m_passes[PRECOMPOSITION_PASS]->set_image_dependace_table({{GEOMETRY_PASS, {0, 1}}});
+
     // Composition Pass
     m_passes[COMPOSITION_PASS] = new Core::CompositionPass(
         &m_device, m_window->get_extent(), totalImagesInFlight, SRGBA_32F, Core::ResourceManager::VIGNETTE, false);
-    m_passes[COMPOSITION_PASS]->set_image_dependace_table({{SHADOW_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3, 4}}});
+    m_passes[COMPOSITION_PASS]->set_image_dependace_table(
+        {{SHADOW_PASS, {0}}, {GEOMETRY_PASS, {0, 1, 2, 3, 4}}, {PRECOMPOSITION_PASS, {0}}});
     // Bloom Pass
     m_passes[BLOOM_PASS] =
         new Core::BloomPass(&m_device, m_window->get_extent(), totalImagesInFlight, Core::ResourceManager::VIGNETTE);
@@ -66,7 +71,7 @@ void DeferredRenderer::create_renderpasses() {
     m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(&m_device,
                                                           m_window->get_extent(),
                                                           totalImagesInFlight,
-                                                           m_settings.colorFormat,
+                                                          m_settings.colorFormat,
                                                           Core::ResourceManager::VIGNETTE,
                                                           ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
                                                           "TONEMAPPING",
@@ -85,6 +90,7 @@ void DeferredRenderer::create_renderpasses() {
     m_passes[FXAA_PASS]->set_image_dependace_table({{TONEMAPPIN_PASS, {0}}});
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);
+        
 }
 
 } // namespace Systems

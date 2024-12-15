@@ -59,26 +59,7 @@ void Tools::ForwardRendererWidget::render() {
 
     const char* res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
 
-    ShadowResolution res_currentr = m_renderer->get_shadow_quality();
-    int              res_current;
-    switch (res_currentr)
-    {
-    case ShadowResolution::VERY_LOW:
-        res_current = 0;
-        break;
-    case ShadowResolution::LOW:
-        res_current = 1;
-        break;
-    case ShadowResolution::MEDIUM:
-        res_current = 2;
-        break;
-    case ShadowResolution::HIGH:
-        res_current = 3;
-        break;
-    case ShadowResolution::ULTRA:
-        res_current = 4;
-        break;
-    }
+    int res_current;
 
     if (ImGui::Combo("Shadow Quality", &res_current, res, IM_ARRAYSIZE(res)))
     {
@@ -113,7 +94,7 @@ void Tools::ForwardRendererWidget::render() {
 void Tools::DeferredRendererWidget::render() {
     ImGui::SeparatorText("Renderer Settings");
 
-    const char* outputTypes[] = {"LIGHTING", "ALBEDO", "NORMALS", "POSITION", "MATERIAL","SSR","AO"};
+    const char* outputTypes[] = {"LIGHTING", "ALBEDO", "NORMALS", "POSITION", "MATERIAL", "AO", "SSR"};
     static int  otype_current = static_cast<int>(m_renderer->get_shading_output());
     if (ImGui::Combo("Shading Output", &otype_current, outputTypes, IM_ARRAYSIZE(outputTypes)))
     {
@@ -135,7 +116,7 @@ void Tools::DeferredRendererWidget::render() {
             m_renderer->set_shading_output(Core::OutputBuffer::MATERIAL);
             break;
         case 5:
-            m_renderer->set_shading_output(Core::OutputBuffer::LIGHTING);
+            m_renderer->set_shading_output(Core::OutputBuffer::SSAO);
             break;
         }
     }
@@ -166,26 +147,7 @@ void Tools::DeferredRendererWidget::render() {
 
     const char* res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
 
-    ShadowResolution res_currentr = m_renderer->get_shadow_quality();
-    int              res_current;
-    switch (res_currentr)
-    {
-    case ShadowResolution::VERY_LOW:
-        res_current = 0;
-        break;
-    case ShadowResolution::LOW:
-        res_current = 1;
-        break;
-    case ShadowResolution::MEDIUM:
-        res_current = 2;
-        break;
-    case ShadowResolution::HIGH:
-        res_current = 3;
-        break;
-    case ShadowResolution::ULTRA:
-        res_current = 4;
-        break;
-    }
+    int res_current;
 
     if (ImGui::Combo("Shadow Quality", &res_current, res, IM_ARRAYSIZE(res)))
     {
@@ -215,6 +177,47 @@ void Tools::DeferredRendererWidget::render() {
     if (ImGui::DragFloat("Bloom Intensity", &bloomIntensity, 0.01f, 0.0f, 0.5f))
     {
         m_renderer->set_bloom_strength(bloomIntensity);
+    }
+    ImGui::Separator();
+    Core::SSAOSettings settings_SSAO = m_renderer->get_SSAO_settings();
+    bool               SSAOEnabled   = (bool)settings_SSAO.enabled;
+    if (ImGui::Checkbox("Enable SSAO", &SSAOEnabled))
+    {
+        settings_SSAO.enabled = SSAOEnabled;
+        m_renderer->set_SSAO_settings(settings_SSAO);
+    }
+    if (SSAOEnabled)
+    {
+        int         SSAOsamples  = (int)settings_SSAO.samples;
+        const char* ssaoType[]   = {"SSAO", "RTAO"};
+        int         ssao_current = (int)settings_SSAO.type;
+        if (ImGui::Combo("SSAO Type", &ssao_current, ssaoType, IM_ARRAYSIZE(ssaoType)))
+        {
+
+            switch (ssao_current)
+            {
+            case 0:
+                settings_SSAO.type = Core::AOType::SSAO;
+                break;
+            case 1:
+                settings_SSAO.type = Core::AOType::RTAO;
+                break;
+            }
+            m_renderer->set_SSAO_settings(settings_SSAO);
+        }
+        if (ImGui::DragInt("SSAO Samples", &SSAOsamples, 1, 1, 64))
+        {
+            settings_SSAO.samples = SSAOsamples;
+            m_renderer->set_SSAO_settings(settings_SSAO);
+        }
+        if (ImGui::DragFloat("SSAO Radius", &settings_SSAO.radius, 0.01f, 0.0f, 10.0f))
+        {
+            m_renderer->set_SSAO_settings(settings_SSAO);
+        }
+        if (ImGui::DragFloat("SSAO Bias", &settings_SSAO.bias, 0.01f, 0.0f, 10.0f))
+        {
+            m_renderer->set_SSAO_settings(settings_SSAO);
+        }
     }
     ImGui::Separator();
     Core::SSRSettings settings_SSR = m_renderer->get_SSR_settings();

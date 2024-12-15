@@ -24,9 +24,9 @@ enum class OutputBuffer
     NORMAL   = 2,
     POSITION = 3,
     MATERIAL = 4,
-    EMISSIVE = 5,
-    SSR      = 6,
-    SSAO     = 7
+    SSAO     = 5,
+    EMISSIVE = 6,
+    SSR      = 7,
 };
 struct SSRSettings {
     uint32_t maxSteps              = 64;
@@ -53,6 +53,7 @@ class CompositionPass : public GraphicPass
 
     struct Settings {
         OutputBuffer outputBuffer = OutputBuffer::LIGHTING;
+        int          enableAO     = 1;
         SSRSettings  ssr          = {};
     };
     Settings m_settings = {};
@@ -83,6 +84,12 @@ class CompositionPass : public GraphicPass
     inline OutputBuffer get_output_buffer() const {
         return m_settings.outputBuffer;
     };
+    inline bool enable_AO() const {
+        return m_settings.enableAO;
+    }
+    inline void enable_AO(bool op) {
+        m_settings.enableAO = op;
+    }
 
     void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);

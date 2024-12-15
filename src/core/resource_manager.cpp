@@ -40,7 +40,7 @@ void ResourceManager::init_basic_resources(Graphics::Device* const device) {
     if (!BLUE_NOISE_TEXTURE) // If not user set
     {
         BLUE_NOISE_TEXTURE = new Core::Texture();
-        Tools::Loaders::load_PNG(BLUE_NOISE_TEXTURE, ENGINE_RESOURCES_PATH "textures/blueNoise.png");
+        Tools::Loaders::load_PNG(BLUE_NOISE_TEXTURE, ENGINE_RESOURCES_PATH "textures/blueNoise.png",TEXTURE_FORMAT_TYPE_NORMAL);
         BLUE_NOISE_TEXTURE->set_use_mipmaps(false);
     }
     upload_texture_data(device, BLUE_NOISE_TEXTURE);
