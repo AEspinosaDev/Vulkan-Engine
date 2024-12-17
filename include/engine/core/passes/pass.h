@@ -48,11 +48,12 @@ class BasePass
     std::vector<Graphics::Framebuffer> m_framebuffers;
     uint32_t                           m_framebufferImageDepth; // In case if multilayered rendering.
 
+    Extent2D    m_imageExtent;
     std::string m_name;
 
-    // Key: Renderpass ID
-    // Value: Framebuffer's image ID inside renderpass
-    std::unordered_map<uint32_t, std::vector<uint32_t>> m_imageDepedanceTable;
+    // Key: Vec2 (Renderpass ID, Framebuffer ID)
+    // Value: Framebuffer's image attachment IDs
+    std::unordered_map<iVec2, std::vector<uint32_t>> m_imageDepedanceTable;
 
     // Query
     bool m_initiatized  = false;
@@ -62,7 +63,7 @@ class BasePass
     bool m_isGraphical  = true;
 
     virtual void
-                 setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+                 setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                    std::vector<Graphics::SubPassDependency>& dependencies) = 0; // Only for graphical renderpasses
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) = 0;
     virtual void setup_shader_passes()                                = 0;
@@ -73,13 +74,14 @@ class BasePass
              uint32_t          framebufferCount = 1,
              uint32_t          framebufferDepth = 1,
              bool              isDefault        = false,
-             std::string       name             = "Graphic Pass")
+             std::string       name             = "UNNAMED PASS")
         : m_device(ctx)
         , m_framebufferImageDepth(framebufferDepth)
         , m_isDefault(isDefault)
         , m_name(name) {
-        m_framebuffers.resize(framebufferCount);
-        m_renderpass.extent = extent;
+        !isDefault ? m_framebuffers.resize(framebufferCount)
+                   : m_framebuffers.resize(m_device->get_swapchain().get_present_images().size());
+        m_imageExtent = extent;
     }
 
 #pragma region Getters & Setters
@@ -92,24 +94,20 @@ class BasePass
     }
 
     inline Extent2D get_extent() const {
-        return m_renderpass.extent;
+        return m_imageExtent;
     }
     inline void set_extent(Extent2D extent) {
-        m_renderpass.extent = extent;
+        m_imageExtent = extent;
     }
 
-    inline Graphics::RenderPass get_handle() const {
+    inline Graphics::RenderPass get_renderpass() const {
         return m_renderpass;
     }
     inline std::vector<Graphics::Framebuffer> const get_framebuffers() const {
         return m_framebuffers;
     }
-
-    inline std::vector<Graphics::Attachment> get_attachments() {
-        return m_renderpass.attachments;
-    }
     inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) {
-        m_renderpass.attachments[attachmentLayout].clearValue = value;
+        m_renderpass.attachmentsInfo[attachmentLayout].clearValue = value;
     }
 
     inline bool resizeable() const {
@@ -137,13 +135,14 @@ class BasePass
     }
 
     /*
-    Sets a table of connection with different passes. Key is the pass ID and value
-    is the atachment number
+    Sets a table of depedencies with different passes.
+    - Key: Vec2 (Renderpass ID, Framebuffer ID)
+    - Value: array of framebuffer's image attachment IDs
     */
-    inline void set_image_dependace_table(std::unordered_map<uint32_t, std::vector<uint32_t>> table) {
+    inline void set_image_dependace_table(std::unordered_map<iVec2, std::vector<uint32_t>> table) {
         m_imageDepedanceTable = table;
     }
-    inline std::unordered_map<uint32_t, std::vector<uint32_t>> get_image_dependace_table() const {
+    inline std::unordered_map<iVec2, std::vector<uint32_t>> get_image_dependace_table() const {
         return m_imageDepedanceTable;
     }
 
@@ -158,7 +157,7 @@ class BasePass
 
     virtual void update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
-    virtual void connect_to_previous_images(std::vector<Graphics::Image> images) {
+    virtual void link_previous_images(std::vector<Graphics::Image> images) {
     }
     /**
      * Create framebuffers and images attached to them necessary for the

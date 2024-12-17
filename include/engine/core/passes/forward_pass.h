@@ -9,9 +9,9 @@
 #ifndef FORWARD_PASS_H
 #define FORWARD_PASS_H
 #include <engine/core/passes/pass.h>
+#include <engine/core/resource_manager.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
-#include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -39,18 +39,17 @@ class ForwardPass : public GraphicPass
   public:
     ForwardPass(Graphics::Device* ctx,
                 Extent2D          extent,
-                uint32_t          framebufferCount,
                 ColorFormatType   colorFormat,
                 ColorFormatType   depthFormat,
                 MSAASamples       samples,
                 bool              isDefault = true)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "FORWARD")
+        : BasePass(ctx, extent, 1, isDefault, "FORWARD")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat)
         , m_aa(samples) {
     }
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
@@ -61,7 +60,7 @@ class ForwardPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void connect_to_previous_images(std::vector<Graphics::Image> images);
+    void link_previous_images(std::vector<Graphics::Image> images);
 
     void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
 };

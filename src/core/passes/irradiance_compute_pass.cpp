@@ -4,12 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void IrrandianceComputePass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void IrrandianceComputePass::setup_attachments(std::vector<Graphics::AttachmentInfo>&        attachments,
                                                std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(m_format,
+    attachments[0] = Graphics::AttachmentInfo(m_format,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -39,7 +39,7 @@ void IrrandianceComputePass::setup_uniforms(std::vector<Graphics::Frame>& frames
 void IrrandianceComputePass::setup_shader_passes() {
 
     GraphicShaderPass* converterPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/misc/irradiance_compute.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/misc/irradiance_compute.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     converterPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                       {NORMAL_ATTRIBUTE, false},
@@ -57,7 +57,7 @@ void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const 
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.set_viewport( m_imageExtent);
 
     ShaderPass* shaderPass = m_shaderPasses["irr"];
     cmd.bind_shaderpass(*shaderPass);
@@ -66,7 +66,7 @@ void IrrandianceComputePass::render(Graphics::Frame& currentFrame, Scene* const 
     Geometry* g = scene->get_skybox()->get_box();
     cmd.draw_geometry(*get_VAO(g));
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
 void IrrandianceComputePass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

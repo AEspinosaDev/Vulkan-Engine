@@ -27,6 +27,7 @@ void Application::init(Systems::RendererSettings settings) {
 void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
+    settings.bufferingType    = BufferingType::DOUBLE;
     settings.samplesMSAA      = MSAASamples::x1;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
@@ -191,7 +192,7 @@ void Application::setup() {
     stormtrooper->set_scale(.7f);
     Mesh* stormtrooperHead = new Mesh();
     Tools::Loaders::load_3D_file(stormtrooperHead, MESH_PATH + "stormtrooper_helm.obj", false);
-    auto stormtrooperMat1 = new PhysicallyBasedMaterial();
+    auto     stormtrooperMat1   = new PhysicallyBasedMaterial();
     Texture* stormtrooperText11 = new Texture();
     Tools::Loaders::load_texture(stormtrooperText11, TEXTURE_PATH + "stormtrooper_head_color.png");
     stormtrooperMat1->set_albedo_texture(stormtrooperText11);
@@ -200,13 +201,13 @@ void Application::setup() {
         stormtrooperText12, TEXTURE_PATH + "stormtrooper_head_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
     stormtrooperMat1->set_normal_texture(stormtrooperText12);
     Texture* stormtrooperText13 = new Texture();
-    Tools::Loaders::load_texture(stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(
+        stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_TYPE_NORMAL);
     stormtrooperMat1->set_mask_texture(stormtrooperText13, MaskType::UNREAL_ENGINE);
     stormtrooperHead->push_material(stormtrooperMat1);
     stormtrooperHead->set_name("Head");
     stormtrooper->add_child(stormtrooperHead);
     m_scene->add(stormtrooper);
-    
 
     m_scene->add(plane);
 

@@ -85,6 +85,7 @@ void Swapchain::create(VkPhysicalDevice &gpu, VkDevice &device, VkExtent2D actua
     for (size_t i = 0; i < imageCount; i++)
     {
         m_presentImages[i].handle = images[i];
+        m_presentImages[i].device = device;
     }
 
     m_presentFormat = surfaceFormat.format;

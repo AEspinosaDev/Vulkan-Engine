@@ -4,21 +4,21 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void PanoramaConverterPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void PanoramaConverterPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                               std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(m_format,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                          COLOR_ATTACHMENT,
-                                          ASPECT_COLOR,
-                                          TEXTURE_CUBE,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_BORDER);
+    attachments[0] = Graphics::AttachmentInfo(m_format,
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                              COLOR_ATTACHMENT,
+                                              ASPECT_COLOR,
+                                              TEXTURE_CUBE,
+                                              FILTER_LINEAR,
+                                              ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
     dependencies.resize(1);
@@ -37,8 +37,11 @@ void PanoramaConverterPass::setup_uniforms(std::vector<Graphics::Frame>& frames)
 }
 void PanoramaConverterPass::setup_shader_passes() {
 
-    GraphicShaderPass* converterPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
+    GraphicShaderPass* converterPass =
+        new GraphicShaderPass(m_device->get_handle(),
+                              m_renderpass,
+                              m_imageExtent,
+                              ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     converterPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                       {NORMAL_ATTRIBUTE, false},
@@ -56,7 +59,7 @@ void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const s
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.set_viewport(m_imageExtent);
 
     ShaderPass* shaderPass = m_shaderPasses["converter"];
     cmd.bind_shaderpass(*shaderPass);
@@ -64,7 +67,7 @@ void PanoramaConverterPass::render(Graphics::Frame& currentFrame, Scene* const s
 
     Geometry* g = m_vignette->get_geometry();
     cmd.draw_geometry(*get_VAO(g));
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
 void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
@@ -81,8 +84,6 @@ void PanoramaConverterPass::update_uniforms(uint32_t frameIndex, Scene* const sc
             envMap->set_dirty(false);
         }
     }
-}
-void PanoramaConverterPass::connect_to_previous_images(std::vector<Image> images) {
 }
 
 } // namespace Core

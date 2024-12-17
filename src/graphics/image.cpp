@@ -223,7 +223,7 @@ void Image::cleanup(bool destroySampler) {
         vkDestroyImageView(device, view, nullptr);
         view = VK_NULL_HANDLE;
     }
-    if (handle)
+    if (handle && memory)
     {
         vmaDestroyImage(memory, handle, allocation);
         handle = VK_NULL_HANDLE;

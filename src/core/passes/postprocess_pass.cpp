@@ -4,24 +4,25 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void PostProcessPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void PostProcessPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                         std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(m_colorFormat,
-                                          1,
-                                          m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
-                                                      : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                          COLOR_ATTACHMENT,
-                                          ASPECT_COLOR,
-                                          TEXTURE_2D,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] =
+        Graphics::AttachmentInfo(m_colorFormat,
+                                 1,
+                                 m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                             : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                 COLOR_ATTACHMENT,
+                                 ASPECT_COLOR,
+                                 TEXTURE_2D,
+                                 FILTER_LINEAR,
+                                 ADDRESS_MODE_CLAMP_TO_EDGE);
 
-    attachments[0].isPresentImage = m_isDefault ? true : false;
+    attachments[0].isDefault = m_isDefault ? true : false;
 
     // Depdencies
     if (!m_isDefault)
@@ -30,13 +31,13 @@ void PostProcessPass::setup_attachments(std::vector<Graphics::Attachment>&      
 
         dependencies[0] = Graphics::SubPassDependency(
             STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
-        dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
+        dependencies[0].srcAccessMask   = ACCESS_SHADER_READ;
         dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
         dependencies[1] =
             Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
-        dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
-        dependencies[1].srcSubpass    = 0;
-        dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcAccessMask   = ACCESS_COLOR_ATTACHMENT_WRITE;
+        dependencies[1].srcSubpass      = 0;
+        dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
         dependencies[1].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
     } else
     {
@@ -59,7 +60,8 @@ void PostProcessPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 }
 void PostProcessPass::setup_shader_passes() {
 
-    GraphicShaderPass* ppPass               = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_shaderPath);
+    GraphicShaderPass* ppPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, m_shaderPath);
     ppPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     ppPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                {NORMAL_ATTRIBUTE, false},
@@ -76,8 +78,8 @@ void PostProcessPass::setup_shader_passes() {
 void PostProcessPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[m_isDefault ? presentImageIndex : 0]);
+    cmd.set_viewport(m_imageExtent);
 
     ShaderPass* shaderPass = m_shaderPasses["pp"];
 
@@ -91,10 +93,10 @@ void PostProcessPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     if (m_isDefault && Frame::guiEnabled)
         cmd.draw_gui_data();
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[m_isDefault ? presentImageIndex : 0]);
 }
 
-void PostProcessPass::connect_to_previous_images(std::vector<Image> images) {
+void PostProcessPass::link_previous_images(std::vector<Image> images) {
     m_descriptorPool.set_descriptor_write(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
 

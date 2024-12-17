@@ -27,16 +27,12 @@ class ShadowPass : public GraphicPass
     std::vector<FrameDescriptors> m_descriptors;
 
   public:
-    ShadowPass(Graphics::Device* ctx,
-               Extent2D          extent,
-               uint32_t          framebufferCount,
-               uint32_t          numLights,
-               ColorFormatType   depthFormat)
-        : BasePass(ctx, extent, framebufferCount, numLights)
+    ShadowPass(Graphics::Device* ctx, Extent2D extent, uint32_t numLights, ColorFormatType depthFormat)
+        : BasePass(ctx, extent, 1, numLights)
         , m_depthFormat(depthFormat) {
     }
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);

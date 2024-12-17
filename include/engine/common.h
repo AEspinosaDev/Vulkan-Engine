@@ -116,11 +116,13 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 // Mathematics library glm
 namespace math = glm;
-typedef math::vec4 Vec4;
-typedef math::vec3 Vec3;
-typedef math::vec2 Vec2;
-typedef math::mat4 Mat4;
-typedef math::mat3 Mat3;
+typedef math::vec4  Vec4;
+typedef math::vec3  Vec3;
+typedef math::ivec3 iVec3;
+typedef math::vec2  Vec2;
+typedef math::ivec2 iVec2;
+typedef math::mat4  Mat4;
+typedef math::mat3  Mat3;
 
 typedef VkExtent3D   Extent3D;
 typedef VkExtent2D   Extent2D;

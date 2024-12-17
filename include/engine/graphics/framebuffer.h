@@ -10,19 +10,22 @@
 #define FRAMEBUFFER_H
 
 #include <engine/common.h>
-#include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/renderpass.h>
+#include <engine/graphics/utilities/initializers.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 /*Vulkan FBO. Device should populate the struct*/
-struct Framebuffer
-{
+struct Framebuffer {
     VkFramebuffer handle = VK_NULL_HANDLE;
     VkDevice      device = VK_NULL_HANDLE;
-    uint32_t      layers = 1;
-   
+
+    Extent2D extent = {0, 0};
+    uint32_t layers = 1;
+
+    std::vector<Image> attachmentImages;
+
     void cleanup();
 };
 

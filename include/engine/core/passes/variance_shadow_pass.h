@@ -28,16 +28,12 @@ class VarianceShadowPass : public GraphicPass
     std::vector<FrameDescriptors> m_descriptors;
 
   public:
-    VarianceShadowPass(Graphics::Device* ctx,
-                       Extent2D          extent,
-                       uint32_t          framebufferCount,
-                       uint32_t          numLights,
-                       ColorFormatType   depthFormat)
-        : BasePass(ctx, extent, framebufferCount, numLights, false, "SHADOWS")
+    VarianceShadowPass(Graphics::Device* ctx, Extent2D extent, uint32_t numLights, ColorFormatType depthFormat)
+        : BasePass(ctx, extent, 1, numLights, false, "SHADOWS")
         , m_depthFormat(depthFormat) {
     }
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);

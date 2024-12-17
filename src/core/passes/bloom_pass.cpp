@@ -4,12 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void BloomPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void BloomPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&        attachments,
                                   std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(m_colorFormat,
+    attachments[0] = Graphics::AttachmentInfo(m_colorFormat,
                                           1,
                                           m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -21,7 +21,7 @@ void BloomPass::setup_attachments(std::vector<Graphics::Attachment>&        atta
                                           FILTER_LINEAR,
                                           ADDRESS_MODE_CLAMP_TO_EDGE);
 
-    attachments[0].isPresentImage = m_isDefault ? true : false;
+    attachments[0].isDefault = m_isDefault ? true : false;
 
     // Depdencies
     if (!m_isDefault)
@@ -89,8 +89,8 @@ void BloomPass::setup_shader_passes() {
 
     m_shaderPasses["upsample"] = upsamplePass;
 
-    GraphicShaderPass* bloomPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/misc/bloom.glsl");
+    GraphicShaderPass* bloomPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/misc/bloom.glsl");
     bloomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     bloomPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                   {NORMAL_ATTRIBUTE, false},
@@ -236,8 +236,8 @@ paintBloom:
 
     cmd = currentFrame.commandBuffer;
 
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_imageExtent);
 
     cmd.bind_shaderpass(*shaderPass);
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_bloomStrength, sizeof(float));
@@ -245,10 +245,10 @@ paintBloom:
 
     cmd.draw_geometry(*get_VAO(g));
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
-void BloomPass::connect_to_previous_images(std::vector<Image> images) {
+void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
 
     m_originalImage = images[0];
     m_brightImage   = images[1];

@@ -4,30 +4,30 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void VarianceShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void VarianceShadowPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                            std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(2);
 
-    attachments[0] = Graphics::Attachment(m_format,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                          COLOR_ATTACHMENT,
-                                          ASPECT_COLOR,
-                                          TEXTURE_2D_ARRAY,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_BORDER);
+    attachments[0] = Graphics::AttachmentInfo(m_format,
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                              COLOR_ATTACHMENT,
+                                              ASPECT_COLOR,
+                                              TEXTURE_2D_ARRAY,
+                                              FILTER_LINEAR,
+                                              ADDRESS_MODE_CLAMP_TO_BORDER);
 
-    attachments[1] = Graphics::Attachment(m_depthFormat,
-                                          1,
-                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                          DEPTH_ATTACHMENT,
-                                          ASPECT_DEPTH,
-                                          TEXTURE_2D_ARRAY);
+    attachments[1] = Graphics::AttachmentInfo(m_depthFormat,
+                                              1,
+                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                              DEPTH_ATTACHMENT,
+                                              ASPECT_DEPTH,
+                                              TEXTURE_2D_ARRAY);
 
     // Depdencies
     dependencies.resize(2);
@@ -117,16 +117,19 @@ void VarianceShadowPass::setup_shader_passes() {
                                        VK_DYNAMIC_STATE_CULL_MODE};
     // settings.blendAttachments       = {};
 
-    GraphicShaderPass* depthPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/shadows/vsm_geom.glsl");
+    GraphicShaderPass* depthPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/shadows/vsm_geom.glsl");
     depthPass->settings        = settings;
     depthPass->graphicSettings = gfxSettings;
     depthPass->build_shader_stages();
     depthPass->build(m_descriptorPool);
     m_shaderPasses["shadowTri"] = depthPass;
 
-    GraphicShaderPass* depthLinePass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/shadows/vsm_line_geom.glsl");
+    GraphicShaderPass* depthLinePass =
+        new GraphicShaderPass(m_device->get_handle(),
+                              m_renderpass,
+                              m_imageExtent,
+                              ENGINE_RESOURCES_PATH "shaders/shadows/vsm_line_geom.glsl");
     depthLinePass->settings                    = settings;
     depthLinePass->graphicSettings             = gfxSettings;
     depthLinePass->graphicSettings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -142,8 +145,8 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
         return;
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_imageExtent);
 
     cmd.set_depth_bias_enable(true);
     float depthBiasConstant = 0.0;
@@ -193,7 +196,7 @@ void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scen
         }
     }
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
 } // namespace Core

@@ -396,7 +396,7 @@ void ResourceManager::setup_skybox(Graphics::Device* const device, Core::Scene* 
                     {skybox->get_irradiance_resolution(), skybox->get_irradiance_resolution()});
                 irradianceComputePass->setup(empty);
                 irradianceComputePass->update_uniforms(0, scene);
-                irradianceComputePass->connect_env_cubemap(panoramaConverterPass->get_attachments()[0].image);
+                irradianceComputePass->connect_env_cubemap(panoramaConverterPass->get_framebuffers()[0].attachmentImages[0]);
             }
         }
     }

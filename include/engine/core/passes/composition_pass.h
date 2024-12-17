@@ -63,11 +63,10 @@ class CompositionPass : public GraphicPass
   public:
     CompositionPass(Graphics::Device* ctx,
                     VkExtent2D        extent,
-                    uint32_t          framebufferCount,
                     ColorFormatType   colorFormat,
                     Mesh*             vignette,
                     bool              isDefault = true)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "COMPOSITION")
+        : BasePass(ctx, extent, 1, 1, isDefault, "COMPOSITION")
         , m_colorFormat(colorFormat)
         , m_vignette(vignette) {
     }
@@ -91,7 +90,7 @@ class CompositionPass : public GraphicPass
         m_settings.enableAO = op;
     }
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
@@ -100,7 +99,7 @@ class CompositionPass : public GraphicPass
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void connect_to_previous_images(std::vector<Graphics::Image> images);
+    void link_previous_images(std::vector<Graphics::Image> images);
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 

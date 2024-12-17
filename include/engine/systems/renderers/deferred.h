@@ -97,7 +97,7 @@ class DeferredRenderer : public BaseRenderer
 
     virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
 
-    virtual void create_renderpasses();
+    virtual void create_passes();
 };
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

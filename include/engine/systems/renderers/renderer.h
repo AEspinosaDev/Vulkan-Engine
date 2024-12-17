@@ -46,7 +46,7 @@ class BaseRenderer
 {
 #pragma region Properties
   protected:
-    Graphics::Device             m_device{};
+    Graphics::Device*            m_device;
     std::vector<Graphics::Frame> m_frames;
 
     Core::IWindow* m_window;
@@ -64,12 +64,14 @@ class BaseRenderer
 #pragma endregion
   public:
     BaseRenderer(Core::IWindow* window)
-        : m_window(window) {
+        : m_window(window)
+        , m_device(nullptr) {
         on_instance();
     }
     BaseRenderer(Core::IWindow* window, RendererSettings settings)
         : m_window(window)
-        , m_settings(settings) {
+        , m_settings(settings)
+        , m_device(nullptr) {
         on_instance();
     }
 
@@ -119,7 +121,6 @@ class BaseRenderer
      * Inits the renderer.
      */
     void init();
-
     /**
      * Standalone pre-implemented render loop for the renderer.
      */
@@ -139,7 +140,7 @@ class BaseRenderer
     /*
      Init renderpasses and
      */
-    virtual void create_renderpasses();
+    virtual void create_passes();
     /*
     What to do when instancing the renderer
     */
@@ -174,12 +175,12 @@ class BaseRenderer
     /*
     Link images of previous passes to current pass
     */
-    void connect_renderpass(Core::BasePass* const currentPass);
+    void connect_pass(Core::BasePass* const currentPass);
     /*
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context
     */
-    void update_renderpasses();
+    void update_passes();
     /*
     Initialize gui layout in case ther's one enabled
     */

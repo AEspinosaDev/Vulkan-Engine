@@ -83,10 +83,12 @@ struct GraphicShaderPass : public ShaderPass {
     std::vector<ShaderStage> shaderStages;
     GraphicPipelineSettings  graphicSettings = {};
     RenderPass*              renderpass      = nullptr;
+    Extent2D                 extent          = {0, 0};
 
-    GraphicShaderPass(VkDevice _device, RenderPass& renderPass, const std::string shaderFile)
+    GraphicShaderPass(VkDevice _device, RenderPass& renderPass, Extent2D _extent, const std::string shaderFile)
         : ShaderPass(_device, shaderFile, GRAPHIC_QUEUE)
-        , renderpass(&renderPass) {
+        , renderpass(&renderPass)
+        , extent(_extent) {
     }
 
     void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);

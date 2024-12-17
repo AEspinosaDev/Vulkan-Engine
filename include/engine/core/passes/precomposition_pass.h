@@ -14,17 +14,17 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
-    
+
 typedef enum class AmbientOcclusionType
 {
     SSAO = 0,
     RTAO = 1, // Raytraced AO
 } AOType;
 struct SSAOSettings {
-    float    radius  = 0.75;
+    float    radius  = 0.2;
     float    bias    = 0.0;
-    uint32_t samples = 16;
-    AOType   type    = AOType::RTAO;
+    uint32_t samples = 8;
+    AOType   type    = AOType::SSAO;
     uint32_t enabled = 1;
 };
 /*
@@ -38,6 +38,7 @@ class PreCompositionPass : public GraphicPass
     /*Descriptors*/
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
+        Graphics::DescriptorSet blurImageDescritor;
     };
     std::vector<FrameDescriptors> m_descriptors;
     /*Resources*/
@@ -51,8 +52,8 @@ class PreCompositionPass : public GraphicPass
     void create_samples_kernel();
 
   public:
-    PreCompositionPass(Graphics::Device* ctx, VkExtent2D extent, uint32_t framebufferCount, Mesh* vignette)
-        : BasePass(ctx, extent, framebufferCount, 1, false, "PRE-COMPOSITION")
+    PreCompositionPass(Graphics::Device* ctx, VkExtent2D extent, Mesh* vignette)
+        : BasePass(ctx, extent, 2, 1, false, "PRE-COMPOSITION")
         , m_vignette(vignette) {
     }
 
@@ -65,7 +66,7 @@ class PreCompositionPass : public GraphicPass
         return m_AO;
     };
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
@@ -74,7 +75,7 @@ class PreCompositionPass : public GraphicPass
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void connect_to_previous_images(std::vector<Graphics::Image> images);
+    void link_previous_images(std::vector<Graphics::Image> images);
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 

@@ -4,21 +4,21 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void ShadowPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void ShadowPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                    std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::Attachment(m_depthFormat,
-                                          1,
-                                          LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                          DEPTH_ATTACHMENT,
-                                          ASPECT_DEPTH,
-                                          TEXTURE_2D_ARRAY,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_BORDER);
+    attachments[0] = Graphics::AttachmentInfo(m_depthFormat,
+                                              1,
+                                              LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                              DEPTH_ATTACHMENT,
+                                              ASPECT_DEPTH,
+                                              TEXTURE_2D_ARRAY,
+                                              FILTER_LINEAR,
+                                              ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
 
@@ -117,15 +117,18 @@ void ShadowPass::setup_shader_passes() {
     gfxSettings.blendAttachments    = {};
 
     GraphicShaderPass* depthPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/shadows/shadows_geom.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/shadows/shadows_geom.glsl");
     depthPass->settings        = settings;
     depthPass->graphicSettings = gfxSettings;
     depthPass->build_shader_stages();
     depthPass->build(m_descriptorPool);
     m_shaderPasses["shadow"] = depthPass;
 
-    GraphicShaderPass* depthLinePass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/shadows/shadows_line_geom.glsl");
+    GraphicShaderPass* depthLinePass =
+        new GraphicShaderPass(m_device->get_handle(),
+                              m_renderpass,
+                              m_imageExtent,
+                              ENGINE_RESOURCES_PATH "shaders/shadows/shadows_line_geom.glsl");
     depthLinePass->settings                    = settings;
     depthLinePass->graphicSettings             = gfxSettings;
     depthLinePass->graphicSettings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -140,7 +143,7 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.set_viewport(m_imageExtent);
 
     cmd.set_depth_bias_enable(true);
     float depthBiasConstant = 0.0;
@@ -190,7 +193,7 @@ void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint3
         }
     }
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
 } // namespace Core

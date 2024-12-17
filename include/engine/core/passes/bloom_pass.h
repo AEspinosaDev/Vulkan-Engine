@@ -50,8 +50,8 @@ class BloomPass : public BasePass
     std::vector<Graphics::Framebuffer> m_bloomFramebuffers;
 
   public:
-    BloomPass(Graphics::Device* ctx, Extent2D extent, uint32_t framebufferCount, Mesh* vignette, bool isDefault = false)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "BLOOM")
+    BloomPass(Graphics::Device* ctx, Extent2D extent, Mesh* vignette, bool isDefault = false)
+        : BasePass(ctx, extent, 1, 1, isDefault, "BLOOM")
         , m_vignette(vignette) {
     }
 
@@ -62,7 +62,7 @@ class BloomPass : public BasePass
         m_bloomStrength = st;
     }
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
@@ -71,7 +71,7 @@ class BloomPass : public BasePass
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void connect_to_previous_images(std::vector<Graphics::Image> images);
+    void link_previous_images(std::vector<Graphics::Image> images);
 
     void update();
 

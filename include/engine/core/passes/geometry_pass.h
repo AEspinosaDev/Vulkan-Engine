@@ -36,16 +36,15 @@ class GeometryPass : public GraphicPass
   public:
     GeometryPass(Graphics::Device* ctx,
                  Extent2D          extent,
-                 uint32_t          framebufferCount,
                  ColorFormatType   colorFormat,
                  ColorFormatType   depthFormat,
                  bool              isDefault = false)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault, "GEOMETRY")
+        : BasePass(ctx, extent, 1, 1, isDefault, "GEOMETRY")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat) {
     }
 
-    void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
@@ -57,7 +56,6 @@ class GeometryPass : public GraphicPass
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
-
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

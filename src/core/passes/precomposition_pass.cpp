@@ -32,22 +32,22 @@ void PreCompositionPass::create_samples_kernel() {
     m_updateSamplesKernel = false;
 }
 
-void PreCompositionPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void PreCompositionPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                            std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
     // SSAO and RT SHADOWS buffer
-    attachments[0] = Graphics::Attachment(RG_8U,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                          COLOR_ATTACHMENT,
-                                          ASPECT_COLOR,
-                                          TEXTURE_2D,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] = Graphics::AttachmentInfo(RG_8U,
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                              COLOR_ATTACHMENT,
+                                              ASPECT_COLOR,
+                                              TEXTURE_2D,
+                                              FILTER_LINEAR,
+                                              ADDRESS_MODE_CLAMP_TO_EDGE);
 
     // Depdencies
     dependencies.resize(2);
@@ -99,9 +99,14 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                  noiseBinding,
                                  accelBinding});
 
+    // TO BLUR IMAGE LAYOUT
+    LayoutBinding toBlurImageBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    m_descriptorPool.set_layout(1, {toBlurImageBinding});
+
     for (size_t i = 0; i < frames.size(); i++)
     {
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
+        m_descriptorPool.allocate_descriptor_set(1, &m_descriptors[i].blurImageDescritor);
 
         m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(CameraUniforms),
@@ -122,12 +127,15 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               5);
+       
     }
 }
 void PreCompositionPass::setup_shader_passes() {
 
-    GraphicShaderPass* compPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/pre_composition.glsl");
+    GraphicShaderPass* compPass               = new GraphicShaderPass(m_device->get_handle(),
+                                                        m_renderpass,
+                                                        m_imageExtent,
+                                                        ENGINE_RESOURCES_PATH "shaders/deferred/pre_composition.glsl");
     compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     compPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                  {NORMAL_ATTRIBUTE, false},
@@ -141,21 +149,28 @@ void PreCompositionPass::setup_shader_passes() {
     compPass->build(m_descriptorPool);
     m_shaderPasses["pre"] = compPass;
 
-    //   ComputeShaderPass* boxFilterPass =
-    //     new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/compute/box_filter_swap.glsl");
-    // boxFilterPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
+    GraphicShaderPass* blurPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/misc/box_filter.glsl");
+    blurPass->settings.descriptorSetLayoutIDs = {{0, true}, {1, true}};
+    blurPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
+                                                 {NORMAL_ATTRIBUTE, false},
+                                                 {UV_ATTRIBUTE, true},
+                                                 {TANGENT_ATTRIBUTE, false},
+                                                 {COLOR_ATTRIBUTE, false}};
 
-    // boxFilterPass->build_shader_stages();
-    // boxFilterPass->build(m_descriptorPool);
-    // m_shaderPasses["box"] = boxFilterPass;
+    blurPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(SSAOSettings))};
+
+    blurPass->build_shader_stages();
+    blurPass->build(m_descriptorPool);
+    m_shaderPasses["blur"] = blurPass;
 }
 
 void PreCompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd = currentFrame.commandBuffer;
 
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_imageExtent);
 
     ShaderPass* shaderPass = m_shaderPasses["pre"];
 
@@ -167,40 +182,28 @@ void PreCompositionPass::render(Graphics::Frame& currentFrame, Scene* const scen
     Geometry* g = m_vignette->get_geometry();
     cmd.draw_geometry(*get_VAO(g));
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     // /////////////////////////////////////////
     // /*Copy data to tmp previous frame image*/
     // /////////////////////////////////////////
-    // cmd.pipeline_barrier(m_prevFrame,
-    //                      LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    //                      LAYOUT_TRANSFER_DST_OPTIMAL,
-    //                      ACCESS_SHADER_READ,
-    //                      ACCESS_TRANSFER_READ,
-    //                      STAGE_FRAGMENT_SHADER,
-    //                      STAGE_TRANSFER);
 
-    // cmd.blit_image(m_renderpass.attachments[0].image, m_prevFrame, FILTER_NEAREST);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[1]);
+    cmd.set_viewport(m_imageExtent);
 
-    // // m_prevFrame.generate_mipmaps(cmd.handle);
+    shaderPass = m_shaderPasses["blur"];
 
-    // cmd.pipeline_barrier(m_renderpass.attachments[0].image,
-    //                      LAYOUT_TRANSFER_SRC_OPTIMAL,
-    //                      m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    //                      ACCESS_TRANSFER_READ,
-    //                      ACCESS_SHADER_READ,
-    //                      STAGE_TRANSFER,
-    //                      STAGE_FRAGMENT_SHADER);
+    cmd.bind_shaderpass(*shaderPass);
 
-    // cmd.pipeline_barrier(m_prevFrame,
-    //                      LAYOUT_TRANSFER_DST_OPTIMAL,
-    //                      LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    //                      ACCESS_TRANSFER_WRITE,
-    //                      ACCESS_SHADER_READ,
-    //                      STAGE_TRANSFER,
-    //                      STAGE_FRAGMENT_SHADER);
+    // cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_AO, sizeof(SSAOSettings));
+    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].blurImageDescritor, 1, *shaderPass);
+
+    cmd.draw_geometry(*get_VAO(g));
+
+    cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 }
-void PreCompositionPass::connect_to_previous_images(std::vector<Graphics::Image> images) {
+void PreCompositionPass::link_previous_images(std::vector<Graphics::Image> images) {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // SET UP G-BUFFER
@@ -208,6 +211,11 @@ void PreCompositionPass::connect_to_previous_images(std::vector<Graphics::Image>
             &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2); // POSITION
         m_descriptorPool.set_descriptor_write(
             &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3); // NORMALS
+        // RAW SSAO    
+        m_descriptorPool.set_descriptor_write(&m_framebuffers[0].attachmentImages[0],
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              &m_descriptors[i].blurImageDescritor,
+                                              0);
     }
 }
 

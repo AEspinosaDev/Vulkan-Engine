@@ -20,7 +20,8 @@ void BaseRenderer::init() {
     // Init Vulkan Device
     void* windowHandle{nullptr};
     m_window->get_handle(windowHandle);
-    m_device.init(windowHandle,
+    m_device = new Graphics::Device();
+    m_device->init(windowHandle,
                   m_window->get_windowing_system(),
                   m_window->get_extent(),
                   static_cast<uint32_t>(m_settings.bufferingType),
@@ -29,7 +30,7 @@ void BaseRenderer::init() {
     // Init resources
     init_resources();
     // User defined renderpasses
-    create_renderpasses();
+    create_passes();
     // Init renderpasses
     for (Core::BasePass* pass : m_passes)
     {
@@ -43,7 +44,7 @@ void BaseRenderer::init() {
     {
         if (pass->is_active())
         {
-            connect_renderpass(pass);
+            connect_pass(pass);
         }
     };
 
@@ -74,7 +75,7 @@ void BaseRenderer::run(Core::Scene* const scene) {
 }
 
 void BaseRenderer::shutdown(Core::Scene* const scene) {
-    m_device.wait();
+    m_device->wait();
 
     on_shutdown(scene);
 
@@ -86,26 +87,29 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
         Core::ResourceManager::clean_scene(scene);
 
         if (m_settings.enableUI)
-            m_device.destroy_imgui();
+            m_device->destroy_imgui();
+
         for (Core::BasePass* pass : m_passes)
         {
             pass->clean_framebuffer();
+
         }
-        m_device.cleanup();
+        m_device->cleanup();
     }
 
     m_window->destroy();
+
     glfwTerminate();
 }
-void BaseRenderer::create_renderpasses() {
+void BaseRenderer::create_passes() {
     throw VKFW_Exception("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
 }
 void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
 
-    Core::ResourceManager::update_global_data(&m_device, &m_frames[m_currentFrame], scene, m_window);
+    Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, m_window);
     Core::ResourceManager::update_object_data(
-        &m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
+        m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
 
     for (Core::BasePass* pass : m_passes)
     {
@@ -121,7 +125,7 @@ void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* cons
         m_window->is_resized() || m_updateFramebuffers)
     {
         m_window->set_resized(false);
-        update_renderpasses();
+        update_passes();
         scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
     } else if (renderResult != RenderResult::SUCCESS)
     { throw VKFW_Exception("failed to present swap chain image!"); }
@@ -137,18 +141,18 @@ void BaseRenderer::render(Core::Scene* const scene) {
         init();
 
     uint32_t     imageIndex;
-    RenderResult result = m_device.wait_frame(m_frames[m_currentFrame], imageIndex);
+    RenderResult result = m_device->wait_frame(m_frames[m_currentFrame], imageIndex);
 
     if (result == RenderResult::ERROR_OUT_OF_DATE_KHR)
     {
-        update_renderpasses();
+        update_passes();
         return;
     } else if (result != RenderResult::SUCCESS && result != RenderResult::SUBOPTIMAL_KHR)
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
 
     on_before_render(scene);
 
-    m_device.start_frame(m_frames[m_currentFrame]);
+    m_device->start_frame(m_frames[m_currentFrame]);
 
     if (scene->get_skybox())
         Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame], scene);
@@ -159,35 +163,40 @@ void BaseRenderer::render(Core::Scene* const scene) {
             pass->render(m_frames[m_currentFrame], scene, imageIndex);
     }
 
-    RenderResult renderResult = m_device.submit_frame(m_frames[m_currentFrame], imageIndex);
+    RenderResult renderResult = m_device->submit_frame(m_frames[m_currentFrame], imageIndex);
 
     on_after_render(renderResult, scene);
 }
 
-void BaseRenderer::connect_renderpass(Core::BasePass* const currentPass) {
+void BaseRenderer::connect_pass(Core::BasePass* const currentPass) {
     if (currentPass->get_image_dependace_table().empty())
         return;
 
     std::vector<Graphics::Image> images;
     for (auto pair : currentPass->get_image_dependace_table())
     {
-        std::vector<Graphics::Attachment> attachments = m_passes[pair.first]->get_attachments();
+        uint32_t passID = pair.first.x;
+        uint32_t fboID = pair.first.y;
+
+        Graphics::Framebuffer fbo = m_passes[passID]->get_framebuffers()[fboID];
         for (size_t i = 0; i < pair.second.size(); i++)
         {
-            images.push_back(attachments[pair.second[i]].image);
+            images.push_back(fbo.attachmentImages[pair.second[i]]);
         }
     }
-    currentPass->connect_to_previous_images(images);
+    currentPass->link_previous_images(images);
 }
 
-void BaseRenderer::update_renderpasses() {
+void BaseRenderer::update_passes() {
 
     m_window->update_framebuffer();
-    m_device.wait();
-    m_device.update_swapchain(m_window->get_extent(),
+
+    m_device->wait();
+    m_device->update_swapchain(m_window->get_extent(),
                               static_cast<uint32_t>(m_settings.bufferingType),
                               m_settings.colorFormat,
                               m_settings.screenSync);
+                              
 
     // Renderpass framebuffer updating
     for (Core::BasePass* pass : m_passes)
@@ -199,11 +208,12 @@ void BaseRenderer::update_renderpasses() {
                 pass->set_extent(m_window->get_extent());
                 pass->update();
             }
-            connect_renderpass(pass);
+            connect_pass(pass);
         }
     };
 
     m_updateFramebuffers = false;
+
 }
 
 void BaseRenderer::init_gui() {
@@ -222,10 +232,10 @@ void BaseRenderer::init_gui() {
 
         void* windowHandle;
         m_window->get_handle(windowHandle);
-        m_device.init_imgui(windowHandle,
+        m_device->init_imgui(windowHandle,
                             m_window->get_windowing_system(),
-                            defaultPass->get_handle(),
-                            defaultPass->get_attachments()[0].imageConfig.samples);
+                            defaultPass->get_renderpass(),
+                            defaultPass->get_renderpass().attachmentsInfo[0].imageConfig.samples);
     }
 }
 void BaseRenderer::init_resources() {
@@ -233,26 +243,26 @@ void BaseRenderer::init_resources() {
     // Setup frames
     m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
     for (size_t i = 0; i < m_frames.size(); i++)
-        m_frames[i] = m_device.create_frame(i);
+        m_frames[i] = m_device->create_frame(i);
     for (size_t i = 0; i < m_frames.size(); i++)
     {
         // Global Buffer
-        const size_t     globalStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
-                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
-        Graphics::Buffer globalBuffer     = m_device.create_buffer_VMA(
+        const size_t     globalStrideSize = (m_device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
+                                         m_device->pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
+        Graphics::Buffer globalBuffer     = m_device->create_buffer_VMA(
             globalStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
         m_frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
-        const size_t     objectStrideSize = (m_device.pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
-                                         m_device.pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
-        Graphics::Buffer objectBuffer     = m_device.create_buffer_VMA(ENGINE_MAX_OBJECTS * objectStrideSize,
+        const size_t     objectStrideSize = (m_device->pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
+                                         m_device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+        Graphics::Buffer objectBuffer     = m_device->create_buffer_VMA(ENGINE_MAX_OBJECTS * objectStrideSize,
                                                                    BUFFER_USAGE_UNIFORM_BUFFER,
                                                                    VMA_MEMORY_USAGE_CPU_TO_GPU,
                                                                    (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);
     }
-    Core::ResourceManager::init_basic_resources(&m_device);
+    Core::ResourceManager::init_basic_resources(m_device);
 }
 
 void BaseRenderer::clean_resources() {

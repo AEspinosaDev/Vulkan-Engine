@@ -178,7 +178,7 @@ void GraphicShaderPass::build(DescriptorPool& descriptorManager) {
         stages.push_back(Init::pipeline_shader_stage_create_info(stage.stage, stage.shaderModule));
     }
     PipelineBuilder::build_graphic_pipeline(
-        pipeline, pipelineLayout, device, renderpass->handle, renderpass->extent, graphicSettings, stages);
+        pipeline, pipelineLayout, device, renderpass->handle, extent, graphicSettings, stages);
 }
 void ComputeShaderPass::build(DescriptorPool& descriptorManager) {
 

@@ -110,7 +110,7 @@ class Device
                        bool           useMipmaps,
                        VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
-    Framebuffer create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers = 1);
+    Framebuffer create_framebuffer(RenderPass& renderpass, Extent2D extent, uint32_t layers = 1, uint32_t id = 0);
     Framebuffer create_framebuffer(RenderPass& renderpass, Image& img);
     Semaphore   create_semaphore();
     Fence       create_fence();
@@ -118,9 +118,7 @@ class Device
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
-    RenderPass create_render_pass(Extent2D                        extent,
-                                  std::vector<Attachment>&        attachments,
-                                  std::vector<SubPassDependency>& dependencies);
+    RenderPass create_render_pass(std::vector<AttachmentInfo>& attachments, std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
     DescriptorPool create_descriptor_pool(uint32_t                       maxSets,
                                           uint32_t                       numUBO,

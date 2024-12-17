@@ -58,7 +58,7 @@ class Swapchain
     inline VkFormat& get_image_format() {
         return m_presentFormat;
     }
-    inline std::vector<Image> get_present_images() const {
+    inline std::vector<Image>& get_present_images() {
         return m_presentImages;
     }
 };

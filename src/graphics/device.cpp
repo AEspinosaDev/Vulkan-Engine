@@ -265,13 +265,11 @@ DescriptorPool Device::create_descriptor_pool(uint32_t                       max
     VK_CHECK(vkCreateDescriptorPool(m_handle, &pool_info, nullptr, &pool.handle));
     return pool;
 }
-RenderPass Device::create_render_pass(Extent2D                        extent,
-                                      std::vector<Attachment>&        attachments,
+RenderPass Device::create_render_pass(std::vector<AttachmentInfo>&        attachments,
                                       std::vector<SubPassDependency>& dependencies) {
     RenderPass rp = {};
     // ATTACHMENT SETUP ----------------------------------
     rp.device = m_handle;
-    rp.extent = extent;
 
     std::vector<VkAttachmentDescription> attachmentsInfo;
     attachmentsInfo.resize(attachments.size(), {});
@@ -351,27 +349,42 @@ RenderPass Device::create_render_pass(Extent2D                        extent,
     {
         new VKFW_Exception("failed to create renderpass!");
     }
-    rp.attachments  = attachments;
-    rp.dependencies = dependencies;
+    rp.attachmentsInfo  = attachments;
+    rp.dependenciesInfo = dependencies;
     return rp;
 } // namespace Graphics
-Framebuffer Device::create_framebuffer(RenderPass& renderpass, std::vector<Attachment>& attachments, uint32_t layers) {
+Framebuffer Device::create_framebuffer(RenderPass& renderpass, Extent2D extent, uint32_t layers, uint32_t id) {
     Framebuffer fbo = {};
     fbo.device      = m_handle;
     fbo.layers      = layers;
+    fbo.extent      = extent;
 
-    std::vector<VkImageView> viewAttachments;
-    viewAttachments.resize(attachments.size());
-
-    // If default
-    size_t presentViewIndex{0};
-
-    for (size_t i = 0; i < viewAttachments.size(); i++)
+    // Populate Image Attachments
+    fbo.attachmentImages.resize(renderpass.attachmentsInfo.size());
+    for (size_t i = 0; i < renderpass.attachmentsInfo.size(); i++)
     {
-        viewAttachments[i] = attachments[i].image.view;
+        if (!renderpass.attachmentsInfo[i].isDefault) // If its not present image
+        {
+            renderpass.attachmentsInfo[i].imageConfig.layers = layers;
+            fbo.attachmentImages[i]                      = create_image({extent.width, extent.height, 1},
+                                                   renderpass.attachmentsInfo[i].imageConfig,
+                                                   false); // No mipmap for attachment image :(
+            fbo.attachmentImages[i].create_view(renderpass.attachmentsInfo[i].imageConfig);
+            fbo.attachmentImages[i].create_sampler(renderpass.attachmentsInfo[i].samplerConfig);
+        }
     }
 
-    VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.handle, renderpass.extent);
+    std::vector<VkImageView> viewAttachments;
+    viewAttachments.resize(renderpass.attachmentsInfo.size());
+    for (size_t i = 0; i < viewAttachments.size(); i++)
+    {
+        if (!renderpass.attachmentsInfo[i].isDefault)
+            viewAttachments[i] = fbo.attachmentImages[i].view;
+        else
+            viewAttachments[i] = m_swapchain.get_present_images()[id].view;
+    }
+
+    VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.handle, extent);
     fbInfo.pAttachments            = viewAttachments.data();
     fbInfo.attachmentCount         = (uint32_t)viewAttachments.size();
     fbInfo.layers                  = layers;

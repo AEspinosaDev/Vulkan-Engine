@@ -86,14 +86,20 @@ class Camera : public Object3D
     inline void set_projection(int width, int height) {
         m_aspect = (float)width / (float)height;
         // m_proj   = math::perspective(math::radians(m_fov), m_aspect, m_near, m_far);
-        m_proj   = math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_near, m_far);
+        m_proj = math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
     inline Mat4 get_projection() const {
         return m_proj;
     }
     inline Mat4 get_view() {
-        return get_model_matrix();
+        if (isDirty)
+        {
+            m_view = math::lookAt(m_transform.position, m_transform.position + m_transform.forward, m_transform.up);
+            set_frustum();
+            isDirty = false;
+        }
+        return m_view;
     }
     inline float get_far() const {
         return m_far;
@@ -108,16 +114,6 @@ class Camera : public Object3D
     inline void set_near(float n) {
         m_near  = n;
         isDirty = true;
-    }
-
-    inline Mat4 get_model_matrix() {
-        if (isDirty)
-        {
-            m_view = math::lookAt(m_transform.position, m_transform.position + m_transform.forward, m_transform.up);
-            set_frustum();
-            isDirty = false;
-        }
-        return m_view;
     }
 
     void set_frustum();

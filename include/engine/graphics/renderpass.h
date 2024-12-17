@@ -20,13 +20,12 @@ namespace Graphics {
 /*
 Attachment info needed for Renderpasses and Framebuffers
 */
-struct Attachment {
-    AttachmentType type           = AttachmentType::COLOR_ATTACHMENT;
-    Image          image          = {};
-    ImageConfig    imageConfig    = {};
-    SamplerConfig  samplerConfig  = {};
-    bool           isPresentImage = false;
-    ClearValue     clearValue     = {};
+struct AttachmentInfo {
+    AttachmentType type          = AttachmentType::COLOR_ATTACHMENT;
+    ImageConfig    imageConfig   = {};
+    SamplerConfig  samplerConfig = {};
+    ClearValue     clearValue    = {};
+    bool           isDefault     = false;
 
     AttachmentLoadOp  loadOp           = ATTACHMENT_LOAD_OP_CLEAR;
     AttachmentStoreOp storeOp          = ATTACHMENT_STORE_OP_STORE;
@@ -36,18 +35,18 @@ struct Attachment {
     ImageLayout       finalLayout      = LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     ImageLayout       attachmentLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    Attachment() {};
-    Attachment(ColorFormatType     format,
-               uint16_t            samples,
-               ImageLayout         final_Layout,
-               ImageLayout         attach_layout,
-               ImageUsageFlags     usage,
-               AttachmentType      attachmentType = AttachmentType::COLOR_ATTACHMENT,
-               ImageAspect         aspect         = ASPECT_COLOR,
-               TextureTypeFlagBits viewType       = TEXTURE_2D,
-               FilterType          filter         = FILTER_LINEAR,
-               AddressMode         addressMode    = ADDRESS_MODE_CLAMP_TO_EDGE,
-               ClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
+    AttachmentInfo() {};
+    AttachmentInfo(ColorFormatType     format,
+                   uint16_t            samples,
+                   ImageLayout         final_Layout,
+                   ImageLayout         attach_layout,
+                   ImageUsageFlags     usage,
+                   AttachmentType      attachmentType = AttachmentType::COLOR_ATTACHMENT,
+                   ImageAspect         aspect         = ASPECT_COLOR,
+                   TextureTypeFlagBits viewType       = TEXTURE_2D,
+                   FilterType          filter         = FILTER_LINEAR,
+                   AddressMode         addressMode    = ADDRESS_MODE_CLAMP_TO_EDGE,
+                   ClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
         : finalLayout(final_Layout)
         , attachmentLayout(attach_layout)
         , clearValue(clearVal)
@@ -88,9 +87,8 @@ struct RenderPass {
     VkRenderPass handle = VK_NULL_HANDLE;
     VkDevice     device = VK_NULL_HANDLE;
 
-    Extent2D                                 extent;
-    std::vector<Graphics::Attachment>        attachments;
-    std::vector<Graphics::SubPassDependency> dependencies;
+    std::vector<Graphics::AttachmentInfo>    attachmentsInfo;
+    std::vector<Graphics::SubPassDependency> dependenciesInfo;
 
     const char* debbugName = nullptr;
 

@@ -28,19 +28,18 @@ class PostProcessPass : public GraphicPass
   public:
     PostProcessPass(Graphics::Device* ctx,
                     Extent2D          extent,
-                    uint32_t          framebufferCount,
                     ColorFormatType   colorFormat,
                     Mesh*             vignette,
                     std::string       shaderPath,
                     std::string       name      = "POST-PROCESS",
                     bool              isDefault = true)
-        : BasePass(ctx, extent, framebufferCount, 1, isDefault, name)
+        : BasePass(ctx, extent, 1, 1, isDefault, name)
         , m_colorFormat(colorFormat)
         , m_vignette(vignette)
         , m_shaderPath(shaderPath) {
     }
 
-    virtual void setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+    virtual void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                    std::vector<Graphics::SubPassDependency>& dependencies);
 
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames);
@@ -49,7 +48,11 @@ class PostProcessPass : public GraphicPass
 
     virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    virtual void connect_to_previous_images(std::vector<Graphics::Image> images);
+    virtual void link_previous_images(std::vector<Graphics::Image> images);
+
+    void clean_framebuffer() {
+        GraphicPass::clean_framebuffer();
+    }
 };
 
 } // namespace Core

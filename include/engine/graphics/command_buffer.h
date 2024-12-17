@@ -45,7 +45,7 @@ struct CommandBuffer {
     void begin_renderpass(RenderPass&       renderpass,
                           Framebuffer&      fbo,
                           VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
-    void end_renderpass(RenderPass& renderpass);
+    void end_renderpass(RenderPass& renderpass, Framebuffer& fbo);
     void draw_geometry(VertexArrays& vao,
                        uint32_t      instanceCount  = 1,
                        uint32_t      firstOcurrence = 0,
@@ -91,7 +91,7 @@ struct CommandBuffer {
     void blit_image(Image&      srcImage,
                     Image&      dstImage,
                     FilterType  filter    = FILTER_LINEAR,
-                    uint32_t    mipLevel = 0,
+                    uint32_t    mipLevel  = 0,
                     ImageAspect srcAspect = ASPECT_COLOR,
                     ImageAspect dstAspect = ASPECT_COLOR);
 
@@ -103,7 +103,7 @@ struct CommandBuffer {
                     Extent2D    srcExtent,
                     Extent2D    dstExtent,
                     FilterType  filter    = FILTER_LINEAR,
-                    uint32_t    mipLevel = 0,
+                    uint32_t    mipLevel  = 0,
                     ImageAspect srcAspect = ASPECT_COLOR,
                     ImageAspect dstAspect = ASPECT_COLOR);
 

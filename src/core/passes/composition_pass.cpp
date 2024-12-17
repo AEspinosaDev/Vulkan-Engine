@@ -12,20 +12,19 @@ void CompositionPass::create_prev_frame_image() {
     prevImgConfig.format      = m_colorFormat;
     prevImgConfig.usageFlags  = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC;
     // prevImgConfig.mipLevels   = 6;
-    m_prevFrame =
-        m_device->create_image({m_renderpass.extent.width, m_renderpass.extent.height, 1}, prevImgConfig, true);
+    m_prevFrame = m_device->create_image({m_imageExtent.width, m_imageExtent.height, 1}, prevImgConfig, true);
     m_prevFrame.create_view(prevImgConfig);
 
     SamplerConfig samplerConfig      = {};
     samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
     m_prevFrame.create_sampler(samplerConfig);
 }
-void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void CompositionPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                         std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(m_isDefault ? 1 : 2);
 
-    attachments[0] = Graphics::Attachment(
+    attachments[0] = Graphics::AttachmentInfo(
         m_colorFormat,
         1,
         LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -38,19 +37,19 @@ void CompositionPass::setup_attachments(std::vector<Graphics::Attachment>&      
         FILTER_LINEAR,
         ADDRESS_MODE_CLAMP_TO_EDGE);
 
-    attachments[0].isPresentImage = m_isDefault ? true : false;
+    attachments[0].isDefault = m_isDefault ? true : false;
 
     if (!m_isDefault) // Bright color buffer. m_colorFormat should be in floating point.
-        attachments[1] = Graphics::Attachment(m_colorFormat,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              COLOR_ATTACHMENT,
-                                              ASPECT_COLOR,
-                                              TEXTURE_2D,
-                                              FILTER_LINEAR,
-                                              ADDRESS_MODE_CLAMP_TO_EDGE);
+        attachments[1] = Graphics::AttachmentInfo(m_colorFormat,
+                                                  1,
+                                                  LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                  LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                  IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                  COLOR_ATTACHMENT,
+                                                  ASPECT_COLOR,
+                                                  TEXTURE_2D,
+                                                  FILTER_LINEAR,
+                                                  ADDRESS_MODE_CLAMP_TO_EDGE);
 
     // Depdencies
     dependencies.resize(2);
@@ -140,7 +139,7 @@ void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 void CompositionPass::setup_shader_passes() {
 
     GraphicShaderPass* compPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
     compPass->settings.descriptorSetLayoutIDs  = {{GLOBAL_LAYOUT, true}, {1, true}};
     compPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
                                                   {NORMAL_ATTRIBUTE, false},
@@ -171,8 +170,8 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
                              STAGE_TOP_OF_PIPE,
                              STAGE_FRAGMENT_SHADER);
 
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_imageExtent);
 
     ShaderPass* shaderPass = m_shaderPasses["composition"];
 
@@ -189,7 +188,7 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     if (m_isDefault && Frame::guiEnabled)
         cmd.draw_gui_data();
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /////////////////////////////////////////
     /*Copy data to tmp previous frame image*/
@@ -202,11 +201,11 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
                          STAGE_FRAGMENT_SHADER,
                          STAGE_TRANSFER);
 
-    cmd.blit_image(m_renderpass.attachments[0].image, m_prevFrame, FILTER_NEAREST);
+    cmd.blit_image(m_framebuffers[0].attachmentImages[0], m_prevFrame, FILTER_NEAREST);
 
     // m_prevFrame.generate_mipmaps(cmd.handle);
 
-    cmd.pipeline_barrier(m_renderpass.attachments[0].image,
+    cmd.pipeline_barrier(m_framebuffers[0].attachmentImages[0],
                          LAYOUT_TRANSFER_SRC_OPTIMAL,
                          m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                          ACCESS_TRANSFER_READ,
@@ -222,7 +221,7 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
                          STAGE_TRANSFER,
                          STAGE_FRAGMENT_SHADER);
 }
-void CompositionPass::connect_to_previous_images(std::vector<Graphics::Image> images) {
+void CompositionPass::link_previous_images(std::vector<Graphics::Image> images) {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // SHADOWS

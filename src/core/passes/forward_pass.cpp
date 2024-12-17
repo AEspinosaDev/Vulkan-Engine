@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                     std::vector<Graphics::SubPassDependency>& dependencies) {
 
     uint16_t samples      = static_cast<uint16_t>(m_aa);
@@ -13,68 +13,68 @@ void ForwardPass::setup_attachments(std::vector<Graphics::Attachment>&        at
     attachments.resize(multisampled ? 4 : 2);
 
     attachments[0] =
-        Graphics::Attachment(m_colorFormat,
-                             samples,
-                             m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
-                                         : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                             !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
-                                          : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-                             COLOR_ATTACHMENT,
-                             ASPECT_COLOR,
-                             TEXTURE_2D,
-                             FILTER_LINEAR,
-                             ADDRESS_MODE_CLAMP_TO_EDGE);
-
-    attachments[0].isPresentImage = m_isDefault ? (multisampled ? false : true) : false;
-
-    // Bright color buffer. m_colorFormat should be in floating point.
-    attachments[1] = Graphics::Attachment(m_colorFormat,
-                                          samples,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                          COLOR_ATTACHMENT,
-                                          ASPECT_COLOR,
-                                          TEXTURE_2D,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_EDGE);
-
-    Graphics::Attachment resolveAttachment;
-    if (multisampled)
-    {
-        attachments[2] =
-            Graphics::Attachment(m_colorFormat,
-                                 1,
-                                 m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        Graphics::AttachmentInfo(m_colorFormat,
+                                 samples,
+                                 m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
+                                             : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                  LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                  !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
                                               : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-                                 RESOLVE_ATTACHMENT,
+                                 COLOR_ATTACHMENT,
                                  ASPECT_COLOR,
-                                 TEXTURE_2D);
-        attachments[2].isPresentImage = m_isDefault ? true : false;
+                                 TEXTURE_2D,
+                                 FILTER_LINEAR,
+                                 ADDRESS_MODE_CLAMP_TO_EDGE);
 
-        attachments[3] = Graphics::Attachment(m_colorFormat,
-                                              1,
+    attachments[0].isDefault = m_isDefault ? (multisampled ? false : true) : false;
+
+    // Bright color buffer. m_colorFormat should be in floating point.
+    attachments[1] = Graphics::AttachmentInfo(m_colorFormat,
+                                              samples,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              RESOLVE_ATTACHMENT,
+                                              COLOR_ATTACHMENT,
                                               ASPECT_COLOR,
                                               TEXTURE_2D,
                                               FILTER_LINEAR,
                                               ADDRESS_MODE_CLAMP_TO_EDGE);
+
+    Graphics::AttachmentInfo resolveAttachment;
+    if (multisampled)
+    {
+        attachments[2] =
+            Graphics::AttachmentInfo(m_colorFormat,
+                                     1,
+                                     m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                     LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                     !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
+                                                  : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
+                                     RESOLVE_ATTACHMENT,
+                                     ASPECT_COLOR,
+                                     TEXTURE_2D);
+        attachments[2].isDefault = m_isDefault ? true : false;
+
+        attachments[3] = Graphics::AttachmentInfo(m_colorFormat,
+                                                  1,
+                                                  LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                  LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                  IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                  RESOLVE_ATTACHMENT,
+                                                  ASPECT_COLOR,
+                                                  TEXTURE_2D,
+                                                  FILTER_LINEAR,
+                                                  ADDRESS_MODE_CLAMP_TO_EDGE);
     }
 
-    Graphics::Attachment depthAttachment = Graphics::Attachment(m_depthFormat,
-                                                                samples,
-                                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                                                DEPTH_ATTACHMENT,
-                                                                ASPECT_DEPTH,
-                                                                TEXTURE_2D);
+    Graphics::AttachmentInfo depthAttachment = Graphics::AttachmentInfo(m_depthFormat,
+                                                                        samples,
+                                                                        LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                        LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                        IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                                                        DEPTH_ATTACHMENT,
+                                                                        ASPECT_DEPTH,
+                                                                        TEXTURE_2D);
     attachments.push_back(depthAttachment);
 
     // Depdencies
@@ -189,8 +189,8 @@ void ForwardPass::setup_shader_passes() {
     VkSampleCountFlagBits samples = static_cast<VkSampleCountFlagBits>(m_aa);
 
     // Setup shaderpasses
-    GraphicShaderPass* unlitPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/unlit.glsl");
+    GraphicShaderPass* unlitPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/forward/unlit.glsl");
     unlitPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
     unlitPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -203,8 +203,8 @@ void ForwardPass::setup_shader_passes() {
     unlitPass->graphicSettings.samples          = samples;
     m_shaderPasses["unlit"]                     = unlitPass;
 
-    GraphicShaderPass* phongPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/phong.glsl");
+    GraphicShaderPass* phongPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/forward/phong.glsl");
     phongPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     phongPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -217,8 +217,10 @@ void ForwardPass::setup_shader_passes() {
     phongPass->graphicSettings.samples          = samples;
     m_shaderPasses["phong"]                     = phongPass;
 
-    GraphicShaderPass* PBRPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/physically_based.glsl");
+    GraphicShaderPass* PBRPass               = new GraphicShaderPass(m_device->get_handle(),
+                                                       m_renderpass,
+                                                       m_imageExtent,
+                                                       ENGINE_RESOURCES_PATH "shaders/forward/physically_based.glsl");
     PBRPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     PBRPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -232,39 +234,39 @@ void ForwardPass::setup_shader_passes() {
     m_shaderPasses["physical"]                = PBRPass;
 
     GraphicShaderPass* hairStrandPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/forward/hair_strand.glsl");
     hairStrandPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    hairStrandPass->graphicSettings.attributes    = {{POSITION_ATTRIBUTE, true},
-                                                     {NORMAL_ATTRIBUTE, false},
-                                                     {UV_ATTRIBUTE, false},
-                                                     {TANGENT_ATTRIBUTE, true},
-                                                     {COLOR_ATTRIBUTE, true}};
-    hairStrandPass->graphicSettings.dynamicStates = dynamicStates;
+    hairStrandPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                        {NORMAL_ATTRIBUTE, false},
+                                                        {UV_ATTRIBUTE, false},
+                                                        {TANGENT_ATTRIBUTE, true},
+                                                        {COLOR_ATTRIBUTE, true}};
+    hairStrandPass->graphicSettings.dynamicStates    = dynamicStates;
     hairStrandPass->graphicSettings.blendAttachments = blendAttachments;
-    hairStrandPass->graphicSettings.samples       = samples;
-    hairStrandPass->graphicSettings.sampleShading = false;
-    hairStrandPass->graphicSettings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    m_shaderPasses["hairstr"]                     = hairStrandPass;
+    hairStrandPass->graphicSettings.samples          = samples;
+    hairStrandPass->graphicSettings.sampleShading    = false;
+    hairStrandPass->graphicSettings.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    m_shaderPasses["hairstr"]                        = hairStrandPass;
 
     GraphicShaderPass* hairStrandPass2 = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/forward/hair_strand2.glsl");
     hairStrandPass2->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    hairStrandPass2->graphicSettings.attributes    = {{POSITION_ATTRIBUTE, true},
-                                                      {NORMAL_ATTRIBUTE, false},
-                                                      {UV_ATTRIBUTE, false},
-                                                      {TANGENT_ATTRIBUTE, true},
-                                                      {COLOR_ATTRIBUTE, true}};
-    hairStrandPass2->graphicSettings.dynamicStates = dynamicStates;
-    hairStrandPass2->graphicSettings.samples       = samples;
-    hairStrandPass2->graphicSettings.sampleShading = false;
+    hairStrandPass2->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+                                                         {NORMAL_ATTRIBUTE, false},
+                                                         {UV_ATTRIBUTE, false},
+                                                         {TANGENT_ATTRIBUTE, true},
+                                                         {COLOR_ATTRIBUTE, true}};
+    hairStrandPass2->graphicSettings.dynamicStates    = dynamicStates;
+    hairStrandPass2->graphicSettings.samples          = samples;
+    hairStrandPass2->graphicSettings.sampleShading    = false;
     hairStrandPass2->graphicSettings.blendAttachments = blendAttachments;
-    hairStrandPass2->graphicSettings.topology      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    m_shaderPasses["hairstr2"]                     = hairStrandPass2;
+    hairStrandPass2->graphicSettings.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    m_shaderPasses["hairstr2"]                        = hairStrandPass2;
 
     GraphicShaderPass* skyboxPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/forward/skybox.glsl");
     skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -291,8 +293,8 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_imageExtent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -371,7 +373,7 @@ void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint
     if (m_isDefault && Frame::guiEnabled)
         cmd.draw_gui_data();
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
 void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
@@ -396,7 +398,7 @@ void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
         get_TLAS(scene)->binded = true;
     }
 }
-void ForwardPass::connect_to_previous_images(std::vector<Image> images) {
+void ForwardPass::link_previous_images(std::vector<Image> images) {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         m_descriptorPool.set_descriptor_write(&images[0],

@@ -3,7 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
-void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        attachments,
+void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&        attachments,
                                      std::vector<Graphics::SubPassDependency>& dependencies) {
 
     //////////////////////
@@ -12,31 +12,31 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
     attachments.resize(6);
 
     // Positions
-    attachments[0] = Graphics::Attachment(SRGBA_32F,
+    attachments[0] = Graphics::AttachmentInfo(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Normals
-    attachments[1] = Graphics::Attachment(SRGBA_32F,
+    attachments[1] = Graphics::AttachmentInfo(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Albedo
-    attachments[2] = Graphics::Attachment(SRGBA_32F,
+    attachments[2] = Graphics::AttachmentInfo(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Material
-    attachments[3] = Graphics::Attachment(RGBA_8U,
+    attachments[3] = Graphics::AttachmentInfo(RGBA_8U,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Emissive
-    attachments[4] = Graphics::Attachment(SRGBA_32F,
+    attachments[4] = Graphics::AttachmentInfo(SRGBA_32F,
                                           1,
                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                           LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -50,7 +50,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::Attachment>&        a
     //                                       IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Depth
-    attachments[5] = Graphics::Attachment(m_depthFormat,
+    attachments[5] = Graphics::AttachmentInfo(m_depthFormat,
                                           1,
                                           LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                           LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -164,7 +164,7 @@ void GeometryPass::setup_shader_passes() {
 
     // Geometry
     GraphicShaderPass* geomPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
     geomPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     geomPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -189,7 +189,7 @@ void GeometryPass::setup_shader_passes() {
     m_shaderPasses["geometry"] = geomPass;
 
     GraphicShaderPass* skyboxPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent,  ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
     skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -210,8 +210,8 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[presentImageIndex]);
-    cmd.set_viewport(m_renderpass.extent);
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
+    cmd.set_viewport(m_imageExtent);
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
@@ -286,7 +286,7 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
         }
     }
 
-    cmd.end_renderpass(m_renderpass);
+    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
 void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
