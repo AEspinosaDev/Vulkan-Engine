@@ -21,11 +21,14 @@ typedef enum class AmbientOcclusionType
     RTAO = 1, // Raytraced AO
 } AOType;
 struct SSAOSettings {
-    float    radius  = 0.2;
-    float    bias    = 0.0;
-    uint32_t samples = 8;
-    AOType   type    = AOType::SSAO;
-    uint32_t enabled = 1;
+    float    radius     = 0.2;
+    float    bias       = 0.0;
+    uint32_t samples    = 4;
+    AOType   type       = AOType::SSAO;
+    uint32_t enabled    = 1;
+    float    blurRadius = 4.0f;
+    float    blurSigmaA = 10.0f;
+    float    blurSigmaB = 0.8f;
 };
 /*
 Pre-composition pass called before the Composition (Lighting) pass in a deferred framework. This pass computes

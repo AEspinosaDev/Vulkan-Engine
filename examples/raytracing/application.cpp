@@ -18,7 +18,12 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    // SSAOSettings               ao   = {};
+    // ao.type                         = AOType::RTAO;
+    // ao.samples                      = 4;
+    // rndr->set_SSAO_settings(ao);
+    m_renderer = rndr;
 
     setup();
     setup_gui();
@@ -52,7 +57,7 @@ void Application::setup() {
     const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH "meshes/");
 
     camera = new Camera();
-    camera->set_position(Vec3(0.0f, 0.0f, -7.2f));
+    camera->set_position(Vec3(0.0f, 0.0f, -8.2f));
     camera->set_far(100.0f);
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
@@ -209,8 +214,47 @@ void Application::setup() {
     stormtrooper->add_child(stormtrooperHead);
     m_scene->add(stormtrooper);
 
+    Mesh* roninMesh = new Mesh();
+    Tools::Loaders::load_3D_file(roninMesh, MESH_PATH + "ronin.obj");
+    auto roninMat = new PhysicallyBasedMaterial();
+    roninMesh->push_material(roninMat);
+    roninMesh->set_name("Ronin");
+    roninMesh->set_position({-2.1f, -2.065f, -3.4f});
+    roninMesh->set_rotation({0.0, 14.0f, 0.0f});
+
+    stoneMat->set_roughness(0.5f);
+    stoneMat->set_metalness(0.0f);
+
+    Mesh* sphereMesh = new Mesh();
+    Tools::Loaders::load_3D_file(sphereMesh, ENGINE_MESH_PATH + "sphere.obj");
+    auto spheremat = new PhysicallyBasedMaterial();
+    sphereMesh->push_material(spheremat);
+    sphereMesh->set_name("Energy ball");
+    spheremat->set_albedo(Vec3(0.0));
+    spheremat->set_metalness(0.0);
+    spheremat->set_roughness(0.0);
+    spheremat->set_emissive_color(Vec3(0.0,0.35,0.8));
+    spheremat->set_emission_intensity(30.0f);
+    sphereMesh->set_position({-2.5f, -0.4f, -3.0f});
+    sphereMesh->set_scale(0.25f);
+    sphereMesh->ray_hittable(false);
+
+    PointLight* energyLight = new PointLight();
+    energyLight->set_position({-2.5f, -0.4f, -3.0f});
+    energyLight->set_area_of_effect(20.0f);
+    energyLight->set_intensity(0.08f);
+    energyLight->set_color(Vec3(0.0,0.35,0.8));
+    energyLight->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
+    energyLight->set_area(0.1f);
+    energyLight->set_shadow_ray_samples(4);
+    energyLight->set_name("Energy");
+    sphereMesh->add_child(energyLight);
+
+    m_scene->add(roninMesh);
+    m_scene->add(sphereMesh);
     m_scene->add(plane);
 
+    // roninMesh->add_child(sphereMesh);
     m_scene->set_ambient_color({0.2, 0.25, 0.61});
 
     TextureHDR* envMap = new TextureHDR();

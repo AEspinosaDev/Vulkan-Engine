@@ -127,7 +127,6 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               5);
-       
     }
 }
 void PreCompositionPass::setup_shader_passes() {
@@ -149,8 +148,10 @@ void PreCompositionPass::setup_shader_passes() {
     compPass->build(m_descriptorPool);
     m_shaderPasses["pre"] = compPass;
 
-    GraphicShaderPass* blurPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/misc/box_filter.glsl");
+    GraphicShaderPass* blurPass               = new GraphicShaderPass(m_device->get_handle(),
+                                                        m_renderpass,
+                                                        m_imageExtent,
+                                                        ENGINE_RESOURCES_PATH "shaders/misc/bilateral_filter.glsl");
     blurPass->settings.descriptorSetLayoutIDs = {{0, true}, {1, true}};
     blurPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                  {NORMAL_ATTRIBUTE, false},
@@ -158,7 +159,7 @@ void PreCompositionPass::setup_shader_passes() {
                                                  {TANGENT_ATTRIBUTE, false},
                                                  {COLOR_ATTRIBUTE, false}};
 
-    blurPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(SSAOSettings))};
+    blurPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};
 
     blurPass->build_shader_stages();
     blurPass->build(m_descriptorPool);
@@ -195,7 +196,18 @@ void PreCompositionPass::render(Graphics::Frame& currentFrame, Scene* const scen
 
     cmd.bind_shaderpass(*shaderPass);
 
-    // cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_AO, sizeof(SSAOSettings));
+    // struct BFilterUniforms {
+    //     float kernel;
+    //     float sigmaA;
+    //     float sigmaB;
+    // };
+
+    // BFilterUniforms filter;
+    // filter.kernel = m_AO.blurRadius;
+    // filter.sigmaA = m_AO.blurSigmaA;
+    // filter.sigmaB = m_AO.blurSigmaB;
+
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_AO.blurRadius, sizeof(float));
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].blurImageDescritor, 1, *shaderPass);
 
@@ -211,7 +223,7 @@ void PreCompositionPass::link_previous_images(std::vector<Graphics::Image> image
             &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2); // POSITION
         m_descriptorPool.set_descriptor_write(
             &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3); // NORMALS
-        // RAW SSAO    
+        // RAW SSAO
         m_descriptorPool.set_descriptor_write(&m_framebuffers[0].attachmentImages[0],
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].blurImageDescritor,

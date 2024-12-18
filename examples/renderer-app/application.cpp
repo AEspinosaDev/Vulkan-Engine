@@ -33,6 +33,7 @@ void Application::run(int argc, char* argv[]) {
     settings.enableUI         = true;
     settings.enableRaytracing = true;
     settings.softwareAA       = true;
+    
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;

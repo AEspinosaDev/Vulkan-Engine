@@ -218,6 +218,18 @@ void Tools::DeferredRendererWidget::render() {
         {
             m_renderer->set_SSAO_settings(settings_SSAO);
         }
+        if (ImGui::DragFloat("SSAO Blur Radius", &settings_SSAO.blurRadius, 0.01f, 0.0f, 10.0f))
+        {
+            m_renderer->set_SSAO_settings(settings_SSAO);
+        }
+        // if (ImGui::DragFloat("SSAO Blur Sigma", &settings_SSAO.blurSigmaA, 0.01f, 0.0f, 20.0f))
+        // {
+        //     m_renderer->set_SSAO_settings(settings_SSAO);
+        // }
+        // if (ImGui::DragFloat("SSAO Blur Sigma B", &settings_SSAO.blurSigmaB, 0.01f, 0.0f, 10.0f))
+        // {
+        //     m_renderer->set_SSAO_settings(settings_SSAO);
+        // }
     }
     ImGui::Separator();
     Core::SSRSettings settings_SSR = m_renderer->get_SSR_settings();

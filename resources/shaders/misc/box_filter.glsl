@@ -17,25 +17,30 @@ void main() {
 
 layout(location = 0) in  vec2 v_uv;
 
+/*Modify values of set and binding according to needs*/
 layout(set = 1, binding = 0) uniform sampler2D inputImage;
 
+layout(push_constant) uniform Settings {
+    float radius; 
+} settings;
 
 
 layout(location = 0) out vec4 outputImage;
 
 void main()
 {
+    int radius = int(settings.radius);
     vec2 texelSize = 1.0 / vec2(textureSize(inputImage, 0));
     float result = 0.0;
-    for (int x = -4; x < 4; ++x) 
+    for (int x = -radius; x < radius; ++x) 
     {
-        for (int y = -4; y < 4; ++y) 
+        for (int y = -radius; y < radius; ++y) 
         {
             vec2 offset = vec2(float(x), float(y)) * texelSize;
             result += texture(inputImage, v_uv + offset).r;
         }
     }
-    result = result / (8.0f*8.0f);
+    result = result / ((radius*2.0f)*(radius*2.0f));
     outputImage = vec4(result);
 }
 
