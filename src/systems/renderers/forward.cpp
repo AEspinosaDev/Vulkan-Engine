@@ -16,7 +16,9 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
     }
 
     m_passes[FORWARD_PASS]->set_attachment_clear_value(
-        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a});
+        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 0);
+    m_passes[FORWARD_PASS]->set_attachment_clear_value(
+        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 1);
 }
 
 void ForwardRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
