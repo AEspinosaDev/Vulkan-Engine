@@ -250,6 +250,7 @@ class HairStrandMaterial2 : public HairStrandMaterial
   public:
     HairStrandMaterial2(HairPigmentType pigment = BLONDE)
         : HairStrandMaterial(Vec4(0.0), {}, "hairstr2") {
+        m_coloredScatter = true;
         TextureSettings settings{};
         settings.useMipmaps         = false;
         settings.adressMode         = ADDRESS_MODE_CLAMP_TO_EDGE;

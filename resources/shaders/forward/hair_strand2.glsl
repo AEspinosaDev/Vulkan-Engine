@@ -144,8 +144,8 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     float density;
 
     bool glints;
-    bool useScatter;
-    bool coloredScatter;
+    bool localScatter;
+    bool globalScatter;
     bool r;
 
     bool tt;
@@ -176,7 +176,7 @@ vec3 computeAmbient(vec3 n) {
                 0.0, 1.0, 0.0,
                 s, 0.0, c);
         vec3 rotatedNormal = normalize(rotationY * n);
-
+        bsdf.tt = false;
         ambient = evalMarschnerLookupBSDF(
                 rotatedNormal, 
                 normalize(-g_pos),
@@ -190,12 +190,7 @@ vec3 computeAmbient(vec3 n) {
                 nGITex2,
                 vec3(0.5),
                 vec3(0.5),
-                0.1,
-                material.r, 
-                false, 
-                material.trt,
-                material.useScatter);
-
+                0.1);
 
         // ambient = (scene.ambientIntensity * scene.ambientColor) ;
     }else{
@@ -207,11 +202,16 @@ vec3 computeAmbient(vec3 n) {
 void main() {
 
     //BSDF setup ............................................................
-    bsdf.tangent =  normalize(g_dir);
-    bsdf.Rpower = material.Rpower;
-    bsdf.TTpower = material.TTpower;
-    bsdf.TRTpower = material.TRTpower;
-    bsdf.density = material.density;
+    bsdf.tangent        = normalize(g_dir);
+    bsdf.Rpower         = material.Rpower;
+    bsdf.TTpower        = material.TTpower;
+    bsdf.TRTpower       = material.TRTpower;
+    bsdf.density        = material.density;
+    bsdf.r              = material.r;
+    bsdf.tt             = material.tt;
+    bsdf.trt            = material.trt;
+    bsdf.localScatter   = material.localScatter;
+    bsdf.globalScatter  = material.globalScatter;
 
 
     //DIRECT LIGHTING .......................................................
@@ -242,11 +242,7 @@ void main() {
                 nGITex2,
                 shadow,
                 spread,
-                directFraction,
-                material.r, 
-                material.tt, 
-                material.trt,
-                material.useScatter);
+                directFraction);
 
             color += lighting;
         }

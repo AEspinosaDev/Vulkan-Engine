@@ -31,6 +31,12 @@ struct                          MarschnerLookupBSDF{
     float                       TTpower;
     float                       TRTpower;
     float                       density;
+	//Options
+	bool 						r;
+    bool 						tt; 
+    bool 						trt;
+	bool 						localScatter;
+	bool 						globalScatter;
 };
 
 //Longitudinal TERM (Gaussian Distribution)
@@ -102,23 +108,21 @@ vec3 computeHairShadow(LightUniform light,int lightId, sampler2DArray shadowMap,
 
 
 vec3 evalMarschnerLookupBSDF(
-    vec3 wi,               //Light vector
-    vec3 v,                //View vector
-    vec3 irradiance,
+    vec3 wi,               	//Light vector
+    vec3 v,                	//View vector
+    vec3 irradiance,		//Li
     MarschnerLookupBSDF bsdf,
+	//LUTs
     sampler2D texN,
     sampler2D texNTRT,
     sampler3D texGI,
     sampler2D texGI_M,
     sampler2D texGI_N,
     sampler2D texGI_NTRT,
+	//Factors
     vec3 transDirect,
     vec3 spread,
-    float directFraction,
-    bool r,
-    bool tt, 
-    bool trt,
-	bool scatter) 
+    float directFraction) 
     {
 
     //Theta
@@ -163,53 +167,55 @@ vec3 evalMarschnerLookupBSDF(
 	float MTT           = M(thH - TT_SHIFT  ,TT_DEV);
 	float MTRT          = M(thH - TRT_SHIFT ,TRT_DEV);
 
-    float R             = r ?   MR   * NR   * bsdf.Rpower  : 0.0; 
-    vec3 TT             = tt ?  MTT  * NTT  *  bsdf.TTpower  : vec3(0.0); 
-    vec3 TRT            = trt ? MTRT * NTRT * bsdf.TRTpower: vec3(0.0); 
+    float R             = bsdf.r ?   MR   * NR   * bsdf.Rpower  : 0.0; 
+    vec3 TT             = bsdf.tt ?  MTT  * NTT  *  bsdf.TTpower  : vec3(0.0); 
+    vec3 TRT            = bsdf.trt ? MTRT * NTRT * bsdf.TRTpower: vec3(0.0); 
 
     vec3 color          = R+TT+TRT;
 
-	if(scatter){
     //////////////////////////////////////////////////////////////////////////
 	// Local Scattering
 	//////////////////////////////////////////////////////////////////////////
-
+	vec3 gi	= vec3(0.0);
     float ix_thH = thH * ONE_OVER_PI * 0.5 + 0.5;
     vec3  ix_spread  =  sqrt(spread) * ONE_OVER_PI* 0.5;
 
-	vec3 gi;
-	gi.r = DENSITY * texture( texGI, vec3( ix_spread.r, 1-ix_thH, ix_th ) ).r;
-	gi.g = DENSITY * texture( texGI, vec3( ix_spread.g, 1-ix_thH, ix_th ) ).g;
-	gi.b = DENSITY * texture( texGI, vec3( ix_spread.b, 1-ix_thH, ix_th ) ).b;
+	if(bsdf.localScatter){
 
-	color += gi;
-	color *= directFraction;
 
+		gi.r = DENSITY * texture( texGI, vec3( ix_spread.r, 1-ix_thH, ix_th ) ).r;
+		gi.g = DENSITY * texture( texGI, vec3( ix_spread.g, 1-ix_thH, ix_th ) ).g;
+		gi.b = DENSITY * texture( texGI, vec3( ix_spread.b, 1-ix_thH, ix_th ) ).b;
+
+		color += gi;
+		color *= directFraction;
+
+	}
     //////////////////////////////////////////////////////////////////////////
 	// Global Scattering
 	//////////////////////////////////////////////////////////////////////////
+	if(bsdf.globalScatter){
 
-	vec3 trans = transDirect - directFraction;
+		vec3 trans = transDirect - directFraction;
 
-	//N
-	vec4  N_GI 		= texture(texGI_N, index1 );
-	float NR_GI   	= N_GI.a;
-	vec3  NTT_GI  	= N_GI.rgb;
-	vec3  NTRT_GI 	= texture(texGI_NTRT, index2 ).rgb;
+		//N
+		vec4  N_GI 		= texture(texGI_N, index1 );
+		float NR_GI   	= N_GI.a;
+		vec3  NTT_GI  	= N_GI.rgb;
+		vec3  NTRT_GI 	= texture(texGI_NTRT, index2 ).rgb;
 
-	//M
-	vec3 M_GIr 		= texture(texGI_M, vec2(ix_spread.r, 1-ix_thH) ).xyz;
-	vec3 M_GIg 		= texture(texGI_M, vec2(ix_spread.g, 1-ix_thH) ).xyz;
-	vec3 M_GIb 		= texture(texGI_M, vec2(ix_spread.b, 1-ix_thH) ).xyz;
+		//M
+		vec3 M_GIr 		= texture(texGI_M, vec2(ix_spread.r, 1-ix_thH) ).xyz;
+		vec3 M_GIg 		= texture(texGI_M, vec2(ix_spread.g, 1-ix_thH) ).xyz;
+		vec3 M_GIb 		= texture(texGI_M, vec2(ix_spread.b, 1-ix_thH) ).xyz;
 
-	vec3 MR_GI   	= vec3( M_GIr.x, M_GIg.x, M_GIb.x );
-	vec3 MTT_GI  	= vec3( M_GIr.y, M_GIg.y, M_GIb.y );
-	vec3 MTRT_GI 	= vec3( M_GIr.z, M_GIg.z, M_GIb.z );
+		vec3 MR_GI   	= vec3( M_GIr.x, M_GIg.x, M_GIb.x );
+		vec3 MTT_GI  	= vec3( M_GIr.y, M_GIg.y, M_GIb.y );
+		vec3 MTRT_GI 	= vec3( M_GIr.z, M_GIg.z, M_GIb.z );
 
-	vec3 f_indir = trans * DENSITY * ( gi + MR_GI*NR_GI + MTT_GI*NTT_GI + MTRT_GI*NTRT_GI );	// N components already divided by PI
-	color +=  f_indir;
+		vec3 f_indir = trans * DENSITY * ( gi + MR_GI*NR_GI + MTT_GI*NTT_GI + MTRT_GI*NTRT_GI );	// N components already divided by PI
+		color +=  f_indir;
 	
-	// color += gi * 0.1; 
 	}
 	//////////////////////////////////////////////////////////////////////////
 

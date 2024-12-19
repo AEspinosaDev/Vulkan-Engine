@@ -723,24 +723,22 @@ void ObjectExplorerWidget::render() {
                     mat->set_ior(ior); // Update index of refraction
                 }
 
-                bool glints = mat->get_glints();
-                if (ImGui::Checkbox("Glints", &glints))
-                {
-                    mat->set_glints(glints); // Update glints
-                }
-
                 bool useScatter = mat->get_useScatter();
-                if (ImGui::Checkbox("Use Scatter", &useScatter))
+                if (ImGui::Checkbox("Local Scatter", &useScatter))
                 {
                     mat->set_useScatter(useScatter); // Update use scatter
                 }
 
                 bool coloredScatter = mat->get_coloredScatter();
-                if (ImGui::Checkbox("Colored Scatter", &coloredScatter))
+                if (ImGui::Checkbox("Global Scatter", &coloredScatter))
                 {
                     mat->set_coloredScatter(coloredScatter); // Update colored scatter
                 }
-
+                bool glints = mat->get_glints();
+                if (ImGui::Checkbox("Glints", &glints))
+                {
+                    mat->set_glints(glints); // Update glints
+                }
                 bool occlusion = mat->get_occlusion();
                 if (ImGui::Checkbox("Occlusion", &occlusion))
                 {
