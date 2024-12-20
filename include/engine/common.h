@@ -400,10 +400,10 @@ typedef enum AttachmentLoadOpFlagBits
 } AttachmentLoadOp;
 typedef enum TextureFormatTypeFlagBits
 {
-    TEXTURE_FORMAT_TYPE_COLOR  = 0x00000000,
-    TEXTURE_FORMAT_TYPE_NORMAL = 0x00000001,
-    TEXTURE_FORMAT_TYPE_DEPTH  = 0x00000002,
-    TEXTURE_FORMAT_TYPE_HDR    = 0x00000003
+    TEXTURE_FORMAT_SRGB  = 0x00000000,
+    TEXTURE_FORMAT_UNORM = 0x00000001,
+    TEXTURE_FORMAT_DEPTH  = 0x00000002,
+    TEXTURE_FORMAT_HDR    = 0x00000003
 } TextureFormatType;
 typedef enum BindingTypeFlagBits
 {

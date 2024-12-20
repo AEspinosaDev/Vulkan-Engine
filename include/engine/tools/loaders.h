@@ -14,9 +14,14 @@
 #include <thread>
 #include <tiny_obj_loader.h>
 #include <tinyply.h>
+#include <tinyxml2.h>
 #include <unordered_map>
 
+#include <engine/core/materials/phong.h>
+#include <engine/core/materials/physically_based.h>
+#include <engine/core/materials/unlit.h>
 #include <engine/core/scene/mesh.h>
+#include <engine/core/scene/scene.h>
 #include <engine/core/textures/textureHDR.h>
 #include <engine/core/textures/textureLDR.h>
 
@@ -53,14 +58,14 @@ Load image texture
 */
 void load_texture(Core::ITexture*   texture,
                   const std::string fileName,
-                  TextureFormatType textureFormat = TEXTURE_FORMAT_TYPE_COLOR,
+                  TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB,
                   bool              asyncCall     = true);
 /*
 Load .png file.
  */
 void load_PNG(Core::Texture* const texture,
               const std::string    fileName,
-              TextureFormatType    textureFormat = TEXTURE_FORMAT_TYPE_COLOR);
+              TextureFormatType    textureFormat = TEXTURE_FORMAT_SRGB);
 /*
 Load .hrd
 */
@@ -72,9 +77,22 @@ will be used for computing the depth if no depthy input is given. PNG or JPEG av
 void load_3D_texture(Core::ITexture* const texture,
                      const std::string     fileName,
                      uint16_t              depth         = 0,
-                     TextureFormatType     textureFormat = TEXTURE_FORMAT_TYPE_COLOR);
+                     TextureFormatType     textureFormat = TEXTURE_FORMAT_SRGB);
 
-void compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices, const std::vector<uint32_t>& indices);
+/*Loads and save a scene from XML file*/
+class SceneLoader
+{
+    // load_mesh();
+    // load_light();
+    // load_camera();
+
+  public:
+    SceneLoader() {
+    }
+    void load_scene(Core::Scene* const scene, const std::string fileName, bool async = true);
+    void save_scene(const std::string fileName) {
+    }
+};
 
 }; // namespace Tools::Loaders
 

@@ -169,7 +169,7 @@ void Application::setup() {
     Texture* toriiT    = new Texture();
     Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
     Texture* toriiN = new Texture();
-    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_UNORM);
     Texture* toriiM = new Texture();
     Tools::Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
@@ -193,7 +193,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
 
     Texture* floorNormalText = new Texture();
-    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_UNORM);
     Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicallyBasedMaterial();

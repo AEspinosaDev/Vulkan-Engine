@@ -1,0 +1,53 @@
+<Scene>
+    <Resources path="assets/resources/" />
+    
+    <Camera type="perspective" fov="70">
+        <Transform>
+            <scale x="1" y="1" z="1" />
+            <translate x="0" y="0.919769" z="5.41159" />
+            <rotate x="0" y="0.893051" z="4.41198" />
+        </Transform>
+    </Camera>
+
+    <Mesh type="file">
+        <Filename value="meshes/sphere.obj" />
+        <Transform>
+            <scale x="0.5" y="0.5" z="0.5" />
+            <translate x="0" y="0" z="0" />
+            <rotate x="0" y="0" z="0" />
+        </Transform>
+
+        <Material type="physical">
+            <roughness value="0.5" />
+            <metallic value="0.5" />
+            <albedo r="0" g="0" b="0" />
+            <emission r="30" g="30" b="30" />
+
+            <!-- Textures for this material -->
+            <Textures>
+                <diffuse path="textures/diffuse_map.jpg" />
+                <normal path="textures/normal_map.jpg" />
+                <specular path="textures/specular_map.jpg" />
+            </Textures>
+        </Material>
+    </Mesh>
+
+    <Light type="point">
+        <Transform>
+            <translate x="5.0" y="5.0" z="5.0" />
+            <scale x="0.5" y="0.5" z="0.5" />
+            <rotate x="0" y="0" z="0" />
+        </Transform>
+
+        <intensity value="2.0" />
+        <color r="30" g="30" b="30" />
+        <influence value="30.0" />
+        <string name="shadowType" value="raytraced" />
+    </Light>
+
+    <!-- <Skybox filename="textures/sky.hdr">
+        <rotate x="0" y="0" z="0" />
+        <intensity value="2.0"/>
+    </Skybox> -->
+
+</Scene>

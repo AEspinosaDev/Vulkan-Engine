@@ -45,8 +45,8 @@ class PhongMaterial : public IMaterial
                                                   {GLOSSINESS, nullptr},
                                                   {AO, nullptr},
                                                   {EMISSIVE, nullptr}};
-                                                  
-    std::unordered_map<int, bool>      m_textureBindingState;
+
+    std::unordered_map<int, bool> m_textureBindingState;
 
     virtual Graphics::MaterialUniforms                get_uniforms() const;
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {

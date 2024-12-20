@@ -125,7 +125,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
 
         if (calculateTangents)
         {
-            compute_tangents_gram_smidt(vertices, indices);
+            Core::Geometry::compute_tangents_gram_smidt(vertices, indices);
         }
 
         // if (overrideGeometry)
@@ -341,7 +341,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh,
 
         if (calculateTangents && normals)
         {
-            compute_tangents_gram_smidt(vertices, indices);
+            Core::Geometry::compute_tangents_gram_smidt(vertices, indices);
         }
 
         if (overrideGeometry)
@@ -735,13 +735,13 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
         // User can override it after, I he need some other more specific format ...
         switch (textureFormat)
         {
-        case TEXTURE_FORMAT_TYPE_COLOR:
+        case TEXTURE_FORMAT_SRGB:
             texture->set_format(SRGBA_8);
             break;
-        case TEXTURE_FORMAT_TYPE_NORMAL:
+        case TEXTURE_FORMAT_UNORM:
             texture->set_format(RGBA_8U);
             break;
-        case TEXTURE_FORMAT_TYPE_HDR:
+        case TEXTURE_FORMAT_HDR:
             texture->set_format(SRGBA_16F);
             break;
         }
@@ -797,13 +797,13 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
         // User can override it after, I he need some other more specific format ...
         switch (textureFormat)
         {
-        case TEXTURE_FORMAT_TYPE_COLOR:
+        case TEXTURE_FORMAT_SRGB:
             texture->set_format(SRGBA_8);
             break;
-        case TEXTURE_FORMAT_TYPE_NORMAL:
+        case TEXTURE_FORMAT_UNORM:
             texture->set_format(RGBA_8U);
             break;
-        case TEXTURE_FORMAT_TYPE_HDR:
+        case TEXTURE_FORMAT_HDR:
             texture->set_format(SRGBA_16F);
             break;
         }
@@ -818,40 +818,299 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
     DEBUG_LOG("PNG Texture loaded successfully");
 #endif // DEBUG
 }
-void VKFW::Tools::Loaders::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
-                                                       const std::vector<uint32_t>&   indices) {
-    if (!indices.empty())
-        for (size_t i = 0; i < indices.size(); i += 3)
+
+void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, const std::string fileName, bool async) {
+
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(fileName.c_str());
+
+    std::string resources = "";
+    if (doc.FirstChildElement("Scene")->FirstChildElement("Resources"))
+    {
+        resources = std::string(doc.FirstChildElement("Scene")->FirstChildElement("Resources")->Attribute("path"));
+    }
+
+    auto parse_transform = [](tinyxml2::XMLElement* obj) {
+        tinyxml2::XMLElement* transformElement = obj->FirstChildElement("Transform");
+
+        Core::Transform transform = {};
+        if (transformElement)
         {
-            size_t i0 = indices[i];
-            size_t i1 = indices[i + 1];
-            size_t i2 = indices[i + 2];
+            tinyxml2::XMLElement* scaleElement    = transformElement->FirstChildElement("scale");
+            tinyxml2::XMLElement* positionElement = transformElement->FirstChildElement("translate");
+            tinyxml2::XMLElement* rotationElement = transformElement->FirstChildElement("rotate");
 
-            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i0].pos,
-                                                                   vertices[i1].pos,
-                                                                   vertices[i2].pos,
-                                                                   vertices[i0].texCoord,
-                                                                   vertices[i1].texCoord,
-                                                                   vertices[i2].texCoord,
-                                                                   vertices[i0].normal);
+            if (positionElement)
+            {
+                transform.position.x = positionElement->FloatAttribute("x");
+                transform.position.y = positionElement->FloatAttribute("y");
+                transform.position.z = positionElement->FloatAttribute("z");
+            }
 
-            vertices[i0].tangent += tangent;
-            vertices[i1].tangent += tangent;
-            vertices[i2].tangent += tangent;
-        }
-    else
-        for (size_t i = 0; i < vertices.size(); i += 3)
+            if (rotationElement)
+            {
+                transform.rotation.x = rotationElement->FloatAttribute("x");
+                transform.rotation.y = rotationElement->FloatAttribute("y");
+                transform.rotation.z = rotationElement->FloatAttribute("z");
+            }
+
+            if (scaleElement)
+            {
+                transform.scale.x = scaleElement->FloatAttribute("x");
+                transform.scale.y = scaleElement->FloatAttribute("y");
+                transform.scale.z = scaleElement->FloatAttribute("z");
+            }
+        };
+        return transform;
+    };
+
+    // Load the camera
+    tinyxml2::XMLElement* cameraElement = doc.FirstChildElement("Scene")->FirstChildElement("Camera");
+    if (cameraElement)
+    {
+        Core::Camera* camera = new Core::Camera();
+        /*
+        SET TRANSFORM
+        */
+        camera->set_transform(parse_transform(cameraElement));
+        /*
+        SET PARAMS
+        */
+        camera->set_position(Vec3(0.0f, 0.0f, -8.2f));
+        camera->set_far(cameraElement->FloatAttribute("far", 100.0f));
+        camera->set_near(cameraElement->FloatAttribute("near", 0.1f));
+        camera->set_field_of_view(cameraElement->FloatAttribute("fov", 75.0f));
+        scene->add(camera);
+    }
+
+    // Load meshes
+    for (tinyxml2::XMLElement* meshElement = doc.FirstChildElement("Scene")->FirstChildElement("Mesh"); meshElement;
+         meshElement                       = meshElement->NextSiblingElement("Mesh"))
+    {
+        Core::Mesh* mesh = new Core::Mesh();
+        /*
+        LOAD GEOMETRY
+        */
+        const char* meshType = meshElement->Attribute("type"); // "file" is expected
+        if (meshType == "file")
         {
-            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i].pos,
-                                                                   vertices[i + 1].pos,
-                                                                   vertices[i + 2].pos,
-                                                                   vertices[i].texCoord,
-                                                                   vertices[i + 1].texCoord,
-                                                                   vertices[i + 2].texCoord,
-                                                                   vertices[i].normal);
-
-            vertices[i].tangent += tangent;
-            vertices[i + 1].tangent += tangent;
-            vertices[i + 2].tangent += tangent;
+            tinyxml2::XMLElement* filenameElement = meshElement->FirstChildElement("Filename");
+            if (filenameElement)
+            {
+                Loaders::load_3D_file(mesh, resources + std::string(filenameElement->Attribute("value")), async);
+            }
         }
+        if (meshType == "plane")
+        {
+            mesh->push_geometry(Core::Geometry::create_quad());
+        }
+
+        /*
+        SET TRANSFORM
+        */
+        mesh->set_transform(parse_transform(meshElement));
+        /*
+        SET PARAMS
+        */
+        // mesh->ray_hittable(meshElement->BoolAttribute("rayHittable", true));
+
+        tinyxml2::XMLElement* materialElement = meshElement->FirstChildElement("Material");
+        Core::IMaterial*      mat             = nullptr;
+        if (materialElement)
+        {
+            std::string materialType = std::string(materialElement->Attribute("type"));
+            if (materialType == "physical")
+            {
+                mat                                     = new Core::PhysicallyBasedMaterial();
+                Core::PhysicallyBasedMaterial* material = static_cast<Core::PhysicallyBasedMaterial*>(mat);
+
+                if (materialElement->FirstChildElement("albedo"))
+                {
+                    Vec4 albedo = Vec4(0.0);
+                    albedo.r    = materialElement->FirstChildElement("albedo")->FloatAttribute("r");
+                    albedo.g    = materialElement->FirstChildElement("albedo")->FloatAttribute("g");
+                    albedo.b    = materialElement->FirstChildElement("albedo")->FloatAttribute("b");
+                    albedo.a    = materialElement->FirstChildElement("albedo")->FloatAttribute("a");
+                    material->set_albedo(albedo);
+                }
+
+                if (materialElement->FirstChildElement("roughness"))
+                    material->set_roughness(materialElement->FirstChildElement("roughness")->FloatAttribute("value"));
+                if (materialElement->FirstChildElement("metallness"))
+                    material->set_metalness(materialElement->FirstChildElement("metallness")->FloatAttribute("value"));
+
+                if (materialElement->FirstChildElement("tile"))
+                {
+                    Vec2 tiling = Vec2(1, 1);
+                    tiling.x    = materialElement->FirstChildElement("tile")->FloatAttribute("u");
+                    tiling.y    = materialElement->FirstChildElement("tile")->FloatAttribute("v");
+                    material->set_tile(tiling);
+                }
+                if (materialElement->FirstChildElement("emission"))
+                {
+                    Vec3 emission = Vec3(0.0);
+                    emission.r    = materialElement->FirstChildElement("emission")->FloatAttribute("r");
+                    emission.g    = materialElement->FirstChildElement("emission")->FloatAttribute("g");
+                    emission.b    = materialElement->FirstChildElement("emission")->FloatAttribute("b");
+                    material->set_emissive_color(emission);
+                    if (materialElement->FirstChildElement("emissionPower"))
+                        material->set_emission_intensity(
+                            materialElement->FirstChildElement("emissionPower")->FloatAttribute("value"));
+                }
+
+                // Textures
+                tinyxml2::XMLElement* texturesElement = materialElement->FirstChildElement("Textures");
+                if (texturesElement)
+                {
+                    tinyxml2::XMLElement* albedoTexture = texturesElement->FirstChildElement("albedo");
+                    if (albedoTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_SRGB,
+                                              async);
+                        material->set_albedo_texture(texture);
+                    }
+                    tinyxml2::XMLElement* normalTexture = texturesElement->FirstChildElement("normals");
+                    if (normalTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_UNORM,
+                                              async);
+                        material->set_normal_texture(texture);
+                    }
+                    tinyxml2::XMLElement* roughTexture = texturesElement->FirstChildElement("roughness");
+                    if (roughTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_UNORM,
+                                              async);
+                        material->set_roughness_texture(texture);
+                    }
+                    tinyxml2::XMLElement* metalTexture = texturesElement->FirstChildElement("metalness");
+                    if (metalTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_UNORM,
+                                              async);
+                        material->set_roughness_texture(texture);
+                    }
+                    tinyxml2::XMLElement* aoTexture = texturesElement->FirstChildElement("ao");
+                    if (aoTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_UNORM,
+                                              async);
+                        material->set_occlusion_texture(texture);
+                    }
+                    tinyxml2::XMLElement* emissiveTexture = texturesElement->FirstChildElement("emission");
+                    if (emissiveTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_SRGB,
+                                              async);
+                        material->set_emissive_texture(texture);
+                    }
+                }
+                mesh->push_material(material);
+            }
+            if (materialType == "phong")
+            {
+            }
+            if (materialType == "unlit")
+            {
+                mat                           = new Core::UnlitMaterial();
+                Core::UnlitMaterial* material = static_cast<Core::UnlitMaterial*>(mat);
+
+                if (materialElement->FirstChildElement("color"))
+                {
+                    Vec4 color = Vec4(0.0);
+                    color.r    = materialElement->FirstChildElement("color")->FloatAttribute("r");
+                    color.g    = materialElement->FirstChildElement("color")->FloatAttribute("g");
+                    color.b    = materialElement->FirstChildElement("color")->FloatAttribute("b");
+                    color.a    = materialElement->FirstChildElement("color")->FloatAttribute("a");
+
+                    material->set_color(color);
+                }
+                if (materialElement->FirstChildElement("tile"))
+                {
+                    Vec2 tiling = Vec2(1, 1);
+                    tiling.x    = materialElement->FirstChildElement("tile")->FloatAttribute("u");
+                    tiling.y    = materialElement->FirstChildElement("tile")->FloatAttribute("v");
+                    material->set_tile(tiling);
+                }
+                tinyxml2::XMLElement* texturesElement = materialElement->FirstChildElement("Textures");
+                if (texturesElement)
+                {
+                    tinyxml2::XMLElement* albedoTexture = texturesElement->FirstChildElement("color");
+                    if (albedoTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_SRGB,
+                                              async);
+                        material->set_color_texture(texture);
+                    }
+                }
+
+                mesh->push_material(material);
+            }
+            if (materialType == "hair")
+            {
+            }
+        }
+        mesh->push_material(mat ? mat : new Core::PhysicallyBasedMaterial(Vec4(0.5, 0.5, 0.5, 1.0)));
+        scene->add(mesh);
+    }
+    // Load lights
+    for (tinyxml2::XMLElement* lightElement = doc.FirstChildElement("Scene")->FirstChildElement("Light"); lightElement;
+         lightElement                       = lightElement->NextSiblingElement("Light"))
+    {
+        Core::Light* light     = nullptr;
+        const char*  lightType = lightElement->Attribute("type");
+        if (lightType == "point")
+        {
+            light                        = new Core::PointLight();
+            Core::PointLight* pointlight = static_cast<Core::PointLight*>(light);
+
+            if (lightElement->FirstChildElement("intensity"))
+                pointlight->set_intensity(lightElement->FirstChildElement("intensity")->FloatAttribute("value"));
+            if (lightElement->FirstChildElement("influence"))
+                pointlight->set_area_of_effect(lightElement->FirstChildElement("influence")->FloatAttribute("value"));
+            // if (lightElement->FirstChildElement("intensity"))
+            //     pointlight->set_intensity(lightElement->FirstChildElement("intensity")->FloatAttribute("value"));
+            if (lightElement->FirstChildElement("color"))
+            {
+                Vec3 color = Vec3(0.0);
+                color.r    = lightElement->FirstChildElement("color")->FloatAttribute("r");
+                color.g    = lightElement->FirstChildElement("color")->FloatAttribute("g");
+                color.b    = lightElement->FirstChildElement("color")->FloatAttribute("b");
+
+                pointlight->set_color(color);
+            }
+        }
+        if (lightType == "directional")
+        {
+        }
+        if (lightType == "spot")
+        {
+        }
+        if (lightType == "ambient")
+        {
+        }
+        if (light)
+            scene->add(light);
+    }
 }

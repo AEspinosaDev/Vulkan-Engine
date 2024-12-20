@@ -27,8 +27,8 @@ class Scene : public Object3D
     std::vector<Light*>  m_lights;
     Skybox*              m_skybox = nullptr;
 
-    bool           m_updateAccel  = false;
-    Graphics::TLAS m_accel        = {};
+    bool           m_updateAccel = false;
+    Graphics::TLAS m_accel       = {};
     // Graphics::TLAS m_dynamicAccel = {};
 
     // ENVIROMENT & FOG
@@ -65,6 +65,8 @@ class Scene : public Object3D
         : m_activeCamera(cam) {
         add_child(cam);
     };
+    Scene()
+        : m_activeCamera(nullptr) {};
     ~Scene() {
 
         delete m_activeCamera;

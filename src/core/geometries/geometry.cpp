@@ -80,6 +80,43 @@ Geometry* Geometry::create_cube() {
 
     return g;
 }
+void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
+                                           const std::vector<uint32_t>&   indices) {
+    if (!indices.empty())
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            size_t i0 = indices[i];
+            size_t i1 = indices[i + 1];
+            size_t i2 = indices[i + 2];
+
+            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i0].pos,
+                                                                   vertices[i1].pos,
+                                                                   vertices[i2].pos,
+                                                                   vertices[i0].texCoord,
+                                                                   vertices[i1].texCoord,
+                                                                   vertices[i2].texCoord,
+                                                                   vertices[i0].normal);
+
+            vertices[i0].tangent += tangent;
+            vertices[i1].tangent += tangent;
+            vertices[i2].tangent += tangent;
+        }
+    else
+        for (size_t i = 0; i < vertices.size(); i += 3)
+        {
+            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i].pos,
+                                                                   vertices[i + 1].pos,
+                                                                   vertices[i + 2].pos,
+                                                                   vertices[i].texCoord,
+                                                                   vertices[i + 1].texCoord,
+                                                                   vertices[i + 2].texCoord,
+                                                                   vertices[i].normal);
+
+            vertices[i].tangent += tangent;
+            vertices[i + 1].tangent += tangent;
+            vertices[i + 2].tangent += tangent;
+        }
+}
 Graphics::VertexArrays* const get_VAO(Geometry* g) {
     return &g->m_VAO;
 }

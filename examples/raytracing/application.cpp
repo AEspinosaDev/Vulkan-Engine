@@ -92,7 +92,7 @@ void Application::setup() {
     toriiMat->set_albedo_texture(toriiT);
 
     Texture* toriiN = new Texture();
-    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_UNORM);
     toriiMat->set_normal_texture(toriiN);
 
     Texture* toriiM = new Texture();
@@ -116,7 +116,7 @@ void Application::setup() {
     Texture* floorText  = new Texture();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
     Texture* floorNormalText = new Texture();
-    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_UNORM);
     Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
@@ -139,7 +139,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "moisturizer_color.png");
     stoneMat->set_albedo_texture(stonelanternT);
     Texture* stonelanternN = new Texture();
-    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "moisturizer_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "moisturizer_normal.png", TEXTURE_FORMAT_UNORM);
     stoneMat->set_normal_texture(stonelanternN);
     stoneMesh->push_material(stoneMat);
     stoneMesh->set_name("Tower");
@@ -160,7 +160,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(droidText1, TEXTURE_PATH + "DROID_Body_Emissive.jpg");
     droidMat->set_emissive_texture(droidText1);
     Texture* droidText2 = new Texture();
-    Tools::Loaders::load_texture(droidText2, TEXTURE_PATH + "DROID_Body_Normal.jpg", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(droidText2, TEXTURE_PATH + "DROID_Body_Normal.jpg", TEXTURE_FORMAT_UNORM);
     droidMat->set_normal_texture(droidText2);
     droidMesh->push_material(droidMat);
     droidMesh->set_name("Droid");
@@ -184,11 +184,10 @@ void Application::setup() {
     Tools::Loaders::load_texture(stormtrooperText, TEXTURE_PATH + "stormtrooper_color.png");
     stormtrooperMat->set_albedo_texture(stormtrooperText);
     Texture* stormtrooperText1 = new Texture();
-    Tools::Loaders::load_texture(
-        stormtrooperText1, TEXTURE_PATH + "stormtrooper_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(stormtrooperText1, TEXTURE_PATH + "stormtrooper_normal.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat->set_normal_texture(stormtrooperText1);
     Texture* stormtrooperText2 = new Texture();
-    Tools::Loaders::load_texture(stormtrooperText2, TEXTURE_PATH + "stormtrooper_mask.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(stormtrooperText2, TEXTURE_PATH + "stormtrooper_mask.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat->set_mask_texture(stormtrooperText2, MaskType::UNREAL_ENGINE);
     stormtrooper->push_material(stormtrooperMat);
     stormtrooper->set_name("Trooper");
@@ -203,11 +202,10 @@ void Application::setup() {
     stormtrooperMat1->set_albedo_texture(stormtrooperText11);
     Texture* stormtrooperText12 = new Texture();
     Tools::Loaders::load_texture(
-        stormtrooperText12, TEXTURE_PATH + "stormtrooper_head_normal.png", TEXTURE_FORMAT_TYPE_NORMAL);
+        stormtrooperText12, TEXTURE_PATH + "stormtrooper_head_normal.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat1->set_normal_texture(stormtrooperText12);
     Texture* stormtrooperText13 = new Texture();
-    Tools::Loaders::load_texture(
-        stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_TYPE_NORMAL);
+    Tools::Loaders::load_texture(stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat1->set_mask_texture(stormtrooperText13, MaskType::UNREAL_ENGINE);
     stormtrooperHead->push_material(stormtrooperMat1);
     stormtrooperHead->set_name("Head");
@@ -233,7 +231,7 @@ void Application::setup() {
     spheremat->set_albedo(Vec3(0.0));
     spheremat->set_metalness(0.0);
     spheremat->set_roughness(0.0);
-    spheremat->set_emissive_color(Vec3(0.0,0.35,0.8));
+    spheremat->set_emissive_color(Vec3(0.0, 0.35, 0.8));
     spheremat->set_emission_intensity(30.0f);
     sphereMesh->set_position({-2.5f, -0.4f, -3.0f});
     sphereMesh->set_scale(0.25f);
@@ -243,7 +241,7 @@ void Application::setup() {
     energyLight->set_position({-2.5f, -0.4f, -3.0f});
     energyLight->set_area_of_effect(20.0f);
     energyLight->set_intensity(0.08f);
-    energyLight->set_color(Vec3(0.0,0.35,0.8));
+    energyLight->set_color(Vec3(0.0, 0.35, 0.8));
     energyLight->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
     energyLight->set_area(0.1f);
     energyLight->set_shadow_ray_samples(4);
@@ -262,6 +260,9 @@ void Application::setup() {
     Skybox* sky = new Skybox(envMap);
     sky->set_color_intensity(0.25f);
     m_scene->set_skybox(sky);
+
+    Tools::Loaders::SceneLoader sceneLoader;
+    sceneLoader.load_scene(m_scene, MESH_PATH + "scene.xml");
 
     m_controller = new Tools::Controller(camera, m_window, ControllerMovementType::ORBITAL);
 }

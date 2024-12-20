@@ -102,6 +102,8 @@ class Geometry
     void             fill_voxel_array(std::vector<Graphics::Voxel> voxels);
     static Geometry* create_quad();
     static Geometry* create_cube();
+    static void      compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
+                                                 const std::vector<uint32_t>&   indices);
 };
 
 Graphics::VertexArrays* const get_VAO(Geometry* g);

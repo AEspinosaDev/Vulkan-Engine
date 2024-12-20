@@ -262,21 +262,21 @@ class HairStrandMaterial2 : public HairStrandMaterial
         m_textures[NGI_TRT]         = new Texture(settings);
         std::string pigmentTypePath = pigment == BLONDE ? "textures/LUTs/blonde/" : "textures/LUTs/brown/";
         Tools::Loaders::load_texture(
-            m_textures[N1], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+            m_textures[N1], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R.png", TEXTURE_FORMAT_UNORM, false);
         Tools::Loaders::load_texture(
-            m_textures[N2], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+            m_textures[N2], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT.png", TEXTURE_FORMAT_UNORM, false);
         Tools::Loaders::load_3D_texture(m_textures[GI], ENGINE_RESOURCES_PATH + pigmentTypePath + "GI.png");
         m_textures[GI]->set_format(RGBA_8U);
         m_textures[GI]->set_type(TEXTURE_3D);
         Tools::Loaders::load_texture(
-            m_textures[MGI], ENGINE_RESOURCES_PATH + pigmentTypePath + "M_GI.png", TEXTURE_FORMAT_TYPE_NORMAL, false);
+            m_textures[MGI], ENGINE_RESOURCES_PATH + pigmentTypePath + "M_GI.png", TEXTURE_FORMAT_UNORM, false);
         Tools::Loaders::load_texture(m_textures[NGI],
                                      ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R_GI.png",
-                                     TEXTURE_FORMAT_TYPE_NORMAL,
+                                     TEXTURE_FORMAT_UNORM,
                                      false);
         Tools::Loaders::load_texture(m_textures[NGI_TRT],
                                      ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT_GI.png",
-                                     TEXTURE_FORMAT_TYPE_NORMAL,
+                                     TEXTURE_FORMAT_UNORM,
                                      false);
         m_textureBindingState[N1]      = false;
         m_textureBindingState[N2]      = false;
