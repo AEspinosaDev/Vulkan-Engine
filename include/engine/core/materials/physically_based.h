@@ -39,12 +39,13 @@ class PhysicallyBasedMaterial : public IMaterial
     float m_emisionWeight     = 1.0f; // Weight between parameter and emi texture
     float m_emissionIntensity = 1.0f;
 
-    //Whether to if casts SSR
+    // Whether to if casts SSR
     bool m_isReflective = false;
 
     // Query
     bool m_hasAlbedoTexture    = false;
     bool m_hasNormalTexture    = false;
+    bool m_useNormalTexture    = true;
     bool m_hasRoughnessTexture = false;
     bool m_hasMetallicTexture  = false;
     bool m_hasAOTexture        = false;
@@ -285,6 +286,12 @@ class PhysicallyBasedMaterial : public IMaterial
     }
     inline MaskType get_mask_type() const {
         return (MaskType)m_maskType;
+    }
+    inline void use_normal_texture(bool op) {
+        m_useNormalTexture = op;
+    }
+    inline bool use_normal_texture() const {
+        return m_useNormalTexture;
     }
 };
 } // namespace Core

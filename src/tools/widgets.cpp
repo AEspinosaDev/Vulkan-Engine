@@ -518,6 +518,11 @@ void ObjectExplorerWidget::render() {
                 if (mat->get_normal_texture())
                 {
                     ImGui::Image(get_image(mat->get_normal_texture())->GUIReadHandle, texSize);
+                    bool useNormal = mat->use_normal_texture();
+                    if (ImGui::Checkbox("Use Normal Texture", &useNormal))
+                    {
+                        mat->use_normal_texture(useNormal);
+                    }
                 }
                 ImGui::Spacing();
 
