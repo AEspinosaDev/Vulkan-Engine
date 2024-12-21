@@ -82,15 +82,16 @@ void load_3D_texture(Core::ITexture* const texture,
 /*Loads and save a scene from XML file*/
 class SceneLoader
 {
-    // load_mesh();
-    // load_light();
-    // load_camera();
-
   public:
     SceneLoader() {
     }
+    /*Loads a scene from an XML file*/
     void load_scene(Core::Scene* const scene, const std::string fileName, bool async = true);
+    /*Saves a scene to an XML file*/
     void save_scene(const std::string fileName) {
+      /*
+      TBD
+      */
     }
 };
 

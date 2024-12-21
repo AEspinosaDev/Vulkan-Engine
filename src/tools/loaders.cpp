@@ -820,6 +820,8 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
 }
 
 void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, const std::string fileName, bool async) {
+    if (!scene)
+        throw VKFW_Exception("Scene is null pointer");
 
     tinyxml2::XMLDocument doc;
     doc.LoadFile(fileName.c_str());
@@ -849,9 +851,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
 
             if (rotationElement)
             {
-                transform.rotation.x = rotationElement->FloatAttribute("x");
-                transform.rotation.y = rotationElement->FloatAttribute("y");
-                transform.rotation.z = rotationElement->FloatAttribute("z");
+                transform.rotation.x = math::radians(rotationElement->FloatAttribute("x"));
+                transform.rotation.y = math::radians(rotationElement->FloatAttribute("y"));
+                transform.rotation.z = math::radians(rotationElement->FloatAttribute("z"));
             }
 
             if (scaleElement)
@@ -873,10 +875,10 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         SET TRANSFORM
         */
         camera->set_transform(parse_transform(cameraElement));
+        camera->set_rotation({-90, 0, 0});
         /*
         SET PARAMS
         */
-        camera->set_position(Vec3(0.0f, 0.0f, -8.2f));
         camera->set_far(cameraElement->FloatAttribute("far", 100.0f));
         camera->set_near(cameraElement->FloatAttribute("near", 0.1f));
         camera->set_field_of_view(cameraElement->FloatAttribute("fov", 75.0f));
@@ -891,7 +893,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         /*
         LOAD GEOMETRY
         */
-        const char* meshType = meshElement->Attribute("type"); // "file" is expected
+        std::string meshType = std::string(meshElement->Attribute("type")); // "file" is expected
         if (meshType == "file")
         {
             tinyxml2::XMLElement* filenameElement = meshElement->FirstChildElement("Filename");
@@ -904,6 +906,14 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         {
             mesh->push_geometry(Core::Geometry::create_quad());
         }
+        if (meshType == "sphere")
+        {
+            Loaders::load_3D_file(mesh, ENGINE_RESOURCES_PATH "meshes/sphere.obj", async);
+        }
+        if (meshType == "cube")
+        {
+            mesh->push_geometry(Core::Geometry::create_cube());
+        }
 
         /*
         SET TRANSFORM
@@ -912,6 +922,8 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         /*
         SET PARAMS
         */
+        if (meshElement->Attribute("name"))
+            mesh->set_name(meshElement->Attribute("name"));
         // mesh->ray_hittable(meshElement->BoolAttribute("rayHittable", true));
 
         tinyxml2::XMLElement* materialElement = meshElement->FirstChildElement("Material");
@@ -977,7 +989,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resources + std::string(normalTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
                                               async);
                         material->set_normal_texture(texture);
@@ -987,7 +999,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resources + std::string(roughTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
                                               async);
                         material->set_roughness_texture(texture);
@@ -997,7 +1009,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resources + std::string(metalTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
                                               async);
                         material->set_roughness_texture(texture);
@@ -1007,7 +1019,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resources + std::string(aoTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
                                               async);
                         material->set_occlusion_texture(texture);
@@ -1017,13 +1029,12 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resources + std::string(emissiveTexture->Attribute("path")),
                                               TEXTURE_FORMAT_SRGB,
                                               async);
                         material->set_emissive_texture(texture);
                     }
                 }
-                mesh->push_material(material);
             }
             if (materialType == "phong")
             {
@@ -1064,8 +1075,6 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                         material->set_color_texture(texture);
                     }
                 }
-
-                mesh->push_material(material);
             }
             if (materialType == "hair")
             {
@@ -1079,28 +1088,16 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
          lightElement                       = lightElement->NextSiblingElement("Light"))
     {
         Core::Light* light     = nullptr;
-        const char*  lightType = lightElement->Attribute("type");
+        std::string  lightType = std::string(lightElement->Attribute("type"));
         if (lightType == "point")
         {
             light                        = new Core::PointLight();
             Core::PointLight* pointlight = static_cast<Core::PointLight*>(light);
 
-            if (lightElement->FirstChildElement("intensity"))
-                pointlight->set_intensity(lightElement->FirstChildElement("intensity")->FloatAttribute("value"));
             if (lightElement->FirstChildElement("influence"))
                 pointlight->set_area_of_effect(lightElement->FirstChildElement("influence")->FloatAttribute("value"));
-            // if (lightElement->FirstChildElement("intensity"))
-            //     pointlight->set_intensity(lightElement->FirstChildElement("intensity")->FloatAttribute("value"));
-            if (lightElement->FirstChildElement("color"))
-            {
-                Vec3 color = Vec3(0.0);
-                color.r    = lightElement->FirstChildElement("color")->FloatAttribute("r");
-                color.g    = lightElement->FirstChildElement("color")->FloatAttribute("g");
-                color.b    = lightElement->FirstChildElement("color")->FloatAttribute("b");
-
-                pointlight->set_color(color);
-            }
         }
+
         if (lightType == "directional")
         {
         }
@@ -1111,6 +1108,98 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         {
         }
         if (light)
+        {
+            if (lightElement->Attribute("name"))
+                light->set_name(lightElement->Attribute("name"));
+
+            light->set_transform(parse_transform(lightElement));
+
+            if (lightElement->FirstChildElement("intensity"))
+                light->set_intensity(lightElement->FirstChildElement("intensity")->FloatAttribute("value"));
+
+            if (lightElement->FirstChildElement("color"))
+            {
+                Vec3 color = Vec3(0.0);
+                color.r    = lightElement->FirstChildElement("color")->FloatAttribute("r");
+                color.g    = lightElement->FirstChildElement("color")->FloatAttribute("g");
+                color.b    = lightElement->FirstChildElement("color")->FloatAttribute("b");
+
+                light->set_color(color);
+            }
+            // Shadows
+            tinyxml2::XMLElement* shadowElement = lightElement->FirstChildElement("Shadow");
+            if (shadowElement)
+            {
+                std::string shadowType = std::string(shadowElement->Attribute("type"));
+                if (shadowType == "rt")
+                {
+                    light->set_shadow_type(ShadowType::RAYTRACED_SHADOW);
+                    if (shadowElement->FirstChildElement("samples"))
+                        light->set_shadow_ray_samples(
+                            shadowElement->FirstChildElement("samples")->IntAttribute("value"));
+                    if (shadowElement->FirstChildElement("area"))
+                        light->set_area(shadowElement->FirstChildElement("area")->FloatAttribute("value"));
+                }
+                if (shadowType == "classic")
+                {
+                    light->set_shadow_type(ShadowType::BASIC_SHADOW);
+                    /*
+                    TBD
+                    */
+                }
+                if (shadowType == "vsm")
+                {
+                    light->set_shadow_type(ShadowType::VSM_SHADOW);
+                    /*
+                    TBD
+                    */
+                }
+            }
+
             scene->add(light);
+        }
+    }
+    // Ambient
+    tinyxml2::XMLElement* ambientElement = doc.FirstChildElement("Scene")->FirstChildElement("Ambient");
+    if (ambientElement)
+    {
+        std::string ambientType = std::string(ambientElement->Attribute("type"));
+        if (ambientType == "constant")
+        {
+            if (ambientElement->FirstChildElement("intensity"))
+                scene->set_ambient_intensity(ambientElement->FirstChildElement("intensity")->FloatAttribute("value"));
+            if (ambientElement->FirstChildElement("color"))
+            {
+                Vec3 color = Vec3(0.0);
+                color.r    = ambientElement->FirstChildElement("color")->FloatAttribute("r");
+                color.g    = ambientElement->FirstChildElement("color")->FloatAttribute("g");
+                color.b    = ambientElement->FirstChildElement("color")->FloatAttribute("b");
+
+                scene->set_ambient_color(color);
+            }
+        }
+        if (ambientType == "skybox")
+        {
+            tinyxml2::XMLElement* filenameElement = ambientElement->FirstChildElement("Filename");
+            if (filenameElement)
+            {
+                Core::TextureHDR* envMap = new Core::TextureHDR();
+                Tools::Loaders::load_texture(
+                    envMap, resources + std::string(filenameElement->Attribute("value")), TEXTURE_FORMAT_HDR, async);
+                Core::Skybox* sky = new Core::Skybox(envMap);
+                if (ambientElement->FirstChildElement("intensity"))
+                {
+                    sky->set_color_intensity(ambientElement->FirstChildElement("intensity")->FloatAttribute("value"));
+                    scene->set_ambient_intensity(
+                        ambientElement->FirstChildElement("intensity")->FloatAttribute("value"));
+                }
+                scene->set_skybox(sky);
+            }
+        }
+
+    } else
+    {
+        scene->set_ambient_color(Vec3(0.0));
+        scene->set_ambient_intensity(0.0f);
     }
 }

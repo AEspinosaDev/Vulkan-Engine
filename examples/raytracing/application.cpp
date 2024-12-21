@@ -261,9 +261,6 @@ void Application::setup() {
     sky->set_color_intensity(0.25f);
     m_scene->set_skybox(sky);
 
-    Tools::Loaders::SceneLoader sceneLoader;
-    sceneLoader.load_scene(m_scene, MESH_PATH + "scene.xml");
-
     m_controller = new Tools::Controller(camera, m_window, ControllerMovementType::ORBITAL);
 }
 

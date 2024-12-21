@@ -48,6 +48,7 @@ class Scene : public Object3D
             break;
         case ObjectType::CAMERA:
             m_cameras.push_back(static_cast<Camera*>(obj));
+            m_activeCamera = static_cast<Camera*>(obj);
             break;
         case ObjectType::LIGHT:
             m_lights.push_back(static_cast<Light*>(obj));

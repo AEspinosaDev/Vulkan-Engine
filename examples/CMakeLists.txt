@@ -29,12 +29,21 @@ file(GLOB APPRT_SOURCES
 )
 add_executable(RaytracingApp  ${APPRT_SOURCES})
 
+#DEMO 4
+# --- Raytracing Example ---
+file(GLOB SPONZA_SOURCES
+"sponza/*.cpp"
+"sponza/*.h"
+)
+add_executable(SponzaApp  ${SPONZA_SOURCES})
+
 # Link projects against Engine lib
 target_link_libraries(RendererApp PRIVATE VulkanEngine)
 target_link_libraries(RotatingKabuto PRIVATE VulkanEngine)
 target_link_libraries(LightingTest PRIVATE VulkanEngine)
 target_link_libraries(RaytracingApp PRIVATE VulkanEngine)
+target_link_libraries(SponzaApp PRIVATE VulkanEngine)
 
 target_compile_definitions(VulkanEngine PUBLIC EXAMPLES_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 
-set_property(TARGET RendererApp RotatingKabuto LightingTest RaytracingApp PROPERTY FOLDER "examples")
+set_property(TARGET RendererApp RotatingKabuto LightingTest RaytracingApp SponzaApp PROPERTY FOLDER "examples")
