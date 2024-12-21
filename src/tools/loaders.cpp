@@ -691,7 +691,7 @@ void VKFW::Tools::Loaders::load_texture(Core::ITexture* const texture,
 
         std::string fileExtension = fileName.substr(dotPosition + 1);
 
-        if (fileExtension == PNG || fileExtension == JPG)
+        if (fileExtension == PNG || fileExtension == JPG || fileExtension == "jpeg")
         {
             if (asyncCall)
             {
@@ -894,7 +894,8 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
         */
         if (meshElement->Attribute("name"))
             mesh->set_name(meshElement->Attribute("name"));
-        // mesh->ray_hittable(meshElement->BoolAttribute("rayHittable", true));
+        // if (meshElement->BoolAttribute("alphaTest"))
+        //     mesh->ray_hittable(meshElement->BoolAttribute("rayHittable"))
 
         tinyxml2::XMLElement* materialElement = meshElement->FirstChildElement("Material");
         Core::IMaterial*      mat             = nullptr;
@@ -918,8 +919,8 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
 
                 if (materialElement->FirstChildElement("roughness"))
                     material->set_roughness(materialElement->FirstChildElement("roughness")->FloatAttribute("value"));
-                if (materialElement->FirstChildElement("metallness"))
-                    material->set_metalness(materialElement->FirstChildElement("metallness")->FloatAttribute("value"));
+                if (materialElement->FirstChildElement("metalness"))
+                    material->set_metalness(materialElement->FirstChildElement("metalness")->FloatAttribute("value"));
 
                 if (materialElement->FirstChildElement("tile"))
                 {
@@ -982,7 +983,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
                                               resourcesPath + std::string(metalTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
                                               m_asyncLoad);
-                        material->set_roughness_texture(texture);
+                        material->set_metallic_texture(texture);
                     }
                     tinyxml2::XMLElement* aoTexture = texturesElement->FirstChildElement("ao");
                     if (aoTexture)
@@ -1003,6 +1004,21 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
                                               TEXTURE_FORMAT_SRGB,
                                               m_asyncLoad);
                         material->set_emissive_texture(texture);
+                    }
+                    tinyxml2::XMLElement* maskTexture = texturesElement->FirstChildElement("mask");
+                    if (maskTexture)
+                    {
+                        Core::ITexture* texture = new Core::Texture();
+                        Loaders::load_texture(texture,
+                                              resourcesPath + std::string(maskTexture->Attribute("path")),
+                                              TEXTURE_FORMAT_UNORM,
+                                              m_asyncLoad);
+                        if (std::string(maskTexture->Attribute("type")) == "UnityHDRP")
+                            material->set_mask_texture(texture, MaskType::UNITY_HDRP);
+                        if (std::string(maskTexture->Attribute("type")) == "Unreal")
+                            material->set_mask_texture(texture, MaskType::UNREAL_ENGINE);
+                        if (std::string(maskTexture->Attribute("type")) == "UnityURP")
+                            material->set_mask_texture(texture, MaskType::UNITY_URP);
                     }
                 }
             }
@@ -1050,6 +1066,8 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
             {
             }
         }
+        if (mat)
+            mat->enable_alpha_test(meshElement->BoolAttribute("alphaTest"));
         mesh->push_material(mat ? mat : new Core::PhysicalMaterial(Vec4(0.5, 0.5, 0.5, 1.0)));
 
         if (meshElement->FirstChildElement("Children"))
@@ -1074,11 +1092,21 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
 
         if (lightType == "directional")
         {
+            light                            = new Core::DirectionalLight(Vec3(0.0));
+            Core::DirectionalLight* dirLight = static_cast<Core::DirectionalLight*>(light);
+
+            if (lightElement->FirstChildElement("direction"))
+            {
+
+                Vec3 dir = Vec3(1.0);
+                dir.x    = lightElement->FirstChildElement("direction")->FloatAttribute("x");
+                dir.y    = lightElement->FirstChildElement("direction")->FloatAttribute("y");
+                dir.z    = lightElement->FirstChildElement("direction")->FloatAttribute("z");
+
+                dirLight->set_direction(dir);
+            }
         }
         if (lightType == "spot")
-        {
-        }
-        if (lightType == "ambient")
         {
         }
         if (light)
@@ -1198,6 +1226,15 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
             tinyxml2::XMLElement* filenameElement = ambientElement->FirstChildElement("Filename");
             if (filenameElement)
             {
+                if (ambientElement->FirstChildElement("color"))
+                {
+                    Vec3 color = Vec3(0.0);
+                    color.r    = ambientElement->FirstChildElement("color")->FloatAttribute("r");
+                    color.g    = ambientElement->FirstChildElement("color")->FloatAttribute("g");
+                    color.b    = ambientElement->FirstChildElement("color")->FloatAttribute("b");
+
+                    scene->set_ambient_color(color);
+                }
                 Core::TextureHDR* envMap = new Core::TextureHDR();
                 Tools::Loaders::load_texture(envMap,
                                              resources + std::string(filenameElement->Attribute("value")),

@@ -212,7 +212,7 @@ class DirectionalLight : public Light
         , m_direction(direction) {
         DirectionalLight::m_instanceCount++;
     }
-
+   
     inline Vec3 get_direction() const {
         return m_direction;
     }

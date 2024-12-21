@@ -180,10 +180,10 @@ void SceneExplorerWidget::render() {
         switch (currentAmbient)
         {
         case 0:
-            m_scene->set_use_IBL(false);
+            m_scene->use_IBL(false);
             break;
         case 1:
-            m_scene->set_use_IBL(true);
+            m_scene->use_IBL(true);
             break;
         }
     };

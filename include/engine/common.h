@@ -98,6 +98,7 @@
 #define PNG "png"
 #define HDR "hdr"
 #define JPG "jpg"
+#define TIF "tif"
 #define HAIR "hair"
 
 #define CUBEMAP_FACES 6

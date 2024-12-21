@@ -41,7 +41,7 @@ void main() {
     v_normal = normalize(mat3(transpose(inverse(mv))) * normal);
 
     if(int(material.slot5.x) == 1) { //If has normal texture
-        vec3 T = -normalize(vec3(mv * vec4(tangent, 0.0)));
+        vec3 T = normalize(vec3(mv * vec4(tangent, 0.0)));
         vec3 N = normalize(vec3(mv * vec4(normal, 0.0)));
         vec3 B = cross(N, T);
         v_TBN = mat3(T, B, N);
@@ -102,16 +102,16 @@ void setupSurfaceProperties(){
 
         //Setting input surface properties
         g_albedo = int(material.slot4.w)== 1 ? mix(material.slot1.rgb, texture(albedoTex, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
-        g_opacity = int(material.slot4.w)== 1 ?  texture(albedoTex, v_uv).a :material.slot1.w;
+        g_opacity = int(material.slot4.w)== 1 ?  mix(material.slot1.w, texture(albedoTex, v_uv).a, material.slot6.z) : material.slot1.w;
         g_normal = int(material.slot5.x)== 1 ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize( v_normal );
 
         if(int(material.slot6.x)== 1) {
             vec4 mask = texture(materialText1, v_uv).rgba; //Correction linearize color
             if(int(material.slot6.y) == 0) { //HDRP UNITY
 	    	    //Unity HDRP uses glossiness not roughness pipeline, so it has to be inversed
-                g_material.r = 1.0 - mask.a;
-                g_material.g = mask.r;
-                g_material.b = mask.g;
+                g_material.r = 1.0 - mix(material.slot3.w,mask.a, material.slot4.x); 
+                g_material.g = mix(material.slot3.y, mask.r, material.slot3.z);
+                g_material.b = mix(material.slot4.y, mask.g, material.slot4.z);
             } else if(int(material.slot6.y) == 1) { //UNREAL
                 g_material.r  = mask.r;
                 g_material.g  = mask.b;

@@ -52,13 +52,16 @@ void Application::setup() {
     const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH "textures/");
 
     m_scene = new Scene();
-    Tools::Loaders::SceneLoader loader;
-    loader.load_scene(m_scene, SCENE_PATH + "scene.xml");
+    Tools::Loaders::SceneLoader loader(true);
+    loader.load_scene(m_scene, SCENE_PATH + "sponza.xml");
+
+    m_scene->set_ambient_intensity(0.1f);
+    m_scene->use_IBL(false);
 
    
 
     m_camera = m_scene->get_active_camera();
-    m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::ORBITAL);
+    m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::WASD);
 }
 
 void Application::setup_gui() {

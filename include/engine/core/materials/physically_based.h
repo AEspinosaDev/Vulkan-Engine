@@ -24,12 +24,12 @@ class PhysicalMaterial : public IMaterial
 
     Vec4  m_albedo        = {0.5, 0.5, 0.5, 1.0}; // w for opacity
     float m_albedoWeight  = 1.0f;                 // Weight between parameter and albedo texture
-    float m_opacityWeight = 0.0f;
+    float m_opacityWeight = 1.0f;
 
-    float m_metalness       = 0.5f;
+    float m_metalness       = 0.0f;
     float m_metalnessWeight = 1.0f; // Weight between parameter and metallness texture
 
-    float m_roughness       = 0.5f;
+    float m_roughness       = 0.75f;
     float m_roughnessWeight = 1.0f; // Weight between parameter and roughness texture
 
     float m_occlusion       = 1.0f;

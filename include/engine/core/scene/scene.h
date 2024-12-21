@@ -155,7 +155,7 @@ class Scene : public Object3D
     inline bool use_IBL() const {
         return m_useIBL;
     }
-    inline void set_use_IBL(bool p) {
+    inline void use_IBL(bool p) {
         m_useIBL = p;
     }
     /*

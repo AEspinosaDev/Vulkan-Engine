@@ -53,6 +53,20 @@
             <area value="0.5" />
         </Shadow>
     </Light>
+    <Light type="point" name="Light">
+        <Transform>
+            <translate x="5.0" y="5.0" z="5.0" />
+        </Transform>
+
+        <intensity value="2.0" />
+        <color r="1" g="1" b="1" />
+        <influence value="30.0" />
+
+        <Shadow type="rt">
+            <samples value="4" />
+            <area value="0.5" />
+        </Shadow>
+    </Light>
     <!-- ENVIROMENT -->
     <Enviroment type="skybox">
         <Filename value="textures/cloudy.hdr" />

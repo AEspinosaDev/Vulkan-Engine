@@ -1,0 +1,371 @@
+<!-- VULKAN ENGINE SPONZA SCENE EXPECIFICATION -->
+<Scene>
+
+    <!-- assets are in gitignore doe to heavy files. If needed they can be download from here: -->
+    <Resources path="C:/Dev/Vulkan-Engine/examples/sponza/assets/" />
+
+    <!-- CAMERA -->
+    <Camera type="perspective" fov="70" near="0.1" far="50">
+        <Transform>
+            <translate x="0.0" y="0.0" z="-13.0" />
+        </Transform>
+    </Camera>
+
+    <!-- MESHES -->
+    <Mesh type="file" name="Sponza">
+
+        <Filename value="meshes/walls.obj" />
+
+        <Transform>
+            <translate x="0.0" y="-2.0" z="0.0" />
+        </Transform>
+
+        <Material type="physical">
+            <albedo r="0.5" g="0.5" b="0.5" />
+            <Textures>
+                <albedo path="textures/Walls/Bricks_Diffuse.png" />
+                <normals path="textures/Walls/Bricks_Normal.png" />
+                <!-- <mask path="textures/Walls/Bricks_MaskMap.png" type="UnityHDRP" /> -->
+            </Textures>
+        </Material>
+
+        <Children>
+            <Mesh type="file" name="Arcs">
+                <Filename value="meshes/arcs.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Arches/Arches_Diffuse.png" />
+                        <normals path="textures/Arches/Arches_Normal.png" />
+                        <!-- <mask path="textures/Arches/Arches_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Domes">
+                <Filename value="meshes/boves.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Vaults/Ceiling_Diffuse.png" />
+                        <normals path="textures/Vaults/Ceiling_Normal.png" />
+                        <!-- <mask path="textures/Vaults/Ceiling_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Columns 2">
+                <Filename value="meshes/columns2.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Columns/Column_C_Diffuse.png" />
+                        <normals path="textures/Columns/Column_C_Normal.png" />
+                        <!-- <mask path="textures/Columns/Column_C_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Columns Bottom">
+                <Filename value="meshes/columnsBottom.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Columns/Column_A_Diffuse.png" />
+                        <normals path="textures/Columns/Column_A_Normal.png" />
+                        <!-- <mask path="textures/Columns/Column_A_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Columns Top">
+                <Filename value="meshes/columnsTop.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Columns/Column_B_Diffuse.png" />
+                        <normals path="textures/Columns/Column_B_Normal.png" />
+                        <!-- <mask path="textures/Columns/Column_B_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Doors">
+                <Filename value="meshes/doors.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Doors/Details_Diffuse.png" />
+                        <normals path="textures/Doors/Details_Normal.png" />
+                        <!-- <mask path="textures/Doors/Details_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Floor">
+                <Filename value="meshes/floor.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Floor/Floor_Diffuse.png" />
+                        <normals path="textures/Floor/Floor_Normal.png" />
+                        <!-- <mask path="textures/Floor/Floor_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Fountains">
+                <Filename value="meshes/fountains.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Vase/Vase_Octagonal_Diffuse.png" />
+                        <normals path="textures/Vase/Vase_Octagonal_Normal.png" />
+                        <!-- <mask path="textures/Vase/Vase_Octagonal_MaskMap.png" type="UnityHDRP"
+                        /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Lion">
+                <Filename value="meshes/lion.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Lion/Lion_Head_Diffuse.png" />
+                        <normals path="textures/Lion/Lion_Head_Normal.png" />
+                        <!-- <mask path="textures/Lion/Lion_Head_MaskMap.png" type="UnityHDRP"/> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Lion Base">
+                <Filename value="meshes/lionBase.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <Textures>
+                        <albedo path="textures/Lion/Lion_Shield_Diffuse.png" />
+                        <normals path="textures/Lion/Lion_Shield_Normal.png" />
+                        <!-- <mask path="textures/Lion/Lion_Shield_MaskMap.png" type="UnityHDRP"/> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Pols">
+                <Filename value="meshes/pols.obj" />
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.4" />
+                    <metalness value="0.7" />
+                    <Textures>
+                        <albedo path="textures/Poles/FlagPoles_Diffuse.png" />
+                        <normals path="textures/Poles/FlagPoles_Normal.png" />
+                        <!-- <mask path="textures/Poles/FlagPoles_MaskMap.png" type="UnityHDRP" /> -->
+                    </Textures>
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Roof">
+                <Filename value="meshes/roof.obj" />
+                <Material type="physical">
+                    <Textures>
+                        <albedo path="textures/Roof/Roof_Diffuse.png" />
+                        <normals path="textures/Roof/Roof_Normal.png" />
+                        <!-- <mask path="textures/Floor/Floor_Mask.png" type="UnityHDRP" /> -->
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Round Vases">
+                <Filename value="meshes/smallFountains.obj" />
+                <Material type="physical">
+                    <Textures>
+                        <albedo path="textures/Vase/Vase_Round_Diffuse.png" />
+                        <normals path="textures/Vase/Vase_Round_Normal.png" />
+                        <!-- <mask path="textures/Floor/Floor_Mask.png" type="UnityHDRP" /> -->
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <!-- <Mesh type="file" name="Leaves" alphaTest="true">
+                <Filename value="meshes/leaves.obj" />
+                <Material type="physical">
+                    <Textures>
+                        <albedo path="textures/Leaves/Ivy_Diffuses.png" />
+                        <normals path="textures/Leaves/Ivy_Diffuse_Normal.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh> -->
+            <Mesh type="file" name="Vase Leaves" alphaTest="true">
+                <Filename value="meshes/leaves2.obj" />
+                <Material type="physical">
+                    <Textures>
+                        <albedo path="textures/Leaves/Vase_Round_Plants_Diffuse.png" />
+                        <normals path="textures/Leaves/Vase_Round_Plants_Normal.png" />
+                        <!-- <mask path="textures/Floor/Floor_Mask.png" type="UnityHDRP" /> -->
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Lamp">
+                <Filename value="meshes/lamps.obj" />
+                <Material type="physical">
+                    <roughness value="0.3" />
+                    <metalness value="0.9" />
+                    <Textures>
+                        <albedo path="textures/Lamps/Vase_Hanging_Diffuse.png" />
+                        <normals path="textures/Lamps/Vase_Hanging_Normal.png" />
+                        <!-- <mask path="textures/Floor/Floor_Mask.png" type="UnityHDRP" /> -->
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Lamp Hang" alphaTest="true">
+                <Filename value="meshes/lampsHold.obj" />
+                <Material type="physical">
+                    <roughness value="0.3" />
+                    <metalness value="0.9" />
+                    <Textures>
+                        <albedo path="textures/Lamps/Vase_Hanging_Chain_Diffuse.png" />
+                        <normals path="textures/Lamps/Vase_Hanging_Chain_Normal.png" />
+                        <!-- <mask path="textures/Floor/Floor_Mask.png" type="UnityHDRP" /> -->
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Knight">
+                <Filename value="meshes/knight.obj" />
+                <Transform>
+                    <translate x="0.0" y="0.0" z="-5.0" />
+                    <scale x="1.2" y="1.2" z="1.2" />
+                    <rotate x="0.0" y="-225.0" z="0.0" />
+                </Transform>
+                <Material type="physical">
+                    <roughness value="0.4"></roughness>
+
+                    <Textures>
+                        <albedo path="textures/Knight/Armor_Mat_albedo.jpeg" />
+                        <normals path="textures/Knight/Armor_Mat_Normal.png" />
+                        <metalness path="textures/Knight/Armor_Mat_metallic.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Statue">
+                <Filename value="meshes/apollon_daphne.obj" />
+                <Transform>
+                    <translate x="8.5" y="0.0" z="5.5" />
+                    <scale x="2" y="2" z="2" />
+                    <rotate x="0.0" y="-90.0" z="0.0" />
+                </Transform>
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Apollo/apollo_diffuse.jpg" />
+                        <normals path="textures/Apollo/apollo_normal.jpg" />
+                        <roughness path="textures/Apollo/apollo_roughness.jpg" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+
+        </Children>
+    </Mesh>
+
+
+    <!-- IF DAY -->
+    <!-- <Light type="directional" name="Sun">
+        <Transform>
+            <translate x="0.0" y="50.0" z="0.0" />
+        </Transform>
+
+        <intensity value="15.0" />
+        <color r="1.0" g="0.9" b="0.8" />
+        <direction x="2.0" y="20.0" z="5.0" />
+
+        <Shadow type="rt">
+            <samples value="2" />
+            <area value="0.1" />
+        </Shadow>
+    </Light>
+
+    <Enviroment type="skybox">
+        <Filename value="textures/cloudy.hdr" />
+        <intensity value="0.5" />
+    </Enviroment> -->
+
+
+    <!-- IF NIGHT -->
+    <Light type="directional" name="Moon">
+        <Transform>
+            <translate x="0.0" y="50.0" z="0.0" />
+        </Transform>
+
+        <intensity value="0.45" />
+        <color r="0.14" g="0.37" b="0.58" />
+        <direction x="2.0" y="20.0" z="5.0" />
+
+        <Shadow type="rt">
+            <samples value="2" />
+            <area value="0.1" />
+        </Shadow>
+    </Light>
+    <Light type="point" name="Light">
+        <Transform>
+            <translate x="-2.8" y="0.5" z="-8.6" />
+        </Transform>
+
+        <intensity value="0.3" />
+        <color r="0.75" g="0.45" b="0.15" />
+
+        <influence value="25"></influence>
+        <Shadow type="rt">
+            <samples value="4" />
+            <area value="0.050" />
+        </Shadow>
+    </Light>
+    <Light type="point" name="Light">
+        <Transform>
+            <translate x="-2.8" y="0.5" z="8.6" />
+        </Transform>
+
+        <intensity value="0.3" />
+        <color r="0.75" g="0.45" b="0.15" />
+        <influence value="25"></influence>
+
+        <Shadow type="rt">
+            <samples value="4" />
+            <area value="0.050" />
+        </Shadow>
+    </Light>
+    <Light type="point" name="Light">
+        <Transform>
+            <translate x="2.8" y="0.5" z="-8.6" />
+        </Transform>
+
+        <intensity value="0.3" />
+        <color r="0.75" g="0.45" b="0.15" />
+        <influence value="25"></influence>
+
+        <Shadow type="rt">
+            <samples value="4" />
+            <area value="0.050" />
+        </Shadow>
+    </Light>
+    <Light type="point" name="Light">
+        <Transform>
+            <translate x="2.8" y="0.5" z="8.6" />
+        </Transform>
+
+        <intensity value="0.3" />
+        <color r="0.75" g="0.45" b="0.15" />
+        <influence value="25"></influence>
+
+        <Shadow type="rt">
+            <samples value="4" />
+            <area value="0.050" />
+        </Shadow>
+    </Light>
+    <Enviroment type="skybox">
+        <Filename value="textures/moon.hdr" />
+        <intensity value="0.3" />
+        <color r="0.14" g="0.37" b="0.58" />
+    </Enviroment>
+
+
+    <!-- FOG -->
+    <Fog intensity="30.0">
+        <color r="1" g="1" b="1" />
+    </Fog>
+
+</Scene>
