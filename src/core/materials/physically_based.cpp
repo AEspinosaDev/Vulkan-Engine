@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
-Graphics::MaterialUniforms PhysicallyBasedMaterial::get_uniforms() const {
+Graphics::MaterialUniforms PhysicalMaterial::get_uniforms() const {
 
     Graphics::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_albedo;

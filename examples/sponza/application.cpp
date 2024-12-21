@@ -55,6 +55,8 @@ void Application::setup() {
     Tools::Loaders::SceneLoader loader;
     loader.load_scene(m_scene, SCENE_PATH + "scene.xml");
 
+   
+
     m_camera = m_scene->get_active_camera();
     m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::ORBITAL);
 }

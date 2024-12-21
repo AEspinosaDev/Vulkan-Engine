@@ -818,75 +818,44 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
     DEBUG_LOG("PNG Texture loaded successfully");
 #endif // DEBUG
 }
+VKFW::Core::Transform VKFW::Tools::Loaders::SceneLoader::load_transform(tinyxml2::XMLElement* obj) {
+    tinyxml2::XMLElement* transformElement = obj->FirstChildElement("Transform");
 
-void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, const std::string fileName, bool async) {
-    if (!scene)
-        throw VKFW_Exception("Scene is null pointer");
-
-    tinyxml2::XMLDocument doc;
-    doc.LoadFile(fileName.c_str());
-
-    std::string resources = "";
-    if (doc.FirstChildElement("Scene")->FirstChildElement("Resources"))
+    Core::Transform transform = {};
+    if (transformElement)
     {
-        resources = std::string(doc.FirstChildElement("Scene")->FirstChildElement("Resources")->Attribute("path"));
-    }
+        tinyxml2::XMLElement* scaleElement    = transformElement->FirstChildElement("scale");
+        tinyxml2::XMLElement* positionElement = transformElement->FirstChildElement("translate");
+        tinyxml2::XMLElement* rotationElement = transformElement->FirstChildElement("rotate");
 
-    auto parse_transform = [](tinyxml2::XMLElement* obj) {
-        tinyxml2::XMLElement* transformElement = obj->FirstChildElement("Transform");
-
-        Core::Transform transform = {};
-        if (transformElement)
+        if (positionElement)
         {
-            tinyxml2::XMLElement* scaleElement    = transformElement->FirstChildElement("scale");
-            tinyxml2::XMLElement* positionElement = transformElement->FirstChildElement("translate");
-            tinyxml2::XMLElement* rotationElement = transformElement->FirstChildElement("rotate");
+            transform.position.x = positionElement->FloatAttribute("x");
+            transform.position.y = positionElement->FloatAttribute("y");
+            transform.position.z = positionElement->FloatAttribute("z");
+        }
 
-            if (positionElement)
-            {
-                transform.position.x = positionElement->FloatAttribute("x");
-                transform.position.y = positionElement->FloatAttribute("y");
-                transform.position.z = positionElement->FloatAttribute("z");
-            }
+        if (rotationElement)
+        {
+            transform.rotation.x = math::radians(rotationElement->FloatAttribute("x"));
+            transform.rotation.y = math::radians(rotationElement->FloatAttribute("y"));
+            transform.rotation.z = math::radians(rotationElement->FloatAttribute("z"));
+        }
 
-            if (rotationElement)
-            {
-                transform.rotation.x = math::radians(rotationElement->FloatAttribute("x"));
-                transform.rotation.y = math::radians(rotationElement->FloatAttribute("y"));
-                transform.rotation.z = math::radians(rotationElement->FloatAttribute("z"));
-            }
-
-            if (scaleElement)
-            {
-                transform.scale.x = scaleElement->FloatAttribute("x");
-                transform.scale.y = scaleElement->FloatAttribute("y");
-                transform.scale.z = scaleElement->FloatAttribute("z");
-            }
-        };
-        return transform;
+        if (scaleElement)
+        {
+            transform.scale.x = scaleElement->FloatAttribute("x");
+            transform.scale.y = scaleElement->FloatAttribute("y");
+            transform.scale.z = scaleElement->FloatAttribute("z");
+        }
     };
+    return transform;
+}
 
-    // Load the camera
-    tinyxml2::XMLElement* cameraElement = doc.FirstChildElement("Scene")->FirstChildElement("Camera");
-    if (cameraElement)
-    {
-        Core::Camera* camera = new Core::Camera();
-        /*
-        SET TRANSFORM
-        */
-        camera->set_transform(parse_transform(cameraElement));
-        camera->set_rotation({-90, 0, 0});
-        /*
-        SET PARAMS
-        */
-        camera->set_far(cameraElement->FloatAttribute("far", 100.0f));
-        camera->set_near(cameraElement->FloatAttribute("near", 0.1f));
-        camera->set_field_of_view(cameraElement->FloatAttribute("fov", 75.0f));
-        scene->add(camera);
-    }
-
-    // Load meshes
-    for (tinyxml2::XMLElement* meshElement = doc.FirstChildElement("Scene")->FirstChildElement("Mesh"); meshElement;
+void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* element,
+                                                      Core::Object3D* const parent,
+                                                      std::string           resourcesPath) {
+    for (tinyxml2::XMLElement* meshElement = element->FirstChildElement("Mesh"); meshElement;
          meshElement                       = meshElement->NextSiblingElement("Mesh"))
     {
         Core::Mesh* mesh = new Core::Mesh();
@@ -899,7 +868,8 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
             tinyxml2::XMLElement* filenameElement = meshElement->FirstChildElement("Filename");
             if (filenameElement)
             {
-                Loaders::load_3D_file(mesh, resources + std::string(filenameElement->Attribute("value")), async);
+                Loaders::load_3D_file(
+                    mesh, resourcesPath + std::string(filenameElement->Attribute("value")), m_asyncLoad);
             }
         }
         if (meshType == "plane")
@@ -908,7 +878,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         }
         if (meshType == "sphere")
         {
-            Loaders::load_3D_file(mesh, ENGINE_RESOURCES_PATH "meshes/sphere.obj", async);
+            Loaders::load_3D_file(mesh, ENGINE_RESOURCES_PATH "meshes/sphere.obj", m_asyncLoad);
         }
         if (meshType == "cube")
         {
@@ -918,7 +888,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         /*
         SET TRANSFORM
         */
-        mesh->set_transform(parse_transform(meshElement));
+        mesh->set_transform(load_transform(meshElement));
         /*
         SET PARAMS
         */
@@ -933,8 +903,8 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
             std::string materialType = std::string(materialElement->Attribute("type"));
             if (materialType == "physical")
             {
-                mat                                     = new Core::PhysicallyBasedMaterial();
-                Core::PhysicallyBasedMaterial* material = static_cast<Core::PhysicallyBasedMaterial*>(mat);
+                mat                              = new Core::PhysicalMaterial();
+                Core::PhysicalMaterial* material = static_cast<Core::PhysicalMaterial*>(mat);
 
                 if (materialElement->FirstChildElement("albedo"))
                 {
@@ -979,9 +949,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resourcesPath + std::string(albedoTexture->Attribute("path")),
                                               TEXTURE_FORMAT_SRGB,
-                                              async);
+                                              m_asyncLoad);
                         material->set_albedo_texture(texture);
                     }
                     tinyxml2::XMLElement* normalTexture = texturesElement->FirstChildElement("normals");
@@ -989,9 +959,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(normalTexture->Attribute("path")),
+                                              resourcesPath + std::string(normalTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
-                                              async);
+                                              m_asyncLoad);
                         material->set_normal_texture(texture);
                     }
                     tinyxml2::XMLElement* roughTexture = texturesElement->FirstChildElement("roughness");
@@ -999,9 +969,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(roughTexture->Attribute("path")),
+                                              resourcesPath + std::string(roughTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
-                                              async);
+                                              m_asyncLoad);
                         material->set_roughness_texture(texture);
                     }
                     tinyxml2::XMLElement* metalTexture = texturesElement->FirstChildElement("metalness");
@@ -1009,9 +979,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(metalTexture->Attribute("path")),
+                                              resourcesPath + std::string(metalTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
-                                              async);
+                                              m_asyncLoad);
                         material->set_roughness_texture(texture);
                     }
                     tinyxml2::XMLElement* aoTexture = texturesElement->FirstChildElement("ao");
@@ -1019,9 +989,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(aoTexture->Attribute("path")),
+                                              resourcesPath + std::string(aoTexture->Attribute("path")),
                                               TEXTURE_FORMAT_UNORM,
-                                              async);
+                                              m_asyncLoad);
                         material->set_occlusion_texture(texture);
                     }
                     tinyxml2::XMLElement* emissiveTexture = texturesElement->FirstChildElement("emission");
@@ -1029,9 +999,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(emissiveTexture->Attribute("path")),
+                                              resourcesPath + std::string(emissiveTexture->Attribute("path")),
                                               TEXTURE_FORMAT_SRGB,
-                                              async);
+                                              m_asyncLoad);
                         material->set_emissive_texture(texture);
                     }
                 }
@@ -1069,9 +1039,9 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                     {
                         Core::ITexture* texture = new Core::Texture();
                         Loaders::load_texture(texture,
-                                              resources + std::string(albedoTexture->Attribute("path")),
+                                              resourcesPath + std::string(albedoTexture->Attribute("path")),
                                               TEXTURE_FORMAT_SRGB,
-                                              async);
+                                              m_asyncLoad);
                         material->set_color_texture(texture);
                     }
                 }
@@ -1080,11 +1050,15 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
             {
             }
         }
-        mesh->push_material(mat ? mat : new Core::PhysicallyBasedMaterial(Vec4(0.5, 0.5, 0.5, 1.0)));
-        scene->add(mesh);
+        mesh->push_material(mat ? mat : new Core::PhysicalMaterial(Vec4(0.5, 0.5, 0.5, 1.0)));
+
+        if (meshElement->FirstChildElement("Children"))
+            load_children(meshElement->FirstChildElement("Children"), mesh, resourcesPath);
+
+        parent->add_child(mesh);
     }
     // Load lights
-    for (tinyxml2::XMLElement* lightElement = doc.FirstChildElement("Scene")->FirstChildElement("Light"); lightElement;
+    for (tinyxml2::XMLElement* lightElement = element->FirstChildElement("Light"); lightElement;
          lightElement                       = lightElement->NextSiblingElement("Light"))
     {
         Core::Light* light     = nullptr;
@@ -1112,7 +1086,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
             if (lightElement->Attribute("name"))
                 light->set_name(lightElement->Attribute("name"));
 
-            light->set_transform(parse_transform(lightElement));
+            light->set_transform(load_transform(lightElement));
 
             if (lightElement->FirstChildElement("intensity"))
                 light->set_intensity(lightElement->FirstChildElement("intensity")->FloatAttribute("value"));
@@ -1156,11 +1130,52 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                 }
             }
 
-            scene->add(light);
+            if (lightElement->FirstChildElement("Children"))
+                load_children(lightElement->FirstChildElement("Children"), light, resourcesPath);
+
+            parent->add_child(light);
         }
     }
+}
+
+void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, const std::string fileName) {
+
+    if (!scene)
+        throw VKFW_Exception("Scene is null pointer");
+
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(fileName.c_str());
+
+    std::string resources = "";
+    if (doc.FirstChildElement("Scene")->FirstChildElement("Resources"))
+    {
+        resources = std::string(doc.FirstChildElement("Scene")->FirstChildElement("Resources")->Attribute("path"));
+    }
+
+    // Load the camera
+    tinyxml2::XMLElement* cameraElement = doc.FirstChildElement("Scene")->FirstChildElement("Camera");
+    if (cameraElement)
+    {
+        Core::Camera* camera = new Core::Camera();
+        /*
+        SET TRANSFORM
+        */
+        camera->set_transform(load_transform(cameraElement));
+        camera->set_rotation({-90, 0, 0}, true);
+        /*
+        SET PARAMS
+        */
+        camera->set_far(cameraElement->FloatAttribute("far", 100.0f));
+        camera->set_near(cameraElement->FloatAttribute("near", 0.1f));
+        camera->set_field_of_view(cameraElement->FloatAttribute("fov", 75.0f));
+        scene->add(camera);
+    }
+
+    // Load Hierarqy of children
+    load_children(doc.FirstChildElement("Scene"), scene, resources);
+
     // Ambient
-    tinyxml2::XMLElement* ambientElement = doc.FirstChildElement("Scene")->FirstChildElement("Ambient");
+    tinyxml2::XMLElement* ambientElement = doc.FirstChildElement("Scene")->FirstChildElement("Enviroment");
     if (ambientElement)
     {
         std::string ambientType = std::string(ambientElement->Attribute("type"));
@@ -1184,8 +1199,10 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
             if (filenameElement)
             {
                 Core::TextureHDR* envMap = new Core::TextureHDR();
-                Tools::Loaders::load_texture(
-                    envMap, resources + std::string(filenameElement->Attribute("value")), TEXTURE_FORMAT_HDR, async);
+                Tools::Loaders::load_texture(envMap,
+                                             resources + std::string(filenameElement->Attribute("value")),
+                                             TEXTURE_FORMAT_HDR,
+                                             m_asyncLoad);
                 Core::Skybox* sky = new Core::Skybox(envMap);
                 if (ambientElement->FirstChildElement("intensity"))
                 {

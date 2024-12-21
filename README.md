@@ -146,7 +146,80 @@ project_root/
 └── CMakeLists.txt
 ````
 
-## Project Usage ✨
+## Documentation ✨
+
+### XML Specification:
+
+You can load scenes by making use of the SceneLoader specified in the Tools module:
+
+```xml
+<!-- VULKAN ENGINE SCENE EXAMPLE EXPECIFICATION -->
+<Scene>
+    <Resources path="C:/Dev/Vulkan-Engine/examples/resources/" />
+    <!-- CAMERA -->
+    <Camera type="perspective" fov="70" near="0.1" far="50">
+        <Transform>
+            <translate x="0.0" y="4.0" z="-5.2" />
+        </Transform>
+    </Camera>
+    <!-- MESHES -->
+    <Mesh type="file" name="Droid">
+        <Filename value="meshes/droid.obj" />
+        <Transform>
+            <scale x="0.5" y="0.5" z="0.5" />
+            <translate x="0" y="0" z="0" />
+            <rotate x="0" y="0" z="0" />
+        </Transform>
+        <!-- MATERIALS -->
+        <Material type="physical">
+            <albedo r="0" g="0" b="0" />
+            <roughness value="0.5" />
+            <metallic value="0.5" />
+            <emission r="30" g="30" b="30" />
+
+            <Textures>
+                <albedo path="textures/DROID_Body_BaseColor.jpg" />
+                <normals path="textures/DROID_Body_Normal.jpg" />
+                <emission path="textures/DROID_Body_Emissive.jpg" />
+            </Textures>
+        </Material>
+    </Mesh>
+    <Mesh type="plane" name="Floor">
+        <Transform>
+            <scale x="5.0" y="5.0" z="5.0" />
+            <translate x="0" y="0" z="0" />
+            <rotate x="-90" y="0" z="0" />
+        </Transform>
+    </Mesh>
+    <!-- LIGHTS -->
+    <Light type="point" name="Light">
+        <Transform>
+            <translate x="5.0" y="5.0" z="5.0" />
+        </Transform>
+
+        <intensity value="2.0" />
+        <color r="1" g="1" b="1" />
+        <influence value="30.0" />
+
+        <Shadow type="rt">
+            <samples value="4" />
+            <area value="0.5" />
+        </Shadow>
+    </Light>
+    <!-- ENVIROMENT -->
+    <Enviroment type="skybox">
+        <Filename value="textures/cloudy.hdr" />
+        <intensity value="0.5" />
+    </Enviroment>
+    <!-- FOG -->
+    <Fog intensity="30.0">
+        <color r="1" g="1" b="1" />
+    </Fog>
+
+</Scene>
+```
+
+### Directly using C++:
 
 Here is a simple snippet for creating a basic scene:
 
@@ -172,7 +245,7 @@ int main()
 
         // Create the renderer, you can play with the settings here
         Systems::RendererSettings settings{};
-        settings.samplesMSAA = MSAASamples::x4;
+        settings.samplesMSAA = MSAASamples::x1;
         settings.clearColor = Vec4(0.0, 0.0, 0.0, 1.0);
         Systems::BaseRenderer *renderer = new Systems::ForwardRenderer(window, settings, {});
 

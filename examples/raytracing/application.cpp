@@ -85,7 +85,7 @@ void Application::setup() {
     m_scene->add(light);
 
     Mesh* toriiMesh = new Mesh();
-    auto  toriiMat  = new PhysicallyBasedMaterial();
+    auto  toriiMat  = new PhysicalMaterial();
 
     Texture* toriiT = new Texture();
     Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
@@ -112,7 +112,7 @@ void Application::setup() {
     Mesh* plane = new Mesh();
     // Tools::Loaders::load_3D_file(plane, MESH_PATH + "torii.obj", false);
     plane->push_geometry(Geometry::create_quad());
-    auto     terrainMat = new PhysicallyBasedMaterial();
+    auto     terrainMat = new PhysicalMaterial();
     Texture* floorText  = new Texture();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
     Texture* floorNormalText = new Texture();
@@ -134,7 +134,7 @@ void Application::setup() {
 
     Mesh* stoneMesh = new Mesh();
     Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "moisturizer.obj");
-    auto     stoneMat      = new PhysicallyBasedMaterial();
+    auto     stoneMat      = new PhysicalMaterial();
     Texture* stonelanternT = new Texture();
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "moisturizer_color.png");
     stoneMat->set_albedo_texture(stonelanternT);
@@ -152,7 +152,7 @@ void Application::setup() {
 
     Mesh* droidMesh = new Mesh();
     Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid.obj");
-    auto     droidMat   = new PhysicallyBasedMaterial();
+    auto     droidMat   = new PhysicalMaterial();
     Texture* droidText0 = new Texture();
     Tools::Loaders::load_texture(droidText0, TEXTURE_PATH + "DROID_Body_BaseColor.jpg");
     droidMat->set_albedo_texture(droidText0);
@@ -169,7 +169,7 @@ void Application::setup() {
     droidMesh->set_scale(.7f);
     Mesh* eyesMesh = new Mesh();
     Tools::Loaders::load_3D_file(eyesMesh, MESH_PATH + "eyes.obj", false);
-    auto droidMat1 = new PhysicallyBasedMaterial();
+    auto droidMat1 = new PhysicalMaterial();
     droidMat1->set_emissive_color(Vec3(1.0));
     droidMat1->set_emission_intensity(10.0);
     eyesMesh->push_material(droidMat1);
@@ -179,7 +179,7 @@ void Application::setup() {
 
     Mesh* stormtrooper = new Mesh();
     Tools::Loaders::load_3D_file(stormtrooper, MESH_PATH + "stormtrooper.obj");
-    auto     stormtrooperMat  = new PhysicallyBasedMaterial();
+    auto     stormtrooperMat  = new PhysicalMaterial();
     Texture* stormtrooperText = new Texture();
     Tools::Loaders::load_texture(stormtrooperText, TEXTURE_PATH + "stormtrooper_color.png");
     stormtrooperMat->set_albedo_texture(stormtrooperText);
@@ -196,7 +196,7 @@ void Application::setup() {
     stormtrooper->set_scale(.7f);
     Mesh* stormtrooperHead = new Mesh();
     Tools::Loaders::load_3D_file(stormtrooperHead, MESH_PATH + "stormtrooper_helm.obj", false);
-    auto     stormtrooperMat1   = new PhysicallyBasedMaterial();
+    auto     stormtrooperMat1   = new PhysicalMaterial();
     Texture* stormtrooperText11 = new Texture();
     Tools::Loaders::load_texture(stormtrooperText11, TEXTURE_PATH + "stormtrooper_head_color.png");
     stormtrooperMat1->set_albedo_texture(stormtrooperText11);
@@ -214,7 +214,7 @@ void Application::setup() {
 
     Mesh* roninMesh = new Mesh();
     Tools::Loaders::load_3D_file(roninMesh, MESH_PATH + "ronin.obj");
-    auto roninMat = new PhysicallyBasedMaterial();
+    auto roninMat = new PhysicalMaterial();
     roninMesh->push_material(roninMat);
     roninMesh->set_name("Ronin");
     roninMesh->set_position({-2.1f, -2.065f, -3.4f});
@@ -225,7 +225,7 @@ void Application::setup() {
 
     Mesh* sphereMesh = new Mesh();
     Tools::Loaders::load_3D_file(sphereMesh, ENGINE_MESH_PATH + "sphere.obj");
-    auto spheremat = new PhysicallyBasedMaterial();
+    auto spheremat = new PhysicalMaterial();
     sphereMesh->push_material(spheremat);
     sphereMesh->set_name("Energy ball");
     spheremat->set_albedo(Vec3(0.0));

@@ -32,7 +32,7 @@ int main() {
         window->init();
 
         Systems::RendererSettings settings{};
-        settings.samplesMSAA = MSAASamples::x4;
+        settings.samplesMSAA = MSAASamples::x1;
         settings.clearColor  = Vec4(0.0, 0.0, 0.0, 1.0);
 
         Systems::BaseRenderer* renderer =
@@ -54,7 +54,7 @@ int main() {
         Tools::Loaders::load_3D_file(kabuto, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj");
         kabuto->set_scale(0.4f);
 
-        Core::PhysicallyBasedMaterial* material = new Core::PhysicallyBasedMaterial();
+        Core::PhysicalMaterial* material = new Core::PhysicalMaterial();
         material->set_albedo(Vec4{1.0});
         kabuto->push_material(material);
 

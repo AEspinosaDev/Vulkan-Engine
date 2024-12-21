@@ -71,7 +71,7 @@ void SceneExplorerWidget::render() {
             {
                 Mesh* plane = new Mesh();
                 plane->push_geometry(Geometry::create_quad());
-                auto mat = new PhysicallyBasedMaterial();
+                auto mat = new PhysicalMaterial();
                 plane->push_material(mat);
                 plane->set_name("Plane");
                 m_scene->add(plane);
@@ -80,7 +80,7 @@ void SceneExplorerWidget::render() {
             {
                 Mesh* cube = new Mesh();
                 Loaders::load_3D_file(cube, ENGINE_RESOURCES_PATH "meshes/cube.obj", false);
-                auto mat = new PhysicallyBasedMaterial();
+                auto mat = new PhysicalMaterial();
                 cube->push_material(mat);
                 cube->set_name("Box");
                 m_scene->add(cube);
@@ -89,7 +89,7 @@ void SceneExplorerWidget::render() {
             {
                 Mesh* sph = new Mesh();
                 Loaders::load_3D_file(sph, ENGINE_RESOURCES_PATH "meshes/sphere.obj", false);
-                auto mat = new PhysicallyBasedMaterial();
+                auto mat = new PhysicalMaterial();
                 sph->push_material(mat);
                 sph->set_name("Sphere");
                 m_scene->add(sph);
@@ -126,7 +126,7 @@ void SceneExplorerWidget::render() {
 
             Mesh* mesh = new Mesh();
             Loaders::load_3D_file(mesh, filePath, true);
-            auto mat = new PhysicallyBasedMaterial();
+            auto mat = new PhysicalMaterial();
             mesh->push_material(mat);
             mesh->set_name(std::filesystem::path(filePath).filename().string());
             m_scene->add(mesh);
@@ -481,7 +481,7 @@ void ObjectExplorerWidget::render() {
             ImVec2 texSize = {160, 160};
             if (model->get_material(i)->get_shaderpass_ID() == "physical")
             {
-                PhysicallyBasedMaterial* mat    = static_cast<PhysicallyBasedMaterial*>(model->get_material(i));
+                PhysicalMaterial* mat    = static_cast<PhysicalMaterial*>(model->get_material(i));
                 Vec3                     albedo = mat->get_albedo();
                 if (ImGui::ColorEdit3("Albedo", (float*)&albedo))
                 {

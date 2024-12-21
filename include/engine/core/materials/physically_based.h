@@ -17,7 +17,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
 /// Epic's Unreal Engine 4 PBR Metallic-Roughness Workflow
-class PhysicallyBasedMaterial : public IMaterial
+class PhysicalMaterial : public IMaterial
 {
   protected:
     Vec2 m_tileUV = {1.0f, 1.0f};
@@ -84,11 +84,11 @@ class PhysicallyBasedMaterial : public IMaterial
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
     }
-    PhysicallyBasedMaterial(Vec4 albedo = Vec4(1.0f, 1.0f, 0.5f, 1.0f))
+    PhysicalMaterial(Vec4 albedo = Vec4(1.0f, 1.0f, 0.5f, 1.0f))
         : IMaterial("physical")
         , m_albedo(albedo) {
     }
-    PhysicallyBasedMaterial(Vec4 albedo, MaterialSettings params)
+    PhysicalMaterial(Vec4 albedo, MaterialSettings params)
         : IMaterial("physical", params)
         , m_albedo(albedo) {
     }

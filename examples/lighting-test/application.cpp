@@ -185,7 +185,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg");
     Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
-    auto terrainMat = new PhysicallyBasedMaterial();
+    auto terrainMat = new PhysicalMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
     terrainMat->set_roughness_texture(floorRoughText);
@@ -198,7 +198,7 @@ void Application::setup() {
     Tools::Loaders::load_3D_file(kabutoMesh, EXAMPLES_RESOURCES_PATH "meshes/kabuto.obj", false);
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     kabutoMesh->set_position({-5.0, 0.0, 5.0});
-    auto     kabutoMat  = new PhysicallyBasedMaterial();
+    auto     kabutoMat  = new PhysicalMaterial();
     Texture* kabutoText = new Texture();
     Tools::Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);

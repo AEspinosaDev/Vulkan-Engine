@@ -165,7 +165,7 @@ void Application::setup() {
     m_scene->get_lights()[3]->set_cast_shadows(false);
 
     Mesh*    toriiMesh = new Mesh();
-    auto     toriiMat  = new PhysicallyBasedMaterial();
+    auto     toriiMat  = new PhysicalMaterial();
     Texture* toriiT    = new Texture();
     Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
     Texture* toriiN = new Texture();
@@ -196,7 +196,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_UNORM);
     Texture* floorRoughText = new Texture();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
-    auto terrainMat = new PhysicallyBasedMaterial();
+    auto terrainMat = new PhysicalMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
     terrainMat->set_normal_texture(floorNormalText);
@@ -218,7 +218,7 @@ void Application::setup() {
     Mesh* kabutoMesh = new Mesh();
     Tools::Loaders::load_3D_file(kabutoMesh, MESH_PATH + "kabuto.obj");
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
-    auto     kabutoMat  = new PhysicallyBasedMaterial();
+    auto     kabutoMat  = new PhysicalMaterial();
     Texture* kabutoText = new Texture();
     Tools::Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
@@ -233,7 +233,7 @@ void Application::setup() {
 
     Tools::Loaders::load_3D_file(templeMesh, MESH_PATH + "temple.obj");
     templeMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
-    auto     templeMat  = new PhysicallyBasedMaterial();
+    auto     templeMat  = new PhysicalMaterial();
     Texture* templeText = new Texture();
     Tools::Loaders::load_texture(templeText, TEXTURE_PATH + "temple_diffuse.png");
     Texture* templeRText = new Texture();
@@ -256,7 +256,7 @@ void Application::setup() {
 
     Tools::Loaders::load_3D_file(templeMesh2, MESH_PATH + "shrine.obj");
     templeMesh2->set_rotation(glm::vec3(0.0, 180, 0.0));
-    auto     templeMat2  = new PhysicallyBasedMaterial();
+    auto     templeMat2  = new PhysicalMaterial();
     Texture* templeText2 = new Texture();
     Tools::Loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
     Texture* templeRText2 = new Texture();
@@ -275,7 +275,7 @@ void Application::setup() {
 
     Mesh* lanternMesh = new Mesh();
     Tools::Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj", false);
-    auto     lanternMat = new PhysicallyBasedMaterial();
+    auto     lanternMat = new PhysicalMaterial();
     Texture* lanternT   = new Texture();
     Tools::Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
     lanternMat->set_albedo_texture(lanternT);
@@ -304,7 +304,7 @@ void Application::setup() {
 
     Mesh* stoneMesh = new Mesh();
     Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
-    auto     stoneMat      = new PhysicallyBasedMaterial();
+    auto     stoneMat      = new PhysicalMaterial();
     Texture* stonelanternT = new Texture();
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
     stoneMat->set_albedo_texture(stonelanternT);

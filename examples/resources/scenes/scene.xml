@@ -1,20 +1,29 @@
+<!-- VULKAN ENGINE SCENE EXAMPLE EXPECIFICATION -->
 <Scene>
     <Resources path="C:/Dev/Vulkan-Engine/examples/resources/" />
-
-    <Camera type="perspective" fov="70">
+    <!-- CAMERA -->
+    <Camera type="perspective" fov="70" near="0.1" far="50">
         <Transform>
             <translate x="0.0" y="0.0" z="-5.2" />
         </Transform>
     </Camera>
-
+    <!-- MESHES -->
+    <Mesh type="plane" name="Floor">
+        <Transform>
+            <scale x="5.0" y="5.0" z="5.0" />
+            <translate x="0" y="-1.0" z="0" />
+            <rotate x="-90" y="0" z="0" />
+        </Transform>
+    </Mesh>
     <Mesh type="file" name="Droid">
+       
         <Filename value="meshes/droid.obj" />
         <Transform>
             <scale x="0.5" y="0.5" z="0.5" />
-            <translate x="0" y="0" z="0" />
+            <translate x="0" y="-1.0" z="0" />
             <rotate x="0" y="0" z="0" />
         </Transform>
-
+        <!-- MATERIALS -->
         <Material type="physical">
             <albedo r="0" g="0" b="0" />
             <roughness value="0.5" />
@@ -27,15 +36,9 @@
                 <emission path="textures/DROID_Body_Emissive.jpg" />
             </Textures>
         </Material>
-    </Mesh>
-    <Mesh type="plane" name="Floor">
-        <Transform>
-            <scale x="5.0" y="5.0" z="5.0" />
-            <translate x="0" y="0" z="0" />
-            <rotate x="-90" y="0" z="0" />
-        </Transform>
-    </Mesh>
 
+    </Mesh>
+    <!-- LIGHTS -->
     <Light type="point" name="Light">
         <Transform>
             <translate x="5.0" y="5.0" z="5.0" />
@@ -50,12 +53,12 @@
             <area value="0.5" />
         </Shadow>
     </Light>
-
-    <Ambient type="skybox">
+    <!-- ENVIROMENT -->
+    <Enviroment type="skybox">
         <Filename value="textures/cloudy.hdr" />
         <intensity value="0.5" />
-    </Ambient>
-
+    </Enviroment>
+    <!-- FOG -->
     <Fog intensity="30.0">
         <color r="1" g="1" b="1" />
     </Fog>
