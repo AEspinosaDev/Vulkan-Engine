@@ -76,6 +76,7 @@ void PostProcessPass::setup_shader_passes() {
 }
 
 void PostProcessPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+    PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     cmd.begin_renderpass(m_renderpass, m_framebuffers[m_isDefault ? presentImageIndex : 0]);

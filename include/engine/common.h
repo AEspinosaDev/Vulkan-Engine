@@ -50,7 +50,7 @@
 
 #define ASSERT_PTR(ptr) assert((ptr) && "Pointer is null")
 
-//  #define ENABLE_OPTICK_PROFILING
+#define ENABLE_OPTICK_PROFILING
 #ifdef ENABLE_OPTICK_PROFILING
 #define PROFILING_EVENT() OPTICK_EVENT()
 #define PROFILING_FRAME() OPTICK_FRAME("MainThread");

@@ -33,10 +33,11 @@ Interface class for all textures
 class ITexture
 {
   protected:
-    TextureSettings m_settings{};
+    TextureSettings m_settings = {};
 
-    Graphics::Image m_image{};
-    uint16_t        m_channels{0};
+    Graphics::Image m_image     = {};
+    uint16_t        m_channels  = 0;
+    std::string     m_fileRoute = "None";
 
     bool m_isDirty{true};
 
@@ -121,6 +122,12 @@ class ITexture
     }
     inline TextureTypeFlagBits get_type() const {
         return m_settings.type;
+    }
+    inline std::string get_file_route() const {
+        return m_fileRoute;
+    }
+    inline void set_file_route(std::string r) {
+        m_fileRoute = r;
     }
 };
 

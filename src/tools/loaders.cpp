@@ -733,6 +733,7 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
         texture->set_image_cache(imgCache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
         // Set automatically teh optimal format for each type.
         // User can override it after, I he need some other more specific format ...
+        texture->set_file_route(fileName);
         switch (textureFormat)
         {
         case TEXTURE_FORMAT_SRGB:
@@ -765,6 +766,8 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std:
     {
         texture->set_image_cache(HDRcache, {static_cast<unsigned int>(w), static_cast<unsigned int>(h), 1}, 4);
         texture->set_format(SRGBA_32F);
+        texture->set_file_route(fileName);
+
     } else
     {
 #ifndef NDEBUG
@@ -795,6 +798,8 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
             4);
         // Set automatically the optimal format for each type.
         // User can override it after, I he need some other more specific format ...
+        texture->set_file_route(fileName);
+
         switch (textureFormat)
         {
         case TEXTURE_FORMAT_SRGB:
@@ -852,6 +857,39 @@ VKFW::Core::Transform VKFW::Tools::Loaders::SceneLoader::load_transform(tinyxml2
     return transform;
 }
 
+void VKFW::Tools::Loaders::SceneLoader::save_transform(const Core::Transform& transform,
+                                                       tinyxml2::XMLElement*  parentElement) {
+    tinyxml2::XMLDocument* doc = parentElement->GetDocument();
+
+    if (!doc)
+        return;
+
+    tinyxml2::XMLElement* transformElement = doc->NewElement("Transform");
+
+    // Save position
+    tinyxml2::XMLElement* positionElement = doc->NewElement("translate");
+    positionElement->SetAttribute("x", transform.position.x);
+    positionElement->SetAttribute("y", transform.position.y);
+    positionElement->SetAttribute("z", transform.position.z);
+    transformElement->InsertEndChild(positionElement);
+
+    // Save rotation
+    tinyxml2::XMLElement* rotationElement = doc->NewElement("rotate");
+    rotationElement->SetAttribute("x", math::degrees(transform.rotation.x));
+    rotationElement->SetAttribute("y", math::degrees(transform.rotation.y));
+    rotationElement->SetAttribute("z", math::degrees(transform.rotation.z));
+    transformElement->InsertEndChild(rotationElement);
+
+    // Save scale
+    tinyxml2::XMLElement* scaleElement = doc->NewElement("scale");
+    scaleElement->SetAttribute("x", transform.scale.x);
+    scaleElement->SetAttribute("y", transform.scale.y);
+    scaleElement->SetAttribute("z", transform.scale.z);
+    transformElement->InsertEndChild(scaleElement);
+
+    // Attach the transform element to the parent
+    parentElement->InsertEndChild(transformElement);
+}
 void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* element,
                                                       Core::Object3D* const parent,
                                                       std::string           resourcesPath) {
@@ -1256,4 +1294,72 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
         scene->set_ambient_color(Vec3(0.0));
         scene->set_ambient_intensity(0.0f);
     }
+}
+
+void VKFW::Tools::Loaders::SceneLoader::save_scene(Core::Scene* const scene, const std::string fileName) {
+    if (!scene)
+    {
+        throw VKFW_Exception("Scene is null pointer");
+    }
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLElement* sceneElement = doc.NewElement("Scene");
+
+    doc.InsertFirstChild(sceneElement);
+
+    tinyxml2::XMLElement* resourcesElement = doc.NewElement("Resources");
+    resourcesElement->SetAttribute("path", "");
+    sceneElement->InsertEndChild(resourcesElement);
+
+    // Save camera
+    Core::Camera* camera = scene->get_active_camera();
+    if (camera)
+    {
+        tinyxml2::XMLElement* cameraElement = doc.NewElement("Camera");
+
+        Core::Transform transform = camera->get_transform();
+        save_transform(transform, cameraElement);
+        cameraElement->SetAttribute("far", camera->get_far());
+        cameraElement->SetAttribute("near", camera->get_near());
+        cameraElement->SetAttribute("fov", camera->get_field_of_view());
+
+        sceneElement->InsertEndChild(cameraElement);
+    }
+
+    // // Recursively save children
+    // tinyxml2::XMLElement* childrenElement = doc.NewElement("Children");
+    // save_children(scene->get_root(), childrenElement, doc, resourcesPath); // Assume get_root() gets the root object
+    // sceneElement->InsertEndChild(childrenElement);
+
+    // Save environment settings
+    tinyxml2::XMLElement* environmentElement = doc.NewElement("Enviroment");
+    Vec3                  ambientColor       = scene->get_ambient_color();
+    float                 ambientIntensity   = scene->get_ambient_intensity();
+
+    if (scene->get_skybox())
+    {
+        environmentElement->SetAttribute("type", "skybox");
+
+        tinyxml2::XMLElement* filenameElement = doc.NewElement("Filename");
+        filenameElement->SetAttribute("value", scene->get_skybox()->get_enviroment_map()->get_file_route().c_str());
+        environmentElement->InsertEndChild(filenameElement);
+    } else
+    {
+        environmentElement->SetAttribute("type", "constant");
+        
+        tinyxml2::XMLElement* colorElement = doc.NewElement("color");
+        colorElement->SetAttribute("r", ambientColor.r);
+        colorElement->SetAttribute("g", ambientColor.g);
+        colorElement->SetAttribute("b", ambientColor.b);
+        environmentElement->InsertEndChild(colorElement);
+    }
+
+    tinyxml2::XMLElement* intensityElement = doc.NewElement("intensity");
+    intensityElement->SetAttribute("value", ambientIntensity);
+    environmentElement->InsertEndChild(intensityElement);
+
+    sceneElement->InsertEndChild(environmentElement);
+
+    // Save the XML to file
+    doc.SaveFile(fileName.c_str());
 }

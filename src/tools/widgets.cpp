@@ -65,6 +65,18 @@ void SceneExplorerWidget::render() {
 
     if (ImGui::BeginMenuBar())
     {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Save Scene"))
+            {
+                ImGuiFileDialog::Instance()->OpenDialog("SaveSceneFile", "Save Scene", ".xml");
+            }
+            if (ImGui::MenuItem("Import Scene"))
+            {
+                ImGuiFileDialog::Instance()->OpenDialog("LoadSceneFile", "Choose Scene", ".xml");
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Add"))
         {
             if (ImGui::MenuItem("Plane"))
@@ -109,7 +121,7 @@ void SceneExplorerWidget::render() {
             }
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Import from Disk"))
+            if (ImGui::MenuItem("Import File"))
             {
                 ImGuiFileDialog::Instance()->OpenDialog("ChooseMeshFile", "Choose a file", ".obj,.ply,.gltf");
             }
@@ -130,6 +142,27 @@ void SceneExplorerWidget::render() {
             mesh->push_material(mat);
             mesh->set_name(std::filesystem::path(filePath).filename().string());
             m_scene->add(mesh);
+        }
+
+        ImGuiFileDialog::Instance()->Close();
+    }
+    if (ImGuiFileDialog::Instance()->Display("SaveSceneFile", 32, {800.0f, 400.0f}, {1400.0f, 1000.0f}))
+    {
+        if (ImGuiFileDialog::Instance()->IsOk())
+        {
+            Loaders::SceneLoader sceneLoader;
+            sceneLoader.save_scene(m_scene, "scene.xml");
+        }
+
+        ImGuiFileDialog::Instance()->Close();
+    }
+    if (ImGuiFileDialog::Instance()->Display("LoadSceneFile", 32, {800.0f, 400.0f}, {1400.0f, 1000.0f}))
+    {
+        if (ImGuiFileDialog::Instance()->IsOk())
+        {
+            Loaders::SceneLoader sceneLoader;
+            std::string          filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+            sceneLoader.load_scene(m_scene, filePath);
         }
 
         ImGuiFileDialog::Instance()->Close();
@@ -482,7 +515,7 @@ void ObjectExplorerWidget::render() {
             if (model->get_material(i)->get_shaderpass_ID() == "physical")
             {
                 PhysicalMaterial* mat    = static_cast<PhysicalMaterial*>(model->get_material(i));
-                Vec3                     albedo = mat->get_albedo();
+                Vec3              albedo = mat->get_albedo();
                 if (ImGui::ColorEdit3("Albedo", (float*)&albedo))
                 {
                     mat->set_albedo(Vec4{albedo, 1.0f});

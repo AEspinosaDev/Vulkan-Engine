@@ -157,6 +157,7 @@ void CompositionPass::setup_shader_passes() {
 }
 
 void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+    PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
 
