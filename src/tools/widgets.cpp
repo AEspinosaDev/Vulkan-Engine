@@ -151,7 +151,8 @@ void SceneExplorerWidget::render() {
         if (ImGuiFileDialog::Instance()->IsOk())
         {
             Loaders::SceneLoader sceneLoader;
-            sceneLoader.save_scene(m_scene, "scene.xml");
+            std::string          filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+            sceneLoader.save_scene(m_scene, filePath);
         }
 
         ImGuiFileDialog::Instance()->Close();

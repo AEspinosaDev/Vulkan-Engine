@@ -1204,6 +1204,211 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
     }
 }
 
+void VKFW::Tools::Loaders::SceneLoader::save_children(tinyxml2::XMLElement* parentElement,
+                                                      Core::Object3D* const parent) {
+
+    tinyxml2::XMLDocument* doc = parentElement->GetDocument();
+
+    for (Core::Object3D* child : parent->get_children())
+    {
+        if (child->get_type() == ObjectType::MESH)
+        {
+            Core::Mesh* mesh = static_cast<Core::Mesh*>(child);
+
+            tinyxml2::XMLElement* meshElement = doc->NewElement("Mesh");
+            if (mesh->get_file_route() != "")
+                meshElement->SetAttribute("type", "file");
+            else
+                meshElement->SetAttribute("type", "primitive");
+
+            tinyxml2::XMLElement* filenameElement = doc->NewElement("Filename");
+            filenameElement->SetAttribute("value", mesh->get_file_route().c_str());
+            meshElement->InsertEndChild(filenameElement);
+            // Save transform
+            Core::Transform transform = mesh->get_transform();
+            save_transform(transform, meshElement);
+
+            meshElement->SetAttribute("name", mesh->get_name().c_str());
+
+            // // Save material
+            Core::IMaterial* mat = mesh->get_material();
+            if (mat)
+            {
+                tinyxml2::XMLElement* materialElement = doc->NewElement("Material");
+                materialElement->SetAttribute("type", mat->get_shaderpass_ID().c_str());
+
+                if (mat->get_shaderpass_ID() == "physical")
+                {
+                    Core::PhysicalMaterial* material = static_cast<Core::PhysicalMaterial*>(mat);
+                    // Save Albedo
+                    tinyxml2::XMLElement* albedoElement = doc->NewElement("albedo");
+                    Vec3                  albedo        = material->get_albedo();
+                    albedoElement->SetAttribute("r", albedo.r);
+                    albedoElement->SetAttribute("g", albedo.g);
+                    albedoElement->SetAttribute("b", albedo.b);
+                    materialElement->InsertEndChild(albedoElement);
+                    tinyxml2::XMLElement* opElement = doc->NewElement("opacity");
+                    opElement->SetAttribute("value", material->get_opacity());
+                    materialElement->InsertEndChild(opElement);
+
+                    // Save Roughness
+                    tinyxml2::XMLElement* roughnessElement = doc->NewElement("roughness");
+                    roughnessElement->SetAttribute("value", material->get_roughness());
+                    materialElement->InsertEndChild(roughnessElement);
+
+                    // Save Metallic
+                    tinyxml2::XMLElement* metallicElement = doc->NewElement("metallic");
+                    metallicElement->SetAttribute("value", material->get_metalness());
+                    materialElement->InsertEndChild(metallicElement);
+
+                    // Save Emission
+                    tinyxml2::XMLElement* emissionElement = doc->NewElement("emission");
+                    Vec3                  emission        = material->get_emissive_color();
+                    emissionElement->SetAttribute("r", emission.r);
+                    emissionElement->SetAttribute("g", emission.g);
+                    emissionElement->SetAttribute("b", emission.b);
+                    materialElement->InsertEndChild(emissionElement);
+
+                    // Save Textures
+                    if (!material->get_textures().empty())
+                    {
+                        tinyxml2::XMLElement* texturesElement = doc->NewElement("Textures");
+
+                        if (material->get_albedo_texture())
+                        {
+                            tinyxml2::XMLElement* albedoTextureElement = doc->NewElement("albedo");
+                            albedoTextureElement->SetAttribute(
+                                "path", material->get_albedo_texture()->get_file_route().c_str());
+                            texturesElement->InsertEndChild(albedoTextureElement);
+                        }
+
+                        if (material->get_normal_texture())
+                        {
+                            tinyxml2::XMLElement* normalsTextureElement = doc->NewElement("normals");
+                            normalsTextureElement->SetAttribute(
+                                "path", material->get_normal_texture()->get_file_route().c_str());
+                            texturesElement->InsertEndChild(normalsTextureElement);
+                        }
+                        if (material->get_roughness_texture())
+                        {
+                            tinyxml2::XMLElement* normalsTextureElement = doc->NewElement("roughness");
+                            normalsTextureElement->SetAttribute(
+                                "path", material->get_roughness_texture()->get_file_route().c_str());
+                            texturesElement->InsertEndChild(normalsTextureElement);
+                        }
+                        if (material->get_metallic_texture())
+                        {
+                            tinyxml2::XMLElement* normalsTextureElement = doc->NewElement("metalness");
+                            normalsTextureElement->SetAttribute(
+                                "path", material->get_metallic_texture()->get_file_route().c_str());
+                            texturesElement->InsertEndChild(normalsTextureElement);
+                        }
+
+                        if (material->get_emissive_texture())
+                        {
+                            tinyxml2::XMLElement* emissionTextureElement = doc->NewElement("emission");
+                            emissionTextureElement->SetAttribute(
+                                "path", material->get_emissive_texture()->get_file_route().c_str());
+                            texturesElement->InsertEndChild(emissionTextureElement);
+                        }
+
+                        materialElement->InsertEndChild(texturesElement);
+                    }
+                }
+                // Append to parent element
+                meshElement->InsertEndChild(materialElement);
+            }
+
+            // Recursively save children
+            tinyxml2::XMLElement* childrenElement = doc->NewElement("Children");
+            save_children(childrenElement, mesh);
+            meshElement->InsertEndChild(childrenElement);
+
+            parentElement->InsertEndChild(meshElement);
+        }
+        if (child->get_type() == ObjectType::LIGHT)
+        {
+            Core::Light* light = static_cast<Core::Light*>(child);
+
+            tinyxml2::XMLElement* lightElement     = doc->NewElement("Light");
+            tinyxml2::XMLElement* directionElement = nullptr;
+            tinyxml2::XMLElement* influenceElement = nullptr;
+            switch (light->get_light_type())
+            {
+            case LightType::POINT:
+                lightElement->SetAttribute("type", "point");
+                influenceElement = doc->NewElement("influence");
+                influenceElement->SetAttribute("value", static_cast<Core::PointLight*>(light)->get_area_of_effect());
+                lightElement->InsertEndChild(influenceElement);
+                break;
+            case LightType::DIRECTIONAL:
+                lightElement->SetAttribute("type", "directional");
+                directionElement = doc->NewElement("direction");
+                Vec3 direction   = static_cast<Core::DirectionalLight*>(light)->get_direction();
+                directionElement->SetAttribute("x", direction.x);
+                directionElement->SetAttribute("y", direction.y);
+                directionElement->SetAttribute("z", direction.z);
+                lightElement->InsertEndChild(directionElement);
+                break;
+            case LightType::SPOT:
+                lightElement->SetAttribute("type", "spot");
+                break;
+            }
+            lightElement->SetAttribute("name", light->get_name().c_str());
+
+            // Save transform
+            Core::Transform transform = light->get_transform();
+            save_transform(transform, lightElement);
+
+            // Save Intensity
+            tinyxml2::XMLElement* intensityElement = doc->NewElement("intensity");
+            intensityElement->SetAttribute("value", light->get_intensity());
+            lightElement->InsertEndChild(intensityElement);
+
+            // Save Color
+            tinyxml2::XMLElement* colorElement = doc->NewElement("color");
+            Vec3                  color        = light->get_color();
+            colorElement->SetAttribute("r", color.r);
+            colorElement->SetAttribute("g", color.g);
+            colorElement->SetAttribute("b", color.b);
+            lightElement->InsertEndChild(colorElement);
+
+            if (light->get_cast_shadows())
+            {
+                tinyxml2::XMLElement* shadowElement = doc->NewElement("Shadow");
+                switch (light->get_shadow_type())
+                {
+                case ShadowType::BASIC_SHADOW:
+                    shadowElement->SetAttribute("type", "basic");
+                    break;
+                case ShadowType::VSM_SHADOW:
+                    shadowElement->SetAttribute("type", "vsm");
+                    break;
+                case ShadowType::RAYTRACED_SHADOW:
+                    shadowElement->SetAttribute("type", "rt");
+                    break;
+                }
+
+                tinyxml2::XMLElement* samplesElement = doc->NewElement("samples");
+                samplesElement->SetAttribute("value", light->get_shadow_ray_samples());
+                shadowElement->InsertEndChild(samplesElement);
+
+                tinyxml2::XMLElement* areaElement = doc->NewElement("area");
+                areaElement->SetAttribute("value", light->get_area());
+                shadowElement->InsertEndChild(areaElement);
+
+                lightElement->InsertEndChild(shadowElement);
+            }
+
+            // Recursively save children
+            tinyxml2::XMLElement* childrenElement = doc->NewElement("Children");
+            save_children(childrenElement, light);
+            lightElement->InsertEndChild(childrenElement);
+
+            parentElement->InsertEndChild(lightElement);
+        }
+    }
+}
 void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, const std::string fileName) {
 
     if (!scene)
@@ -1326,10 +1531,8 @@ void VKFW::Tools::Loaders::SceneLoader::save_scene(Core::Scene* const scene, con
         sceneElement->InsertEndChild(cameraElement);
     }
 
-    // // Recursively save children
-    // tinyxml2::XMLElement* childrenElement = doc.NewElement("Children");
-    // save_children(scene->get_root(), childrenElement, doc, resourcesPath); // Assume get_root() gets the root object
-    // sceneElement->InsertEndChild(childrenElement);
+    // Recursively save children
+    save_children(sceneElement, scene); // Assume get_root() gets the root object
 
     // Save environment settings
     tinyxml2::XMLElement* environmentElement = doc.NewElement("Enviroment");
@@ -1346,7 +1549,7 @@ void VKFW::Tools::Loaders::SceneLoader::save_scene(Core::Scene* const scene, con
     } else
     {
         environmentElement->SetAttribute("type", "constant");
-        
+
         tinyxml2::XMLElement* colorElement = doc.NewElement("color");
         colorElement->SetAttribute("r", ambientColor.r);
         colorElement->SetAttribute("g", ambientColor.g);

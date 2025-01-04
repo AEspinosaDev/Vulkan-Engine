@@ -86,6 +86,7 @@ class SceneLoader
     Core::Transform load_transform(tinyxml2::XMLElement* obj);
     void            save_transform(const Core::Transform& transform, tinyxml2::XMLElement* parentElement);
     void load_children(tinyxml2::XMLElement* element, Core::Object3D* const parent, std::string resourcesPath);
+    void save_children(tinyxml2::XMLElement* parentElement, Core::Object3D* const parent);
 
   public:
     SceneLoader(bool asyncLoading = true)
