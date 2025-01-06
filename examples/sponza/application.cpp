@@ -58,8 +58,6 @@ void Application::setup() {
     m_scene->set_ambient_intensity(0.1f);
     m_scene->use_IBL(false);
 
-   
-
     m_camera = m_scene->get_active_camera();
     m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::WASD);
 }

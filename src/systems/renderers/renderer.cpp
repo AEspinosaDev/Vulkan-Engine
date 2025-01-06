@@ -102,6 +102,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     glfwTerminate();
 }
 void BaseRenderer::create_passes() {
+    
     throw VKFW_Exception("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
 }
 void BaseRenderer::on_before_render(Core::Scene* const scene) {

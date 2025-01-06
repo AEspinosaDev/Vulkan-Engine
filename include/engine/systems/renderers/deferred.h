@@ -6,6 +6,7 @@
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/precomposition_pass.h>
+#include <engine/core/passes/voxelization_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
@@ -21,13 +22,14 @@ class DeferredRenderer : public BaseRenderer
 {
     enum RendererPasses
     {
-        SHADOW_PASS         = 0,
-        GEOMETRY_PASS       = 1,
-        PRECOMPOSITION_PASS = 2,
-        COMPOSITION_PASS    = 3,
-        BLOOM_PASS          = 4,
-        TONEMAPPIN_PASS     = 5,
-        FXAA_PASS           = 6,
+        VOXELIZATION_PASS   = 0,
+        SHADOW_PASS         = 1,
+        GEOMETRY_PASS       = 2,
+        PRECOMPOSITION_PASS = 3,
+        COMPOSITION_PASS    = 4,
+        BLOOM_PASS          = 5,
+        TONEMAPPIN_PASS     = 6,
+        FXAA_PASS           = 7,
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;

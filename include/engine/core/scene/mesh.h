@@ -24,21 +24,35 @@ class Mesh;
 /*
 Bounding volume base struct
 */
-struct Volume {
-    Mesh* mesh;
-    Vec3  center{0.0f, 0.0f, 0.0f};
+struct BoundingVolume {
+    const VolumeType TYPE;
+    Object3D*        obj       = nullptr;
+    Vec3             center    = {0.0f, 0.0f, 0.0f};
+    Vec3             maxCoords = {0.0f, 0.0f, 0.0f};
+    Vec3             minCoords = {INFINITY, INFINITY, INFINITY};
+
+    BoundingVolume(VolumeType t, Object3D* o)
+        : TYPE(t)
+        , obj(o) {
+    }
 
     virtual void setup(Mesh* const mesh) = 0;
 
     virtual bool is_on_frustrum(const Frustum& frustum) const = 0;
 };
-struct Sphere : public Volume {
+typedef BoundingVolume BVolume;
+typedef BoundingVolume BV;
+
+struct BoundingSphere : public BVolume {
     float radius{0.0f};
 
-    Sphere() = default;
+    BoundingSphere(Object3D* o)
+        : BVolume(VolumeType::SPHERE_VOLUME, o) {
+    }
 
-    Sphere(const Vec3 c, const float r)
-        : radius(r) {
+    BoundingSphere(const Vec3 c, const float r, Object3D* o)
+        : radius(r)
+        , BVolume(VolumeType::SPHERE_VOLUME, o) {
         center = c;
     }
 
@@ -46,8 +60,22 @@ struct Sphere : public Volume {
 
     virtual bool is_on_frustrum(const Frustum& frustum) const;
 };
-struct AABB : public Volume {
-    // TO DO
+struct AABB : public BVolume {
+
+    AABB(Object3D* o)
+        : BVolume(VolumeType::AABB_VOLUME, o) {
+    }
+
+    AABB(const Vec3 min, const Vec3 max, Object3D* o)
+        : BoundingVolume(VolumeType::AABB_VOLUME, o) {
+        minCoords = min;
+        maxCoords = max;
+        center    = (maxCoords + minCoords) * 0.5f;
+    }
+
+    virtual void setup(Mesh* const mesh);
+
+    virtual bool is_on_frustrum(const Frustum& frustum) const;
 };
 
 /*
@@ -59,8 +87,7 @@ class Mesh : public Object3D
     std::vector<Geometry*>  m_geometry;
     std::vector<IMaterial*> m_material;
 
-    VolumeType  m_volumeType     = SPHERE_VOLUME;
-    Volume*     m_volume         = nullptr;
+    BV*         m_volume         = nullptr;
     bool        m_affectedByFog  = true;
     bool        m_castShadows    = true;
     bool        m_receiveShadows = true;
@@ -77,12 +104,12 @@ class Mesh : public Object3D
   public:
     Mesh()
         : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), ObjectType::MESH)
-        , m_volume(new Sphere()) {
+        , m_volume(nullptr) {
         Mesh::m_instanceCount++;
     }
     Mesh(Geometry* geom, IMaterial* mat)
         : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), ObjectType::MESH)
-        , m_volume(new Sphere()) {
+        , m_volume(nullptr) {
         Mesh::m_instanceCount++;
         m_geometry.push_back(geom);
         m_material.push_back(mat);
@@ -173,17 +200,8 @@ class Mesh : public Object3D
     inline bool ray_hittable() const {
         return m_rayHittable;
     }
-    inline VolumeType get_volume_type() const {
-        return m_volumeType;
-    }
-    void set_volume_type(VolumeType t);
 
-    inline void setup_volume() {
-        if (m_volume)
-            m_volume->setup(this);
-    }
-
-    inline const Volume* const get_bounding_volume() const {
+    inline const BV* const get_bounding_volume() const {
         return m_volume;
     }
 
@@ -202,6 +220,7 @@ class Mesh : public Object3D
         m_geometry[geometrySlot]->set_material_ID(materialSlot);
     }
 
+    void  setup_volume(VolumeType type = VolumeType::SPHERE_VOLUME);
     Mesh* clone() const;
 };
 } // namespace Core

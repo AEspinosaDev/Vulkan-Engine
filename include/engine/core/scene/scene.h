@@ -39,6 +39,8 @@ class Scene : public Object3D
     Vec3  m_fogColor         = {0.2f, 0.2f, 0.2f};
     float m_fogIntensity     = 20.0f;
     float m_fogExponent      = 1.0f;
+    // BVOL
+    AABB m_volume = (this);
 
     inline void classify_object(Object3D* obj) {
         switch (obj->get_type())
@@ -69,7 +71,6 @@ class Scene : public Object3D
     Scene()
         : m_activeCamera(nullptr) {};
     ~Scene() {
-
         delete m_activeCamera;
         delete m_skybox;
 
@@ -176,7 +177,9 @@ class Scene : public Object3D
     inline void update_AS(bool op) {
         m_updateAccel = op;
     }
+    void compute_limits();
 };
+
 void set_meshes(Scene* const scene, std::vector<Mesh*> meshes);
 
 Graphics::TLAS* get_TLAS(Scene* const scene);

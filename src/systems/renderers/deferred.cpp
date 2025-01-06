@@ -42,7 +42,10 @@ void DeferredRenderer::create_passes() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(7, nullptr);
+    m_passes.resize(8, nullptr);
+
+    // Voxelization Pass
+    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, 256);
 
     // Shadow Pass
     m_passes[SHADOW_PASS] =
@@ -89,6 +92,5 @@ void DeferredRenderer::create_passes() {
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);
 }
-
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

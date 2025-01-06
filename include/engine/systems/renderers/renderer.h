@@ -48,10 +48,10 @@ class BaseRenderer
   protected:
     Graphics::Device*            m_device;
     std::vector<Graphics::Frame> m_frames;
-
-    Core::IWindow* m_window;
-
+    Core::IWindow*               m_window;
     RendererSettings             m_settings{};
+
+    /*Passes*/
     std::vector<Core::BasePass*> m_passes;
 
     Graphics::Utils::DeletionQueue m_deletionQueue;
