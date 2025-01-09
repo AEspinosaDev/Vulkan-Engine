@@ -27,7 +27,7 @@ ShaderSource::create_shader_stage(VkDevice device, VkShaderStageFlagBits stageTy
 ShaderSource ShaderSource::read_file(const std::string& filePath) {
 
     std::ifstream stream(filePath);
-    std::string   scriptsPath(ENGINE_RESOURCES_PATH "shaders/scripts/");
+    std::string   scriptsPath(ENGINE_RESOURCES_PATH "shaders/include/");
 
     std::string       line;
     std::stringstream ss[6];

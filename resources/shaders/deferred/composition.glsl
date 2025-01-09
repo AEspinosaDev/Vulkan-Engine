@@ -166,7 +166,7 @@ void main()
                                     TLAS, 
                                     blueNoiseMap,
                                     modelPos, 
-                                    scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].shadowData.xyz - modelPos : scene.lights[i].shadowData.xyz,
+                                    scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : scene.lights[i].shadowData.xyz,
                                     int(scene.lights[i].shadowData.w), 
                                     scene.lights[i].area, 
                                     0);

@@ -291,7 +291,7 @@
             <translate x="0.0" y="50.0" z="0.0" />
         </Transform>
 
-        <intensity value="0.45" />
+        <intensity value="2" />
         <color r="0.14" g="0.37" b="0.58" />
         <direction x="2.0" y="20.0" z="5.0" />
 
@@ -358,7 +358,7 @@
     </Light>
     <Enviroment type="skybox">
         <Filename value="textures/moon.hdr" />
-        <intensity value="0.3" />
+        <intensity value="1.0" />
         <color r="0.14" g="0.37" b="0.58" />
     </Enviroment>
 

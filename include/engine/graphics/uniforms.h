@@ -31,9 +31,10 @@ struct CameraUniforms {
 
 struct LightUniforms {
 
-    Vec4 position  = {0.0f, 0.0f, 0.0f, 0.0f}; // w for type
-    Vec4 color     = {0.0f, 0.0f, 0.0f, 0.0f};
-    Vec4 dataSlot1 = {0.0f, 0.0f, 0.0f, 0.0f};
+    Vec4 position      = {0.0f, 0.0f, 0.0f, 0.0f}; // w for type
+    Vec4 worldPosition = {0.0f, 0.0f, 0.0f, 0.0f}; // w for type
+    Vec4 color         = {0.0f, 0.0f, 0.0f, 0.0f};
+    Vec4 dataSlot1     = {0.0f, 0.0f, 0.0f, 0.0f};
     Mat4 viewProj;
     Vec4 dataSlot2 = {0.0f, 0.0f, 0.0f, 0.0f};
     Vec4 dataSlot3 = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -43,6 +44,8 @@ struct SceneUniforms {
     Vec4          fogColorAndSSAO; // w is for enabling SSAO
     Vec4          fogParams;       // x for near, y for far, z for intensity, w enable.
     Vec4          ambientColor;    // w intensity
+    Vec4          maxCoord;
+    Vec4          minCoord;
     LightUniforms lightUniforms[ENGINE_MAX_LIGHTS];
     int           numLights;
     int           SSAOtype;

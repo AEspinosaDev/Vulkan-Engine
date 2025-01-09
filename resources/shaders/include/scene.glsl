@@ -12,6 +12,9 @@ layout(set = 0, binding = 1) uniform SceneUniforms {
     vec3 ambientColor;
     float ambientIntensity;
 
+    vec4 maxCoord;
+    vec4 minCoord;
+
     LightUniform lights[MAX_LIGHTS];
 
     int numLights;

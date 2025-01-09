@@ -70,7 +70,7 @@ void BloomPass::setup_shader_passes() {
     const uint32_t SETTINGS_UNIFORM_SIZE = sizeof(float);
 
     ComputeShaderPass* downsamplePass =
-        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/compute/downsample.glsl");
+        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/downsample.glsl");
     downsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     downsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
@@ -80,7 +80,7 @@ void BloomPass::setup_shader_passes() {
     m_shaderPasses["downsample"] = downsamplePass;
 
     ComputeShaderPass* upsamplePass =
-        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/compute/upsample.glsl");
+        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/upsample.glsl");
     upsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     upsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
@@ -90,7 +90,7 @@ void BloomPass::setup_shader_passes() {
     m_shaderPasses["upsample"] = upsamplePass;
 
     GraphicShaderPass* bloomPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/misc/bloom.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/bloom/compose.glsl");
     bloomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     bloomPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                   {NORMAL_ATTRIBUTE, false},

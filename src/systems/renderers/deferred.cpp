@@ -45,7 +45,7 @@ void DeferredRenderer::create_passes() {
     m_passes.resize(8, nullptr);
 
     // Voxelization Pass
-    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, 256);
+    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, 64);
 
     // Shadow Pass
     m_passes[SHADOW_PASS] =

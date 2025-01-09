@@ -7,6 +7,9 @@ struct LightUniform{
     vec3    position;
     float   type;
 
+    vec3    worldPosition;
+    float   unused;
+
     vec3    color;
     float   intensity;
 

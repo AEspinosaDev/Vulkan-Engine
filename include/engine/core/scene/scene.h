@@ -177,7 +177,15 @@ class Scene : public Object3D
     inline void update_AS(bool op) {
         m_updateAccel = op;
     }
-    void compute_limits();
+
+    /*
+    Setup axis-aligned bounding volume for the entire scene. This object might be necessary for some functionalities,
+    sush as voxelization of the scene.
+    */
+    void        setup_AABB();
+    inline AABB get_AABB() const {
+        return m_volume;
+    }
 };
 
 void set_meshes(Scene* const scene, std::vector<Mesh*> meshes);

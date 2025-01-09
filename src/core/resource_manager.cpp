@@ -40,7 +40,8 @@ void ResourceManager::init_basic_resources(Graphics::Device* const device) {
     if (!BLUE_NOISE_TEXTURE) // If not user set
     {
         BLUE_NOISE_TEXTURE = new Core::Texture();
-        Tools::Loaders::load_PNG(BLUE_NOISE_TEXTURE, ENGINE_RESOURCES_PATH "textures/blueNoise.png",TEXTURE_FORMAT_UNORM);
+        Tools::Loaders::load_PNG(
+            BLUE_NOISE_TEXTURE, ENGINE_RESOURCES_PATH "textures/blueNoise.png", TEXTURE_FORMAT_UNORM);
         BLUE_NOISE_TEXTURE->set_use_mipmaps(false);
     }
     upload_texture_data(device, BLUE_NOISE_TEXTURE);
@@ -112,6 +113,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     /*
     SCENE UNIFORMS LOAD
     */
+
     Graphics::SceneUniforms sceneParams;
     sceneParams.fogParams = {
         camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
@@ -126,6 +128,13 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
         sceneParams.envColorMultiplier = scene->get_skybox()->get_intensity();
     }
     sceneParams.time = window->get_time_elapsed();
+
+    /*Limits*/
+    // UPDATE AABB OF SCENE FOR VOXELIZATION PURPOSES
+    scene->setup_AABB();
+    AABB aabb            = scene->get_AABB();
+    sceneParams.maxCoord = Vec4(aabb.maxCoords, 1.0f);
+    sceneParams.minCoord = Vec4(aabb.minCoords, 1.0f);
 
     std::vector<Core::Light*> lights = scene->get_lights();
     if (lights.size() > ENGINE_MAX_LIGHTS)
@@ -396,7 +405,8 @@ void ResourceManager::setup_skybox(Graphics::Device* const device, Core::Scene* 
                     {skybox->get_irradiance_resolution(), skybox->get_irradiance_resolution()});
                 irradianceComputePass->setup(empty);
                 irradianceComputePass->update_uniforms(0, scene);
-                irradianceComputePass->connect_env_cubemap(panoramaConverterPass->get_framebuffers()[0].attachmentImages[0]);
+                irradianceComputePass->connect_env_cubemap(
+                    panoramaConverterPass->get_framebuffers()[0].attachmentImages[0]);
             }
         }
     }
