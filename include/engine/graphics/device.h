@@ -54,13 +54,23 @@ class Device
                                              VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
                                              VK_KHR_RAY_QUERY_EXTENSION_NAME};
     // Utils
-    Utils::UploadContext      m_uploadContext = {};
-    Utils::QueueFamilyIndices m_queueFamilies = {};
+    struct UploadContext {
+        Fence         uploadFence;
+        CommandPool   commandPool;
+        CommandBuffer commandBuffer;
+
+        void immediate_submit(std::function<void(CommandBuffer cmd)>&& function);
+        void cleanup();
+    };
+    UploadContext      m_uploadContext = {};
+
 #ifdef NDEBUG
     const bool m_enableValidationLayers{false};
 #else
     const bool m_enableValidationLayers{true};
 #endif
+
+    void create_upload_context();
 
   public:
     /*
@@ -113,12 +123,13 @@ class Device
     Framebuffer create_framebuffer(RenderPass& renderpass, Extent2D extent, uint32_t layers = 1, uint32_t id = 0);
     Framebuffer create_framebuffer(RenderPass& renderpass, Image& img);
     Semaphore   create_semaphore();
-    Fence       create_fence();
+    Fence       create_fence(bool signaled = true);
     /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
-    RenderPass create_render_pass(std::vector<AttachmentInfo>& attachments, std::vector<SubPassDependency>& dependencies);
+    RenderPass create_render_pass(std::vector<AttachmentInfo>&    attachments,
+                                  std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
     DescriptorPool create_descriptor_pool(uint32_t                       maxSets,
                                           uint32_t                       numUBO,

@@ -33,6 +33,7 @@ void main() {
 #include raytracing.glsl
 #include hashing.glsl
 #include SSR.glsl
+#include VXGI.glsl
 
 
 //INPUT
@@ -47,6 +48,7 @@ layout(set = 0, binding =   2) uniform sampler2DArray              shadowMap;
 layout(set = 0, binding =   4) uniform samplerCube                 irradianceMap;
 layout(set = 0,  binding =  5) uniform accelerationStructureEXT    TLAS;
 layout(set = 0,  binding =  6) uniform sampler2D                   blueNoiseMap;
+layout(set = 0,  binding =  7) uniform sampler3D                   voxelMap;
 //G-BUFFER
 layout(set = 1, binding = 0) uniform sampler2D positionBuffer;
 layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
@@ -61,7 +63,8 @@ layout(set = 1, binding = 6) uniform sampler2D prevBuffer;
 layout(push_constant) uniform Settings {
     uint    bufferOutput;
     uint    enableAO;
-    SSR     ssr;
+    VXGI    vxgi;   //Voxel Based GI
+    SSR     ssr;    //Screen Space Reflections
 } settings;
 
 // DEBUGGING QUERIES
@@ -83,6 +86,68 @@ vec3    g_emission;
 int     g_isReflective;
 vec4    g_temp; 
 
+
+vec3 GI(vec3 worldPos, vec3 worldNormal){
+    const float VOXEL_SIZE  = 1.0/float(settings.vxgi.resolution);
+    const float ISQRT2 = 0.707106;
+    const float ANGLE_MIX = 0.5; // Angle mix (1.0f => orthogonal direction, 0.0f => direction of normal).
+	const float w[3] = {1.0, 1.0, 1.0}; // Cone weights.
+
+	// Find a base for the side cones with the normal as one of its base vectors.
+	const vec3 ortho = normalize(orthogonal(worldNormal));
+	const vec3 ortho2 = normalize(cross(ortho, worldNormal));
+
+	// Find base vectors for the corner cones too.
+	const vec3 corner = 0.5 * (ortho + ortho2);
+	const vec3 corner2 = 0.5 * (ortho - ortho2);
+
+	// Find start position of trace (start with a bit of offset).
+	const vec3 N_OFFSET = worldNormal * (1 + 4 * ISQRT2) * VOXEL_SIZE;
+	const vec3 C_ORIGIN = worldPos + N_OFFSET;
+
+	// Accumulate indirect diffuse light.
+	vec3 indirect = vec3(0);
+
+	// We offset forward in normal direction, and backward in cone direction.
+	// Backward in cone direction improves GI, and forward direction removes
+	// artifacts.
+	const float CONE_OFFSET = -0.01;
+
+	// Trace front cone
+	indirect += w[0] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * worldNormal, worldNormal, VOXEL_SIZE );
+
+	// Trace 4 side cones.
+	const vec3 s1 = mix(worldNormal, ortho, ANGLE_MIX);
+	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * ortho, s1, VOXEL_SIZE );
+
+	const vec3 s2 = mix(worldNormal, -ortho, ANGLE_MIX);
+	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * ortho, s2, VOXEL_SIZE );
+
+	const vec3 s3 = mix(worldNormal, ortho2, ANGLE_MIX);
+	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * ortho2, s3, VOXEL_SIZE );
+
+	const vec3 s4 = mix(worldNormal, -ortho2, ANGLE_MIX);
+	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * ortho2, s4, VOXEL_SIZE );
+
+	// Trace 4 corner cones.
+	const vec3 c1 = mix(worldNormal, corner, ANGLE_MIX);
+	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * corner, c1, VOXEL_SIZE );
+
+	const vec3 c2 = mix(worldNormal, -corner, ANGLE_MIX);
+	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * corner, c2, VOXEL_SIZE );
+
+	const vec3 c3 = mix(worldNormal, corner2, ANGLE_MIX);
+	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * corner2, c3, VOXEL_SIZE );
+
+	const vec3 c4 = mix(worldNormal, -corner2, ANGLE_MIX);
+	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * corner2, c4, VOXEL_SIZE );
+
+	// Return result.
+	// return DIFFUSE_INDIRECT_FACTOR * material.diffuseReflectivity * acc * (material.diffuseColor + vec3(0.001f));
+	return indirect;
+
+
+}
 
 void main()
 {
@@ -121,6 +186,7 @@ void main()
 
         vec3 direct     = vec3(0.0);
         vec3 ambient    = vec3(0.0);
+        vec3 indirect   = vec3(0.0);
 
         vec3 modelPos = (camera.invView * vec4(g_pos.xyz, 1.0)).xyz;
         vec3 modelNormal = (camera.invView  * vec4(g_normal.xyz, 0.0)).xyz;
@@ -141,15 +207,22 @@ void main()
             brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
             brdf.emission = g_emission;
 
+            // GI ____________________________
+            if(settings.vxgi.enabled == 1){
+                indirect = GI(modelPos, modelNormal)*settings.vxgi.strength*g_albedo;
+                indirect*= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao;
+            }
+
+            //Direct Component ________________________
             for(int i = 0; i < scene.numLights; i++) {
                     //If inside liught area influence
-                    if(isInAreaOfInfluence(scene.lights[i], g_pos)){
+                    if(isInAreaOfInfluence(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type))){
                         //Direct Component ________________________
                         vec3 lighting = vec3(0.0);
                         lighting = evalSchlickSmithBRDF( 
                             scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(scene.lights[i].position.xyz), //wi
                             normalize(-g_pos),                                                                                           //wo
-                            scene.lights[i].color * computeAttenuation( scene.lights[i], g_pos) *  scene.lights[i].intensity,              //radiance
+                            scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
                             brdf
                             );
                         //Shadow Component ________________________
@@ -158,10 +231,8 @@ void main()
                                 lighting *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
                             if(scene.lights[i].shadowType == 1) //VSM   
                                 lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
-                            // if(scene.lights[i].shadowType == 2) //Raytraced 
-                            //     lighting *= texture(preCompositionBuffer,v_uv).g; 
-                            
                             if(scene.lights[i].shadowType == 2) //Raytraced  
+                                // lighting *= traceShadowCone(voxelMap, modelPos, scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : scene.lights[i].shadowData.xyz, modelNormal,  1.0/float(settings.vxgi.resolution), length(scene.lights[i].worldPosition.xyz - modelPos) );
                                 lighting *= computeRaytracedShadow(
                                     TLAS, 
                                     blueNoiseMap,
@@ -241,7 +312,7 @@ void main()
                
                     
 
-    color = direct + ambient + reflectedColor;
+    color = direct + indirect + ambient + reflectedColor;
       
     //////////////////////////////////////
     // IF UNLIT MATERIAL
@@ -257,6 +328,7 @@ void main()
     }
 
     outColor = vec4(color,1.0);
+
 
     }
     else{ //DEBUG MODE

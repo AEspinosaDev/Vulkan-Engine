@@ -28,7 +28,7 @@ Graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const {
     // Transform to camera view for shader
     uniforms.position      = cameraView * Vec4(m_direction, 0.0f);
     uniforms.position.w    = (float)m_lighType;
-    uniforms.worldPosition = Vec4(m_transform.position, 1.0f);
+    uniforms.worldPosition = Vec4(m_direction, 0.0f);
     uniforms.color         = {m_color.r, m_color.g, m_color.b, m_intensity};
     uniforms.dataSlot1     = {0.0f, m_area, (int)m_shadow.type, m_shadow.cast};
     uniforms.dataSlot2     = {m_shadow.type == ShadowType::VSM_SHADOW ? m_shadow.bleeding : m_shadow.bias,

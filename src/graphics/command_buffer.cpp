@@ -367,4 +367,199 @@ void Graphics::CommandBuffer::push_constants(ShaderPass&      pass,
 void Graphics::CommandBuffer::dispatch_compute(Extent3D grid) {
     vkCmdDispatch(handle, grid.width, grid.height, grid.depth);
 }
+
+void Graphics::CommandBuffer::copy_buffer(Buffer& srcBuffer, Buffer& dstBuffer, size_t size) {
+    VkBufferCopy copy;
+    copy.dstOffset = 0;
+    copy.srcOffset = 0;
+    copy.size      = size;
+    vkCmdCopyBuffer(handle, srcBuffer.handle, dstBuffer.handle, 1, &copy);
+}
+
+void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
+
+    VkImageSubresourceRange range;
+    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel   = 0;
+    range.levelCount     = img.mipLevels;
+    range.baseArrayLayer = 0;
+    range.layerCount     = img.layers;
+
+    VkImageMemoryBarrier imageBarrier_toTransfer = {};
+    imageBarrier_toTransfer.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+
+    imageBarrier_toTransfer.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageBarrier_toTransfer.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imageBarrier_toTransfer.image            = img.handle;
+    imageBarrier_toTransfer.subresourceRange = range;
+
+    imageBarrier_toTransfer.srcAccessMask = 0;
+    imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    // barrier the image into the transfer-receive layout
+    vkCmdPipelineBarrier(handle,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         0,
+                         0,
+                         nullptr,
+                         0,
+                         nullptr,
+                         1,
+                         &imageBarrier_toTransfer);
+
+    // For each layer
+    for (uint32_t layer = 0; layer < img.layers; ++layer)
+    {
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset =
+            layer * ((img.extent.width * img.extent.height * buffer.size) / img.layers); // Offset per face
+        copyRegion.bufferRowLength   = 0;
+        copyRegion.bufferImageHeight = 0;
+
+        copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel       = 0;
+        copyRegion.imageSubresource.baseArrayLayer = layer;
+        copyRegion.imageSubresource.layerCount     = 1;
+        copyRegion.imageExtent                     = img.extent;
+
+        vkCmdCopyBufferToImage(handle, buffer.handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+    }
+
+    if (img.mipLevels == 1)
+    {
+        VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
+
+        imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        // barrier the image into the shader readable layout
+        vkCmdPipelineBarrier(handle,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &imageBarrier_toReadable);
+    }
+}
+
+void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLayout, ImageLayout finalLayout) {
+
+    int32_t mipWidth  = img.extent.width;
+    int32_t mipHeight = img.extent.height;
+    int32_t mipDepth  = img.extent.depth;
+
+    VkImageSubresourceRange range;
+    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.levelCount     = 1;
+    range.baseArrayLayer = 0;
+    range.layerCount     = img.layers;
+
+    VkImageMemoryBarrier imageBarrier_toTransfer = {};
+    imageBarrier_toTransfer.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageBarrier_toTransfer.srcQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier_toTransfer.dstQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier_toTransfer.image                = img.handle;
+    imageBarrier_toTransfer.subresourceRange     = range;
+
+    for (uint32_t i = 1; i < img.mipLevels; i++)
+    {
+        for (uint32_t layer = 0; layer < img.layers; ++layer)
+        {
+            // Set barriers for the current face
+            imageBarrier_toTransfer.subresourceRange.baseMipLevel   = i - 1;
+            imageBarrier_toTransfer.subresourceRange.baseArrayLayer = layer;
+            imageBarrier_toTransfer.oldLayout                       = Translator::get(initialLayout);
+            imageBarrier_toTransfer.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            imageBarrier_toTransfer.srcAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
+            imageBarrier_toTransfer.dstAccessMask                   = VK_ACCESS_TRANSFER_READ_BIT;
+
+            vkCmdPipelineBarrier(handle,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 0,
+                                 0,
+                                 nullptr,
+                                 0,
+                                 nullptr,
+                                 1,
+                                 &imageBarrier_toTransfer);
+
+            VkImageBlit blit{};
+            blit.srcOffsets[0]                 = {0, 0, 0};
+            blit.srcOffsets[1]                 = {mipWidth, mipHeight, mipDepth};
+            blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel       = i - 1;
+            blit.srcSubresource.baseArrayLayer = layer; // Specify the current face
+            blit.srcSubresource.layerCount     = 1;
+
+            blit.dstOffsets[0] = {0, 0, 0};
+            blit.dstOffsets[1] = {
+                mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, mipDepth > 1 ? mipDepth / 2 : 1};
+            blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel       = i;
+            blit.dstSubresource.baseArrayLayer = layer; // Specify the current face
+            blit.dstSubresource.layerCount     = 1;
+
+            vkCmdBlitImage(handle,
+                           img.handle,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           img.handle,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &blit,
+                           VK_FILTER_LINEAR);
+        }
+
+        imageBarrier_toTransfer.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        imageBarrier_toTransfer.newLayout     = Translator::get(finalLayout);
+        imageBarrier_toTransfer.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(handle,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &imageBarrier_toTransfer);
+
+        if (mipWidth > 1)
+            mipWidth /= 2;
+        if (mipHeight > 1)
+            mipHeight /= 2;
+        if (mipDepth > 1)
+            mipDepth /= 2;
+    }
+
+    VkImageMemoryBarrier imageBarrier_toReadable          = imageBarrier_toTransfer;
+    imageBarrier_toReadable.subresourceRange.baseMipLevel = img.mipLevels - 1;
+    imageBarrier_toReadable.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imageBarrier_toReadable.newLayout                     = Translator::get(finalLayout);
+    imageBarrier_toReadable.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imageBarrier_toReadable.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(handle,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         0,
+                         0,
+                         nullptr,
+                         0,
+                         nullptr,
+                         1,
+                         &imageBarrier_toReadable);
+
+    img.currentLayout = finalLayout;
+}
 VULKAN_ENGINE_NAMESPACE_END

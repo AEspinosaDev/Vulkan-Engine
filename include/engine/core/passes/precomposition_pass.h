@@ -48,7 +48,6 @@ class PreCompositionPass : public GraphicPass
     const size_t     MAX_KERNEL_MEMBERS = 64;
     Graphics::Buffer m_kernelBuffer;
     bool             m_updateSamplesKernel = true;
-    Graphics::Image  m_blurredSSAO;
     /*Settings*/
     SSAOSettings m_AO = {};
 

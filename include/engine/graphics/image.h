@@ -66,10 +66,6 @@ struct Image {
 
     void create_GUI_handle();
 
-    void upload_image(VkCommandBuffer& cmd, Buffer* stagingBuffer);
-
-    void generate_mipmaps(VkCommandBuffer& cmd);
-
     void cleanup(bool destroySampler = true);
 
     Image clone() const;

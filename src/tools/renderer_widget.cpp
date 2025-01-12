@@ -3,6 +3,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Tools {
 void RendererSettingsWidget::render() {
 
+#pragma region SYNC
     ImGui::SeparatorText("Renderer Settings");
 
     const char* syncs[]      = {"NONE", "MAILBOX", "VSYNC"};
@@ -31,6 +32,7 @@ void RendererSettingsWidget::render() {
 }
 } // namespace Tools
 void Tools::ForwardRendererWidget::render() {
+#pragma region SYNC
     ImGui::SeparatorText("Renderer Settings");
 
     const char* syncs[]      = {"NONE", "MAILBOX", "VSYNC"};
@@ -57,6 +59,7 @@ void Tools::ForwardRendererWidget::render() {
         m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
     }
 
+#pragma region SHADOWS
     const char* res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
 
     int res_current;
@@ -84,6 +87,7 @@ void Tools::ForwardRendererWidget::render() {
     }
     ImGui::Separator();
 
+#pragma region BLOOM
     float bloomIntensity = m_renderer->get_bloom_strength();
     if (ImGui::DragFloat("Bloom Intensity", &bloomIntensity, 0.01f, 0.0f, 0.5f))
     {
@@ -92,6 +96,7 @@ void Tools::ForwardRendererWidget::render() {
 }
 // namespace Tools
 void Tools::DeferredRendererWidget::render() {
+#pragma region OUTPUT
     ImGui::SeparatorText("Renderer Settings");
 
     const char* outputTypes[] = {"LIGHTING", "ALBEDO", "NORMALS", "POSITION", "MATERIAL", "AO", "SSR"};
@@ -145,6 +150,20 @@ void Tools::DeferredRendererWidget::render() {
         m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
     }
 
+    ImGui::Separator();
+    Core::VXGI settings_VXGI = m_renderer->get_VXGI_settings();
+    bool       VXGIenabled   = (bool)settings_VXGI.enabled;
+    if (ImGui::Checkbox("Enable VXGI", &VXGIenabled))
+    {
+        settings_VXGI.enabled = VXGIenabled;
+        m_renderer->set_VXGI_settings(settings_VXGI);
+    }
+    if (settings_VXGI.enabled)
+        if (ImGui::DragFloat("GI Intensity", &settings_VXGI.strength, 0.1f, 0.0f, 5.0f))
+        {
+            m_renderer->set_VXGI_settings(settings_VXGI);
+        }
+
     const char* res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
 
     int res_current;
@@ -178,6 +197,7 @@ void Tools::DeferredRendererWidget::render() {
     {
         m_renderer->set_bloom_strength(bloomIntensity);
     }
+#pragma region SSAO
     ImGui::Separator();
     Core::SSAOSettings settings_SSAO = m_renderer->get_SSAO_settings();
     bool               SSAOEnabled   = (bool)settings_SSAO.enabled;
@@ -231,9 +251,10 @@ void Tools::DeferredRendererWidget::render() {
         //     m_renderer->set_SSAO_settings(settings_SSAO);
         // }
     }
+#pragma region SSR
     ImGui::Separator();
-    Core::SSRSettings settings_SSR = m_renderer->get_SSR_settings();
-    bool              ssrEnabled   = (bool)settings_SSR.enabled;
+    Core::SSR settings_SSR = m_renderer->get_SSR_settings();
+    bool      ssrEnabled   = (bool)settings_SSR.enabled;
     if (ImGui::Checkbox("Enable SSR", &ssrEnabled))
     {
         settings_SSR.enabled = ssrEnabled;

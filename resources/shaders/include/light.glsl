@@ -36,23 +36,23 @@ struct LightUniform{
 
 };
 
-bool isInAreaOfInfluence(LightUniform light, vec3 fragPos){
-    if(int(light.type) == 0){ //Point Light
-        return length(light.position - fragPos) <= light.areaEffect;
+bool isInAreaOfInfluence(vec3 lightPos, vec3 fragPos, float areaEffect, int lightType){
+    if(lightType == 0){ //Point Light
+        return length(lightPos - fragPos) <= areaEffect;
     }
-    else if(int(light.type) == 2){ //Spot light
+    else if(lightType == 2){ //Spot light
         //TO DO...
         return true;
     }
     return true; //Directional influence is total
 }
 
-float computeAttenuation(LightUniform light, vec3 fragPos) {
-    if(light.type != 0)
+float computeAttenuation(vec3 lightPos, vec3 fragPos, float areaEffect, int lightType) {
+    if(lightType != 0)
         return 1.0;
 
-    float d = length(light.position - fragPos);
-    float influence = light.areaEffect;
+    float d = length(lightPos - fragPos);
+    float influence = areaEffect;
     float window = pow(max(1 - pow(d / influence, 2), 0), 2);
 
     return pow(10 / max(d, 0.0001), 2) * window;

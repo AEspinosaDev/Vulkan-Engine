@@ -6,7 +6,7 @@ void VKFW::Core::set_meshes(Scene* const scene, std::vector<Mesh*> meshes) {
 VKFW::Graphics::TLAS* VKFW::Core::get_TLAS(Scene* const scene) {
     return &scene->m_accel;
 }
-void VKFW::Core::Scene::setup_AABB() {
+void VKFW::Core::Scene::update_AABB() {
 
     for (Mesh* m : m_meshes)
     {

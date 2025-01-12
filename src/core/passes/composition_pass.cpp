@@ -82,9 +82,16 @@ void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
     LayoutBinding accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 5);
     LayoutBinding noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 6);
-    m_descriptorPool.set_layout(
-        GLOBAL_LAYOUT,
-        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding, noiseBinding});
+    LayoutBinding voxelBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 7);
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT,
+                                {camBufferBinding,
+                                 sceneBufferBinding,
+                                 shadowBinding,
+                                 envBinding,
+                                 iblBinding,
+                                 accelBinding,
+                                 noiseBinding,
+                                 voxelBinding});
 
     // G - BUFFER SET
     LayoutBinding positionBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
@@ -228,20 +235,23 @@ void CompositionPass::link_previous_images(std::vector<Graphics::Image> images) 
         // SHADOWS
         m_descriptorPool.set_descriptor_write(
             &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+        // VOXELIZATION
+        m_descriptorPool.set_descriptor_write(&images[1], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7);
         // SET UP G-BUFFER
         m_descriptorPool.set_descriptor_write(
-            &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
+            &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
         m_descriptorPool.set_descriptor_write(
-            &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
+            &images[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
         m_descriptorPool.set_descriptor_write(
-            &images[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 2);
+            &images[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 2);
         m_descriptorPool.set_descriptor_write(
-            &images[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
+            &images[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
         m_descriptorPool.set_descriptor_write(
-            &images[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
+            &images[6], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
+        // SSAO
         m_descriptorPool.set_descriptor_write(
-            &images[6], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 5);
-
+            &images[7], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 5);
+        // PREV FRAME
         m_descriptorPool.set_descriptor_write(
             &m_prevFrame, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 6);
     }
@@ -267,6 +277,12 @@ void CompositionPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image
     }
 }
 
+void CompositionPass::set_voxelization_descriptor(Graphics::Image voxel) {
+    for (size_t i = 0; i < m_descriptors.size(); i++)
+    {
+        m_descriptorPool.set_descriptor_write(&voxel, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7);
+    }
+}
 void CompositionPass::update() {
     GraphicPass::update();
     create_prev_frame_image();

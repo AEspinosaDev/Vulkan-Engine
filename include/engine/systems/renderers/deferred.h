@@ -6,8 +6,8 @@
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/precomposition_pass.h>
-#include <engine/core/passes/voxelization_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
+#include <engine/core/passes/voxelization_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -22,8 +22,8 @@ class DeferredRenderer : public BaseRenderer
 {
     enum RendererPasses
     {
-        VOXELIZATION_PASS   = 0,
-        SHADOW_PASS         = 1,
+        SHADOW_PASS         = 0,
+        VOXELIZATION_PASS   = 1,
         GEOMETRY_PASS       = 2,
         PRECOMPOSITION_PASS = 3,
         COMPOSITION_PASS    = 4,
@@ -32,7 +32,12 @@ class DeferredRenderer : public BaseRenderer
         FXAA_PASS           = 7,
     };
 
-    ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
+    // Graphic Settings
+    ShadowResolution   m_shadowQuality = ShadowResolution::MEDIUM;
+    Core::SSR          m_SSR           = {};
+    Core::VXGI         m_VXGI          = {};
+    Core::SSAOSettings m_SSAO          = {};
+    float              m_bloomStrength = 0.05f;
 
     // Query
     bool m_updateShadows = false;
@@ -57,30 +62,28 @@ class DeferredRenderer : public BaseRenderer
             m_updateShadows = true;
     }
     inline float get_bloom_strength() const {
-        if (m_passes[BLOOM_PASS])
-        {
-            return static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->get_bloom_strength();
-        }
-        return 0.0f;
+        return m_bloomStrength;
     }
     inline void set_bloom_strength(float st) {
-        if (m_passes[BLOOM_PASS])
-        {
-            static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(st);
-        }
+        m_bloomStrength = st;
     }
-    inline void set_SSR_settings(Core::SSRSettings settings) {
-        static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_SSR_settings(settings);
+    inline void set_SSR_settings(Core::SSR settings) {
+        m_SSR = settings;
     };
-    inline Core::SSRSettings get_SSR_settings() const {
-        return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_SSR_settings();
+    inline Core::SSR get_SSR_settings() const {
+        return m_SSR;
+    };
+    inline void set_VXGI_settings(Core::VXGI settings) {
+        m_VXGI = settings;
+    };
+    inline Core::VXGI get_VXGI_settings() const {
+        return m_VXGI;
     };
     inline void set_SSAO_settings(Core::SSAOSettings settings) {
-        static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->enable_AO(settings.enabled);
-        static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->set_SSAO_settings(settings);
+        m_SSAO = settings;
     };
     inline Core::SSAOSettings get_SSAO_settings() const {
-        return static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->get_SSAO_settings();
+        return m_SSAO;
     };
     inline void set_shading_output(Core::OutputBuffer output) {
         static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_output_buffer(output);
@@ -90,8 +93,7 @@ class DeferredRenderer : public BaseRenderer
     }
     inline void set_clearcolor(Vec4 c) {
         BaseRenderer::set_clearcolor(c);
-        m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
-            {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
+       
     }
 
   protected:

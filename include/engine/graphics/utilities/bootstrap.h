@@ -38,6 +38,7 @@ VkDevice create_logical_device(std::unordered_map<QueueType, VkQueue> &queues, V
 // VMA
 VmaAllocator setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu);
 
+
 }; // namespace Booter
 
 } // namespace Graphics

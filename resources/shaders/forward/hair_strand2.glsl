@@ -218,7 +218,7 @@ void main() {
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
-        if(isInAreaOfInfluence(scene.lights[i], g_pos)) {
+        if(isInAreaOfInfluence(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type))) {
 
             vec3    shadow = vec3(1.0);
             vec3    spread = vec3(0.0);

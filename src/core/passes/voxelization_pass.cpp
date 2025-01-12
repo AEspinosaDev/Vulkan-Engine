@@ -5,24 +5,20 @@ using namespace Graphics;
 namespace Core {
 
 void VoxelizationPass::create_voxelization_image() {
-    m_voxelization.cleanup();
+    m_resourceImages[0].cleanup();
 
     ImageConfig config = {};
     config.viewType    = TEXTURE_3D;
     config.format      = SRGBA_32F;
     config.usageFlags = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_STORAGE;
     config.mipLevels  = 6;
-    m_voxelization =
-        m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, false);
-    m_voxelization.create_view(config);
+    m_resourceImages[0] =
+        m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, true);
+    m_resourceImages[0].create_view(config);
 
     SamplerConfig samplerConfig      = {};
     samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
-    m_voxelization.create_sampler(samplerConfig);
-
-    for (size_t i = 0; i < m_descriptors.size(); i++)
-        m_descriptorPool.set_descriptor_write(
-            &m_voxelization, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+    m_resourceImages[0].create_sampler(samplerConfig);
 }
 
 void VoxelizationPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
@@ -38,7 +34,7 @@ void VoxelizationPass::setup_attachments(std::vector<Graphics::AttachmentInfo>& 
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
                                               COLOR_ATTACHMENT,
                                               ASPECT_COLOR);
-
+    create_voxelization_image();
     // Depdencies
     dependencies.resize(2);
 
@@ -135,8 +131,10 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
+
+        m_descriptorPool.set_descriptor_write(
+            &m_resourceImages[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
     }
-    create_voxelization_image();
 }
 void VoxelizationPass::setup_shader_passes() {
 
@@ -164,14 +162,19 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
 
     CommandBuffer cmd = currentFrame.commandBuffer;
 
-    if (m_voxelization.currentLayout == LAYOUT_UNDEFINED)
-        cmd.pipeline_barrier(m_voxelization,
+    /*
+    PREPARE VOXEL IMAGE TO BE USED IN SHADER
+    */
+    if (m_resourceImages[0].currentLayout == LAYOUT_UNDEFINED)
+        cmd.pipeline_barrier(m_resourceImages[0],
                              LAYOUT_UNDEFINED,
                              LAYOUT_GENERAL,
                              ACCESS_NONE,
                              ACCESS_SHADER_READ,
                              STAGE_TOP_OF_PIPE,
                              STAGE_FRAGMENT_SHADER);
+
+    cmd.clear_image(m_resourceImages[0], LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
 
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
 
@@ -222,6 +225,19 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
     }
 
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
+
+    /*
+       GENERATE MIPMAPS FOR LOD
+       */
+    cmd.pipeline_barrier(m_resourceImages[0],
+                         LAYOUT_GENERAL,
+                         LAYOUT_TRANSFER_DST_OPTIMAL,
+                         ACCESS_SHADER_WRITE,
+                         ACCESS_TRANSFER_READ,
+                         STAGE_FRAGMENT_SHADER,
+                         STAGE_TRANSFER);
+
+    cmd.generate_mipmaps(m_resourceImages[0], LAYOUT_TRANSFER_DST_OPTIMAL, LAYOUT_GENERAL);
 }
 
 void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
@@ -237,16 +253,14 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
             }
         }
     }
+    if (!get_TLAS(scene)->binded)
+    {
+        for (size_t i = 0; i < m_descriptors.size(); i++)
+        {
+            m_descriptorPool.set_descriptor_write(get_TLAS(scene), &m_descriptors[i].globalDescritor, 4);
+        }
+    }
 }
-// void VoxelizationPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr) {
-//     for (size_t i = 0; i < m_descriptors.size(); i++)
-//     {
-//         m_descriptorPool.set_descriptor_write(
-//             &env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-//         m_descriptorPool.set_descriptor_write(
-//             &irr, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
-//     }
-// }
 void VoxelizationPass::setup_material_descriptor(IMaterial* mat) {
 
     if (!mat->get_texture_descriptor().allocated)
@@ -280,7 +294,7 @@ void VoxelizationPass::setup_material_descriptor(IMaterial* mat) {
     }
 }
 void VoxelizationPass::cleanup() {
-    m_voxelization.cleanup();
+    m_resourceImages[0].cleanup();
     GraphicPass::cleanup();
 }
 } // namespace Core

@@ -195,12 +195,12 @@ void main() {
     vec3 color = vec3(0.0);
     for(int i = 0; i < scene.numLights; i++) {
         //If inside liught area influence
-        if(isInAreaOfInfluence(scene.lights[i], v_pos)){
+        if(isInAreaOfInfluence(scene.lights[i].position, v_pos,scene.lights[i].areaEffect,int(scene.lights[i].type))){
 
             vec3 lighting =evalSchlickSmithBRDF( 
                 scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].position.xyz), //wi
                 normalize(-v_pos),                                                                                           //wo
-                scene.lights[i].color * computeAttenuation( scene.lights[i], v_pos) *  scene.lights[i].intensity,              //radiance
+                scene.lights[i].color * computeAttenuation(scene.lights[i].position, v_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
                 brdf
                 );
 

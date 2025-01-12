@@ -131,7 +131,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
 
     /*Limits*/
     // UPDATE AABB OF SCENE FOR VOXELIZATION PURPOSES
-    scene->setup_AABB();
+    scene->update_AABB();
     AABB aabb            = scene->get_AABB();
     sceneParams.maxCoord = Vec4(aabb.maxCoords, 1.0f);
     sceneParams.minCoord = Vec4(aabb.minCoords, 1.0f);

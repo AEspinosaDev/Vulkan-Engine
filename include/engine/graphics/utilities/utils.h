@@ -45,15 +45,6 @@ struct SwapChainSupportDetails {
 QueueFamilyIndices      find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);
 SwapChainSupportDetails query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-struct UploadContext {
-    VkFence         uploadFence;
-    VkCommandPool   commandPool;
-    VkCommandBuffer commandBuffer;
-
-    void init(VkDevice& device, VkPhysicalDevice& gpu, VkSurfaceKHR surface);
-    void cleanup(VkDevice& device);
-    void immediate_submit(VkDevice& device, VkQueue& gfxQueue, std::function<void(VkCommandBuffer cmd)>&& function);
-};
 
 struct DeletionQueue {
     std::deque<std::function<void()>> deletors;

@@ -28,14 +28,21 @@ enum class OutputBuffer
     EMISSIVE = 6,
     SSR      = 7,
 };
-struct SSRSettings {
+struct SSR { // Settings for Screen Space Reflections
     uint32_t maxSteps              = 64;
     float    stride                = 0.1f;
     uint32_t binaryRefinementSteps = 6;
     float    thickness             = 0.2f;
     float    jitter                = 0.1f;
-    int      enabled               = 1;
+    uint32_t enabled               = 1;
 };
+struct VXGI { // Settings for Voxel Based GI
+    float    strength   = 0.2f;
+    uint32_t resolution = 256;
+    uint32_t samples    = 8;
+    uint32_t enabled    = 1;
+};
+
 class CompositionPass : public GraphicPass
 {
     /*Setup*/
@@ -54,7 +61,8 @@ class CompositionPass : public GraphicPass
     struct Settings {
         OutputBuffer outputBuffer = OutputBuffer::LIGHTING;
         int          enableAO     = 1;
-        SSRSettings  ssr          = {};
+        VXGI         vxgi         = {};
+        SSR          ssr          = {};
     };
     Settings m_settings = {};
 
@@ -71,11 +79,17 @@ class CompositionPass : public GraphicPass
         , m_vignette(vignette) {
     }
 
-    inline void set_SSR_settings(SSRSettings settings) {
+    inline void set_SSR_settings(SSR settings) {
         m_settings.ssr = settings;
     };
-    inline SSRSettings get_SSR_settings() const {
+    inline SSR get_SSR_settings() const {
         return m_settings.ssr;
+    };
+    inline void set_VXGI_settings(VXGI settings) {
+        m_settings.vxgi = settings;
+    };
+    inline VXGI get_VXGI_settings() const {
+        return m_settings.vxgi;
     };
     inline void set_output_buffer(OutputBuffer buffer) {
         m_settings.outputBuffer = buffer;
@@ -104,6 +118,8 @@ class CompositionPass : public GraphicPass
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
+
+    void set_voxelization_descriptor(Graphics::Image voxel);
 
     void update();
 

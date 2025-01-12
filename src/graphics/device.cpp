@@ -40,19 +40,13 @@ void Device::init(void*           windowHandle,
                        Translator::get(presentFormat),
                        Translator::get(presentMode));
 
-    m_uploadContext.init(m_handle, m_gpu, m_swapchain.get_surface());
-
+    create_upload_context();
     load_extensions(m_handle, m_instance);
 
     // Get properties
     vkGetPhysicalDeviceProperties(m_gpu, &m_properties);
     vkGetPhysicalDeviceFeatures(m_gpu, &m_features);
     vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProperties);
-    // uint32_t queueFamilyCount;
-    // vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueFamilyCount, nullptr);
-    // assert(queueFamilyCount > 0);
-    // queueFamilyProperties.resize(queueFamilyCount);
-    // vkGetPhysicalDeviceQueueFamilyProperties(m_gpu, &queueFamilyCount, queueFamilyProperties.data());
 
     //------<<<
 }
@@ -72,7 +66,7 @@ void Device::update_swapchain(Extent2D        surfaceExtent,
 
 void Device::cleanup() {
 
-    m_uploadContext.cleanup(m_handle);
+    m_uploadContext.cleanup();
 
     m_swapchain.cleanup();
 
@@ -265,7 +259,7 @@ DescriptorPool Device::create_descriptor_pool(uint32_t                       max
     VK_CHECK(vkCreateDescriptorPool(m_handle, &pool_info, nullptr, &pool.handle));
     return pool;
 }
-RenderPass Device::create_render_pass(std::vector<AttachmentInfo>&        attachments,
+RenderPass Device::create_render_pass(std::vector<AttachmentInfo>&    attachments,
                                       std::vector<SubPassDependency>& dependencies) {
     RenderPass rp = {};
     // ATTACHMENT SETUP ----------------------------------
@@ -366,7 +360,7 @@ Framebuffer Device::create_framebuffer(RenderPass& renderpass, Extent2D extent, 
         if (!renderpass.attachmentsInfo[i].isDefault) // If its not present image
         {
             renderpass.attachmentsInfo[i].imageConfig.layers = layers;
-            fbo.attachmentImages[i]                      = create_image({extent.width, extent.height, 1},
+            fbo.attachmentImages[i]                          = create_image({extent.width, extent.height, 1},
                                                    renderpass.attachmentsInfo[i].imageConfig,
                                                    false); // No mipmap for attachment image :(
             fbo.attachmentImages[i].create_view(renderpass.attachmentsInfo[i].imageConfig);
@@ -420,10 +414,10 @@ Semaphore Device::create_semaphore() {
     VK_CHECK(vkCreateSemaphore(m_handle, &semaphoreCreateInfo, nullptr, &semaphore.handle));
     return semaphore;
 }
-Fence Device::create_fence() {
+Fence Device::create_fence(bool signaled) {
     Fence fence                       = {};
     fence.device                      = m_handle;
-    VkFenceCreateInfo fenceCreateInfo = Init::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+    VkFenceCreateInfo fenceCreateInfo = Init::fence_create_info(signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0U);
     VK_CHECK(vkCreateFence(m_handle, &fenceCreateInfo, nullptr, &fence.handle));
     return fence;
 }
@@ -502,13 +496,7 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
                               BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
                           VMA_MEMORY_USAGE_GPU_ONLY);
 
-    m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
-        VkBufferCopy copy;
-        copy.dstOffset = 0;
-        copy.srcOffset = 0;
-        copy.size      = vboSize;
-        vkCmdCopyBuffer(cmd, vboStagingBuffer.handle, vao.vbo.handle, 1, &copy);
-    });
+    m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_buffer(vboStagingBuffer, vao.vbo, vboSize); });
 
     vboStagingBuffer.cleanup();
 
@@ -525,13 +513,8 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
                                         BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
                                     VMA_MEMORY_USAGE_GPU_ONLY);
 
-        m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
-            VkBufferCopy index_copy;
-            index_copy.dstOffset = 0;
-            index_copy.srcOffset = 0;
-            index_copy.size      = iboSize;
-            vkCmdCopyBuffer(cmd, iboStagingBuffer.handle, vao.ibo.handle, 1, &index_copy);
-        });
+        m_uploadContext.immediate_submit(
+            [&](CommandBuffer cmd) { cmd.copy_buffer(iboStagingBuffer, vao.ibo, iboSize); });
 
         iboStagingBuffer.cleanup();
     }
@@ -547,13 +530,8 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
                                                 BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
                                             VMA_MEMORY_USAGE_GPU_ONLY);
 
-        m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
-            VkBufferCopy voxel_copy;
-            voxel_copy.dstOffset = 0;
-            voxel_copy.srcOffset = 0;
-            voxel_copy.size      = voxelSize;
-            vkCmdCopyBuffer(cmd, voxelStagingBuffer.handle, vao.voxelBuffer.handle, 1, &voxel_copy);
-        });
+        m_uploadContext.immediate_submit(
+            [&](CommandBuffer cmd) { cmd.copy_buffer(voxelStagingBuffer, vao.voxelBuffer, voxelSize); });
 
         voxelStagingBuffer.cleanup();
     }
@@ -580,9 +558,7 @@ void Device::upload_texture_image(Image&        img,
     Buffer stagingBuffer = create_buffer_VMA(imageSize, BUFFER_USAGE_TRANSFER_SRC, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer.upload_data(imgCache, static_cast<size_t>(imageSize));
 
-    m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
-        img.upload_image(cmd, &stagingBuffer);
-    });
+    m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_buffer_to_image(img, stagingBuffer); });
 
     stagingBuffer.cleanup();
 
@@ -596,8 +572,7 @@ void Device::upload_texture_image(Image&        img,
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
 
-        m_uploadContext.immediate_submit(
-            m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) { img.generate_mipmaps(cmd); });
+        m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.generate_mipmaps(img); });
     }
 
     // CREATE SAMPLER
@@ -723,9 +698,9 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = {
         &accelerationStructureBuildRangeInfo};
 
-    m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
+    m_uploadContext.immediate_submit([&](CommandBuffer cmd) {
         vkCmdBuildAccelerationStructures(
-            cmd, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
+            cmd.handle, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
     });
 
     VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
@@ -844,9 +819,9 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = {
         &accelerationStructureBuildRangeInfo};
 
-    m_uploadContext.immediate_submit(m_handle, m_queues[QueueType::GRAPHIC_QUEUE], [&](VkCommandBuffer cmd) {
+    m_uploadContext.immediate_submit([&](CommandBuffer cmd) {
         vkCmdBuildAccelerationStructures(
-            cmd, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
+            cmd.handle, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
     });
 
     VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
@@ -941,6 +916,32 @@ size_t Device::pad_uniform_buffer_size(size_t originalSize) {
         alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
     }
     return alignedSize;
+}
+
+void Device::create_upload_context() {
+    m_uploadContext.uploadFence   = create_fence(false);
+    m_uploadContext.commandPool   = create_command_pool(QueueType::GRAPHIC_QUEUE);
+    m_uploadContext.commandBuffer = create_command_buffer(m_uploadContext.commandPool);
+}
+
+void Device::UploadContext::immediate_submit(std::function<void(CommandBuffer cmd)>&& function) {
+
+    commandBuffer.begin();
+
+    function(commandBuffer);
+
+    commandBuffer.end();
+    commandBuffer.submit(uploadFence);
+
+    uploadFence.wait(9999999999);
+    uploadFence.reset();
+
+    commandPool.reset();
+}
+
+void Device::UploadContext::cleanup() {
+    uploadFence.cleanup();
+    commandPool.cleanup();
 }
 } // namespace Graphics
 

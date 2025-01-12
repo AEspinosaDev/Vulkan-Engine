@@ -17,8 +17,6 @@ namespace Core {
 
 class VoxelizationPass : public GraphicPass
 {
-    Graphics::Image m_voxelization = {};
-
     /*Descriptors*/
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
@@ -32,6 +30,7 @@ class VoxelizationPass : public GraphicPass
   public:
     VoxelizationPass(Graphics::Device* ctx, uint32_t resolution)
         : BasePass(ctx, {resolution, resolution}, 1, 1, false, "VOXELIZATION") {
+            m_resourceImages.resize(1);
     }
 
     void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,

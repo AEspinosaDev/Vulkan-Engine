@@ -182,7 +182,7 @@ class Scene : public Object3D
     Setup axis-aligned bounding volume for the entire scene. This object might be necessary for some functionalities,
     sush as voxelization of the scene.
     */
-    void        setup_AABB();
+    void        update_AABB();
     inline AABB get_AABB() const {
         return m_volume;
     }

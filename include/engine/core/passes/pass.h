@@ -27,6 +27,11 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
 /*
+Data containing a dependicy image's location belonging to a previows pass
+*/
+struct ImageDependency;
+
+/*
 Core abstract class needed for a renderer to work.
 It controls the flow of the renderer state, what information and how it is being
 rendered/computed. It also gives access to the framebuffers containing the rendered data.
@@ -47,13 +52,12 @@ class BasePass
     Graphics::RenderPass               m_renderpass = {};
     std::vector<Graphics::Framebuffer> m_framebuffers;
     uint32_t                           m_framebufferImageDepth; // In case if multilayered rendering.
+    // In case is not graphical or need auxiliar data, other graphic data can be stored onto these images
+    std::vector<Graphics::Image> m_resourceImages;
 
-    Extent2D    m_imageExtent;
-    std::string m_name;
-
-    // Key: Vec2 (Renderpass ID, Framebuffer ID)
-    // Value: Framebuffer's image attachment IDs
-    std::unordered_map<iVec2, std::vector<uint32_t>> m_imageDepedanceTable;
+    Extent2D                     m_imageExtent;
+    std::string                  m_name;
+    std::vector<ImageDependency> m_imageDependencies; // Previous passes image dependency list
 
     // Query
     bool m_initiatized  = false;
@@ -106,6 +110,9 @@ class BasePass
     inline std::vector<Graphics::Framebuffer> const get_framebuffers() const {
         return m_framebuffers;
     }
+    inline std::vector<Graphics::Image> const get_resource_images() const {
+        return m_resourceImages;
+    }
     inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) {
         m_renderpass.attachmentsInfo[attachmentLayout].clearValue = value;
     }
@@ -133,17 +140,14 @@ class BasePass
     inline std::unordered_map<std::string, Graphics::ShaderPass*> const get_shaderpasses() const {
         return m_shaderPasses;
     }
-
     /*
-    Sets a table of depedencies with different passes.
-    - Key: Vec2 (Renderpass ID, Framebuffer ID)
-    - Value: array of framebuffer's image attachment IDs
+    Sets a vector of depedencies with different passes.
     */
-    inline void set_image_dependace_table(std::unordered_map<iVec2, std::vector<uint32_t>> table) {
-        m_imageDepedanceTable = table;
+    inline void set_image_dependencies(std::vector<ImageDependency> dependencies) {
+        m_imageDependencies = dependencies;
     }
-    inline std::unordered_map<iVec2, std::vector<uint32_t>> get_image_dependace_table() const {
-        return m_imageDepedanceTable;
+    inline std::vector<ImageDependency> get_image_dependencies() const {
+        return m_imageDependencies;
     }
 
 #pragma endregion
@@ -185,6 +189,28 @@ class BasePass
 #pragma endregion
 };
 
+#pragma region IMAGE DEP
+
+struct ImageDependency {
+    uint32_t passID = 0; // The pass that produces this image
+    uint32_t fboID  = 0; // The FBO within the pass that produces this image
+    bool isFBO = true;   // If set to false, It will take the attachments from the pass resourceImages (Useful if not a
+                         // graphical pass).
+    std::vector<uint32_t> attachmentIDs; // The attachment indeces within the FBO
+
+    ImageDependency(uint32_t passId, u_int fboId, std::vector<uint32_t> attachmentIds)
+        : passID(passId)
+        , fboID(fboId)
+        , attachmentIDs(attachmentIds) {
+    }
+    ImageDependency(uint32_t passId, std::vector<uint32_t> attachmentIds)
+        : passID(passId)
+        , attachmentIDs(attachmentIds)
+        , isFBO(false) {
+    }
+};
+
+#pragma endregion
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

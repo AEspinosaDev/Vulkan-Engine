@@ -293,7 +293,7 @@
 
         <intensity value="2" />
         <color r="0.14" g="0.37" b="0.58" />
-        <direction x="2.0" y="20.0" z="5.0" />
+        <direction x="2.0" y="30.0" z="5.0" />
 
         <Shadow type="rt">
             <samples value="2" />
