@@ -185,21 +185,24 @@ void main() {
                 scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].worldPosition.xyz - _pos) : normalize(scene.lights[i].worldPosition.xyz), //wi                                                                                          //wo
                 scene.lights[i].color * computeAttenuation(scene.lights[i].worldPosition.xyz, _pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity             
                 );
-            if(scene.lights[i].shadowCast == 1) {
-                        if(scene.lights[i].shadowType == 0) //Classic
-                            lighting *= computeShadow(shadowMap, scene.lights[i], i, _pos);
-                        if(scene.lights[i].shadowType == 1) //VSM   
-                            lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, _pos);
-                        if(scene.lights[i].shadowType == 2) //Raytraced  
-                            lighting *= computeRaytracedShadow(
-                                TLAS, 
-                                blueNoiseMap,
-                                _pos, 
-                                scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - _pos : scene.lights[i].shadowData.xyz,
-                                1, 
-                                0.0, 
-                                0);
-                    }
+
+
+            //Visibility__________________________
+            // if(scene.lights[i].shadowCast == 1) {
+            //             if(scene.lights[i].shadowType == 0) //Classic
+            //                 lighting *= computeShadow(shadowMap, scene.lights[i], i, _pos);
+            //             if(scene.lights[i].shadowType == 1) //VSM   
+            //                 lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, _pos);
+            //             if(scene.lights[i].shadowType == 2) //Raytraced  
+            //                 lighting *= computeRaytracedShadow(
+            //                     TLAS, 
+            //                     blueNoiseMap,
+            //                     _pos, 
+            //                     scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - _pos : scene.lights[i].shadowData.xyz,
+            //                     1, 
+            //                     0.0, 
+            //                     0);
+            //         }
             
             color += lighting;
         }

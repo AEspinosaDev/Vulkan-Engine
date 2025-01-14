@@ -87,6 +87,7 @@ int     g_isReflective;
 vec4    g_temp; 
 
 
+
 vec3 GI(vec3 worldPos, vec3 worldNormal){
     const float VOXEL_SIZE  = 1.0/float(settings.vxgi.resolution);
     const float ISQRT2 = 0.707106;
@@ -112,35 +113,36 @@ vec3 GI(vec3 worldPos, vec3 worldNormal){
 	// Backward in cone direction improves GI, and forward direction removes
 	// artifacts.
 	const float CONE_OFFSET = -0.01;
+    const float CONE_SPREAD = 0.325;
 
 	// Trace front cone
-	indirect += w[0] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * worldNormal, worldNormal, VOXEL_SIZE );
+	indirect += w[0] * traceVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * worldNormal, worldNormal,CONE_SPREAD, VOXEL_SIZE );
 
 	// Trace 4 side cones.
 	const vec3 s1 = mix(worldNormal, ortho, ANGLE_MIX);
-	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * ortho, s1, VOXEL_SIZE );
+	indirect += w[1] * traceVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * ortho, s1,CONE_SPREAD, VOXEL_SIZE );
 
 	const vec3 s2 = mix(worldNormal, -ortho, ANGLE_MIX);
-	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * ortho, s2, VOXEL_SIZE );
+	indirect += w[1] * traceVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * ortho, s2,CONE_SPREAD, VOXEL_SIZE );
 
 	const vec3 s3 = mix(worldNormal, ortho2, ANGLE_MIX);
-	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * ortho2, s3, VOXEL_SIZE );
+	indirect += w[1] * traceVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * ortho2, s3,CONE_SPREAD, VOXEL_SIZE );
 
 	const vec3 s4 = mix(worldNormal, -ortho2, ANGLE_MIX);
-	indirect += w[1] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * ortho2, s4, VOXEL_SIZE );
+	indirect += w[1] * traceVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * ortho2, s4,CONE_SPREAD, VOXEL_SIZE );
 
 	// Trace 4 corner cones.
 	const vec3 c1 = mix(worldNormal, corner, ANGLE_MIX);
-	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * corner, c1, VOXEL_SIZE );
+	indirect += w[2] * traceVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * corner, c1,CONE_SPREAD, VOXEL_SIZE );
 
 	const vec3 c2 = mix(worldNormal, -corner, ANGLE_MIX);
-	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * corner, c2, VOXEL_SIZE );
+	indirect += w[2] * traceVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * corner, c2,CONE_SPREAD, VOXEL_SIZE );
 
 	const vec3 c3 = mix(worldNormal, corner2, ANGLE_MIX);
-	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * corner2, c3, VOXEL_SIZE );
+	indirect += w[2] * traceVoxelCone(voxelMap, C_ORIGIN + CONE_OFFSET * corner2, c3,CONE_SPREAD, VOXEL_SIZE );
 
 	const vec3 c4 = mix(worldNormal, -corner2, ANGLE_MIX);
-	indirect += w[2] * traceDiffuseVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * corner2, c4, VOXEL_SIZE );
+	indirect += w[2] * traceVoxelCone(voxelMap, C_ORIGIN - CONE_OFFSET * corner2, c4,CONE_SPREAD, VOXEL_SIZE );
 
 	// Return result.
 	// return DIFFUSE_INDIRECT_FACTOR * material.diffuseReflectivity * acc * (material.diffuseColor + vec3(0.001f));
@@ -187,6 +189,7 @@ void main()
         vec3 direct     = vec3(0.0);
         vec3 ambient    = vec3(0.0);
         vec3 indirect   = vec3(0.0);
+        vec3 indirect2   = vec3(0.0);
 
         vec3 modelPos = (camera.invView * vec4(g_pos.xyz, 1.0)).xyz;
         vec3 modelNormal = (camera.invView  * vec4(g_normal.xyz, 0.0)).xyz;
@@ -206,12 +209,50 @@ void main()
             brdf.F0 = vec3(0.04);
             brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
             brdf.emission = g_emission;
-
-            // GI ____________________________
+            // Indirect Component ____________________________
             if(settings.vxgi.enabled == 1){
-                indirect = GI(modelPos, modelNormal)*settings.vxgi.strength*g_albedo;
+                vec3 diffuseIndirect = vec3(0.0);
+
+                const float VOXEL_SIZE  = 1.0/float(settings.vxgi.resolution);
+
+
+                 // Offset startPos to avoid self occlusion
+                vec3 startPos = modelPos + modelNormal * VOXEL_SIZE;
+    
+                float coneTraceCount = 0.0;
+                float cosSum = 0.0;
+	            for (int i = 0; i < DIFFUSE_CONE_COUNT; ++i)
+                {
+	            	float cosTheta = dot(modelNormal, DIFFUSE_CONE_DIRECTIONS[i]);
+
+                    if (cosTheta < 0.0)
+                        continue;
+
+                    coneTraceCount += 1.0;
+	            	diffuseIndirect += traceVoxelCone(voxelMap, startPos,  DIFFUSE_CONE_DIRECTIONS[i],DIFFUSE_CONE_APERTURE , VOXEL_SIZE );
+                }
+
+	            diffuseIndirect /= coneTraceCount;
+                // indirectContribution.a *= u_ambientOcclusionFactor;
+    
+	            diffuseIndirect.rgb *= g_albedo * settings.vxgi.strength;
+
+
+                indirect = diffuseIndirect.rgb;
+
+
+                // indirect = GI(modelPos, modelNormal)*settings.vxgi.strength*g_albedo;
                 indirect*= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao;
+
+                // vec3 specularConeDirection = reflect(normalize(camera.position.xyz-modelPos), modelNormal);
+                // vec3 specularIndirect = vec3(0.0);
+    
+    
+                //  specularIndirect =   traceVoxelCone(voxelMap, startPos, specularConeDirection, max(brdf.roughness, 0.05) , VOXEL_SIZE );
+                // // specularIndirect = castCone(startPos, specularConeDirection, max(roughness, MIN_SPECULAR_APERTURE), MAX_TRACE_DISTANCE, minLevel).rgb * specColor.rgb * u_indirectSpecularIntensity;
+                // indirect2+=specularIndirect;
             }
+            
 
             //Direct Component ________________________
             for(int i = 0; i < scene.numLights; i++) {
@@ -232,7 +273,6 @@ void main()
                             if(scene.lights[i].shadowType == 1) //VSM   
                                 lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
                             if(scene.lights[i].shadowType == 2) //Raytraced  
-                                // lighting *= traceShadowCone(voxelMap, modelPos, scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : scene.lights[i].shadowData.xyz, modelNormal,  1.0/float(settings.vxgi.resolution), length(scene.lights[i].worldPosition.xyz - modelPos) );
                                 lighting *= computeRaytracedShadow(
                                     TLAS, 
                                     blueNoiseMap,
@@ -263,6 +303,7 @@ void main()
                 ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
             }
             ambient *= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao;
+          
             //SSR ________________________________
             vec3 fresnel = fresnelSchlick(max(dot(g_normal, normalize(g_pos)), 0.0), brdf.F0);
             if(settings.ssr.enabled == 1 && g_isReflective == 1){

@@ -17,7 +17,8 @@ void VoxelizationPass::create_voxelization_image() {
     m_resourceImages[0].create_view(config);
 
     SamplerConfig samplerConfig      = {};
-    samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_BORDER;
+    samplerConfig.border = BorderColor::FLOAT_OPAQUE_BLACK;
     m_resourceImages[0].create_sampler(samplerConfig);
 }
 

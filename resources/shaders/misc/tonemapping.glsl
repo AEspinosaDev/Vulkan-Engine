@@ -27,7 +27,8 @@ layout(location = 0) out vec4 outputImage;
 void main()
 {
     vec3 result = texture(inputImage,v_uv).rgb;
-    result = vec3(1.0) - exp(-result * 1.0);
+    float exposure = 1.0;
+    result = vec3(1.0) - exp(-result * exposure);
     //  result = result / (result + vec3(1.0));
 
     outputImage = vec4(result,1.0); //WIP

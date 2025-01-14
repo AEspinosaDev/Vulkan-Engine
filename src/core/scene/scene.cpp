@@ -8,8 +8,13 @@ VKFW::Graphics::TLAS* VKFW::Core::get_TLAS(Scene* const scene) {
 }
 void VKFW::Core::Scene::update_AABB() {
 
+    m_volume.maxCoords = Vec3(0.0);
+    m_volume.minCoords = Vec3(INFINITY);
+
     for (Mesh* m : m_meshes)
     {
+        if (!m->is_active())
+            continue;
         BV const* bvolume = m->get_bounding_volume();
         if (!bvolume)
             continue;
@@ -33,6 +38,12 @@ void VKFW::Core::Scene::update_AABB() {
         if (minCoords.z < m_volume.minCoords.z)
             m_volume.minCoords.z = minCoords.z;
     }
+
+    // Make a cube container for voxelization
+    float maxTerm      = std::max(std::max(m_volume.maxCoords.r, m_volume.maxCoords.g), m_volume.maxCoords.b);
+    float minTerm      = std::min(std::min(m_volume.minCoords.r, m_volume.minCoords.g), m_volume.minCoords.b);
+    m_volume.maxCoords = Vec3(maxTerm);
+    m_volume.minCoords = Vec3(minTerm);
 
     m_volume.center = (m_volume.maxCoords + m_volume.minCoords) * 0.5f;
 }
