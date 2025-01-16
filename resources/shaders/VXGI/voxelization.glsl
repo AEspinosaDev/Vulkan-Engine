@@ -39,7 +39,6 @@ void main() {
 
     vec3 ndc = mapToZeroOne(v_pos, scene.minCoord.xyz, scene.maxCoord.xyz) * 2.0 -1.0;
     gl_Position = vec4(ndc, 1.0);
-    // gl_Position = camera.viewProj * vec4(v_pos, 1.0);
     
 }
 #shader geometry
@@ -83,6 +82,11 @@ void main(){
 #version 460
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
+#extension GL_EXT_shader_atomic_float2 : enable
+// #extension GL_EXT_shader_16bit_storage : require
+// #extension GL_EXT_gpu_shader5 : require
+// #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+// #extension GL_EXT_shader_atomic_fp16_vector : require
 #include light.glsl
 #include scene.glsl
 #include utils.glsl
@@ -98,7 +102,7 @@ layout(location = 2) in vec2 _uv;
 layout(set = 0, binding =   2) uniform sampler2DArray              shadowMap;
 layout(set = 0, binding =   3) uniform samplerCube                 irradianceMap;
 layout(set = 0,  binding =  4) uniform accelerationStructureEXT    TLAS;
-layout(set = 0,  binding =  5) uniform sampler2D                   blueNoiseMap;
+layout(set = 0,  binding =  5) uniform sampler2D                   samplerMap;
 layout(set = 0,  binding =  6, r32f) uniform image3D               voxelImage;
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
@@ -179,42 +183,43 @@ void main() {
         if(isInAreaOfInfluence(scene.lights[i].worldPosition.xyz, _pos,scene.lights[i].areaEffect,int(scene.lights[i].type))){
 
             //Diffuse Component ________________________
-
             vec3 lighting = vec3(0.0);
             lighting = evalDiffuseLighting( 
                 scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].worldPosition.xyz - _pos) : normalize(scene.lights[i].worldPosition.xyz), //wi                                                                                          //wo
                 scene.lights[i].color * computeAttenuation(scene.lights[i].worldPosition.xyz, _pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity             
                 );
 
-
-            //Visibility__________________________
-            // if(scene.lights[i].shadowCast == 1) {
-            //             if(scene.lights[i].shadowType == 0) //Classic
-            //                 lighting *= computeShadow(shadowMap, scene.lights[i], i, _pos);
-            //             if(scene.lights[i].shadowType == 1) //VSM   
-            //                 lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, _pos);
-            //             if(scene.lights[i].shadowType == 2) //Raytraced  
-            //                 lighting *= computeRaytracedShadow(
-            //                     TLAS, 
-            //                     blueNoiseMap,
-            //                     _pos, 
-            //                     scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - _pos : scene.lights[i].shadowData.xyz,
-            //                     1, 
-            //                     0.0, 
-            //                     0);
-            //         }
+            //Visibility Component__________________________
+            if(scene.lights[i].shadowCast == 1) {
+                        // if(scene.lights[i].shadowType == 0) //Classic
+                        //     lighting *= computeShadow(shadowMap, scene.lights[i], i, _pos);
+                        // if(scene.lights[i].shadowType == 1) //VSM   
+                        //     lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, _pos);
+                        if(scene.lights[i].shadowType == 2) //Raytraced  
+                            lighting *= computeRaytracedShadow(
+                                TLAS, 
+                                samplerMap,
+                                _pos, 
+                                scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - _pos : scene.lights[i].shadowData.xyz,
+                                1, 
+                                0.0, 
+                                0);
+                    }
             
             color += lighting;
         }
     }
 
     color += g_emisison;
-    vec3 ambient = (scene.ambientIntensity * scene.ambientColor) * g_albedo;
+
+    vec3 ambient = scene.ambientIntensity * g_albedo;
     color +=ambient;
-   
 
 	vec4 result = g_opacity * vec4(vec3(color), 1);
     ivec3 voxelPos = worldSpaceToVoxelSpace(_pos);
+    
+    // imageAtomicMax(voxelImage, voxelPos, 1);
+    //  imageAtomicMax(voxelImage, voxelPos, f16vec4(color, 1.0));
     imageStore(voxelImage, voxelPos, result);
 
 }

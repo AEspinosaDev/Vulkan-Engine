@@ -159,11 +159,27 @@ void Tools::DeferredRendererWidget::render() {
         m_renderer->set_VXGI_settings(settings_VXGI);
     }
     if (settings_VXGI.enabled)
+    {
+
         if (ImGui::DragFloat("GI Intensity", &settings_VXGI.strength, 0.1f, 0.0f, 5.0f))
         {
             m_renderer->set_VXGI_settings(settings_VXGI);
         }
+        if (ImGui::DragFloat("Cone Offset", &settings_VXGI.offset, 0.1f, 0.0f, 10.0f))
+        {
+            m_renderer->set_VXGI_settings(settings_VXGI);
+        }
+        if (ImGui::DragFloat("Max Cone Distance", &settings_VXGI.maxDistance, 0.1f, 0.0f, 1000.0f))
+        {
+            m_renderer->set_VXGI_settings(settings_VXGI);
+        }
+        if (ImGui::DragFloat("Diffuse Cone Spread", &settings_VXGI.diffuseConeSpread, 0.01f, 0.0f, 2.0f))
+        {
+            m_renderer->set_VXGI_settings(settings_VXGI);
+        }
+    }
 
+    ImGui::Separator();
     const char* res[] = {"VERY LOW", "LOW", "MID", "HIGH", "ULTRA"};
 
     int res_current;

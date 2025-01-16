@@ -37,10 +37,13 @@ struct SSR { // Settings for Screen Space Reflections
     uint32_t enabled               = 1;
 };
 struct VXGI { // Settings for Voxel Based GI
-    float    strength   = 0.2f;
-    uint32_t resolution = 256;
-    uint32_t samples    = 8;
-    uint32_t enabled    = 1;
+    float    strength          = 1.0f;
+    float    diffuseConeSpread = 0.577f;
+    float    offset            = 1.0f;
+    float    maxDistance       = 75.0f;
+    uint32_t resolution        = 256;
+    uint32_t samples           = 8;
+    uint32_t enabled           = 1;
 };
 
 class CompositionPass : public GraphicPass

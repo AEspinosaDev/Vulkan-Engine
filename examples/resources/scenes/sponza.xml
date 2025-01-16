@@ -14,7 +14,7 @@
     <!-- MESHES -->
     <Mesh type="file" name="Sponza">
 
-        <Filename value="meshes/walls.obj" />
+        <Filename value="meshes/testWall.obj" />
 
         <Transform>
             <translate x="0.0" y="-2.0" z="0.0" />
@@ -36,7 +36,7 @@
                     <albedo r="0.5" g="0.5" b="0.5" />
                     <Textures>
                         <albedo path="textures/Arches/Arches_Diffuse.png" />
-                        <normals path="textures/Arches/Arches_Normal.png" />
+                        <!-- <normals path="textures/Arches/Arches_Normal.png" /> -->
                         <!-- <mask path="textures/Arches/Arches_MaskMap.png" type="UnityHDRP" /> -->
                     </Textures>
                 </Material>
@@ -264,14 +264,14 @@
 
 
     <!-- IF DAY -->
-    <!-- <Light type="directional" name="Sun">
+    <Light type="directional" name="Sun">
         <Transform>
             <translate x="0.0" y="50.0" z="0.0" />
         </Transform>
 
-        <intensity value="15.0" />
+        <intensity value="10.0" />
         <color r="1.0" g="0.9" b="0.8" />
-        <direction x="2.0" y="20.0" z="5.0" />
+        <direction x="2.0" y="30.0" z="5.0" />
 
         <Shadow type="rt">
             <samples value="2" />
@@ -281,12 +281,12 @@
 
     <Enviroment type="skybox">
         <Filename value="textures/cloudy.hdr" />
-        <intensity value="0.5" />
-    </Enviroment> -->
+        <intensity value="0.01" />
+    </Enviroment>
 
 
     <!-- IF NIGHT -->
-    <Light type="directional" name="Moon">
+    <!-- <Light type="directional" name="Moon">
         <Transform>
             <translate x="0.0" y="50.0" z="0.0" />
         </Transform>
@@ -360,7 +360,7 @@
         <Filename value="textures/moon.hdr" />
         <intensity value="1.0" />
         <color r="0.14" g="0.37" b="0.58" />
-    </Enviroment>
+    </Enviroment> -->
 
 
     <!-- FOG -->

@@ -11,7 +11,7 @@ void VoxelizationPass::create_voxelization_image() {
     config.viewType    = TEXTURE_3D;
     config.format      = SRGBA_32F;
     config.usageFlags = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_STORAGE;
-    config.mipLevels  = 6;
+    config.mipLevels  = 9;
     m_resourceImages[0] =
         m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, true);
     m_resourceImages[0].create_view(config);
