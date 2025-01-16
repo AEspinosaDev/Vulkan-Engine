@@ -58,7 +58,7 @@
                     <albedo r="0.5" g="0.5" b="0.5" />
                     <Textures>
                         <albedo path="textures/Columns/Column_C_Diffuse.png" />
-                        <normals path="textures/Columns/Column_C_Normal.png" />
+                        <!-- <normals path="textures/Columns/Column_C_Normal.png" /> -->
                         <!-- <mask path="textures/Columns/Column_C_MaskMap.png" type="UnityHDRP" /> -->
                     </Textures>
                 </Material>
@@ -281,7 +281,7 @@
 
     <Enviroment type="skybox">
         <Filename value="textures/cloudy.hdr" />
-        <intensity value="0.01" />
+        <intensity value="0.4" />
     </Enviroment>
 
 

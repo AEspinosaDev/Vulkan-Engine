@@ -89,7 +89,7 @@ std::vector<uint32_t> ShaderSource::compile_shader(const std::string          sr
     shaderc::Compiler       compiler;
     shaderc::CompileOptions options;
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-    options.SetTargetSpirv(shaderc_spirv_version_1_4);
+    options.SetTargetSpirv(shaderc_spirv_version_1_6);
 
     options.SetOptimizationLevel(optimization);
 

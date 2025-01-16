@@ -44,6 +44,7 @@ struct VXGI { // Settings for Voxel Based GI
     uint32_t resolution        = 256;
     uint32_t samples           = 8;
     uint32_t enabled           = 1;
+    uint32_t updateMode        = 0;
 };
 
 class CompositionPass : public GraphicPass

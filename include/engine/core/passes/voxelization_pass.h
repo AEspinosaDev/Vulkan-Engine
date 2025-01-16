@@ -11,13 +11,19 @@
 #include <engine/core/passes/pass.h>
 #include <engine/core/resource_manager.h>
 
+#define USE_IMG_ATOMIC_OPERATION
+
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
 class VoxelizationPass : public GraphicPass
 {
+#ifdef USE_IMG_ATOMIC_OPERATION
     const uint16_t RESOURCE_IMAGES = 4;
+#else
+    const uint16_t RESOURCE_IMAGES = 1;
+#endif
 
     /*Descriptors*/
     struct FrameDescriptors {
@@ -32,7 +38,7 @@ class VoxelizationPass : public GraphicPass
   public:
     VoxelizationPass(Graphics::Device* ctx, uint32_t resolution)
         : BasePass(ctx, {resolution, resolution}, 1, 1, false, "VOXELIZATION") {
-            m_resourceImages.resize(RESOURCE_IMAGES);
+        m_resourceImages.resize(RESOURCE_IMAGES);
     }
 
     void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,

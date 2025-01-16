@@ -10,7 +10,9 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
     Core::CompositionPass* compPass = static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS]);
     compPass->set_SSR_settings(m_SSR);
     compPass->set_VXGI_settings(m_VXGI);
-    m_passes[VOXELIZATION_PASS]->set_active(m_VXGI.enabled);
+    if (m_VXGI.updateMode == 0)
+        m_passes[VOXELIZATION_PASS]->set_active(m_VXGI.enabled);
+   
     compPass->enable_AO(m_SSAO.enabled);
     static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->set_SSAO_settings(m_SSAO);
     static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(m_bloomStrength);
@@ -36,6 +38,9 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
 
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
     BaseRenderer::on_after_render(renderResult, scene);
+
+     if (m_VXGI.updateMode == 1)
+        m_passes[VOXELIZATION_PASS]->set_active(false);
 
     if (m_updateShadows)
     {

@@ -124,8 +124,8 @@ void main()
 
         vec3 direct     = vec3(0.0);
         vec3 ambient    = vec3(0.0);
-        vec3 indirect   = vec3(0.0);
-        vec3 indirect2   = vec3(0.0);
+        vec4 indirect   = vec4(0.0);
+        vec3 indirectSpecular   = vec3(0.0);
 
         vec3 modelPos = (camera.invView * vec4(g_pos.xyz, 1.0)).xyz;
         vec3 modelNormal = (camera.invView  * vec4(g_normal.xyz, 0.0)).xyz;
@@ -150,16 +150,20 @@ void main()
             // Indirect Component ____________________________
             if(settings.vxgi.enabled == 1){
 
-                vec4 diffuseIndirect = diffuseVoxelGI(voxelMap, modelPos, modelNormal, settings.vxgi, scene.maxCoord.x-scene.minCoord.x);
+                // Diffuse
+                indirect = diffuseVoxelGI2(voxelMap, modelPos, modelNormal, settings.vxgi, scene.maxCoord.x-scene.minCoord.x);
+                indirect.rgb *= g_albedo;
+                indirect.rgb *= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao; //Add ambient occlusion
 
-                indirect = diffuseIndirect.rgb * g_albedo;
-                indirect*= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao; //Add ambient occlusion
+                // Specular
+                vec3 specularConeDirection = reflect(-normalize(camera.position.xyz-modelPos), modelNormal);
+                float voxelWorldSize =  (scene.maxCoord.x-scene.minCoord.x) / float(settings.vxgi.resolution);
+	            vec3 startPos = modelPos + modelNormal * voxelWorldSize * settings.vxgi.offset;
 
-                // vec3 specularConeDirection = reflect(normalize(camera.position.xyz-modelPos), modelNormal);
-                // vec3 specularIndirect = vec3(0.0);
-                //  specularIndirect =   traceVoxelCone(voxelMap, startPos, specularConeDirection, max(brdf.roughness, 0.05) , VOXEL_SIZE );
-                // // specularIndirect = castCone(startPos, specularConeDirection, max(roughness, MIN_SPECULAR_APERTURE), MAX_TRACE_DISTANCE, minLevel).rgb * specColor.rgb * u_indirectSpecularIntensity;
-                // indirect2+=specularIndirect;
+                const float CONE_SPREAD = mix(0.005, settings.vxgi.diffuseConeSpread, brdf.roughness);
+                indirectSpecular = traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize ).rgb;
+                
+                // indirect+=specularIndirect.rgb;
             }
             //Direct Component ________________________
             for(int i = 0; i < scene.numLights; i++) {
@@ -262,7 +266,8 @@ void main()
                
                     
 
-    color = direct + indirect + ambient + reflectedColor;
+    color = direct  + indirect.rgb + ambient + reflectedColor;
+    // color = direct + indirect.rgb + ambient + reflectedColor;
       
     //////////////////////////////////////
     // IF UNLIT MATERIAL

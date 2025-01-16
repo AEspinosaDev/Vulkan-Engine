@@ -43,6 +43,8 @@ void main() {
 }
 #shader geometry
 #version 460
+#extension GL_NV_geometry_shader_passthrough : enable
+
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
@@ -80,12 +82,15 @@ void main(){
 
 #shader fragment
 #version 460
+
+#define USE_IMG_ATOMIC_OPERATION
+
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
-#extension GL_EXT_shader_atomic_float2 : enable
-// #extension GL_EXT_shader_16bit_storage : require
+
+
+#extension GL_EXT_shader_atomic_float2 : require
 // #extension GL_EXT_gpu_shader5 : require
-// #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 // #extension GL_EXT_shader_atomic_fp16_vector : require
 #include light.glsl
 #include scene.glsl
@@ -95,6 +100,9 @@ void main(){
 #include raytracing.glsl
 #include material_defines.glsl
 
+
+
+
 layout(location = 0) in vec3 _pos;
 layout(location = 1) in vec3 _normal;
 layout(location = 2) in vec2 _uv;
@@ -103,7 +111,11 @@ layout(set = 0, binding =   2) uniform sampler2DArray              shadowMap;
 layout(set = 0, binding =   3) uniform samplerCube                 irradianceMap;
 layout(set = 0,  binding =  4) uniform accelerationStructureEXT    TLAS;
 layout(set = 0,  binding =  5) uniform sampler2D                   samplerMap;
+
 layout(set = 0,  binding =  6, r32f) uniform image3D               voxelImage;
+#ifdef USE_IMG_ATOMIC_OPERATION
+layout(set = 0,  binding =  7, r32ui) uniform uimage3D              auxVoxelImages[3];
+#endif
 
 layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec4 slot1; 
@@ -217,9 +229,16 @@ void main() {
 
 	vec4 result = g_opacity * vec4(vec3(color), 1);
     ivec3 voxelPos = worldSpaceToVoxelSpace(_pos);
-    
-    // imageAtomicMax(voxelImage, voxelPos, 1);
-    //  imageAtomicMax(voxelImage, voxelPos, f16vec4(color, 1.0));
+
+#ifdef USE_IMG_ATOMIC_OPERATION
+    imageAtomicMax(auxVoxelImages[0], voxelPos, floatBitsToUint(result.r));
+    imageAtomicMax(auxVoxelImages[1], voxelPos, floatBitsToUint(result.g));
+    imageAtomicMax(auxVoxelImages[2], voxelPos, floatBitsToUint(result.b));
+    // imageAtomicMax(voxelImage, voxelPos, f16vec4(vec4(result, 1.0)));
+    // imageStore(voxelImage, voxelPos, vec4(0.0, 0.0, 0.0, 1.0));
     imageStore(voxelImage, voxelPos, result);
+#else
+    imageStore(voxelImage, voxelPos, result);
+#endif
 
 }

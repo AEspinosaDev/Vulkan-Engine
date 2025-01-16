@@ -5,6 +5,8 @@ using namespace Graphics;
 namespace Core {
 
 void VoxelizationPass::create_voxelization_image() {
+
+    // Actual Voxel Image
     m_resourceImages[0].cleanup();
 
     ImageConfig config = {};
@@ -18,8 +20,22 @@ void VoxelizationPass::create_voxelization_image() {
 
     SamplerConfig samplerConfig      = {};
     samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_BORDER;
-    samplerConfig.border = BorderColor::FLOAT_OPAQUE_BLACK;
+    samplerConfig.border             = BorderColor::FLOAT_OPAQUE_BLACK;
     m_resourceImages[0].create_sampler(samplerConfig);
+
+#ifdef USE_IMG_ATOMIC_OPERATION
+    // Auxiliar One Channel Images
+    config.format     = R_32_UINT;
+    config.usageFlags = IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_STORAGE;
+    config.mipLevels  = 1;
+    for (size_t i = 1; i < 4; i++)
+    {
+        m_resourceImages[i].cleanup();
+        m_resourceImages[i] =
+            m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, false);
+        m_resourceImages[i].create_view(config);
+    }
+#endif
 }
 
 void VoxelizationPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
@@ -59,14 +75,22 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
     LayoutBinding sceneBufferBinding(
         UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
-    LayoutBinding shadowBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
-    LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
-    LayoutBinding accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 4);
-    LayoutBinding noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
-    LayoutBinding voxelBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_FRAGMENT, 6);
-    m_descriptorPool.set_layout(
-        GLOBAL_LAYOUT,
-        {camBufferBinding, sceneBufferBinding, shadowBinding, iblBinding, accelBinding, noiseBinding, voxelBinding});
+    LayoutBinding  shadowBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding  iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding  accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 4);
+    LayoutBinding  noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
+    LayoutBinding  voxelBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_FRAGMENT, 6);
+    const uint32_t RGB_CHANNELS = 3;
+    LayoutBinding  auxVoxelBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_FRAGMENT, 7, RGB_CHANNELS);
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT,
+                                {camBufferBinding,
+                                 sceneBufferBinding,
+                                 shadowBinding,
+                                 iblBinding,
+                                 accelBinding,
+                                 noiseBinding,
+                                 voxelBinding,
+                                 auxVoxelBinding});
 
     // PER-OBJECT SET
     LayoutBinding objectBufferBinding(
@@ -132,9 +156,15 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
-
+        // Voxelization Image
         m_descriptorPool.set_descriptor_write(
             &m_resourceImages[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+#ifdef USE_IMG_ATOMIC_OPERATION
+        // Voxelization Aux.Images
+        std::vector<Graphics::Image> auxImages = {m_resourceImages[1], m_resourceImages[2], m_resourceImages[3]};
+        m_descriptorPool.set_descriptor_write(
+            auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
+#endif
     }
 }
 void VoxelizationPass::setup_shader_passes() {
@@ -157,26 +187,49 @@ void VoxelizationPass::setup_shader_passes() {
     voxelPass->build(m_descriptorPool);
 
     m_shaderPasses["voxelization"] = voxelPass;
+
+#ifdef USE_IMG_ATOMIC_OPERATION
+
+    ComputeShaderPass* mergePass =
+        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/VXGI/merge_intermediates.glsl");
+    mergePass->settings.descriptorSetLayoutIDs = {
+        {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
+
+    mergePass->build_shader_stages();
+    mergePass->build(m_descriptorPool);
+
+    m_shaderPasses["merge"] = mergePass;
+
+#endif
 }
 void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
+    m_enabled = false;
 
     CommandBuffer cmd = currentFrame.commandBuffer;
 
     /*
-    PREPARE VOXEL IMAGE TO BE USED IN SHADER
+    PREPARE VOXEL IMAGES TO BE USED IN SHADERS
     */
     if (m_resourceImages[0].currentLayout == LAYOUT_UNDEFINED)
-        cmd.pipeline_barrier(m_resourceImages[0],
-                             LAYOUT_UNDEFINED,
-                             LAYOUT_GENERAL,
-                             ACCESS_NONE,
-                             ACCESS_SHADER_READ,
-                             STAGE_TOP_OF_PIPE,
-                             STAGE_FRAGMENT_SHADER);
+        for (Graphics::Image& img : m_resourceImages)
+            cmd.pipeline_barrier(img,
+                                 LAYOUT_UNDEFINED,
+                                 LAYOUT_GENERAL,
+                                 ACCESS_NONE,
+                                 ACCESS_SHADER_READ,
+                                 STAGE_TOP_OF_PIPE,
+                                 STAGE_FRAGMENT_SHADER);
 
-    cmd.clear_image(m_resourceImages[0], LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
+    /*
+    CLEAR IMAGES
+    */
+    for (Graphics::Image& img : m_resourceImages)
+        cmd.clear_image(img, LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
 
+    /*
+    POPULATE AUXILIAR IMAGES WITH DIRECT IRRADIANCE
+    */
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
 
     cmd.set_viewport(m_imageExtent);
@@ -228,7 +281,33 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /*
-       GENERATE MIPMAPS FOR LOD
+    DISPATCH COMPUTE FOR POPULATING FINAL IMAGE WITH CONTENT OF AUX.IMAGES
+    */
+#ifdef USE_IMG_ATOMIC_OPERATION
+
+    // cmd = currentFrame.computeCommandBuffer;
+    // cmd.begin();
+
+    // ShaderPass* mergePass = m_shaderPasses["merge"];
+    // cmd.bind_shaderpass(*mergePass);
+
+    // cmd.bind_descriptor_set(
+    //     m_descriptors[currentFrame.index].globalDescritor, 0, *mergePass, {0, 0}, BINDING_TYPE_COMPUTE);
+
+    // // Dispatch the compute shader
+    // const uint32_t WORK_GROUP_SIZE = 4;
+    // uint32_t       gridSize        = std::max(1u, m_imageExtent.width);
+    // gridSize                       = (gridSize + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE;
+    // cmd.dispatch_compute({gridSize, gridSize, gridSize});
+
+    // cmd.end();
+    // cmd.submit();
+
+    // cmd = currentFrame.commandBuffer;
+#endif
+
+    /*
+       GENERATE MIPMAPS FOR UPPER IRRADIANCE LEVELS
        */
     cmd.pipeline_barrier(m_resourceImages[0],
                          LAYOUT_GENERAL,
@@ -239,6 +318,7 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
                          STAGE_TRANSFER);
 
     cmd.generate_mipmaps(m_resourceImages[0], LAYOUT_TRANSFER_DST_OPTIMAL, LAYOUT_GENERAL);
+
 }
 
 void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
@@ -295,7 +375,8 @@ void VoxelizationPass::setup_material_descriptor(IMaterial* mat) {
     }
 }
 void VoxelizationPass::cleanup() {
-    m_resourceImages[0].cleanup();
+    for (Graphics::Image& img : m_resourceImages)
+        img.cleanup();
     GraphicPass::cleanup();
 }
 } // namespace Core

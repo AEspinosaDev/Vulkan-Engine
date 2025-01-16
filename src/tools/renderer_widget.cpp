@@ -160,6 +160,15 @@ void Tools::DeferredRendererWidget::render() {
     }
     if (settings_VXGI.enabled)
     {
+        const char* updatMode[] = {"PER FRAME", "ON DEMAND", "ON INIT"};
+
+        int updateMode_current = settings_VXGI.updateMode;
+
+        if (ImGui::Combo("Update Mode", &updateMode_current, updatMode, IM_ARRAYSIZE(updatMode)))
+        {
+            settings_VXGI.updateMode = updateMode_current;
+            m_renderer->set_VXGI_settings(settings_VXGI);
+        }
 
         if (ImGui::DragFloat("GI Intensity", &settings_VXGI.strength, 0.1f, 0.0f, 5.0f))
         {

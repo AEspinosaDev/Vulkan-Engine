@@ -18,6 +18,7 @@ struct VXGI {
 	uint 	resolution;
 	uint 	samples;
 	uint 	enabled;
+	uint 	updateMode;
 };
 
 vec4 traceCone(sampler3D voxelization, vec3 origin, vec3 direction, const float MAX_DISTANCE ,const float CONE_SPREAD, const float VOXEL_WORLD_SIZE)

@@ -206,6 +206,9 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
     enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
+    if (Utils::is_device_extension_supported(gpu, "VK_NV_geometry_shader_passthrough"))
+        enabledExtensions.push_back("VK_NV_geometry_shader_passthrough");
+
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
 
     if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
