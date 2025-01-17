@@ -88,10 +88,6 @@ void main(){
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
 
-
-#extension GL_EXT_shader_atomic_float2 : require
-// #extension GL_EXT_gpu_shader5 : require
-// #extension GL_EXT_shader_atomic_fp16_vector : require
 #include light.glsl
 #include scene.glsl
 #include utils.glsl
@@ -234,9 +230,7 @@ void main() {
     imageAtomicMax(auxVoxelImages[0], voxelPos, floatBitsToUint(result.r));
     imageAtomicMax(auxVoxelImages[1], voxelPos, floatBitsToUint(result.g));
     imageAtomicMax(auxVoxelImages[2], voxelPos, floatBitsToUint(result.b));
-    // imageAtomicMax(voxelImage, voxelPos, f16vec4(vec4(result, 1.0)));
-    // imageStore(voxelImage, voxelPos, vec4(0.0, 0.0, 0.0, 1.0));
-    imageStore(voxelImage, voxelPos, result);
+    imageStore(voxelImage, voxelPos, vec4(0.0, 0.0, 0.0, 1.0));
 #else
     imageStore(voxelImage, voxelPos, result);
 #endif

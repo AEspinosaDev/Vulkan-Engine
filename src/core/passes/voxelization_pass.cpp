@@ -25,15 +25,18 @@ void VoxelizationPass::create_voxelization_image() {
 
 #ifdef USE_IMG_ATOMIC_OPERATION
     // Auxiliar One Channel Images
-    config.format     = R_32_UINT;
-    config.usageFlags = IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_STORAGE;
-    config.mipLevels  = 1;
+    config.format            = R_32_UINT;
+    config.mipLevels         = 1;
+    samplerConfig.filters    = FilterType::FILTER_NEAREST;
+    samplerConfig.mipmapMode = MipmapMode::MIPMAP_NEAREST;
     for (size_t i = 1; i < 4; i++)
     {
+
         m_resourceImages[i].cleanup();
         m_resourceImages[i] =
             m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, false);
         m_resourceImages[i].create_view(config);
+        m_resourceImages[i].create_sampler(samplerConfig);
     }
 #endif
 }
@@ -63,6 +66,8 @@ void VoxelizationPass::setup_attachments(std::vector<Graphics::AttachmentInfo>& 
     dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
     dependencies[1].srcSubpass    = 0;
     dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
+
+    m_isResizeable = false;
 }
 void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
@@ -82,6 +87,7 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding  voxelBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_FRAGMENT, 6);
     const uint32_t RGB_CHANNELS = 3;
     LayoutBinding  auxVoxelBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_FRAGMENT, 7, RGB_CHANNELS);
+    LayoutBinding  auxVoxelBindingSampler(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 8, RGB_CHANNELS);
     m_descriptorPool.set_layout(GLOBAL_LAYOUT,
                                 {camBufferBinding,
                                  sceneBufferBinding,
@@ -90,7 +96,8 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                  accelBinding,
                                  noiseBinding,
                                  voxelBinding,
-                                 auxVoxelBinding});
+                                 auxVoxelBinding,
+                                 auxVoxelBindingSampler});
 
     // PER-OBJECT SET
     LayoutBinding objectBufferBinding(
@@ -164,6 +171,7 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         std::vector<Graphics::Image> auxImages = {m_resourceImages[1], m_resourceImages[2], m_resourceImages[3]};
         m_descriptorPool.set_descriptor_write(
             auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
+        m_descriptorPool.set_descriptor_write(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
 #endif
     }
 }
@@ -204,7 +212,6 @@ void VoxelizationPass::setup_shader_passes() {
 }
 void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
-    m_enabled = false;
 
     CommandBuffer cmd = currentFrame.commandBuffer;
 
@@ -285,25 +292,18 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
     */
 #ifdef USE_IMG_ATOMIC_OPERATION
 
-    // cmd = currentFrame.computeCommandBuffer;
-    // cmd.begin();
+    ShaderPass* mergePass = m_shaderPasses["merge"];
+    cmd.bind_shaderpass(*mergePass);
 
-    // ShaderPass* mergePass = m_shaderPasses["merge"];
-    // cmd.bind_shaderpass(*mergePass);
+    cmd.bind_descriptor_set(
+        m_descriptors[currentFrame.index].globalDescritor, 0, *mergePass, {0, 0}, BINDING_TYPE_COMPUTE);
 
-    // cmd.bind_descriptor_set(
-    //     m_descriptors[currentFrame.index].globalDescritor, 0, *mergePass, {0, 0}, BINDING_TYPE_COMPUTE);
+    // Dispatch the compute shader
+    const uint32_t WORK_GROUP_SIZE = 4;
+    uint32_t       gridSize        = std::max(1u, m_imageExtent.width);
+    gridSize                       = (gridSize + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE;
+    cmd.dispatch_compute({gridSize, gridSize, gridSize});
 
-    // // Dispatch the compute shader
-    // const uint32_t WORK_GROUP_SIZE = 4;
-    // uint32_t       gridSize        = std::max(1u, m_imageExtent.width);
-    // gridSize                       = (gridSize + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE;
-    // cmd.dispatch_compute({gridSize, gridSize, gridSize});
-
-    // cmd.end();
-    // cmd.submit();
-
-    // cmd = currentFrame.commandBuffer;
 #endif
 
     /*
@@ -314,11 +314,10 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
                          LAYOUT_TRANSFER_DST_OPTIMAL,
                          ACCESS_SHADER_WRITE,
                          ACCESS_TRANSFER_READ,
-                         STAGE_FRAGMENT_SHADER,
+                         STAGE_COMPUTE_SHADER,
                          STAGE_TRANSFER);
 
     cmd.generate_mipmaps(m_resourceImages[0], LAYOUT_TRANSFER_DST_OPTIMAL, LAYOUT_GENERAL);
-
 }
 
 void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

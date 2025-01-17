@@ -17,7 +17,7 @@ void Image::create_view(ImageConfig config) {
 void Image::create_sampler(SamplerConfig config) {
     VkSamplerCreateInfo samplerInfo =
         Init::sampler_create_info(Translator::get(config.filters),
-                                  VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                                  Translator::get(config.mipmapMode),
                                   config.minLod,
                                   config.maxLod <= mipLevels ? config.maxLod : mipLevels + baseMipLevel,
                                   config.anysotropicFilter,

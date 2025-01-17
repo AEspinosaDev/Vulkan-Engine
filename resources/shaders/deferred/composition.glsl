@@ -265,7 +265,7 @@ void main()
 
                
                     
-
+   
     color = direct  + indirect.rgb + ambient + reflectedColor;
     // color = direct + indirect.rgb + ambient + reflectedColor;
       
