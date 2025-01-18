@@ -33,14 +33,15 @@ class DeferredRenderer : public BaseRenderer
     };
 
     // Graphic Settings
-    ShadowResolution   m_shadowQuality = ShadowResolution::MEDIUM;
-    Core::SSR          m_SSR           = {};
-    Core::VXGI         m_VXGI          = {};
-    Core::SSAOSettings m_SSAO          = {};
-    float              m_bloomStrength = 0.05f;
+    ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
+    Core::SSR        m_SSR           = {};
+    Core::VXGI       m_VXGI          = {};
+    Core::AO         m_AO            = {};
+    float            m_bloomStrength = 0.05f;
 
     // Query
     bool m_updateShadows = false;
+    bool m_updateGI      = false;
 
   public:
     DeferredRenderer(Core::IWindow* window)
@@ -74,16 +75,18 @@ class DeferredRenderer : public BaseRenderer
         return m_SSR;
     };
     inline void set_VXGI_settings(Core::VXGI settings) {
+        if (m_VXGI.resolution != settings.resolution)
+            m_updateGI = true;
         m_VXGI = settings;
     };
     inline Core::VXGI get_VXGI_settings() const {
         return m_VXGI;
     };
-    inline void set_SSAO_settings(Core::SSAOSettings settings) {
-        m_SSAO = settings;
+    inline void set_SSAO_settings(Core::AO settings) {
+        m_AO = settings;
     };
-    inline Core::SSAOSettings get_SSAO_settings() const {
-        return m_SSAO;
+    inline Core::AO get_SSAO_settings() const {
+        return m_AO;
     };
     inline void set_shading_output(Core::OutputBuffer output) {
         static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_output_buffer(output);
@@ -93,7 +96,6 @@ class DeferredRenderer : public BaseRenderer
     }
     inline void set_clearcolor(Vec4 c) {
         BaseRenderer::set_clearcolor(c);
-       
     }
 
   protected:

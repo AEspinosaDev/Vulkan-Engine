@@ -1,3 +1,8 @@
+//////////////////////////////////////////////
+// ATTENTTION
+// This script needs: fresnel.glsl
+//////////////////////////////////////////////
+
 #ifndef PI 
 #define PI              3.1415926535897932384626433832795
 #endif
@@ -5,7 +10,7 @@
 #define EPSILON         0.001
 #endif  
 
-struct                  SchlickSmithBRDF{
+struct                  CookTorranceBRDF{
     vec3                albedo;
     float               opacity;
     vec3                normal;
@@ -52,11 +57,11 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-vec3 evalSchlickSmithBRDF(
+vec3 evalCookTorranceBRDF(
     vec3 wi,
     vec3 wo, 
     vec3 radiance, 
-    SchlickSmithBRDF brdf) 
+    CookTorranceBRDF brdf) 
     {
 
     //Vector setup
@@ -88,3 +93,17 @@ vec3 evalSchlickSmithBRDF(
     return (kD * brdf.albedo / PI + specular) * radiance * lambertian;
 
 }
+// For IBL
+vec3 evalDiffuseCookTorranceBRDF(
+    vec3 wi, 
+    vec3 wo, 
+    vec3 irradiance, 
+    CookTorranceBRDF brdf){
+
+    vec3 specularity = fresnelSchlickRoughness(max(dot(wi, wo), 0.0), brdf.F0, brdf.roughness);
+    vec3 aDiffuse = vec3(1.0)  - specularity;
+    aDiffuse *= 1.0 - brdf.metalness;	
+
+    vec3 diffuse = irradiance * brdf.albedo;
+    return aDiffuse * diffuse;
+} 

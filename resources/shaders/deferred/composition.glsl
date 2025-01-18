@@ -26,8 +26,7 @@ void main() {
 #include utils.glsl
 #include shadow_mapping.glsl
 #include fresnel.glsl
-#include IBL.glsl
-#include BRDFs/schlick_smith_BRDF.glsl
+#include BRDFs/cook_torrance_BRDF.glsl
 #include BRDFs/marschner_BSDF.glsl
 #include warp.glsl
 #include raytracing.glsl
@@ -63,6 +62,7 @@ layout(set = 1, binding = 6) uniform sampler2D prevBuffer;
 layout(push_constant) uniform Settings {
     uint    bufferOutput;
     uint    enableAO;
+    uint    AOtype;
     VXGI    vxgi;   //Voxel Based GI
     SSR     ssr;    //Screen Space Reflections
 } settings;
@@ -134,7 +134,7 @@ void main()
         //////////////////////////////////////
         if(g_material.w == PHYSICAL_MATERIAL){
             //Populate BRDF ________________________
-            SchlickSmithBRDF brdf;
+            CookTorranceBRDF brdf;
             brdf.albedo = g_albedo;
             brdf.opacity = g_opacity;
             brdf.normal = g_normal;
@@ -151,17 +151,23 @@ void main()
             if(settings.vxgi.enabled == 1){
 
                 // Diffuse
-                indirect = diffuseVoxelGI2(voxelMap, modelPos, modelNormal, settings.vxgi, scene.maxCoord.x-scene.minCoord.x);
+                indirect = diffuseVoxelGI2(voxelMap , modelPos, modelNormal, settings.vxgi, scene.maxCoord.x-scene.minCoord.x);
                 indirect.rgb *= g_albedo;
-                indirect.rgb *= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao; //Add ambient occlusion
+                indirect.rgb *= (1.0 - indirect.a);
+                // indirect.rgb = evalDiffuseCookTorranceBRDF(
+                //     modelNormal,
+                //     normalize(camera.position.xyz-modelPos), 
+                //     indirect.rgb, 
+                //     brdf);
+                //indirect = diffuseVoxelGI_CookTorrance(voxelMap, irradianceMap, modelPos, modelNormal,normalize(camera.position.xyz-modelPos), settings.vxgi, brdf, scene.maxCoord.x-scene.minCoord.x);
 
                 // Specular
-                vec3 specularConeDirection = reflect(-normalize(camera.position.xyz-modelPos), modelNormal);
-                float voxelWorldSize =  (scene.maxCoord.x-scene.minCoord.x) / float(settings.vxgi.resolution);
-	            vec3 startPos = modelPos + modelNormal * voxelWorldSize * settings.vxgi.offset;
+                // vec3 specularConeDirection = reflect(-normalize(camera.position.xyz-modelPos), modelNormal);
+                // float voxelWorldSize =  (scene.maxCoord.x-scene.minCoord.x) / float(settings.vxgi.resolution);
+	            // vec3 startPos = modelPos + modelNormal * voxelWorldSize * settings.vxgi.offset;
 
-                const float CONE_SPREAD = mix(0.005, settings.vxgi.diffuseConeSpread, brdf.roughness);
-                indirectSpecular = traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize ).rgb;
+                // const float CONE_SPREAD = mix(0.005, settings.vxgi.diffuseConeSpread, brdf.roughness);
+                // indirectSpecular = traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize ).rgb;
                 
                 // indirect+=specularIndirect.rgb;
             }
@@ -172,7 +178,7 @@ void main()
 
                         //Direct Component ________________________
                         vec3 lighting = vec3(0.0);
-                        lighting = evalSchlickSmithBRDF( 
+                        lighting = evalCookTorranceBRDF( 
                             scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(scene.lights[i].position.xyz), //wi
                             normalize(-g_pos),                                                                                           //wo
                             scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
@@ -202,20 +208,18 @@ void main()
             direct += brdf.emission;
             //Ambient Component ________________________
             if(scene.useIBL){
-                ambient = computeAmbient(
-                    irradianceMap,
-                    scene.envRotation,
-                    modelNormal,
-                    normalize(camera.position.xyz-modelPos),
-                    brdf.albedo,
-                    brdf.F0,
-                    brdf.metalness,
-                    brdf.roughness,
-                    scene.ambientIntensity);
+                mat3 rotY           = rotationY(radians(scene.envRotation));
+                vec3 rotatedNormal  = normalize(rotY * modelNormal);
+                vec3 irradiance     = texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity;
+                ambient = evalDiffuseCookTorranceBRDF(
+                    rotatedNormal,
+                    normalize(camera.position.xyz-modelPos), 
+                    irradiance, 
+                    brdf);
             }else{
                 ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
             }
-            ambient *= settings.enableAO == 1 ? (brdf.ao * SSAO) : brdf.ao;
+            ambient *= settings.enableAO == 1 ? settings.AOtype != 2 ? (brdf.ao * SSAO) : 1.0 - indirect.a : brdf.ao;
           
             //SSR ________________________________
             vec3 fresnel = fresnelSchlick(max(dot(g_normal, normalize(g_pos)), 0.0), brdf.F0);

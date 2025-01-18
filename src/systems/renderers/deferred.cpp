@@ -10,11 +10,14 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
     Core::CompositionPass* compPass = static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS]);
     compPass->set_SSR_settings(m_SSR);
     compPass->set_VXGI_settings(m_VXGI);
-    if (m_VXGI.updateMode == 0)
-        m_passes[VOXELIZATION_PASS]->set_active(m_VXGI.enabled);
-   
-    compPass->enable_AO(m_SSAO.enabled);
-    static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->set_SSAO_settings(m_SSAO);
+    compPass->enable_AO(m_AO.enabled);
+    compPass->set_AO_type(static_cast<int>(m_AO.type));
+
+    m_passes[VOXELIZATION_PASS]->set_active(m_VXGI.enabled);
+
+    m_passes[PRECOMPOSITION_PASS]->set_active(m_AO.enabled && m_AO.type != Core::AOType::VXAO);
+    static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->set_SSAO_settings(m_AO);
+
     static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(m_bloomStrength);
 
     if (scene->get_skybox())
@@ -39,9 +42,6 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
     BaseRenderer::on_after_render(renderResult, scene);
 
-     if (m_VXGI.updateMode == 1)
-        m_passes[VOXELIZATION_PASS]->set_active(false);
-
     if (m_updateShadows)
     {
         m_device->wait();
@@ -52,6 +52,17 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
         m_passes[SHADOW_PASS]->update();
 
         m_updateShadows = false;
+
+        connect_pass(m_passes[COMPOSITION_PASS]);
+    }
+    if (m_updateGI)
+    {
+        m_device->wait();
+
+        m_passes[VOXELIZATION_PASS]->set_extent({m_VXGI.resolution, m_VXGI.resolution});
+        m_passes[VOXELIZATION_PASS]->update();
+
+        m_updateGI = false;
 
         connect_pass(m_passes[COMPOSITION_PASS]);
     }

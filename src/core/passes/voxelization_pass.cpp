@@ -341,6 +341,26 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
         }
     }
 }
+void VoxelizationPass::update() {
+    BasePass::update();
+    for (Graphics::Image& img : m_resourceImages)
+        img.cleanup();
+    create_voxelization_image();
+
+    for (size_t i = 0; i < m_descriptors.size(); i++)
+    {
+        // Voxelization Image
+        m_descriptorPool.set_descriptor_write(
+            &m_resourceImages[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+#ifdef USE_IMG_ATOMIC_OPERATION
+        // Voxelization Aux.Images
+        std::vector<Graphics::Image> auxImages = {m_resourceImages[1], m_resourceImages[2], m_resourceImages[3]};
+        m_descriptorPool.set_descriptor_write(
+            auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
+        m_descriptorPool.set_descriptor_write(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
+#endif
+    }
+}
 void VoxelizationPass::setup_material_descriptor(IMaterial* mat) {
 
     if (!mat->get_texture_descriptor().allocated)

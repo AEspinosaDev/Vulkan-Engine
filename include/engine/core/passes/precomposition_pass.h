@@ -19,8 +19,9 @@ typedef enum class AmbientOcclusionType
 {
     SSAO = 0,
     RTAO = 1, // Raytraced AO
+    VXAO = 2, // Voxel Cone Traced
 } AOType;
-struct SSAOSettings {
+struct AO {
     float    radius     = 0.2;
     float    bias       = 0.0;
     uint32_t samples    = 4;
@@ -49,7 +50,7 @@ class PreCompositionPass : public GraphicPass
     Graphics::Buffer m_kernelBuffer;
     bool             m_updateSamplesKernel = true;
     /*Settings*/
-    SSAOSettings m_AO = {};
+    AO m_AO = {};
 
     void create_samples_kernel();
 
@@ -59,12 +60,12 @@ class PreCompositionPass : public GraphicPass
         , m_vignette(vignette) {
     }
 
-    inline void set_SSAO_settings(SSAOSettings settings) {
+    inline void set_SSAO_settings(AO settings) {
         if (settings.samples != m_AO.samples)
             m_updateSamplesKernel = true;
         m_AO = settings;
     };
-    inline SSAOSettings get_SSAO_settings() const {
+    inline AO get_SSAO_settings() const {
         return m_AO;
     };
 

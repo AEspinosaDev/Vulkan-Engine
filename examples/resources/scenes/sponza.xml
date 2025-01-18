@@ -176,7 +176,7 @@
                     <albedo r="0.5" g="0.5" b="0.5" />
                 </Material>
             </Mesh>
-            <!-- <Mesh type="file" name="Leaves" alphaTest="true">
+            <Mesh type="file" name="Leaves" alphaTest="true">
                 <Filename value="meshes/leaves.obj" />
                 <Material type="physical">
                     <Textures>
@@ -185,7 +185,7 @@
                     </Textures>
                     <albedo r="0.5" g="0.5" b="0.5" />
                 </Material>
-            </Mesh> -->
+            </Mesh>
             <Mesh type="file" name="Vase Leaves" alphaTest="true">
                 <Filename value="meshes/leaves2.obj" />
                 <Material type="physical">

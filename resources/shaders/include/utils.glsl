@@ -4,6 +4,14 @@ float linearizeDepth(float depth, float near, float far) {
     return (linearZ - near) / (far - near);
 }
 
+mat3 rotationY(float angle) {
+    float c = cos(angle);
+    float s = sin(angle);
+    return mat3(c, 0.0, -s,
+                0.0, 1.0, 0.0,
+                s, 0.0, c);
+}
+
 vec3 shiftTangent(vec3 T, vec3 N, float shift) {
     vec3 shiftedT = T + shift * N;
     return normalize(shiftedT);

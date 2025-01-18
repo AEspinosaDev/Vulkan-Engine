@@ -1,5 +1,8 @@
+//////////////////////////////////////////////
 // ATTENTTION
-// This script needs: scene.glsl, utils.glsl
+// This script needs: scene.glsl, utils.glsl, 
+//	cook_torrance_BRDF.glsl, fresnel.glsl
+//////////////////////////////////////////////
 
 #ifndef MIPMAP_HARDCAP
 #define MIPMAP_HARDCAP 9.0
@@ -20,6 +23,26 @@ struct VXGI {
 	uint 	enabled;
 	uint 	updateMode;
 };
+// Randomly Uniformly Dist. generated cone directions
+const int DIFFUSE_CONE_COUNT 			= 16;
+const vec3 DIFFUSE_CONE_DIRECTIONS[16] 	= {
+    	vec3(0.57735, 0.57735, 0.57735),
+    	vec3(0.57735, -0.57735, -0.57735),
+    	vec3(-0.57735, 0.57735, -0.57735),
+    	vec3(-0.57735, -0.57735, 0.57735),
+    	vec3(-0.903007, -0.182696, -0.388844),
+    	vec3(-0.903007, 0.182696, 0.388844),
+    	vec3(0.903007, -0.182696, 0.388844),
+    	vec3(0.903007, 0.182696, -0.388844),
+    	vec3(-0.388844, -0.903007, -0.182696),
+    	vec3(0.388844, -0.903007, 0.182696),
+    	vec3(0.388844, 0.903007, -0.182696),
+    	vec3(-0.388844, 0.903007, 0.182696),
+    	vec3(-0.182696, -0.388844, -0.903007),
+    	vec3(0.182696, 0.388844, -0.903007),
+    	vec3(-0.182696, 0.388844, 0.903007),
+    	vec3(0.182696, -0.388844, 0.903007)
+	};
 
 vec4 traceCone(sampler3D voxelization, vec3 origin, vec3 direction, const float MAX_DISTANCE ,const float CONE_SPREAD, const float VOXEL_WORLD_SIZE)
 {
@@ -94,45 +117,24 @@ vec4 diffuseVoxelGI(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI vx
 		indirectDiffuse += w[i+1] * traceCone(voxelMap, startPos, sDirs[i], vxgi.maxDistance, CONE_SPREAD, voxelWorldSize );
 	}
 
-	return indirectDiffuse*vxgi.strength;
-
+	indirectDiffuse.rgb*=vxgi.strength; 
+	return indirectDiffuse; 
 }
 
 vec4 diffuseVoxelGI2(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI vxgi, float worldVolumeSize){
-	const int DIFFUSE_CONE_COUNT = 16;
-	const float DIFFUSE_CONE_APERTURE = vxgi.diffuseConeSpread;
-	const vec3 DIFFUSE_CONE_DIRECTIONS[16] = {
-    	vec3(0.57735, 0.57735, 0.57735),
-    	vec3(0.57735, -0.57735, -0.57735),
-    	vec3(-0.57735, 0.57735, -0.57735),
-    	vec3(-0.57735, -0.57735, 0.57735),
-    	vec3(-0.903007, -0.182696, -0.388844),
-    	vec3(-0.903007, 0.182696, 0.388844),
-    	vec3(0.903007, -0.182696, 0.388844),
-    	vec3(0.903007, 0.182696, -0.388844),
-    	vec3(-0.388844, -0.903007, -0.182696),
-    	vec3(0.388844, -0.903007, 0.182696),
-    	vec3(0.388844, 0.903007, -0.182696),
-    	vec3(-0.388844, 0.903007, 0.182696),
-    	vec3(-0.182696, -0.388844, -0.903007),
-    	vec3(0.182696, 0.388844, -0.903007),
-    	vec3(-0.182696, 0.388844, 0.903007),
-    	vec3(0.182696, -0.388844, 0.903007)
-	};
-    const float VOXEL_SIZE  = 1.0/float(vxgi.resolution);
 	
+	const float DIFFUSE_CONE_APERTURE 	= vxgi.diffuseConeSpread;
+    const float VOXEL_SIZE  			= 1.0/float(vxgi.resolution);
+
 	vec4 diffuseIndirect = vec4(0.0);
 
-    //Offset start position
-	float voxelWorldSize = worldVolumeSize / float(vxgi.resolution);
-	// float dist = voxelWorldSize;
-	vec3 startPos = worldPos + worldNormal * voxelWorldSize * vxgi.offset;
+	float voxelWorldSize 	= worldVolumeSize / float(vxgi.resolution);
+	vec3 startPos 			= worldPos + worldNormal * voxelWorldSize * vxgi.offset;
     
     float coneTraceCount = 0.0;
 	for (int i = 0; i < DIFFUSE_CONE_COUNT; ++i)
     {
 		float cosTheta = dot(worldNormal, DIFFUSE_CONE_DIRECTIONS[i]);
-
         if (cosTheta < 0.0)
             continue;
         coneTraceCount += 1.0;
@@ -140,9 +142,46 @@ vec4 diffuseVoxelGI2(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI v
 		diffuseIndirect += traceCone(voxelMap, startPos,  DIFFUSE_CONE_DIRECTIONS[i], vxgi.maxDistance, DIFFUSE_CONE_APERTURE, voxelWorldSize ) * cosTheta;
     }
 
+	//Avrg
 	diffuseIndirect /= coneTraceCount;
+
+
      
-	return diffuseIndirect*vxgi.strength; 
+	diffuseIndirect.rgb*=vxgi.strength; 
+	return diffuseIndirect; 
+
+}
+vec4 diffuseVoxelGI_CookTorrance(sampler3D voxelMap, samplerCube envMap, vec3 worldPos, vec3 worldNormal, vec3 worldView, VXGI vxgi, CookTorranceBRDF brdf, float worldVolumeSize){
+	
+	const float DIFFUSE_CONE_APERTURE 	= vxgi.diffuseConeSpread;
+    const float VOXEL_SIZE  			= 1.0/float(vxgi.resolution);
+
+
+	float voxelWorldSize 	= worldVolumeSize / float(vxgi.resolution);
+	vec3 startPos 			= worldPos + worldNormal * voxelWorldSize * vxgi.offset;
+    
+    float coneTraceCount 	= 0.0;
+	vec3 diffuseIndirect 	= vec3(0.0);
+	float occlusion 		= 0.0;
+	for (int i = 0; i < DIFFUSE_CONE_COUNT; ++i)
+    {
+		float cosTheta = dot(worldNormal, DIFFUSE_CONE_DIRECTIONS[i]);
+        if (cosTheta < 0.0)
+            continue;
+        coneTraceCount += 1.0;
+
+		vec4 irradiance  = traceCone(voxelMap, startPos,  DIFFUSE_CONE_DIRECTIONS[i], vxgi.maxDistance, DIFFUSE_CONE_APERTURE, voxelWorldSize);
+		diffuseIndirect += evalDiffuseCookTorranceBRDF(DIFFUSE_CONE_DIRECTIONS[i], worldView ,irradiance.rgb, brdf) * cosTheta;
+		occlusion 		+= irradiance.a;
+
+		// diffuseIndirect += (1.0 - irradiance.a) *vec3(1.0,0.0,0.0) * scene.ambientIntensity; 
+    }
+
+	//Avrg
+	diffuseIndirect /= coneTraceCount;
+	occlusion  		/= coneTraceCount;
+     
+	return vec4(diffuseIndirect*vxgi.strength, occlusion); 
 
 }
 

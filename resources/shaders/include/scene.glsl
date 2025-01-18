@@ -1,3 +1,8 @@
+//////////////////////////////////////////////
+// ATTENTTION
+// This script needs: light.glsl
+//////////////////////////////////////////////
+
 #define MAX_LIGHTS 50
 
 layout(set = 0, binding = 1) uniform SceneUniforms {

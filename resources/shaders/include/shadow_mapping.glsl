@@ -1,3 +1,8 @@
+//////////////////////////////////////////////
+// ATTENTTION
+// This script needs: light.glsl
+//////////////////////////////////////////////
+
 float filterPCF(sampler2DArray shadowMap ,int lightId ,int kernelSize, float extentMultiplier, vec3 coords, float bias) {
 
     int edge = kernelSize / 2;

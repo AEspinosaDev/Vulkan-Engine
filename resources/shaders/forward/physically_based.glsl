@@ -84,10 +84,8 @@ void main() {
 #include utils.glsl
 #include shadow_mapping.glsl
 #include fresnel.glsl
-#include ssao.glsl
-#include IBL.glsl
 #include reindhart.glsl
-#include BRDFs/schlick_smith_BRDF.glsl
+#include BRDFs/cook_torrance_BRDF.glsl
 #include warp.glsl
 #include raytracing.glsl
 
@@ -145,7 +143,7 @@ layout(set = 2, binding = 5) uniform sampler2D emissiveTex;
 
 
 //BRDF Definiiton
-SchlickSmithBRDF brdf;
+CookTorranceBRDF brdf;
 
 
 void setupBRDFProperties(){
@@ -197,7 +195,7 @@ void main() {
         //If inside liught area influence
         if(isInAreaOfInfluence(scene.lights[i].position, v_pos,scene.lights[i].areaEffect,int(scene.lights[i].type))){
 
-            vec3 lighting =evalSchlickSmithBRDF( 
+            vec3 lighting =evalCookTorranceBRDF( 
                 scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].position.xyz), //wi
                 normalize(-v_pos),                                                                                           //wo
                 scene.lights[i].color * computeAttenuation(scene.lights[i].position, v_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
@@ -228,16 +226,14 @@ void main() {
     //Ambient component ___________________________________________________________________
     vec3 ambient;
     if(scene.useIBL){
-        ambient = computeAmbient(
-            irradianceMap,
-            scene.envRotation,
-            v_modelNormal,
-            normalize(camera.position.xyz-v_modelPos),
-            brdf.albedo,
-            brdf.F0,
-            brdf.metalness,
-            brdf.roughness,
-            scene.ambientIntensity);
+        mat3 rotY           = rotationY(radians(scene.envRotation));
+        vec3 rotatedNormal  = normalize(rotY * v_modelNormal);
+        vec3 irradiance     = texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity;
+        ambient = evalDiffuseCookTorranceBRDF(
+            rotatedNormal,
+            normalize(camera.position.xyz-modelPos), 
+            irradiance, 
+            brdf);
     }else{
         ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
     }

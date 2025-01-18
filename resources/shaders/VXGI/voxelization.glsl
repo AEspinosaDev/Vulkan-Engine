@@ -97,8 +97,6 @@ void main(){
 #include material_defines.glsl
 
 
-
-
 layout(location = 0) in vec3 _pos;
 layout(location = 1) in vec3 _normal;
 layout(location = 2) in vec2 _uv;

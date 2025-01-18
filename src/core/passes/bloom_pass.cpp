@@ -112,7 +112,7 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
     if (m_bloomStrength == 0.0f)
         goto paintBloom;
 
-    cmd = currentFrame.computeCommandBuffer;
+    cmd = currentFrame.commandBuffer;
 
     struct Mipmap {
         uint32_t srcLevel;
@@ -120,8 +120,6 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
     };
 
     const uint32_t WORK_GROUP_SIZE = 16;
-
-    cmd.begin();
 
     cmd.pipeline_barrier(m_brightImage,
                          LAYOUT_UNDEFINED,
@@ -218,13 +216,6 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
                          ACCESS_SHADER_READ,
                          STAGE_COMPUTE_SHADER);
 
-    cmd.end();
-
-    cmd.submit();
-
-    m_device->wait_queue(QueueType::COMPUTE_QUEUE);
-
-    m_descriptorPool.set_descriptor_write(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
 
 ////////////////////////////////////////////////////////////
 // ADD BLOOM
@@ -282,6 +273,8 @@ void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
     m_descriptorPool.set_descriptor_write(
         m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
     m_descriptorPool.set_descriptor_write(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
+    m_descriptorPool.set_descriptor_write(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
+
 }
 
 void BloomPass::update() {

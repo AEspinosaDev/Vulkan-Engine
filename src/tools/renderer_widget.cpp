@@ -160,13 +160,41 @@ void Tools::DeferredRendererWidget::render() {
     }
     if (settings_VXGI.enabled)
     {
-        const char* updatMode[] = {"PER FRAME", "ON DEMAND", "ON INIT"};
-
-        int updateMode_current = settings_VXGI.updateMode;
-
-        if (ImGui::Combo("Update Mode", &updateMode_current, updatMode, IM_ARRAYSIZE(updatMode)))
+        const char* updatMode[] = {"64", "128", "256", "512"};
+        int         updateMode_current;
+        switch (settings_VXGI.resolution)
         {
-            settings_VXGI.updateMode = updateMode_current;
+        case 64:
+            updateMode_current = 0;
+            break;
+        case 128:
+            updateMode_current = 1;
+            break;
+        case 256:
+            updateMode_current = 2;
+            break;
+        case 512:
+            updateMode_current = 3;
+            break;
+        }
+
+        if (ImGui::Combo("Voxel Resolution", &updateMode_current, updatMode, IM_ARRAYSIZE(updatMode)))
+        {
+            switch (updateMode_current)
+            {
+            case 0:
+                settings_VXGI.resolution = 64;
+                break;
+            case 1:
+                settings_VXGI.resolution = 128;
+                break;
+            case 2:
+                settings_VXGI.resolution = 256;
+                break;
+            case 3:
+                settings_VXGI.resolution = 512;
+                break;
+            }
             m_renderer->set_VXGI_settings(settings_VXGI);
         }
 
@@ -222,11 +250,11 @@ void Tools::DeferredRendererWidget::render() {
     {
         m_renderer->set_bloom_strength(bloomIntensity);
     }
-#pragma region SSAO
+#pragma region AO
     ImGui::Separator();
-    Core::SSAOSettings settings_SSAO = m_renderer->get_SSAO_settings();
-    bool               SSAOEnabled   = (bool)settings_SSAO.enabled;
-    if (ImGui::Checkbox("Enable SSAO", &SSAOEnabled))
+    Core::AO settings_SSAO = m_renderer->get_SSAO_settings();
+    bool     SSAOEnabled   = (bool)settings_SSAO.enabled;
+    if (ImGui::Checkbox("Enable AO", &SSAOEnabled))
     {
         settings_SSAO.enabled = SSAOEnabled;
         m_renderer->set_SSAO_settings(settings_SSAO);
@@ -234,9 +262,9 @@ void Tools::DeferredRendererWidget::render() {
     if (SSAOEnabled)
     {
         int         SSAOsamples  = (int)settings_SSAO.samples;
-        const char* ssaoType[]   = {"SSAO", "RTAO"};
+        const char* ssaoType[]   = {"SSAO", "RTAO", "VXAO"};
         int         ssao_current = (int)settings_SSAO.type;
-        if (ImGui::Combo("SSAO Type", &ssao_current, ssaoType, IM_ARRAYSIZE(ssaoType)))
+        if (ImGui::Combo("AO Type", &ssao_current, ssaoType, IM_ARRAYSIZE(ssaoType)))
         {
 
             switch (ssao_current)
@@ -247,34 +275,40 @@ void Tools::DeferredRendererWidget::render() {
             case 1:
                 settings_SSAO.type = Core::AOType::RTAO;
                 break;
+            case 2:
+                settings_SSAO.type = Core::AOType::VXAO;
+                break;
             }
             m_renderer->set_SSAO_settings(settings_SSAO);
         }
-        if (ImGui::DragInt("SSAO Samples", &SSAOsamples, 1, 1, 64))
+        if (settings_SSAO.type != Core::AOType::VXAO)
         {
-            settings_SSAO.samples = SSAOsamples;
-            m_renderer->set_SSAO_settings(settings_SSAO);
+            if (ImGui::DragInt("SSAO Samples", &SSAOsamples, 1, 1, 64))
+            {
+                settings_SSAO.samples = SSAOsamples;
+                m_renderer->set_SSAO_settings(settings_SSAO);
+            }
+            if (ImGui::DragFloat("SSAO Radius", &settings_SSAO.radius, 0.01f, 0.0f, 10.0f))
+            {
+                m_renderer->set_SSAO_settings(settings_SSAO);
+            }
+            if (ImGui::DragFloat("SSAO Bias", &settings_SSAO.bias, 0.01f, 0.0f, 10.0f))
+            {
+                m_renderer->set_SSAO_settings(settings_SSAO);
+            }
+            if (ImGui::DragFloat("SSAO Blur Radius", &settings_SSAO.blurRadius, 0.01f, 0.0f, 10.0f))
+            {
+                m_renderer->set_SSAO_settings(settings_SSAO);
+            }
+            // if (ImGui::DragFloat("SSAO Blur Sigma", &settings_SSAO.blurSigmaA, 0.01f, 0.0f, 20.0f))
+            // {
+            //     m_renderer->set_SSAO_settings(settings_SSAO);
+            // }
+            // if (ImGui::DragFloat("SSAO Blur Sigma B", &settings_SSAO.blurSigmaB, 0.01f, 0.0f, 10.0f))
+            // {
+            //     m_renderer->set_SSAO_settings(settings_SSAO);
+            // }
         }
-        if (ImGui::DragFloat("SSAO Radius", &settings_SSAO.radius, 0.01f, 0.0f, 10.0f))
-        {
-            m_renderer->set_SSAO_settings(settings_SSAO);
-        }
-        if (ImGui::DragFloat("SSAO Bias", &settings_SSAO.bias, 0.01f, 0.0f, 10.0f))
-        {
-            m_renderer->set_SSAO_settings(settings_SSAO);
-        }
-        if (ImGui::DragFloat("SSAO Blur Radius", &settings_SSAO.blurRadius, 0.01f, 0.0f, 10.0f))
-        {
-            m_renderer->set_SSAO_settings(settings_SSAO);
-        }
-        // if (ImGui::DragFloat("SSAO Blur Sigma", &settings_SSAO.blurSigmaA, 0.01f, 0.0f, 20.0f))
-        // {
-        //     m_renderer->set_SSAO_settings(settings_SSAO);
-        // }
-        // if (ImGui::DragFloat("SSAO Blur Sigma B", &settings_SSAO.blurSigmaB, 0.01f, 0.0f, 10.0f))
-        // {
-        //     m_renderer->set_SSAO_settings(settings_SSAO);
-        // }
     }
 #pragma region SSR
     ImGui::Separator();

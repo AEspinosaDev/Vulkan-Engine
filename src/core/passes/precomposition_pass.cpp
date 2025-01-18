@@ -142,7 +142,7 @@ void PreCompositionPass::setup_shader_passes() {
                                                  {TANGENT_ATTRIBUTE, false},
                                                  {COLOR_ATTRIBUTE, false}};
 
-    compPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(SSAOSettings))};
+    compPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(AO))};
 
     compPass->build_shader_stages();
     compPass->build(m_descriptorPool);
@@ -178,7 +178,7 @@ void PreCompositionPass::render(Graphics::Frame& currentFrame, Scene* const scen
 
     cmd.bind_shaderpass(*shaderPass);
 
-    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_AO, sizeof(SSAOSettings));
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_AO, sizeof(AO));
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
     Geometry* g = m_vignette->get_geometry();

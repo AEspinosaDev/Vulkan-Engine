@@ -6,9 +6,8 @@
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(set = 0,  binding =  6, r32f)    uniform image3D     finalVoxelImage;
-// layout(set = 0,  binding =  7, r32ui)   uniform uimage3D    interVoxelImages[3];
-layout(set = 0,  binding =  8)   uniform usampler3D    interVoxelImages[3];
+layout(set = 0,  binding =  6, r32f)    uniform image3D         finalVoxelImage;
+layout(set = 0,  binding =  8)          uniform usampler3D      interVoxelImages[3];
 
 void main()
 {
@@ -20,9 +19,6 @@ void main()
         uint r = texelFetch(interVoxelImages[0], imgCoord, 0).r;
         uint g = texelFetch(interVoxelImages[1], imgCoord, 0).r;
         uint b = texelFetch(interVoxelImages[2], imgCoord, 0).r;
-        // float r = imageLoad(interVoxelImages[0], imgCoord).r;
-        // float g = imageLoad(interVoxelImages[1], imgCoord).r;
-        // float b = imageLoad(interVoxelImages[2], imgCoord).r;
         imageStore(finalVoxelImage, imgCoord, vec4(uintBitsToFloat(r), uintBitsToFloat(g), uintBitsToFloat(b), a));
     }
 }

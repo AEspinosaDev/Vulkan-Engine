@@ -40,7 +40,7 @@ struct VXGI { // Settings for Voxel Based GI
     float    strength          = 1.0f;
     float    diffuseConeSpread = 0.577f;
     float    offset            = 1.0f;
-    float    maxDistance       = 75.0f;
+    float    maxDistance       = 35.0f;
     uint32_t resolution        = 256;
     uint32_t samples           = 8;
     uint32_t enabled           = 1;
@@ -65,6 +65,7 @@ class CompositionPass : public GraphicPass
     struct Settings {
         OutputBuffer outputBuffer = OutputBuffer::LIGHTING;
         int          enableAO     = 1;
+        int          AOtype       = 0;
         VXGI         vxgi         = {};
         SSR          ssr          = {};
     };
@@ -106,6 +107,12 @@ class CompositionPass : public GraphicPass
     }
     inline void enable_AO(bool op) {
         m_settings.enableAO = op;
+    }
+    inline int get_AO_type() const {
+        return m_settings.AOtype;
+    }
+    inline void set_AO_type(int op) {
+        m_settings.AOtype = op;
     }
 
     void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
