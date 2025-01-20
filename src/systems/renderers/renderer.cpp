@@ -267,7 +267,28 @@ void BaseRenderer::init_resources() {
                                                                     (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);
     }
+
     Core::ResourceManager::init_basic_resources(m_device);
+
+    // Create basic texture resources
+    Core::ResourceManager::textureResources.resize(2, nullptr);
+
+    Core::Texture* samplerText = new Core::Texture();
+    Tools::Loaders::load_PNG(samplerText,
+                             ENGINE_RESOURCES_PATH "textures/blueNoise.png",
+                             TEXTURE_FORMAT_UNORM);
+    samplerText->set_use_mipmaps(false);
+    Core::ResourceManager::upload_texture_data(m_device, samplerText);
+    Core::ResourceManager::textureResources[0] = samplerText;
+
+     Core::TextureHDR* brdfText = new Core::TextureHDR();
+    Tools::Loaders::load_HDRi(brdfText,
+                              ENGINE_RESOURCES_PATH "textures/cookTorranceBRDF.png"
+                              );
+    brdfText->set_adress_mode(ADDRESS_MODE_CLAMP_TO_BORDER);
+    brdfText->set_use_mipmaps(false);
+    Core::ResourceManager::upload_texture_data(m_device, brdfText);
+    Core::ResourceManager::textureResources[1] = brdfText;
 }
 
 void BaseRenderer::clean_resources() {

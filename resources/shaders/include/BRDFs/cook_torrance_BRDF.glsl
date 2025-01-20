@@ -100,10 +100,25 @@ vec3 evalDiffuseCookTorranceBRDF(
     vec3 irradiance, 
     CookTorranceBRDF brdf){
 
-    vec3 specularity = fresnelSchlickRoughness(max(dot(wi, wo), 0.0), brdf.F0, brdf.roughness);
+    float WidotWo = max(dot(wi, wo), 0.0);
+    vec3 specularity = fresnelSchlickRoughness(WidotWo, brdf.F0, brdf.roughness);
     vec3 aDiffuse = vec3(1.0)  - specularity;
     aDiffuse *= 1.0 - brdf.metalness;	
 
     vec3 diffuse = irradiance * brdf.albedo;
     return aDiffuse * diffuse;
+} 
+vec3 evalSpecularCookTorranceBRDF(
+    vec3 wi, 
+    vec3 wo, 
+    vec3 irradiance, 
+    sampler2D brdfLUT,
+    CookTorranceBRDF brdf){
+
+    float WidotWo = max(dot(wi, wo), 0.0);
+    vec3 specularity = fresnelSchlickRoughness(WidotWo, brdf.F0, brdf.roughness);
+    // vec2 brdfSpec = texture(brdfLUT, vec2(WidotWo, brdf.roughness )).rg;
+    // vec3 specular = irradiance * (specularity * brdfSpec.x + brdfSpec.y);
+    vec3 specular = irradiance * specularity;
+    return  specular;
 } 

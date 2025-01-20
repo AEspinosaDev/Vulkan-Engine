@@ -47,7 +47,8 @@ layout(set = 0, binding =   2) uniform sampler2DArray              shadowMap;
 layout(set = 0, binding =   4) uniform samplerCube                 irradianceMap;
 layout(set = 0,  binding =  5) uniform accelerationStructureEXT    TLAS;
 layout(set = 0,  binding =  6) uniform sampler2D                   samplerMap;
-layout(set = 0,  binding =  7) uniform sampler3D                   voxelMap;
+layout(set = 0,  binding =  7) uniform sampler2D                   brdfMap;
+layout(set = 0,  binding =  8) uniform sampler3D                   voxelMap;
 //G-BUFFER
 layout(set = 1, binding = 0) uniform sampler2D positionBuffer;
 layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
@@ -151,25 +152,29 @@ void main()
             if(settings.vxgi.enabled == 1){
 
                 // Diffuse
-                indirect = diffuseVoxelGI2(voxelMap , modelPos, modelNormal, settings.vxgi, scene.maxCoord.x-scene.minCoord.x);
-                indirect.rgb *= g_albedo;
+                indirect        = diffuseVoxelGI2(voxelMap , modelPos, modelNormal, settings.vxgi, scene.maxCoord.x-scene.minCoord.x);
+                indirect.rgb    = evalDiffuseCookTorranceBRDF(
+                    modelNormal,
+                    normalize(camera.position.xyz-modelPos), 
+                    indirect.rgb, 
+                    brdf);
                 indirect.rgb *= (1.0 - indirect.a);
-                // indirect.rgb = evalDiffuseCookTorranceBRDF(
-                //     modelNormal,
-                //     normalize(camera.position.xyz-modelPos), 
-                //     indirect.rgb, 
-                //     brdf);
                 //indirect = diffuseVoxelGI_CookTorrance(voxelMap, irradianceMap, modelPos, modelNormal,normalize(camera.position.xyz-modelPos), settings.vxgi, brdf, scene.maxCoord.x-scene.minCoord.x);
 
                 // Specular
-                // vec3 specularConeDirection = reflect(-normalize(camera.position.xyz-modelPos), modelNormal);
-                // float voxelWorldSize =  (scene.maxCoord.x-scene.minCoord.x) / float(settings.vxgi.resolution);
-	            // vec3 startPos = modelPos + modelNormal * voxelWorldSize * settings.vxgi.offset;
+                vec3 specularConeDirection = reflect(-normalize(camera.position.xyz-modelPos), modelNormal);
+                float voxelWorldSize =  (scene.maxCoord.x-scene.minCoord.x) / float(settings.vxgi.resolution);
+	            vec3 startPos = modelPos + modelNormal * voxelWorldSize * settings.vxgi.offset;
 
-                // const float CONE_SPREAD = mix(0.005, settings.vxgi.diffuseConeSpread, brdf.roughness);
-                // indirectSpecular = traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize ).rgb;
+                const float CONE_SPREAD = mix(0.005, settings.vxgi.diffuseConeSpread, brdf.roughness);
+                indirectSpecular = evalSpecularCookTorranceBRDF(
+                    modelNormal, 
+                    normalize(camera.position.xyz-modelPos),
+                    traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize ).rgb, 
+                    brdfMap,
+                    brdf);
                 
-                // indirect+=specularIndirect.rgb;
+                indirect.rgb+=indirectSpecular.rgb;
             }
             //Direct Component ________________________
             for(int i = 0; i < scene.numLights; i++) {

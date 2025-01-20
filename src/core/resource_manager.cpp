@@ -7,10 +7,10 @@ namespace Core {
 Core::PanoramaConverterPass*  ResourceManager::panoramaConverterPass = nullptr;
 Core::IrrandianceComputePass* ResourceManager::irradianceComputePass = nullptr;
 
-Core::Texture* ResourceManager::FALLBACK_TEXTURE   = nullptr;
-Core::Texture* ResourceManager::FALLBACK_CUBEMAP   = nullptr;
-Core::Texture* ResourceManager::BLUE_NOISE_TEXTURE = nullptr;
-Core::Mesh*    ResourceManager::VIGNETTE           = nullptr;
+std::vector<Core::ITexture*> ResourceManager::textureResources;
+Core::Texture*               ResourceManager::FALLBACK_TEXTURE = nullptr;
+Core::Texture*               ResourceManager::FALLBACK_CUBEMAP = nullptr;
+Core::Mesh*                  ResourceManager::VIGNETTE         = nullptr;
 
 void ResourceManager::init_basic_resources(Graphics::Device* const device) {
 
@@ -35,22 +35,11 @@ void ResourceManager::init_basic_resources(Graphics::Device* const device) {
         FALLBACK_CUBEMAP->set_type(TextureTypeFlagBits::TEXTURE_CUBE);
     }
     upload_texture_data(device, FALLBACK_CUBEMAP);
-
-    // Setup blue noise texture
-    if (!BLUE_NOISE_TEXTURE) // If not user set
-    {
-        BLUE_NOISE_TEXTURE = new Core::Texture();
-        Tools::Loaders::load_PNG(
-            BLUE_NOISE_TEXTURE, ENGINE_RESOURCES_PATH "textures/blueNoise.png", TEXTURE_FORMAT_UNORM);
-        BLUE_NOISE_TEXTURE->set_use_mipmaps(false);
-    }
-    upload_texture_data(device, BLUE_NOISE_TEXTURE);
 }
 
 void ResourceManager::clean_basic_resources() {
     destroy_geometry_data(VIGNETTE->get_geometry());
     destroy_texture_data(FALLBACK_TEXTURE);
-    destroy_texture_data(BLUE_NOISE_TEXTURE);
     destroy_texture_data(FALLBACK_CUBEMAP);
     if (irradianceComputePass)
     {
@@ -62,6 +51,8 @@ void ResourceManager::clean_basic_resources() {
         panoramaConverterPass->clean_framebuffer();
         panoramaConverterPass->cleanup();
     }
+    for (Core::ITexture* texture : textureResources)
+        destroy_texture_data(texture);
 }
 void ResourceManager::update_global_data(Graphics::Device* const device,
                                          Graphics::Frame* const  currentFrame,

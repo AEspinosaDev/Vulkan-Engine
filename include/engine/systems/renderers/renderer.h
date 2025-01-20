@@ -46,6 +46,7 @@ class BaseRenderer
 {
 #pragma region Properties
   protected:
+    /*Main properties*/
     Graphics::Device*            m_device;
     std::vector<Graphics::Frame> m_frames;
     Core::IWindow*               m_window;
@@ -54,9 +55,11 @@ class BaseRenderer
     /*Passes*/
     std::vector<Core::BasePass*> m_passes;
 
+   
+    /*Automatic deletion queue*/
     Graphics::Utils::DeletionQueue m_deletionQueue;
 
-    // Query
+    /*Query*/
     uint32_t m_currentFrame       = 0;
     bool     m_initialized        = false;
     bool     m_updateFramebuffers = false;

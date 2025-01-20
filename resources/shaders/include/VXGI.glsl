@@ -53,7 +53,7 @@ vec4 traceCone(sampler3D voxelization, vec3 origin, vec3 direction, const float 
 	float occlusion = 0.0;
 	float dist 		= VOXEL_WORLD_SIZE;
 
-	while(dist < MAX_DISTANCE && alpha < ALPHA_THRESHOLD)
+	while( alpha < ALPHA_THRESHOLD)
 	{
 		float diameter 	= max(VOXEL_WORLD_SIZE, 2.0 * CONE_SPREAD * dist);
 		float lodLevel 	= log2(diameter / VOXEL_WORLD_SIZE);
@@ -144,8 +144,6 @@ vec4 diffuseVoxelGI2(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI v
 
 	//Avrg
 	diffuseIndirect /= coneTraceCount;
-
-
      
 	diffuseIndirect.rgb*=vxgi.strength; 
 	return diffuseIndirect; 

@@ -123,7 +123,7 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         m_descriptorPool.set_descriptor_write(
             &m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptors[i].globalDescritor, UNIFORM_BUFFER, 4);
 
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::BLUE_NOISE_TEXTURE),
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::textureResources[0]),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               5);

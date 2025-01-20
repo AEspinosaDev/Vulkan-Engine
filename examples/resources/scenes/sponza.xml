@@ -22,6 +22,7 @@
 
         <Material type="physical">
             <albedo r="0.5" g="0.5" b="0.5" />
+            <roughness value="0.9"></roughness>
             <Textures>
                 <albedo path="textures/Walls/Bricks_Diffuse.png" />
                 <normals path="textures/Walls/Bricks_Normal.png" />
@@ -34,6 +35,7 @@
                 <Filename value="meshes/arcs.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Arches/Arches_Diffuse.png" />
                         <!-- <normals path="textures/Arches/Arches_Normal.png" /> -->
@@ -44,7 +46,9 @@
             <Mesh type="file" name="Domes">
                 <Filename value="meshes/boves.obj" />
                 <Material type="physical">
+
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Vaults/Ceiling_Diffuse.png" />
                         <normals path="textures/Vaults/Ceiling_Normal.png" />
@@ -56,6 +60,7 @@
                 <Filename value="meshes/columns2.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Columns/Column_C_Diffuse.png" />
                         <!-- <normals path="textures/Columns/Column_C_Normal.png" /> -->
@@ -67,6 +72,7 @@
                 <Filename value="meshes/columnsBottom.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Columns/Column_A_Diffuse.png" />
                         <normals path="textures/Columns/Column_A_Normal.png" />
@@ -78,6 +84,7 @@
                 <Filename value="meshes/columnsTop.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Columns/Column_B_Diffuse.png" />
                         <normals path="textures/Columns/Column_B_Normal.png" />
@@ -89,6 +96,7 @@
                 <Filename value="meshes/doors.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Doors/Details_Diffuse.png" />
                         <normals path="textures/Doors/Details_Normal.png" />
@@ -100,6 +108,7 @@
                 <Filename value="meshes/floor.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Floor/Floor_Diffuse.png" />
                         <normals path="textures/Floor/Floor_Normal.png" />
@@ -111,6 +120,7 @@
                 <Filename value="meshes/fountains.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Vase/Vase_Octagonal_Diffuse.png" />
                         <normals path="textures/Vase/Vase_Octagonal_Normal.png" />
@@ -123,6 +133,7 @@
                 <Filename value="meshes/lion.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Lion/Lion_Head_Diffuse.png" />
                         <normals path="textures/Lion/Lion_Head_Normal.png" />
@@ -134,6 +145,7 @@
                 <Filename value="meshes/lionBase.obj" />
                 <Material type="physical">
                     <albedo r="0.5" g="0.5" b="0.5" />
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Lion/Lion_Shield_Diffuse.png" />
                         <normals path="textures/Lion/Lion_Shield_Normal.png" />
@@ -157,6 +169,7 @@
             <Mesh type="file" name="Roof">
                 <Filename value="meshes/roof.obj" />
                 <Material type="physical">
+                    <roughness value="0.9"></roughness>
                     <Textures>
                         <albedo path="textures/Roof/Roof_Diffuse.png" />
                         <normals path="textures/Roof/Roof_Normal.png" />
@@ -231,6 +244,7 @@
                     <rotate x="0.0" y="-225.0" z="0.0" />
                 </Transform>
                 <Material type="physical">
+                    
                     <roughness value="0.4"></roughness>
 
                     <Textures>
@@ -258,6 +272,104 @@
                     <albedo r="0.5" g="0.5" b="0.5" />
                 </Material>
             </Mesh>
+            <Mesh type="file" name="Curtain 0">
+                <Filename value="meshes/curtain1.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Curtain_Diffuse_Blue.png" />
+                        <normals path="textures/Fabrics/Fabric_Curtain_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Curtain_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Curtain_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Curtain 1">
+                <Filename value="meshes/curtain2.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Curtain_Diffuse_Red.png" />
+                        <normals path="textures/Fabrics/Fabric_Curtain_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Curtain_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Curtain_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Curtain 2">
+                <Filename value="meshes/curtain3.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Curtain_Diffuse_Green.png" />
+                        <normals path="textures/Fabrics/Fabric_Curtain_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Curtain_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Curtain_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Round Curtain 0">
+                <Filename value="meshes/topCurtain1.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Round_Diffuse_Blue.png" />
+                        <normals path="textures/Fabrics/Fabric_Round_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Round_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Round_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Round Curtain 1">
+                <Filename value="meshes/topCurtain2.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Round_Diffuse_Red.png" />
+                        <normals path="textures/Fabrics/Fabric_Round_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Round_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Round_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <Mesh type="file" name="Round Curtain 2">
+                <Filename value="meshes/topCurtain3.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Round_Diffuse_Green.png" />
+                        <normals path="textures/Fabrics/Fabric_Round_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Round_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Round_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh>
+            <!-- <Mesh type="file" name="Carpet">
+                <Filename value="meshes/carpet.obj" />
+                
+                <Material type="physical">
+
+                    <Textures>
+                        <albedo path="textures/Fabrics/Fabric_Round_Diffuse_Green.png" />
+                        <normals path="textures/Fabrics/Fabric_Round_Normal.png" />
+                        <metalness path="textures/Fabrics/Fabric_Round_Metallic.png" />
+                        <roughness path="textures/Fabrics/Fabric_Round_Roughness.png" />
+                    </Textures>
+                    <albedo r="0.5" g="0.5" b="0.5" />
+                </Material>
+            </Mesh> -->
 
         </Children>
     </Mesh>

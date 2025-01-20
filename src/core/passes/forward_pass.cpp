@@ -146,7 +146,7 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                               &m_descriptors[i].globalDescritor,
                                               3);
 
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::BLUE_NOISE_TEXTURE),
+        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::textureResources[0]),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               6);

@@ -41,11 +41,11 @@ class ResourceManager
     static Core::PanoramaConverterPass*  panoramaConverterPass;
     static Core::IrrandianceComputePass* irradianceComputePass;
     /*
-    Fallback Resources
+    Texture Resources
     */
-    static Core::Texture* FALLBACK_TEXTURE;
-    static Core::Texture* FALLBACK_CUBEMAP;
-    static Core::Texture* BLUE_NOISE_TEXTURE;
+    static std::vector<Core::ITexture*> textureResources;
+    static Core::Texture*              FALLBACK_TEXTURE;
+    static Core::Texture*              FALLBACK_CUBEMAP;
     /*
     Vignette for RTT
     */
@@ -93,7 +93,7 @@ class ResourceManager
     static void clean_scene(Core::Scene* const scene);
 };
 
-} // namespace Systems
+} // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END;
 

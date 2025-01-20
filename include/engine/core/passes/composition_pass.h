@@ -130,8 +130,6 @@ class CompositionPass : public GraphicPass
 
     void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
 
-    void set_voxelization_descriptor(Graphics::Image voxel);
-
     void update();
 
     void cleanup();

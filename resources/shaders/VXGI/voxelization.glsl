@@ -87,6 +87,7 @@ void main(){
 
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
+// #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
 #include light.glsl
 #include scene.glsl
@@ -218,7 +219,7 @@ void main() {
 
     color += g_emisison;
 
-    vec3 ambient = scene.ambientIntensity * g_albedo;
+    vec3 ambient = scene.ambientIntensity * scene.ambientColor * g_albedo;
     color +=ambient;
 
 	vec4 result = g_opacity * vec4(vec3(color), 1);

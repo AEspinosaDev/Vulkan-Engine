@@ -21,12 +21,14 @@ namespace Graphics {
 Attachment info needed for Renderpasses and Framebuffers
 */
 struct AttachmentInfo {
+    //Image Info
     AttachmentType type          = AttachmentType::COLOR_ATTACHMENT;
     ImageConfig    imageConfig   = {};
     SamplerConfig  samplerConfig = {};
     ClearValue     clearValue    = {};
     bool           isDefault     = false;
-
+    
+    //Renderpass Info
     AttachmentLoadOp  loadOp           = ATTACHMENT_LOAD_OP_CLEAR;
     AttachmentStoreOp storeOp          = ATTACHMENT_STORE_OP_STORE;
     AttachmentLoadOp  stencilLoadOp    = ATTACHMENT_LOAD_OP_DONT_CARE;
