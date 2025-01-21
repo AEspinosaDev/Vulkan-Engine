@@ -1,15 +1,16 @@
 #ifndef DEFERRED_H
 #define DEFERRED_H
 
+#include <engine/systems/renderers/renderer.h>
+
 #include <engine/core/passes/bloom_pass.h>
 #include <engine/core/passes/composition_pass.h>
+#include <engine/core/passes/enviroment_pass.h>
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/precomposition_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/core/passes/voxelization_pass.h>
-
-#include <engine/systems/renderers/renderer.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -22,14 +23,15 @@ class DeferredRenderer : public BaseRenderer
 {
     enum RendererPasses
     {
-        SHADOW_PASS         = 0,
-        VOXELIZATION_PASS   = 1,
-        GEOMETRY_PASS       = 2,
-        PRECOMPOSITION_PASS = 3,
-        COMPOSITION_PASS    = 4,
-        BLOOM_PASS          = 5,
-        TONEMAPPIN_PASS     = 6,
-        FXAA_PASS           = 7,
+        ENVIROMENT_PASS     = 0,
+        SHADOW_PASS         = 1,
+        VOXELIZATION_PASS   = 2,
+        GEOMETRY_PASS       = 3,
+        PRECOMPOSITION_PASS = 4,
+        COMPOSITION_PASS    = 5,
+        BLOOM_PASS          = 6,
+        TONEMAPPIN_PASS     = 7,
+        FXAA_PASS           = 8,
     };
 
     // Graphic Settings
@@ -89,13 +91,11 @@ class DeferredRenderer : public BaseRenderer
         return m_AO;
     };
     inline void set_shading_output(Core::OutputBuffer output) {
-        static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->set_output_buffer(output);
+        get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->set_output_buffer(output);
     }
     inline Core::OutputBuffer get_shading_output() const {
+        // get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_output_buffer();
         return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_output_buffer();
-    }
-    inline void set_clearcolor(Vec4 c) {
-        BaseRenderer::set_clearcolor(c);
     }
 
   protected:
@@ -104,6 +104,8 @@ class DeferredRenderer : public BaseRenderer
     virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
 
     virtual void create_passes();
+
+    virtual void update_enviroment(Core::Skybox* const skybox);
 };
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

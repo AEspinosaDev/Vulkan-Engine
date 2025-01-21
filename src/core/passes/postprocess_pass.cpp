@@ -98,7 +98,7 @@ void PostProcessPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
 }
 
 void PostProcessPass::link_previous_images(std::vector<Image> images) {
-    m_descriptorPool.set_descriptor_write(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+    m_descriptorPool.update_descriptor(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
 }
 
 } // namespace Core

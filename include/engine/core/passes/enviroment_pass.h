@@ -15,6 +15,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+/*
+This pass does three things:
+- Performs a first renderpass to convert the HDRi image into a enviroment cubemap.
+- Performs a second renderpass to compute the diuffuse irradiance cubemap.
+- Performs a third renderpass to compute the specular irradiance cubemap.
+*/
 class EnviromentPass : public GraphicPass
 {
     ColorFormatType         m_format;
@@ -24,15 +30,18 @@ class EnviromentPass : public GraphicPass
     Extent2D                m_irradianceResolution;
 
   public:
-    EnviromentPass(Graphics::Device* ctx,
-                   ColorFormatType   format,
-                   Extent2D          extent,
-                   uint32_t          irradianceResolution,
-                   Mesh*             vignette)
-        : BasePass(ctx, extent, 2, CUBEMAP_FACES, false)
+    EnviromentPass(Graphics::Device* ctx, Mesh* vignette)
+        : BasePass(ctx, {1, 1}, 2, CUBEMAP_FACES, false)
         , m_vignette(vignette)
-        , m_format(format)
-        , m_irradianceResolution({irradianceResolution, irradianceResolution}) {
+        , m_format(SRGBA_32F)
+        , m_irradianceResolution({1, 1}) {
+    }
+
+    inline uint32_t get_irradiance_resolution() const {
+        return m_irradianceResolution.width;
+    }
+    inline void set_irradiance_resolution(uint32_t res) {
+        m_irradianceResolution = {res, res};
     }
 
     void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
@@ -44,9 +53,11 @@ class EnviromentPass : public GraphicPass
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
-
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
+
+    void update();
+
+    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
     void cleanup();
 };

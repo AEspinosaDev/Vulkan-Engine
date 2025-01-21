@@ -27,7 +27,7 @@ void main() {
 
         //Check if object inside area of light
         gl_Layer = i;
-        if(scene.lights[i].type == 2) continue; //If some light is raytraced
+        if(scene.lights[i].shadowType == 2) continue; //If some light is raytraced
 
         gl_Position = scene.lights[i].viewProj * object.model*gl_in[0].gl_Position;
         EmitVertex();

@@ -128,8 +128,6 @@ class CompositionPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
-
     void update();
 
     void cleanup();

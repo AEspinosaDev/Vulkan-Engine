@@ -74,10 +74,10 @@ vec4 diffuseVoxelGI(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI vx
 	const float VOXEL_SIZE  = 1.0/float(vxgi.resolution);
     const float ANGLE_MIX 	= 0.5; 
     const float CONE_SPREAD = vxgi.diffuseConeSpread;
-	const int SAMPLES 		= 8;
+	const int SAMPLES 		= 4;
 
-	const float w[SAMPLES+1] = {.2,.1, .1, .1, .1,.1,.1,.1,.1};  // Cone weights. Importance sampling on pole
-	//const float w[5] 		= {.28, .18, .18, .18,.18};  // Cone weights. Importance sampling on pole
+	// const float w[SAMPLES+1] = {.2,.1, .1, .1, .1,.1,.1,.1,.1};  // Cone weights. Importance sampling on pole
+	const float w[5] 		= {.28, .18, .18, .18,.18};  // Cone weights. Importance sampling on pole
 
 	// Find a base for the side cones with the normal as one of its base vectors.
 	const vec3 ortho 	= normalize(orthogonal(worldNormal));
@@ -85,22 +85,22 @@ vec4 diffuseVoxelGI(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI vx
 	const vec3 corner 	= 0.5 * (ortho + ortho2);
 	const vec3 corner2 	= 0.5 * (ortho - ortho2);
 	// Direction for the side cones
-	const vec3 sDirs[SAMPLES] ={
-		mix(worldNormal, ortho, 	ANGLE_MIX),
-		mix(worldNormal, -ortho, 	ANGLE_MIX),
-		mix(worldNormal, ortho2, 	ANGLE_MIX),
-		mix(worldNormal, -ortho, 	ANGLE_MIX),
-		mix(worldNormal, corner, 	ANGLE_MIX),
-		mix(worldNormal, -corner, 	ANGLE_MIX),
-		mix(worldNormal, corner2, 	ANGLE_MIX),
-		mix(worldNormal, -corner2, 	ANGLE_MIX),
-	};
-	// const vec3 sDirs[4] ={
+	// const vec3 sDirs[SAMPLES] ={
 	// 	mix(worldNormal, ortho, 	ANGLE_MIX),
 	// 	mix(worldNormal, -ortho, 	ANGLE_MIX),
 	// 	mix(worldNormal, ortho2, 	ANGLE_MIX),
 	// 	mix(worldNormal, -ortho, 	ANGLE_MIX),
+	// 	mix(worldNormal, corner, 	ANGLE_MIX),
+	// 	mix(worldNormal, -corner, 	ANGLE_MIX),
+	// 	mix(worldNormal, corner2, 	ANGLE_MIX),
+	// 	mix(worldNormal, -corner2, 	ANGLE_MIX),
 	// };
+	const vec3 sDirs[4] ={
+		mix(worldNormal, ortho, 	ANGLE_MIX),
+		mix(worldNormal, -ortho, 	ANGLE_MIX),
+		mix(worldNormal, ortho2, 	ANGLE_MIX),
+		mix(worldNormal, -ortho, 	ANGLE_MIX),
+	};
 
 	//Offset start position
 	float voxelWorldSize = worldVolumeSize / float(vxgi.resolution);
@@ -114,7 +114,8 @@ vec4 diffuseVoxelGI(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI vx
 	
 	// Trace side cones
 	for(int i = 0; i < SAMPLES; i++){
-		indirectDiffuse += w[i+1] * traceCone(voxelMap, startPos, sDirs[i], vxgi.maxDistance, CONE_SPREAD, voxelWorldSize );
+		float cosTheta = dot(worldNormal, sDirs[i]);
+		indirectDiffuse += w[i+1] * traceCone(voxelMap, startPos, sDirs[i], vxgi.maxDistance, CONE_SPREAD, voxelWorldSize ) * cosTheta;
 	}
 
 	indirectDiffuse.rgb*=vxgi.strength; 

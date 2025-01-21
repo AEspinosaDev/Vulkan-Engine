@@ -13,6 +13,7 @@
 #define RENDERER_H
 
 #include <engine/common.h>
+#include <engine/core/passes/pass.h>
 #include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -55,7 +56,6 @@ class BaseRenderer
     /*Passes*/
     std::vector<Core::BasePass*> m_passes;
 
-   
     /*Automatic deletion queue*/
     Graphics::Utils::DeletionQueue m_deletionQueue;
 
@@ -115,6 +115,9 @@ class BaseRenderer
     }
     virtual inline void set_clearcolor(Vec4 c) {
         m_settings.clearColor = c;
+    }
+    template <typename T> inline T get_pass(uint32_t id) {
+        return id < m_passes.size() ? static_cast<T>(m_passes[id]) : nullptr;
     }
 
 #pragma endregion

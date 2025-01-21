@@ -82,7 +82,7 @@ void main() {
 #include scene.glsl
 #include object.glsl
 #include utils.glsl
-#include shadow_mapping.glsl
+#include shadows.glsl
 #include fresnel.glsl
 #include reindhart.glsl
 #include BRDFs/cook_torrance_BRDF.glsl
@@ -231,7 +231,7 @@ void main() {
         vec3 irradiance     = texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity;
         ambient = evalDiffuseCookTorranceBRDF(
             rotatedNormal,
-            normalize(camera.position.xyz-modelPos), 
+            normalize(camera.position.xyz-v_modelPos), 
             irradiance, 
             brdf);
     }else{

@@ -267,13 +267,13 @@ void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
         m_bloomMipmaps[i].create_view(config);
     }
 
-    m_descriptorPool.set_descriptor_write(&m_brightImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
-    m_descriptorPool.set_descriptor_write(&m_originalImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
+    m_descriptorPool.update_descriptor(&m_brightImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+    m_descriptorPool.update_descriptor(&m_originalImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
 
-    m_descriptorPool.set_descriptor_write(
+    m_descriptorPool.update_descriptor(
         m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
-    m_descriptorPool.set_descriptor_write(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
-    m_descriptorPool.set_descriptor_write(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
+    m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
+    m_descriptorPool.update_descriptor(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
 
 }
 

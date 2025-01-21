@@ -4,37 +4,22 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems {
 
 void DeferredRenderer::on_before_render(Core::Scene* const scene) {
+    // Update enviroment before
+    update_enviroment(scene->get_skybox());
     BaseRenderer::on_before_render(scene);
 
     // Set Deferred Graphic Settings
-    Core::CompositionPass* compPass = static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS]);
+    Core::CompositionPass* compPass = get_pass<Core::CompositionPass*>(COMPOSITION_PASS);
     compPass->set_SSR_settings(m_SSR);
     compPass->set_VXGI_settings(m_VXGI);
     compPass->enable_AO(m_AO.enabled);
     compPass->set_AO_type(static_cast<int>(m_AO.type));
-
+    get_pass<Core::PreCompositionPass*>(PRECOMPOSITION_PASS)->set_SSAO_settings(m_AO);
+    get_pass<Core::BloomPass*>(BLOOM_PASS)->set_bloom_strength(m_bloomStrength);
     m_passes[VOXELIZATION_PASS]->set_active(m_VXGI.enabled);
-
     m_passes[PRECOMPOSITION_PASS]->set_active(m_AO.enabled && m_AO.type != Core::AOType::VXAO);
-    static_cast<Core::PreCompositionPass*>(m_passes[PRECOMPOSITION_PASS])->set_SSAO_settings(m_AO);
 
-    static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(m_bloomStrength);
-
-    if (scene->get_skybox())
-    {
-        if (scene->get_skybox()->update_enviroment())
-        {
-            static_cast<Core::GeometryPass*>(m_passes[GEOMETRY_PASS])
-                ->set_envmap_descriptor(
-                    Core::ResourceManager::panoramaConverterPass->get_framebuffers()[0].attachmentImages[0],
-                    Core::ResourceManager::irradianceComputePass->get_framebuffers()[0].attachmentImages[0]);
-        }
-        if (scene->get_skybox()->update_enviroment())
-            compPass->set_envmap_descriptor(
-                Core::ResourceManager::panoramaConverterPass->get_framebuffers()[0].attachmentImages[0],
-                Core::ResourceManager::irradianceComputePass->get_framebuffers()[0].attachmentImages[0]);
-    }
-
+    // Set clear color
     m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
 }
@@ -71,7 +56,10 @@ void DeferredRenderer::create_passes() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(8, nullptr);
+    m_passes.resize(9, nullptr);
+
+    // Enviroment Pass
+    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, Core::ResourceManager::VIGNETTE);
 
     // Shadow Pass
     m_passes[SHADOW_PASS] =
@@ -79,10 +67,13 @@ void DeferredRenderer::create_passes() {
 
     // Voxelization Pass
     m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, m_VXGI.resolution);
+    m_passes[VOXELIZATION_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0})});
 
     // Geometry Pass
     m_passes[GEOMETRY_PASS] =
         new Core::GeometryPass(m_device, m_window->get_extent(), m_settings.colorFormat, m_settings.depthFormat);
+    m_passes[GEOMETRY_PASS]->set_image_dependencies(
+        {Core::ImageDependency(ENVIROMENT_PASS, 0, {0}), Core::ImageDependency(ENVIROMENT_PASS, 1, {0})});
 
     // Pre-Composition Pass
     m_passes[PRECOMPOSITION_PASS] =
@@ -92,10 +83,15 @@ void DeferredRenderer::create_passes() {
     // Composition Pass
     m_passes[COMPOSITION_PASS] =
         new Core::CompositionPass(m_device, m_window->get_extent(), SRGBA_32F, Core::ResourceManager::VIGNETTE, false);
-    m_passes[COMPOSITION_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0}),
-                                                        Core::ImageDependency(VOXELIZATION_PASS, {0}),
-                                                        Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1, 2, 3, 4}),
-                                                        Core::ImageDependency(PRECOMPOSITION_PASS, 1, {0})});
+    m_passes[COMPOSITION_PASS]->set_image_dependencies({
+        Core::ImageDependency(SHADOW_PASS, 0, {0}),
+        Core::ImageDependency(VOXELIZATION_PASS, {0}),
+        Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1, 2, 3, 4}),
+        Core::ImageDependency(PRECOMPOSITION_PASS, 1, {0}),
+        Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
+        Core::ImageDependency(ENVIROMENT_PASS, 1, {0}),
+    });
+
     // Bloom Pass
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent(), Core::ResourceManager::VIGNETTE);
     m_passes[BLOOM_PASS]->set_image_dependencies({Core::ImageDependency(COMPOSITION_PASS, 0, {0, 1})});
@@ -121,6 +117,25 @@ void DeferredRenderer::create_passes() {
     m_passes[FXAA_PASS]->set_image_dependencies({Core::ImageDependency(TONEMAPPIN_PASS, 0, {0})});
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);
+}
+void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
+    if (skybox)
+    {
+        if (skybox->update_enviroment())
+        {
+            m_device->wait();
+            Core::ResourceManager::upload_skybox_data(m_device, skybox);
+            const uint32_t HDRi_EXTENT       = skybox->get_enviroment_map()->get_size().height;
+            const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
+
+            get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
+            m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
+            m_passes[ENVIROMENT_PASS]->update();
+
+            connect_pass(m_passes[GEOMETRY_PASS]);
+            connect_pass(m_passes[COMPOSITION_PASS]);
+        }
+    }
 }
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

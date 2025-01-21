@@ -43,14 +43,14 @@ void main() {
 
 layout(location = 0) in vec3 _pos;
 
-layout(set = 0, binding = 1) uniform CaptureData{
+layout(set = 0, binding = 2) uniform CaptureData{
     mat4 proj;
 	mat4 views[6];
 } capture;
 
 layout(location = 0) out vec4 li;
 
-layout(set = 0, binding = 0) uniform samplerCube u_envMap;
+layout(set = 0, binding = 1) uniform samplerCube u_envMap;
 
 
 void main()

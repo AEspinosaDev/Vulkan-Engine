@@ -41,7 +41,7 @@ void DescriptorPool::allocate_descriptor_set(uint32_t layoutSetIndex, Descriptor
 
     descriptor->allocated = true;
 }
-void DescriptorPool::set_descriptor_write(Buffer*         buffer,
+void DescriptorPool::update_descriptor(Buffer*         buffer,
                                           size_t          dataSize,
                                           size_t          readOffset,
                                           DescriptorSet*  descriptor,
@@ -61,7 +61,7 @@ void DescriptorPool::set_descriptor_write(Buffer*         buffer,
 
     vkUpdateDescriptorSets(device, 1, &writeSetting, 0, nullptr);
 }
-void DescriptorPool::set_descriptor_write(Image*          image,
+void DescriptorPool::update_descriptor(Image*          image,
                                           ImageLayout     layout,
                                           DescriptorSet*  descriptor,
                                           uint32_t        binding,
@@ -79,7 +79,7 @@ void DescriptorPool::set_descriptor_write(Image*          image,
 
     vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
 }
-void DescriptorPool::set_descriptor_write(std::vector<Image>& images,
+void DescriptorPool::update_descriptor(std::vector<Image>& images,
                                           ImageLayout         layout,
                                           DescriptorSet*      descriptor,
                                           uint32_t            binding,
@@ -100,7 +100,7 @@ void DescriptorPool::set_descriptor_write(std::vector<Image>& images,
 
     vkUpdateDescriptorSets(device, 1, &imageArray, 0, nullptr);
 }
-void DescriptorPool::set_descriptor_write(TLAS* accel, DescriptorSet* descriptor, uint32_t binding) {
+void DescriptorPool::update_descriptor(TLAS* accel, DescriptorSet* descriptor, uint32_t binding) {
 
     VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo =
         Init::write_descriptor_set_acceleration_structure();

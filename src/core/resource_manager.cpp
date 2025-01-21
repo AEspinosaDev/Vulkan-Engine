@@ -4,9 +4,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-Core::PanoramaConverterPass*  ResourceManager::panoramaConverterPass = nullptr;
-Core::IrrandianceComputePass* ResourceManager::irradianceComputePass = nullptr;
-
 std::vector<Core::ITexture*> ResourceManager::textureResources;
 Core::Texture*               ResourceManager::FALLBACK_TEXTURE = nullptr;
 Core::Texture*               ResourceManager::FALLBACK_CUBEMAP = nullptr;
@@ -41,16 +38,6 @@ void ResourceManager::clean_basic_resources() {
     destroy_geometry_data(VIGNETTE->get_geometry());
     destroy_texture_data(FALLBACK_TEXTURE);
     destroy_texture_data(FALLBACK_CUBEMAP);
-    if (irradianceComputePass)
-    {
-        irradianceComputePass->clean_framebuffer();
-        irradianceComputePass->cleanup();
-    }
-    if (panoramaConverterPass)
-    {
-        panoramaConverterPass->clean_framebuffer();
-        panoramaConverterPass->cleanup();
-    }
     for (Core::ITexture* texture : textureResources)
         destroy_texture_data(texture);
 }
@@ -156,10 +143,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
         sizeof(Graphics::SceneUniforms),
         device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
 
-    /*
-    SKYBOX MESH AND TEXTURE UPLOAD
-    */
-    setup_skybox(device, scene);
+   
 }
 void ResourceManager::update_object_data(Graphics::Device* const device,
                                          Graphics::Frame* const  currentFrame,
@@ -346,70 +330,32 @@ void ResourceManager::destroy_geometry_data(Core::Geometry* const g) {
         get_BLAS(g)->cleanup();
     }
 }
-void ResourceManager::setup_skybox(Graphics::Device* const device, Core::Scene* const scene) {
-    Core::Skybox* const skybox = scene->get_skybox();
-    if (skybox)
+void ResourceManager::upload_skybox_data(Graphics::Device* const device, Core::Skybox* const sky) {
+    if (sky)
     {
-        if (skybox->update_enviroment())
+        upload_geometry_data(device, sky->get_box());
+        Core::TextureHDR* envMap = sky->get_enviroment_map();
+        if (envMap && envMap->loaded_on_CPU())
         {
-            upload_geometry_data(device, skybox->get_box());
-            Core::TextureHDR* envMap = skybox->get_enviroment_map();
-            if (envMap && envMap->loaded_on_CPU())
+            if (!envMap->loaded_on_GPU())
             {
-                if (!envMap->loaded_on_GPU())
-                {
-                    Graphics::ImageConfig   config        = {};
-                    Graphics::SamplerConfig samplerConfig = {};
-                    Core::TextureSettings   textSettings  = envMap->get_settings();
-                    config.format                         = textSettings.format;
-                    samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
-                    samplerConfig.filters                 = textSettings.filter;
-                    samplerConfig.samplerAddressMode      = textSettings.adressMode;
+                Graphics::ImageConfig   config        = {};
+                Graphics::SamplerConfig samplerConfig = {};
+                Core::TextureSettings   textSettings  = envMap->get_settings();
+                config.format                         = textSettings.format;
+                samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
+                samplerConfig.filters                 = textSettings.filter;
+                samplerConfig.samplerAddressMode      = textSettings.adressMode;
 
-                    void* imgCache{nullptr};
-                    envMap->get_image_cache(imgCache);
-                    device->upload_texture_image(
-                        *get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
-                }
-                // Create Panorama converter pass
-                if (panoramaConverterPass)
-                { // If already exists
-                    panoramaConverterPass->cleanup();
-                    irradianceComputePass->cleanup();
-                    panoramaConverterPass->clean_framebuffer();
-                    irradianceComputePass->clean_framebuffer();
-                    delete panoramaConverterPass;
-                    delete irradianceComputePass;
-                }
-                panoramaConverterPass =
-                    new Core::PanoramaConverterPass(device,
-                                                    envMap->get_settings().format,
-                                                    {envMap->get_size().height, envMap->get_size().height},
-                                                    VIGNETTE);
-                std::vector<Graphics::Frame> empty;
-                panoramaConverterPass->setup(empty);
-                panoramaConverterPass->update_uniforms(0, scene);
-                // Create Irradiance converter pass
-                irradianceComputePass = new Core::IrrandianceComputePass(
-                    device,
-                    envMap->get_settings().format,
-                    {skybox->get_irradiance_resolution(), skybox->get_irradiance_resolution()});
-                irradianceComputePass->setup(empty);
-                irradianceComputePass->update_uniforms(0, scene);
-                irradianceComputePass->connect_env_cubemap(
-                    panoramaConverterPass->get_framebuffers()[0].attachmentImages[0]);
+                void* imgCache{nullptr};
+                envMap->get_image_cache(imgCache);
+                device->upload_texture_image(
+                    *get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
             }
         }
     }
 }
-void ResourceManager::generate_skybox_maps(Graphics::Frame* const currentFrame, Core::Scene* const scene) {
-    if (scene->get_skybox()->update_enviroment())
-    {
-        panoramaConverterPass->render(*currentFrame, scene);
-        irradianceComputePass->render(*currentFrame, scene);
-        scene->get_skybox()->set_update_enviroment(false);
-    }
-}
+
 void ResourceManager::clean_scene(Core::Scene* const scene) {
     if (scene)
     {

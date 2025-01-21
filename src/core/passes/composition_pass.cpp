@@ -119,31 +119,31 @@ void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.allocate_descriptor_set(1, &m_descriptors[i].gBufferDescritor);
 
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(CameraUniforms),
                                               0,
                                               &m_descriptors[i].globalDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               0);
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(SceneUniforms),
                                               m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
                                               &m_descriptors[i].globalDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               1);
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               4);
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::textureResources[0]),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::textureResources[0]),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               6);
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::textureResources[1]),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::textureResources[1]),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               7);
@@ -239,26 +239,31 @@ void CompositionPass::link_previous_images(std::vector<Graphics::Image> images) 
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // SHADOWS
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
         // VOXELIZATION
-        m_descriptorPool.set_descriptor_write(&images[1], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
+        m_descriptorPool.update_descriptor(&images[1], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
         // SET UP G-BUFFER
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 2);
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[6], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
         // SSAO
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[7], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 5);
+        // ENVIROMENT
+        m_descriptorPool.update_descriptor(
+            &images[8], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorPool.update_descriptor(
+            &images[9], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
         // PREV FRAME
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &m_prevFrame, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 6);
     }
 }
@@ -268,18 +273,9 @@ void CompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     {
         for (size_t i = 0; i < m_descriptors.size(); i++)
         {
-            m_descriptorPool.set_descriptor_write(get_TLAS(scene), &m_descriptors[i].globalDescritor, 5);
+            m_descriptorPool.update_descriptor(get_TLAS(scene), &m_descriptors[i].globalDescritor, 5);
         }
         get_TLAS(scene)->binded = true;
-    }
-}
-void CompositionPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr) {
-    for (size_t i = 0; i < m_descriptors.size(); i++)
-    {
-        m_descriptorPool.set_descriptor_write(
-            &env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-        m_descriptorPool.set_descriptor_write(
-            &irr, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
     }
 }
 

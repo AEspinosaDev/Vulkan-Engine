@@ -3,7 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
-void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&        attachments,
+void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                      std::vector<Graphics::SubPassDependency>& dependencies) {
 
     //////////////////////
@@ -13,34 +13,34 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&     
 
     // Positions
     attachments[0] = Graphics::AttachmentInfo(SRGBA_32F,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Normals
     attachments[1] = Graphics::AttachmentInfo(SRGBA_32F,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Albedo
     attachments[2] = Graphics::AttachmentInfo(SRGBA_32F,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Material
     attachments[3] = Graphics::AttachmentInfo(RGBA_8U,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Emissive
     attachments[4] = Graphics::AttachmentInfo(SRGBA_32F,
-                                          1,
-                                          LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+                                              1,
+                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Temporal
     // attachments[5] = Graphics::Attachment(m_colorFormat,
@@ -51,12 +51,12 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&     
 
     // Depth
     attachments[5] = Graphics::AttachmentInfo(m_depthFormat,
-                                          1,
-                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                          IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                          DEPTH_ATTACHMENT,
-                                          ASPECT_DEPTH);
+                                              1,
+                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                              IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                              DEPTH_ATTACHMENT,
+                                              ASPECT_DEPTH);
 
     // Depdencies
     dependencies.resize(2);
@@ -112,49 +112,49 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(CameraUniforms),
                                               0,
                                               &m_descriptors[i].globalDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               0);
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(SceneUniforms),
                                               m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
                                               &m_descriptors[i].globalDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               1);
 
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_TEXTURE),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
 
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::textureResources[0]),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::textureResources[0]),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               6);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[OBJECT_LAYOUT],
                                               sizeof(ObjectUniforms),
                                               0,
                                               &m_descriptors[i].objectDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               0);
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[OBJECT_LAYOUT],
                                               sizeof(MaterialUniforms),
                                               m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
                                               &m_descriptors[i].objectDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               1);
         // Set up enviroment fallback texture
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               3);
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_CUBEMAP),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               4);
@@ -189,7 +189,7 @@ void GeometryPass::setup_shader_passes() {
     m_shaderPasses["geometry"] = geomPass;
 
     GraphicShaderPass* skyboxPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent,  ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
     skyboxPass->settings.descriptorSetLayoutIDs = {
         {GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
@@ -289,6 +289,17 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
+void GeometryPass::link_previous_images(std::vector<Graphics::Image> images) {
+
+    for (size_t i = 0; i < m_descriptors.size(); i++)
+    {
+        m_descriptorPool.update_descriptor(
+            &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorPool.update_descriptor(
+            &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+    }
+}
+
 void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     for (Mesh* m : scene->get_meshes())
     {
@@ -303,15 +314,7 @@ void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
         }
     }
 }
-void GeometryPass::set_envmap_descriptor(Graphics::Image env, Graphics::Image irr) {
-    for (size_t i = 0; i < m_descriptors.size(); i++)
-    {
-        m_descriptorPool.set_descriptor_write(
-            &env, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-        m_descriptorPool.set_descriptor_write(
-            &irr, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
-    }
-}
+
 void GeometryPass::setup_material_descriptor(IMaterial* mat) {
     if (!mat->get_texture_descriptor().allocated)
         m_descriptorPool.allocate_descriptor_set(OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
@@ -326,7 +329,7 @@ void GeometryPass::setup_material_descriptor(IMaterial* mat) {
             // Set texture write
             if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
             {
-                m_descriptorPool.set_descriptor_write(
+                m_descriptorPool.update_descriptor(
                     get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
                 mat->set_texture_binding_state(pair.first, true);
                 texture->set_dirty(false);
@@ -335,7 +338,7 @@ void GeometryPass::setup_material_descriptor(IMaterial* mat) {
         {
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorPool.set_descriptor_write(get_image(ResourceManager::FALLBACK_TEXTURE),
+                m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE),
                                                       LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                       &mat->get_texture_descriptor(),
                                                       pair.first);

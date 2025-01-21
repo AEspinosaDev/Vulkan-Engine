@@ -92,7 +92,7 @@ void main(){
 #include light.glsl
 #include scene.glsl
 #include utils.glsl
-#include shadow_mapping.glsl
+#include shadows.glsl
 #include warp.glsl
 #include raytracing.glsl
 #include material_defines.glsl
@@ -198,10 +198,10 @@ void main() {
 
             //Visibility Component__________________________
             if(scene.lights[i].shadowCast == 1) {
-                        // if(scene.lights[i].shadowType == 0) //Classic
-                        //     lighting *= computeShadow(shadowMap, scene.lights[i], i, _pos);
-                        // if(scene.lights[i].shadowType == 1) //VSM   
-                        //     lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, _pos);
+                        if(scene.lights[i].shadowType == 0) //Classic
+                            lighting *= computeShadow(shadowMap, scene.lights[i], i, _pos);
+                        if(scene.lights[i].shadowType == 1) //VSM   
+                            lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, _pos);
                         if(scene.lights[i].shadowType == 2) //Raytraced  
                             lighting *= computeRaytracedShadow(
                                 TLAS, 

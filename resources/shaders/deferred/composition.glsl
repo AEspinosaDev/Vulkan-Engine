@@ -24,7 +24,7 @@ void main() {
 #include light.glsl
 #include scene.glsl
 #include utils.glsl
-#include shadow_mapping.glsl
+#include shadows.glsl
 #include fresnel.glsl
 #include BRDFs/cook_torrance_BRDF.glsl
 #include BRDFs/marschner_BSDF.glsl
@@ -158,8 +158,7 @@ void main()
                     normalize(camera.position.xyz-modelPos), 
                     indirect.rgb, 
                     brdf);
-                indirect.rgb *= (1.0 - indirect.a);
-                //indirect = diffuseVoxelGI_CookTorrance(voxelMap, irradianceMap, modelPos, modelNormal,normalize(camera.position.xyz-modelPos), settings.vxgi, brdf, scene.maxCoord.x-scene.minCoord.x);
+                indirect.rgb *= (1.0 - indirect.a); //Account for occlusion
 
                 // Specular
                 vec3 specularConeDirection = reflect(-normalize(camera.position.xyz-modelPos), modelNormal);

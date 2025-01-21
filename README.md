@@ -25,19 +25,19 @@ The main feautures of the library are:
 
 - Forward and Deferred pipelines support.
 - PBR, Phong and other types of materials abstractions.
-- Scene and scene objects abstractions.
-- On the fly shader compiling.
 - Raytracing Support (Shadows, AO).
-- Texture loading with mipmapping.
-- Dynamic renderer states for some graphic features.
-- Multipass (depth pass for shadows, SSAO and post-processing).
-- Vulkan object and functionality abstraction.
-- IBL.
+- Global Illumination with Voxel Cone Tracing.
+- On the fly shader compiling.
+- Diffuse and Specular IBL.
 - Physically Based Bloom.
 - Ray Marched SSR.
+- Scene and scene objects abstractions.
+- Texture loading with mipmapping.
+- Multipass (depth pass for shadows, SSAO and post-processing).
+- Dynamic renderer states for some graphic features.
+- Vulkan object and functionality abstraction.
 - Simple to use user interface.
 - Easy to distribute source code.
-- Global Illumination with Voxel Cone Tracing (wip)
 
 This project is a work in progress. It has a long way until becoming a decent library, there are no fancy features for now, but all the basics are here. Eventually, with time, I will be adding more advanced functionality.
 

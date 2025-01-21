@@ -154,9 +154,6 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     m_device->start_frame(m_frames[m_currentFrame]);
 
-    if (scene->get_skybox())
-        Core::ResourceManager::generate_skybox_maps(&m_frames[m_currentFrame], scene);
-
     for (Core::BasePass* pass : m_passes)
     {
         if (pass->is_active())

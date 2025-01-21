@@ -2,6 +2,7 @@
 #define FORWARD_H
 
 #include <engine/core/passes/bloom_pass.h>
+#include <engine/core/passes/enviroment_pass.h>
 #include <engine/core/passes/forward_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
@@ -20,11 +21,12 @@ class ForwardRenderer : public BaseRenderer
 
     enum RendererPasses
     {
-        SHADOW_PASS     = 0,
-        FORWARD_PASS    = 1,
-        BLOOM_PASS      = 2,
-        TONEMAPPIN_PASS = 3,
-        FXAA_PASS       = 4,
+        ENVIROMENT_PASS = 0,
+        SHADOW_PASS     = 1,
+        FORWARD_PASS    = 2,
+        BLOOM_PASS      = 3,
+        TONEMAPPIN_PASS = 4,
+        FXAA_PASS       = 5,
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
@@ -69,6 +71,8 @@ class ForwardRenderer : public BaseRenderer
     virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
 
     virtual void create_passes();
+
+    virtual void update_enviroment(Core::Skybox* const skybox);
 };
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

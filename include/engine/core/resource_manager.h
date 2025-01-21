@@ -12,8 +12,6 @@
 
 #include <engine/common.h>
 #include <engine/core/materials/material.h>
-#include <engine/core/passes/irradiance_compute_pass.h>
-#include <engine/core/passes/panorama_conversion_pass.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
@@ -36,11 +34,6 @@ class ResourceManager
 {
   public:
     /*
-    Auxiliar passes
-    */
-    static Core::PanoramaConverterPass*  panoramaConverterPass;
-    static Core::IrrandianceComputePass* irradianceComputePass;
-    /*
     Texture Resources
     */
     static std::vector<Core::ITexture*> textureResources;
@@ -50,6 +43,7 @@ class ResourceManager
     Vignette for RTT
     */
     static Core::Mesh* VIGNETTE;
+
     /*
     Creates and initiates basic rendering resources such as fallback textures and a vignette
     */
@@ -83,10 +77,9 @@ class ResourceManager
     upload_geometry_data(Graphics::Device* const device, Core::Geometry* const g, bool createAccelStructure = true);
     static void destroy_geometry_data(Core::Geometry* const g);
     /*
-    Setup skybox
+    Uploads scene's skybox resources (cube mesh and panorama texture)
     */
-    static void setup_skybox(Graphics::Device* const device, Core::Scene* const scene);
-    static void generate_skybox_maps(Graphics::Frame* const currentFrame, Core::Scene* const scene);
+    static void upload_skybox_data(Graphics::Device* const device, Core::Skybox* const sky);
     /*
     Scene cleanup
     */

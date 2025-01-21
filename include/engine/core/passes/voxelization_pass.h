@@ -17,6 +17,10 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+/*
+Performs an voxelization of the direct irradiance of the scene. For setting the edges of the volume it takes into account the
+AABB of the scene.
+*/
 class VoxelizationPass : public GraphicPass
 {
 #ifdef USE_IMG_ATOMIC_OPERATION
@@ -48,13 +52,16 @@ class VoxelizationPass : public GraphicPass
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void link_previous_images(std::vector<Graphics::Image> images);
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void update();
 
+    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    
     void cleanup();
+
 };
 
 } // namespace Core

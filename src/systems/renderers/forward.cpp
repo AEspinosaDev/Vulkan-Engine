@@ -4,16 +4,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems {
 
 void ForwardRenderer::on_before_render(Core::Scene* const scene) {
+    update_enviroment(scene->get_skybox());
     BaseRenderer::on_before_render(scene);
-
-    if (scene->get_skybox())
-    {
-        if (scene->get_skybox()->update_enviroment())
-            static_cast<Core::ForwardPass*>(m_passes[FORWARD_PASS])
-                ->set_envmap_descriptor(
-                    Core::ResourceManager::panoramaConverterPass->get_framebuffers()[0].attachmentImages[0],
-                    Core::ResourceManager::irradianceComputePass->get_framebuffers()[0].attachmentImages[0]);
-    }
 
     m_passes[FORWARD_PASS]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 0);
@@ -42,7 +34,10 @@ void ForwardRenderer::create_passes() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(5, nullptr);
+    m_passes.resize(6, nullptr);
+    // Enviroment Pass
+    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, Core::ResourceManager::VIGNETTE);
+
     // Shadow Pass
     m_passes[SHADOW_PASS] =
         new Core::VarianceShadowPass(m_device, {SHADOW_RES, SHADOW_RES}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
@@ -50,7 +45,9 @@ void ForwardRenderer::create_passes() {
     // Forward Pass
     m_passes[FORWARD_PASS] = new Core::ForwardPass(
         m_device, m_window->get_extent(), SRGBA_32F, m_settings.depthFormat, m_settings.samplesMSAA, false);
-    m_passes[FORWARD_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0})});
+    m_passes[FORWARD_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0}),
+                                                    Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
+                                                    Core::ImageDependency(ENVIROMENT_PASS, 1, {0})});
 
     // Bloom Pass
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent(), Core::ResourceManager::VIGNETTE);
@@ -82,5 +79,23 @@ void ForwardRenderer::create_passes() {
         m_passes[FXAA_PASS]->set_active(false);
 }
 
+void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
+    if (skybox)
+    {
+        if (skybox->update_enviroment())
+        {
+            m_device->wait();
+            Core::ResourceManager::upload_skybox_data(m_device, skybox);
+            const uint32_t HDRi_EXTENT       = skybox->get_enviroment_map()->get_size().height;
+            const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
+
+            get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
+            m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
+            m_passes[ENVIROMENT_PASS]->update();
+
+            connect_pass(m_passes[FORWARD_PASS]);
+        }
+    }
+}
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

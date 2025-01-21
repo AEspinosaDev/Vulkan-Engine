@@ -108,22 +108,22 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.allocate_descriptor_set(1, &m_descriptors[i].blurImageDescritor);
 
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(CameraUniforms),
                                               0,
                                               &m_descriptors[i].globalDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               0);
-        m_descriptorPool.set_descriptor_write(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
                                               sizeof(SceneUniforms),
                                               m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
                                               &m_descriptors[i].globalDescritor,
                                               UNIFORM_DYNAMIC_BUFFER,
                                               1);
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptors[i].globalDescritor, UNIFORM_BUFFER, 4);
 
-        m_descriptorPool.set_descriptor_write(get_image(ResourceManager::textureResources[0]),
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::textureResources[0]),
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].globalDescritor,
                                               5);
@@ -220,12 +220,12 @@ void PreCompositionPass::link_previous_images(std::vector<Graphics::Image> image
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // SET UP G-BUFFER
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2); // POSITION
-        m_descriptorPool.set_descriptor_write(
+        m_descriptorPool.update_descriptor(
             &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3); // NORMALS
         // RAW SSAO
-        m_descriptorPool.set_descriptor_write(&m_framebuffers[0].attachmentImages[0],
+        m_descriptorPool.update_descriptor(&m_framebuffers[0].attachmentImages[0],
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               &m_descriptors[i].blurImageDescritor,
                                               0);
@@ -241,7 +241,7 @@ void PreCompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene
     {
         for (size_t i = 0; i < m_descriptors.size(); i++)
         {
-            m_descriptorPool.set_descriptor_write(get_TLAS(scene), &m_descriptors[i].globalDescritor, 6);
+            m_descriptorPool.update_descriptor(get_TLAS(scene), &m_descriptors[i].globalDescritor, 6);
         }
         // get_TLAS(scene)->binded = true;
     }

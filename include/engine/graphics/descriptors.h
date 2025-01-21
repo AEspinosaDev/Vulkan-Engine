@@ -59,17 +59,16 @@ struct DescriptorPool {
     /*
     Set writes for Uniform Buffers
     */
-    void set_descriptor_write(Buffer*         buffer,
+    void update_descriptor(Buffer*         buffer,
                               size_t          dataSize,
                               size_t          readOffset,
                               DescriptorSet*  descriptor,
                               UniformDataType type,
                               uint32_t        binding);
-
     /*
     Set writes for Images
     */
-    void set_descriptor_write(Image*          image,
+    void update_descriptor(Image*          image,
                               ImageLayout     layout,
                               DescriptorSet*  descriptor,
                               uint32_t        binding,
@@ -77,7 +76,7 @@ struct DescriptorPool {
     /*
     Set writes for Image Array
     */
-    void set_descriptor_write(std::vector<Image>& images,
+    void update_descriptor(std::vector<Image>& images,
                               ImageLayout         layout,
                               DescriptorSet*      descriptor,
                               uint32_t            binding,
@@ -85,7 +84,7 @@ struct DescriptorPool {
     /*
     Set writes for Acceleration Structures
     */
-    void set_descriptor_write(TLAS* accel, DescriptorSet* descriptor, uint32_t binding);
+    void update_descriptor(TLAS* accel, DescriptorSet* descriptor, uint32_t binding);
 
     void cleanup();
 };

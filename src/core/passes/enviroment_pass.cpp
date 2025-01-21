@@ -25,6 +25,8 @@ void EnviromentPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&   
 
     dependencies[0] =
         Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_NONE);
+
+    m_isResizeable = false;
 }
 void EnviromentPass::create_framebuffer() {
     m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 0);
@@ -32,7 +34,7 @@ void EnviromentPass::create_framebuffer() {
 }
 void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
-    m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 1);
+    m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 2);
 
     LayoutBinding panoramaTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     LayoutBinding enviromentTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
@@ -62,9 +64,9 @@ void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_captureBuffer.upload_data(&capture, sizeof(CaptureData));
 
     // Set descriptors writes
-    m_descriptorPool.set_descriptor_write(
+    m_descriptorPool.update_descriptor(
         &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
-    m_descriptorPool.set_descriptor_write(&m_captureBuffer, BUFFER_SIZE, 0, &m_envDescriptorSet, UNIFORM_BUFFER, 2);
+    m_descriptorPool.update_descriptor(&m_captureBuffer, BUFFER_SIZE, 0, &m_envDescriptorSet, UNIFORM_BUFFER, 2);
 }
 void EnviromentPass::setup_shader_passes() {
 
@@ -74,7 +76,7 @@ void EnviromentPass::setup_shader_passes() {
         new GraphicShaderPass(m_device->get_handle(),
                               m_renderpass,
                               m_imageExtent,
-                              ENGINE_RESOURCES_PATH "shaders/misc/panorama_converter.glsl");
+                              ENGINE_RESOURCES_PATH "shaders/env/panorama_converter.glsl");
     converterPass->settings.descriptorSetLayoutIDs = {{0, true}};
     converterPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                       {NORMAL_ATTRIBUTE, false},
@@ -93,9 +95,13 @@ void EnviromentPass::setup_shader_passes() {
         new GraphicShaderPass(m_device->get_handle(),
                               m_renderpass,
                               m_imageExtent,
-                              ENGINE_RESOURCES_PATH "shaders/misc/irradiance_compute.glsl");
+                              ENGINE_RESOURCES_PATH "shaders/env/irradiance_compute.glsl");
     irradiancePass->settings.descriptorSetLayoutIDs = converterPass->settings.descriptorSetLayoutIDs;
-    irradiancePass->graphicSettings.attributes      = converterPass->graphicSettings.attributes;
+    irradiancePass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
+                                                       {NORMAL_ATTRIBUTE, false},
+                                                       {UV_ATTRIBUTE, false},
+                                                       {TANGENT_ATTRIBUTE, false},
+                                                       {COLOR_ATTRIBUTE, false}};
 
     irradiancePass->build_shader_stages();
     irradiancePass->build(m_descriptorPool);
@@ -109,6 +115,15 @@ void EnviromentPass::setup_shader_passes() {
 }
 
 void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+    if (!scene->get_skybox())
+    {
+        if (m_framebuffers[1].attachmentImages[0].currentLayout == LAYOUT_UNDEFINED)
+            currentFrame.commandBuffer.pipeline_barrier(
+                m_framebuffers[1].attachmentImages[0], LAYOUT_UNDEFINED, LAYOUT_SHADER_READ_ONLY_OPTIMAL, ACCESS_NONE);
+        return;
+    }
+    if (!scene->get_skybox()->update_enviroment())
+        return;
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     Geometry*     g   = m_vignette->get_geometry();
@@ -130,24 +145,35 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
     cmd.draw_geometry(*get_VAO(g));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
+
+    scene->get_skybox()->set_update_enviroment(false);
 }
 
 void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     if (!scene->get_skybox())
         return;
+    if (!scene->get_skybox()->update_enviroment())
+        return;
+
     TextureHDR* envMap = scene->get_skybox()->get_enviroment_map();
     if (envMap && envMap->loaded_on_GPU())
     {
-
-        if (m_envDescriptorSet.bindings == 0 || envMap->is_dirty())
+        if (envMap->is_dirty())
         {
-            m_descriptorPool.set_descriptor_write(
+            m_descriptorPool.update_descriptor(
                 get_image(envMap), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 0);
             envMap->set_dirty(false);
         }
     }
 }
 
+void EnviromentPass::update() {
+    BasePass::update();
+
+    // Update descriptor of previous framebuffer
+    m_descriptorPool.update_descriptor(
+        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
+}
 void EnviromentPass::cleanup() {
     BasePass::cleanup();
     m_captureBuffer.cleanup();
