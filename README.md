@@ -4,13 +4,34 @@
 
 <p align="center"> 
 A Vulkan based 3D library that acts as a wrapper for the most verbose Vulkan parts that I implemented to learn the API.
-	
-![Screenshot (129)](https://github.com/user-attachments/assets/52a80b7c-be5b-4bf1-bb72-b6c657a9dcca)
-![Screenshot (145)](https://github.com/user-attachments/assets/facfffe7-2eb7-48dc-b79b-a2a3c7c98989)
-![Screenshot (147)](https://github.com/user-attachments/assets/7d642b15-fbb9-4362-8c30-337fd0779d35)
-![Screenshot (136)](https://github.com/user-attachments/assets/e274c714-4412-48cd-af73-ac077b088897)
-![Screenshot (128)](https://github.com/user-attachments/assets/62f78960-d5c1-4388-a71e-c87c44f30944)
-![Screenshot (127)](https://github.com/user-attachments/assets/4d2b76d8-6e0a-45f4-ad6e-e7ff2a923a4e)
+
+ - Global Illumination
+ 
+![Screenshot (188)](https://github.com/user-attachments/assets/00b4bd3e-5d71-4da2-823b-14f24790e68c)
+![3](https://github.com/user-attachments/assets/3ee60b6f-7682-4274-ba43-b809f8df0538)
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/a32c7cec-bf1c-4fc3-92bc-6cb9233d7e7d" width="45%" />
+  <img src="https://github.com/user-attachments/assets/366a24d0-0a87-4d72-a1bf-d2e671aa4ed0" width="45%" />
+</p>
+
+ - Classic Direct Illumination + Ambient
+ 
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/52a80b7c-be5b-4bf1-bb72-b6c657a9dcca" width="45%" />
+  <img src="https://github.com/user-attachments/assets/facfffe7-2eb7-48dc-b79b-a2a3c7c98989" width="45%" />
+</p>
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/7d642b15-fbb9-4362-8c30-337fd0779d35" width="45%" />
+  <img src="https://github.com/user-attachments/assets/e274c714-4412-48cd-af73-ac077b088897" width="45%" />
+</p>
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/62f78960-d5c1-4388-a71e-c87c44f30944" width="45%" />
+  <img src="https://github.com/user-attachments/assets/4d2b76d8-6e0a-45f4-ad6e-e7ff2a923a4e" width="45%" />
+</p>
+
 
 ## Project Structure 🗃️
 
