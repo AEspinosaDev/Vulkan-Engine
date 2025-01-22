@@ -15,6 +15,10 @@ A Vulkan based 3D library that acts as a wrapper for the most verbose Vulkan par
   <img src="https://github.com/user-attachments/assets/366a24d0-0a87-4d72-a1bf-d2e671aa4ed0" width="45%" />
 </p>
 
+![Screenshot (197)](https://github.com/user-attachments/assets/faaf23a5-88cb-4e9c-a222-ac629b35ccac)
+
+
+
  - Classic Direct Illumination + Ambient
  
 <p float="left">
