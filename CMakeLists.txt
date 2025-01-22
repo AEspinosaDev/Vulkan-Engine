@@ -88,7 +88,7 @@ target_link_libraries(VulkanEngine PUBLIC
     ImGuiFileDialog)
 
 # Set dependencies inside folder
-set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply optick ImGuiFileDialog PROPERTY FOLDER "thirdparty")
+set_property(TARGET glfw glm imgui stb_image tiny_obj_loader tinyply optick ImGuiFileDialog tinyxml PROPERTY FOLDER "thirdparty")
 
 # For VISUAL STUDIO SLN EXPLORER ONLY !!!
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
