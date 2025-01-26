@@ -167,8 +167,8 @@ void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
 }
 
-void EnviromentPass::update() {
-    BasePass::update();
+void EnviromentPass::update_framebuffer() {
+    BasePass::update_framebuffer();
 
     // Update descriptor of previous framebuffer
     m_descriptorPool.update_descriptor(

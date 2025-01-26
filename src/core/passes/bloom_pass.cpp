@@ -277,8 +277,8 @@ void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
 
 }
 
-void BloomPass::update() {
-    BasePass::update();
+void BloomPass::update_framebuffer() {
+    BasePass::update_framebuffer();
     m_bloomImage.cleanup();
     for (Image& img : m_bloomMipmaps)
     {

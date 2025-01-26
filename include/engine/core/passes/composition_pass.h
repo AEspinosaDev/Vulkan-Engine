@@ -128,7 +128,7 @@ class CompositionPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void update();
+    void update_framebuffer();
 
     void cleanup();
 };

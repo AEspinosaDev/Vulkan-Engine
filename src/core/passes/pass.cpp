@@ -52,7 +52,7 @@ void BasePass::clean_framebuffer() {
     for (Framebuffer& fb : m_framebuffers)
         fb.cleanup();
 }
-void BasePass::update() {
+void BasePass::update_framebuffer() {
     if (!m_initiatized || !m_isGraphical)
         return;
 

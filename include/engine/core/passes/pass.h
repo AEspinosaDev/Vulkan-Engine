@@ -180,7 +180,7 @@ class BasePass
      * regeneration
      *
      */
-    virtual void update();
+    virtual void update_framebuffer();
     /**
      * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a
      * sepparate function for felxibilty matters

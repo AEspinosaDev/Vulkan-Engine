@@ -9,7 +9,6 @@
 #include <engine/tools/controller.h>
 #include <engine/tools/gui.h>
 #include <engine/tools/loaders.h>
-#include <engine/tools/renderer_widget.h>
 
 /**
  * Example app
@@ -24,7 +23,7 @@ class Application
         Tools::Panel *explorer{nullptr};
         Tools::Panel *tutorial{nullptr};
         Tools::Panel *properties{nullptr};
-        Tools::SceneExplorerWidget *scene{nullptr};
+        Tools::ExplorerWidget *scene{nullptr};
         Tools::ObjectExplorerWidget *object{nullptr};
     };
     UserInterface m_interface{};

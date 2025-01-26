@@ -73,7 +73,7 @@ class BloomPass : public BasePass
 
     void link_previous_images(std::vector<Graphics::Image> images);
 
-    void update();
+    void update_framebuffer();
 
     void cleanup();
 };

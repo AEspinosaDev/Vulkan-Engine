@@ -9,6 +9,7 @@
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/precomposition_pass.h>
+#include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/core/passes/voxelization_pass.h>
 
@@ -93,9 +94,21 @@ class DeferredRenderer : public BaseRenderer
     inline void set_shading_output(Core::OutputBuffer output) {
         get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->set_output_buffer(output);
     }
-    inline Core::OutputBuffer get_shading_output() const {
-        // get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_output_buffer();
-        return static_cast<Core::CompositionPass*>(m_passes[COMPOSITION_PASS])->get_output_buffer();
+    inline Core::OutputBuffer get_shading_output() {
+        return get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_output_buffer();
+    }
+    inline float get_exposure() {
+        auto pass = get_pass<Core::TonemappingPass*>(TONEMAPPIN_PASS);
+        return pass->get_exposure();
+    }
+    inline void set_exposure(float exposure) {
+        get_pass<Core::TonemappingPass*>(TONEMAPPIN_PASS)->set_exposure(exposure);
+    }
+    inline Core::TonemappingType get_tonemapping_type() {
+        return get_pass<Core::TonemappingPass*>(TONEMAPPIN_PASS)->get_tonemapping_type();
+    }
+    inline void set_tonemapping_type(Core::TonemappingType type) {
+        get_pass<Core::TonemappingPass*>(TONEMAPPIN_PASS)->set_tonemapping_type(type);
     }
 
   protected:

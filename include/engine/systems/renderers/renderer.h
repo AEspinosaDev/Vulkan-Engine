@@ -117,7 +117,9 @@ class BaseRenderer
         m_settings.clearColor = c;
     }
     template <typename T> inline T get_pass(uint32_t id) {
-        return id < m_passes.size() ? static_cast<T>(m_passes[id]) : nullptr;
+        T pass = id < m_passes.size() ? static_cast<T>(m_passes[id]) : nullptr;
+        ASSERT_PTR(pass);
+        return pass;
     }
 
 #pragma endregion
@@ -186,7 +188,7 @@ class BaseRenderer
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context
     */
-    void update_passes();
+    void update_framebuffers();
     /*
     Initialize gui layout in case ther's one enabled
     */

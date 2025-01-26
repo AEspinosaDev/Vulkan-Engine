@@ -125,7 +125,7 @@ void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* cons
         m_window->is_resized() || m_updateFramebuffers)
     {
         m_window->set_resized(false);
-        update_passes();
+        update_framebuffers();
         scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
     } else if (renderResult != RenderResult::SUCCESS)
     { throw VKFW_Exception("failed to present swap chain image!"); }
@@ -145,7 +145,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     if (result == RenderResult::ERROR_OUT_OF_DATE_KHR)
     {
-        update_passes();
+        update_framebuffers();
         return;
     } else if (result != RenderResult::SUCCESS && result != RenderResult::SUBOPTIMAL_KHR)
     { throw VKFW_Exception("failed to acquire swap chain image!"); }
@@ -191,7 +191,7 @@ void BaseRenderer::connect_pass(Core::BasePass* const currentPass) {
     currentPass->link_previous_images(images);
 }
 
-void BaseRenderer::update_passes() {
+void BaseRenderer::update_framebuffers() {
 
     m_window->update_framebuffer();
 
@@ -209,7 +209,7 @@ void BaseRenderer::update_passes() {
             if (pass->resizeable())
             {
                 pass->set_extent(m_window->get_extent());
-                pass->update();
+                pass->update_framebuffer();
             }
             connect_pass(pass);
         }

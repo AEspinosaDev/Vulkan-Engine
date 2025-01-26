@@ -259,7 +259,7 @@ void Application::setup_gui() {
     m_interface.tutorial = tutorialPanel;
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene           = new Tools::SceneExplorerWidget(m_scene);
+    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
     explorerPanel->add_child(new Tools::RendererSettingsWidget(m_renderer));

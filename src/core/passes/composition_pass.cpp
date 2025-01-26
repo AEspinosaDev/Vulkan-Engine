@@ -280,8 +280,8 @@ void CompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
 }
 
 
-void CompositionPass::update() {
-    GraphicPass::update();
+void CompositionPass::update_framebuffer() {
+    GraphicPass::update_framebuffer();
     create_prev_frame_image();
 }
 

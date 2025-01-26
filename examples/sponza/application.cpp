@@ -68,10 +68,9 @@ void Application::setup_gui() {
 
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene           = new Tools::SceneExplorerWidget(m_scene);
+    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
-    explorerPanel->add_child(new Tools::DeferredRendererWidget(static_cast<Systems::DeferredRenderer*>(m_renderer)));
     explorerPanel->add_child(new Tools::ControllerWidget(m_controller));
     explorerPanel->add_child(new Tools::Separator());
     explorerPanel->add_child(new Tools::TextLine(" Application average"));

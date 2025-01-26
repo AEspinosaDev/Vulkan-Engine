@@ -34,7 +34,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
         const uint32_t SHADOW_RES = (uint32_t)m_shadowQuality;
 
         m_passes[SHADOW_PASS]->set_extent({SHADOW_RES, SHADOW_RES});
-        m_passes[SHADOW_PASS]->update();
+        m_passes[SHADOW_PASS]->update_framebuffer();
 
         m_updateShadows = false;
 
@@ -45,7 +45,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
         m_device->wait();
 
         m_passes[VOXELIZATION_PASS]->set_extent({m_VXGI.resolution, m_VXGI.resolution});
-        m_passes[VOXELIZATION_PASS]->update();
+        m_passes[VOXELIZATION_PASS]->update_framebuffer();
 
         m_updateGI = false;
 
@@ -97,12 +97,10 @@ void DeferredRenderer::create_passes() {
     m_passes[BLOOM_PASS]->set_image_dependencies({Core::ImageDependency(COMPOSITION_PASS, 0, {0, 1})});
 
     // Tonemapping
-    m_passes[TONEMAPPIN_PASS] = new Core::PostProcessPass(m_device,
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device,
                                                           m_window->get_extent(),
                                                           m_settings.colorFormat,
                                                           Core::ResourceManager::VIGNETTE,
-                                                          ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
-                                                          "TONEMAPPING",
                                                           m_settings.softwareAA ? false : true);
     m_passes[TONEMAPPIN_PASS]->set_image_dependencies({Core::ImageDependency(BLOOM_PASS, 0, {0})});
 
@@ -130,7 +128,7 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
             m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
-            m_passes[ENVIROMENT_PASS]->update();
+            m_passes[ENVIROMENT_PASS]->update_framebuffer();
 
             connect_pass(m_passes[GEOMETRY_PASS]);
             connect_pass(m_passes[COMPOSITION_PASS]);

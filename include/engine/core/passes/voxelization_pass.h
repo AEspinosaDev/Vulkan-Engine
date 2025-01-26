@@ -56,7 +56,7 @@ class VoxelizationPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void update();
+    void update_framebuffer();
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
     

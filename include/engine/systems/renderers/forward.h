@@ -5,6 +5,7 @@
 #include <engine/core/passes/enviroment_pass.h>
 #include <engine/core/passes/forward_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
+#include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 
 #include <engine/systems/renderers/renderer.h>

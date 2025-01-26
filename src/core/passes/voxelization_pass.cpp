@@ -349,8 +349,8 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
         }
     }
 }
-void VoxelizationPass::update() {
-    BasePass::update();
+void VoxelizationPass::update_framebuffer() {
+    BasePass::update_framebuffer();
     for (Graphics::Image& img : m_resourceImages)
         img.cleanup();
     create_voxelization_image();

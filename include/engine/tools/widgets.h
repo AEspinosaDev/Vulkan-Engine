@@ -12,11 +12,13 @@
 #include <ImGuiFileDialog.h>
 #include <engine/common.h>
 #include <engine/core.h>
+#include <engine/systems/renderers/deferred.h>
+#include <engine/systems/renderers/forward.h>
 #include <engine/systems/renderers/renderer.h>
-#include <engine/tools/loaders.h>
 #include <engine/tools/controller.h>
-#include <functional>
+#include <engine/tools/loaders.h>
 #include <filesystem>
+#include <functional>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -281,10 +283,11 @@ class TextLine : public Widget
         m_text = t;
     }
 };
-class ControllerWidget : public Widget{
+class ControllerWidget : public Widget
+{
   protected:
-    Controller* m_controller;
-    virtual void    render();
+    Controller*  m_controller;
+    virtual void render();
 
   public:
     ControllerWidget(Controller* ctrl)
@@ -298,25 +301,30 @@ class ControllerWidget : public Widget{
     inline void set_controller(Controller* sc) {
         m_controller = sc;
     }
-
 };
 
-class SceneExplorerWidget : public Widget
+class ExplorerWidget : public Widget
 {
 
   protected:
+    Systems::BaseRenderer* m_renderer{nullptr};
+
     Core::Scene*    m_scene;
     Core::Object3D* m_selectedObject{nullptr};
-    virtual void    render();
+
+    bool m_showRendererSettings{false};
+
+    virtual void render();
 
     void displayObject(Core::Object3D* const obj, int& counter);
+    void displayRendererSettings();
 
   public:
-    SceneExplorerWidget(Core::Scene* scene)
+    ExplorerWidget(Core::Scene* scene, Systems::BaseRenderer* renderer)
         : Widget(ImVec2(0, 0), ImVec2(0, 0))
-        , m_scene(scene) {
+        , m_scene(scene)
+        , m_renderer(renderer) {
     }
-
     inline Core::Scene* get_scene() const {
         return m_scene;
     }
@@ -347,6 +355,67 @@ class ObjectExplorerWidget : public Widget
     }
     inline void set_object(Core::Object3D* obj) {
         m_object = obj;
+    }
+};
+
+class RendererSettingsWidget : public Widget
+{
+
+  protected:
+    Systems::BaseRenderer* m_renderer;
+    virtual void           render();
+
+  public:
+    RendererSettingsWidget(Systems::BaseRenderer* r)
+        : Widget(ImVec2(0, 0), ImVec2(0, 0))
+        , m_renderer(r) {
+    }
+
+    inline Systems::BaseRenderer* get_renderer() const {
+        return m_renderer;
+    }
+    inline void set_renderer(Systems::BaseRenderer* r) {
+        m_renderer = r;
+    }
+};
+class DeferredRendererWidget : public Widget
+{
+
+  protected:
+    Systems::DeferredRenderer* m_renderer;
+    virtual void               render();
+
+  public:
+    DeferredRendererWidget(Systems::DeferredRenderer* r)
+        : Widget(ImVec2(0, 0), ImVec2(0, 0))
+        , m_renderer(r) {
+    }
+
+    inline Systems::DeferredRenderer* get_renderer() const {
+        return m_renderer;
+    }
+    inline void set_renderer(Systems::DeferredRenderer* r) {
+        m_renderer = r;
+    }
+};
+class ForwardRendererWidget : public Widget
+{
+
+  protected:
+    Systems::ForwardRenderer* m_renderer;
+    virtual void              render();
+
+  public:
+    ForwardRendererWidget(Systems::ForwardRenderer* r)
+        : Widget(ImVec2(0, 0), ImVec2(0, 0))
+        , m_renderer(r) {
+    }
+
+    inline Systems::ForwardRenderer* get_renderer() const {
+        return m_renderer;
+    }
+    inline void set_renderer(Systems::ForwardRenderer* r) {
+        m_renderer = r;
     }
 };
 } // namespace Tools
