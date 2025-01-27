@@ -15,6 +15,12 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
+
+enum EnviromentType
+{
+    IMAGE_BASED_ENV = 0,
+    PROCEDURAL_ENV  = 1,
+};
 /*
 Skybox for rendering enviroments and IBL
 */
@@ -25,10 +31,14 @@ class Skybox
     TextureHDR* m_env = nullptr;
 
     // Settings
-    float    m_blurriness           = 0.0f;
-    float    m_intensity            = 1.0f;
-    float    m_rotation             = 0.0f;
-    uint32_t m_irradianceResolution = 32;
+    float          m_blurriness           = 0.0f;
+    float          m_intensity            = 1.0f;
+    float          m_rotation             = 0.0f;
+    uint32_t       m_irradianceResolution = 32;
+    EnviromentType m_envType              = IMAGE_BASED_ENV;
+    float          m_time;
+    uint32_t       m_month;
+    uint32_t       m_aerosolType;
 
     bool m_updateEnviroment{true};
     bool m_active{true};
@@ -36,6 +46,10 @@ class Skybox
   public:
     Skybox(TextureHDR* env)
         : m_env(env) {
+        m_box = Geometry::create_cube();
+    }
+    Skybox()
+        : m_env(nullptr) {
         m_box = Geometry::create_cube();
     }
     ~Skybox() {
@@ -90,12 +104,12 @@ class Skybox
     inline bool is_active() {
         return m_active;
     }
-    inline uint32_t get_irradiance_resolution() const{
+    inline uint32_t get_irradiance_resolution() const {
         return m_irradianceResolution;
     }
-    inline void set_irradiance_resolution(uint32_t r){
+    inline void set_irradiance_resolution(uint32_t r) {
         m_irradianceResolution = r;
-        m_updateEnviroment = true;
+        m_updateEnviroment     = true;
     }
 };
 
