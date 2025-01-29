@@ -43,7 +43,6 @@ void main() {
 
 #shader fragment
 #version 460 core
-#include reindhart.glsl
 
 #define MATH_PI 3.1415926535897932384626433832795
 #define MATH_INV_PI (1.0 / MATH_PI)

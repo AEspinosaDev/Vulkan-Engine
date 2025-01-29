@@ -88,6 +88,7 @@ void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
+            m_passes[ENVIROMENT_PASS]->set_active(true);
             m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
             m_passes[ENVIROMENT_PASS]->update_framebuffer();
 

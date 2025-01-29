@@ -19,9 +19,10 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_4));
 
     Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
-    m_renderer = rndr;
+    m_renderer                      = rndr;
 
     setup();
+    m_renderer->init();
     setup_gui();
 }
 
@@ -58,14 +59,13 @@ void Application::setup() {
     m_scene->set_ambient_intensity(0.1f);
     m_scene->use_IBL(false);
 
-    m_camera = m_scene->get_active_camera();
+    m_camera     = m_scene->get_active_camera();
     m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::WASD);
 }
 
 void Application::setup_gui() {
     m_interface.overlay = new Tools::GUIOverlay(
         (float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
-
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
     m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
@@ -87,7 +87,6 @@ void Application::setup_gui() {
 
     m_interface.overlay->add_panel(propertiesPanel);
     m_interface.properties = propertiesPanel;
-
 }
 
 void Application::update() {

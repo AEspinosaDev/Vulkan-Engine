@@ -84,7 +84,6 @@ void main() {
 #include utils.glsl
 #include shadows.glsl
 #include fresnel.glsl
-#include reindhart.glsl
 #include BRDFs/cook_torrance_BRDF.glsl
 #include warp.glsl
 #include raytracing.glsl

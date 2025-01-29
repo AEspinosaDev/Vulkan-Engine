@@ -30,7 +30,6 @@ void main()
 
 #shader fragment
 #version 460 
-#include reindhart.glsl
 #include light.glsl
 #include scene.glsl
 

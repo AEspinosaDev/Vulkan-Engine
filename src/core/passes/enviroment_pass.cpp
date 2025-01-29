@@ -122,8 +122,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
                 m_framebuffers[1].attachmentImages[0], LAYOUT_UNDEFINED, LAYOUT_SHADER_READ_ONLY_OPTIMAL, ACCESS_NONE);
         return;
     }
-    if (!scene->get_skybox()->update_enviroment())
-        return;
+  
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     Geometry*     g   = m_vignette->get_geometry();
@@ -146,7 +145,9 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     cmd.draw_geometry(*get_VAO(g));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
+    /* Everything is updated, set to sleep */
     scene->get_skybox()->set_update_enviroment(false);
+    set_active(false);
 }
 
 void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {

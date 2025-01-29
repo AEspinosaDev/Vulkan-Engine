@@ -69,13 +69,11 @@ class BaseRenderer
     BaseRenderer(Core::IWindow* window)
         : m_window(window)
         , m_device(nullptr) {
-        on_instance();
     }
     BaseRenderer(Core::IWindow* window, RendererSettings settings)
         : m_window(window)
         , m_settings(settings)
         , m_device(nullptr) {
-        on_instance();
     }
 
 #pragma region Getters & Setters
@@ -116,11 +114,6 @@ class BaseRenderer
     virtual inline void set_clearcolor(Vec4 c) {
         m_settings.clearColor = c;
     }
-    template <typename T> inline T get_pass(uint32_t id) {
-        T pass = id < m_passes.size() ? static_cast<T>(m_passes[id]) : nullptr;
-        ASSERT_PTR(pass);
-        return pass;
-    }
 
 #pragma endregion
 #pragma region Public Functions
@@ -149,11 +142,6 @@ class BaseRenderer
      Init renderpasses and
      */
     virtual void create_passes();
-    /*
-    What to do when instancing the renderer
-    */
-    virtual void on_instance() {
-    }
     /*
     What to do when initiating the renderer
     */
@@ -193,6 +181,14 @@ class BaseRenderer
     Initialize gui layout in case ther's one enabled
     */
     void init_gui();
+#pragma endregion
+#pragma region Utility
+
+    template <typename T> inline T get_pass(uint32_t id) {
+        T pass = id < m_passes.size() ? static_cast<T>(m_passes[id]) : nullptr;
+        ASSERT_PTR(pass);
+        return pass;
+    }
 #pragma endregion
 };
 } // namespace Systems

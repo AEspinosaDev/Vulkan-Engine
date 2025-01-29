@@ -35,6 +35,11 @@ vec3 filmicTonemap(vec3 color){
     return vec3(1.0) - exp(-color * settings.exposure);
 }
 
+vec3 uncharted2Tonemap(vec3 color) {
+    vec3 a = (color + vec3(0.004)) / (color + vec3(1.0));
+    return a * (1.0 + a / (a + vec3(0.15)));
+}
+
 /*
  * ACES tonemapping fit for the sRGB color space
  * https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
@@ -62,6 +67,7 @@ vec3 RRT_ODT_Fit(vec3 v)
 
 vec3 ACESTonemapFitted(vec3 color)
 {
+    color = color * exp2(settings.exposure);
 	color = ACESInputMat * color;
     color = RRT_ODT_Fit(color);
     color = ACESOutputMat * color;

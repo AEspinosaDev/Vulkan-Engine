@@ -12,6 +12,7 @@
 #include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/core/passes/voxelization_pass.h>
+#include <engine/core/passes/sky_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -22,29 +23,35 @@ Renders a given scene data to a given window using deferred rendering. Fully par
 */
 class DeferredRenderer : public BaseRenderer
 {
+  protected:
     enum RendererPasses
     {
-        ENVIROMENT_PASS     = 0,
-        SHADOW_PASS         = 1,
-        VOXELIZATION_PASS   = 2,
-        GEOMETRY_PASS       = 3,
-        PRECOMPOSITION_PASS = 4,
-        COMPOSITION_PASS    = 5,
-        BLOOM_PASS          = 6,
-        TONEMAPPIN_PASS     = 7,
-        FXAA_PASS           = 8,
+        SKY_PASS            = 0, 
+        ENVIROMENT_PASS     = 1,
+        SHADOW_PASS         = 2,
+        VOXELIZATION_PASS   = 3,
+        GEOMETRY_PASS       = 4,
+        PRECOMPOSITION_PASS = 5,
+        COMPOSITION_PASS    = 6,
+        BLOOM_PASS          = 7,
+        TONEMAPPIN_PASS     = 8,
+        FXAA_PASS           = 9,
     };
 
     // Graphic Settings
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
-    Core::SSR        m_SSR           = {};
-    Core::VXGI       m_VXGI          = {};
-    Core::AO         m_AO            = {};
-    float            m_bloomStrength = 0.05f;
 
     // Query
     bool m_updateShadows = false;
     bool m_updateGI      = false;
+
+    virtual void on_before_render(Core::Scene* const scene);
+
+    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
+
+    virtual void create_passes();
+
+    virtual void update_enviroment(Core::Skybox* const skybox);
 
   public:
     DeferredRenderer(Core::IWindow* window)
@@ -57,7 +64,7 @@ class DeferredRenderer : public BaseRenderer
         , m_shadowQuality(shadowQuality) {
     }
 
-    inline ShadowResolution get_shadow_quality() const {
+    inline ShadowResolution get_shadow_quality() {
         return m_shadowQuality;
     }
     inline void set_shadow_quality(ShadowResolution quality) {
@@ -65,31 +72,35 @@ class DeferredRenderer : public BaseRenderer
         if (m_initialized)
             m_updateShadows = true;
     }
-    inline float get_bloom_strength() const {
-        return m_bloomStrength;
+    inline float get_bloom_strength() {
+        return get_pass<Core::BloomPass*>(BLOOM_PASS)->get_bloom_strength();
     }
     inline void set_bloom_strength(float st) {
-        m_bloomStrength = st;
+        get_pass<Core::BloomPass*>(BLOOM_PASS)->set_bloom_strength(st);
     }
     inline void set_SSR_settings(Core::SSR settings) {
-        m_SSR = settings;
+        get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->set_SSR_settings(settings);
     };
-    inline Core::SSR get_SSR_settings() const {
-        return m_SSR;
+    inline Core::SSR get_SSR_settings() {
+        return get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_SSR_settings();
     };
     inline void set_VXGI_settings(Core::VXGI settings) {
-        if (m_VXGI.resolution != settings.resolution)
+        if (get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_VXGI_settings().resolution != settings.resolution)
             m_updateGI = true;
-        m_VXGI = settings;
+        get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->set_VXGI_settings(settings);
+        m_passes[VOXELIZATION_PASS]->set_active(settings.enabled);
     };
-    inline Core::VXGI get_VXGI_settings() const {
-        return m_VXGI;
+    inline Core::VXGI get_VXGI_settings() {
+        return get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_VXGI_settings();
     };
     inline void set_SSAO_settings(Core::AO settings) {
-        m_AO = settings;
+        get_pass<Core::PreCompositionPass*>(PRECOMPOSITION_PASS)->set_SSAO_settings(settings);
+        get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->enable_AO(settings.enabled);
+        get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->set_AO_type(static_cast<int>(settings.type));
+        m_passes[PRECOMPOSITION_PASS]->set_active(settings.enabled && settings.type != Core::AOType::VXAO);
     };
-    inline Core::AO get_SSAO_settings() const {
-        return m_AO;
+    inline Core::AO get_SSAO_settings() {
+        return get_pass<Core::PreCompositionPass*>(PRECOMPOSITION_PASS)->get_SSAO_settings();
     };
     inline void set_shading_output(Core::OutputBuffer output) {
         get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->set_output_buffer(output);
@@ -110,15 +121,6 @@ class DeferredRenderer : public BaseRenderer
     inline void set_tonemapping_type(Core::TonemappingType type) {
         get_pass<Core::TonemappingPass*>(TONEMAPPIN_PASS)->set_tonemapping_type(type);
     }
-
-  protected:
-    virtual void on_before_render(Core::Scene* const scene);
-
-    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
-
-    virtual void create_passes();
-
-    virtual void update_enviroment(Core::Skybox* const skybox);
 };
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

@@ -8,17 +8,6 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
     update_enviroment(scene->get_skybox());
     BaseRenderer::on_before_render(scene);
 
-    // Set Deferred Graphic Settings
-    Core::CompositionPass* compPass = get_pass<Core::CompositionPass*>(COMPOSITION_PASS);
-    compPass->set_SSR_settings(m_SSR);
-    compPass->set_VXGI_settings(m_VXGI);
-    compPass->enable_AO(m_AO.enabled);
-    compPass->set_AO_type(static_cast<int>(m_AO.type));
-    get_pass<Core::PreCompositionPass*>(PRECOMPOSITION_PASS)->set_SSAO_settings(m_AO);
-    get_pass<Core::BloomPass*>(BLOOM_PASS)->set_bloom_strength(m_bloomStrength);
-    m_passes[VOXELIZATION_PASS]->set_active(m_VXGI.enabled);
-    m_passes[PRECOMPOSITION_PASS]->set_active(m_AO.enabled && m_AO.type != Core::AOType::VXAO);
-
     // Set clear color
     m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
@@ -44,7 +33,8 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
     {
         m_device->wait();
 
-        m_passes[VOXELIZATION_PASS]->set_extent({m_VXGI.resolution, m_VXGI.resolution});
+        uint32_t voxelRes = get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_VXGI_settings().resolution;
+        m_passes[VOXELIZATION_PASS]->set_extent({voxelRes, voxelRes});
         m_passes[VOXELIZATION_PASS]->update_framebuffer();
 
         m_updateGI = false;
@@ -56,7 +46,10 @@ void DeferredRenderer::create_passes() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    m_passes.resize(9, nullptr);
+    m_passes.resize(10, nullptr);
+
+    // Sky Generation Pass
+    m_passes[SKY_PASS] = new Core::SkyPass(m_device, {1024, 512}, Core::ResourceManager::VIGNETTE);
 
     // Enviroment Pass
     m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, Core::ResourceManager::VIGNETTE);
@@ -66,7 +59,7 @@ void DeferredRenderer::create_passes() {
         new Core::VarianceShadowPass(m_device, {SHADOW_RES, SHADOW_RES}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
 
     // Voxelization Pass
-    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, m_VXGI.resolution);
+    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, 256);
     m_passes[VOXELIZATION_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0})});
 
     // Geometry Pass
@@ -127,6 +120,7 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
+            m_passes[ENVIROMENT_PASS]->set_active(true);
             m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
             m_passes[ENVIROMENT_PASS]->update_framebuffer();
 
