@@ -24,15 +24,13 @@ This pass does three things:
 class EnviromentPass : public GraphicPass
 {
     ColorFormatType         m_format;
-    Mesh*                   m_vignette;
     Graphics::DescriptorSet m_envDescriptorSet;
     Graphics::Buffer        m_captureBuffer;
     Extent2D                m_irradianceResolution;
 
   public:
-    EnviromentPass(Graphics::Device* ctx, Mesh* vignette)
+    EnviromentPass(Graphics::Device* ctx)
         : BasePass(ctx, {1, 1}, 2, CUBEMAP_FACES, false)
-        , m_vignette(vignette)
         , m_format(SRGBA_32F)
         , m_irradianceResolution({1, 1}) {
     }
@@ -58,6 +56,8 @@ class EnviromentPass : public GraphicPass
     void update_framebuffer();
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+
+    void link_previous_images(std::vector<Graphics::Image> images);
 
     void cleanup();
 };

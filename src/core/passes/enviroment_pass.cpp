@@ -122,10 +122,8 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
                 m_framebuffers[1].attachmentImages[0], LAYOUT_UNDEFINED, LAYOUT_SHADER_READ_ONLY_OPTIMAL, ACCESS_NONE);
         return;
     }
-  
 
     CommandBuffer cmd = currentFrame.commandBuffer;
-    Geometry*     g   = m_vignette->get_geometry();
 
     /*Draw Cubemap*/
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
@@ -133,7 +131,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     ShaderPass* shaderPass = m_shaderPasses["converter"];
     cmd.bind_shaderpass(*shaderPass);
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /*Draw Diffuse Irradiance*/
@@ -142,14 +140,17 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     shaderPass = m_shaderPasses["irr"];
     cmd.bind_shaderpass(*shaderPass);
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
     /* Everything is updated, set to sleep */
-    scene->get_skybox()->set_update_enviroment(false);
+    scene->get_skybox()->update_enviroment(false);
     set_active(false);
 }
 
+void EnviromentPass::link_previous_images(std::vector<Graphics::Image> images) {
+    // m_descriptorPool.update_descriptor(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 0);
+}
 void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     if (!scene->get_skybox())
         return;

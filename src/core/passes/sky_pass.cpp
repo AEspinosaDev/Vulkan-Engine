@@ -26,22 +26,34 @@ void SkyPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attach
     dependencies[0] = Graphics::SubPassDependency(
         STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
+
+    m_isResizeable = false;
+}
+void SkyPass::create_framebuffer() {
+    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 0);
+    m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 1);
+    m_framebuffers[2] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 2);
 }
 void SkyPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
-    m_descriptorPool = m_device->create_descriptor_pool(1, 1,1,1, 1);
+    m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 2);
 
     LayoutBinding LUTBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
-    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {LUTBinding});
+    LayoutBinding SKYBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {LUTBinding, SKYBinding});
 
-    m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_LUTdescriptor);
+    m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptor);
+
     m_descriptorPool.update_descriptor(
-        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_LUTdescriptor, 0);
+        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
+    m_descriptorPool.update_descriptor(
+        &m_framebuffers[1].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
 }
 void SkyPass::setup_shader_passes() {
 
     GraphicShaderPass* ttPass = new GraphicShaderPass(
         m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_tt_compute.glsl");
+    ttPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings))};
     ttPass->settings.descriptorSetLayoutIDs = {{0, true}};
     ttPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
                                                {NORMAL_ATTRIBUTE, false},
@@ -56,6 +68,7 @@ void SkyPass::setup_shader_passes() {
 
     GraphicShaderPass* skyPass = new GraphicShaderPass(
         m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_generation.glsl");
+    skyPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings))};
     skyPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
     skyPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
 
@@ -63,12 +76,27 @@ void SkyPass::setup_shader_passes() {
     skyPass->build(m_descriptorPool);
 
     m_shaderPasses["sky"] = skyPass;
+
+    GraphicShaderPass* projPass = new GraphicShaderPass(
+        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_projection.glsl");
+    projPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(int))};
+    projPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
+    projPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
+
+    projPass->build_shader_stages();
+    projPass->build(m_descriptorPool);
+
+    m_shaderPasses["proj"] = projPass;
 }
 
 void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
+    if (!scene->get_skybox())
+        return;
+
     CommandBuffer cmd = currentFrame.commandBuffer;
-    Geometry*     g   = m_vignette->get_geometry();
+
+    SkySettings skySettings = scene->get_skybox()->get_sky_settings();
 
     /* Transmittance LUT Generation*/
     // ------------------------------------
@@ -76,18 +104,32 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     cmd.set_viewport(m_imageExtent);
     ShaderPass* shaderPass = m_shaderPasses["tt"];
     cmd.bind_shaderpass(*shaderPass);
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &skySettings, sizeof(SkySettings));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
-    /* Transmittance LUT Generation*/
+    /* Sky Generation*/
     // ------------------------------------
     cmd.begin_renderpass(m_renderpass, m_framebuffers[1]);
     cmd.set_viewport(m_imageExtent);
     shaderPass = m_shaderPasses["sky"];
     cmd.bind_shaderpass(*shaderPass);
-    cmd.bind_descriptor_set(m_LUTdescriptor, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &skySettings, sizeof(SkySettings));
+    cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
+
+    /* Sky Generation*/
+    // ------------------------------------
+    cmd.begin_renderpass(m_renderpass, m_framebuffers[2]);
+    cmd.set_viewport(m_imageExtent);
+    shaderPass = m_shaderPasses["proj"];
+    cmd.bind_shaderpass(*shaderPass);
+    int projectionType = skySettings.useForIBL;
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &projectionType, sizeof(int));
+    cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.end_renderpass(m_renderpass, m_framebuffers[2]);
 }
 
 } // namespace Core

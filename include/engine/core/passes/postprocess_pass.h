@@ -21,7 +21,6 @@ class PostProcessPass : public GraphicPass
 {
   protected:
     ColorFormatType         m_colorFormat;
-    Mesh*                   m_vignette;
     Graphics::DescriptorSet m_imageDescriptorSet;
     std::string             m_shaderPath;
 
@@ -29,13 +28,11 @@ class PostProcessPass : public GraphicPass
     PostProcessPass(Graphics::Device* ctx,
                     Extent2D          extent,
                     ColorFormatType   colorFormat,
-                    Mesh*             vignette,
                     std::string       shaderPath,
                     std::string       name      = "POST-PROCESS",
                     bool              isDefault = true)
         : BasePass(ctx, extent, 1, 1, isDefault, name)
         , m_colorFormat(colorFormat)
-        , m_vignette(vignette)
         , m_shaderPath(shaderPath) {
     }
 

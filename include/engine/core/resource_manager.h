@@ -16,6 +16,7 @@
 #include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
+#include <engine/core/passes/pass.h>
 
 #include <engine/graphics/device.h>
 
@@ -39,11 +40,7 @@ class ResourceManager
     static std::vector<Core::ITexture*> textureResources;
     static Core::Texture*              FALLBACK_TEXTURE;
     static Core::Texture*              FALLBACK_CUBEMAP;
-    /*
-    Vignette for RTT
-    */
-    static Core::Mesh* VIGNETTE;
-
+   
     /*
     Creates and initiates basic rendering resources such as fallback textures and a vignette
     */

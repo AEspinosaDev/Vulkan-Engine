@@ -50,7 +50,7 @@ void main()
 {    
     vec3 color =texture(envMap, _uv).rgb * scene.envColorMultiplier;
     
-    outPos      = vec4(_uv,gl_FragCoord.z);
+    outPos      = vec4(0.0);
     outNormal   = vec4(0.0);
     outAlbedo   = vec4(color,1.0);
     outMaterial = vec4(0.0); //w material ID

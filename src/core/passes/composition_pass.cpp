@@ -195,8 +195,7 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].gBufferDescritor, 1, *shaderPass);
 
-    Geometry* g = m_vignette->get_geometry();
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)

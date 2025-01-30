@@ -51,7 +51,6 @@ class CompositionPass : public GraphicPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
-    Mesh*           m_vignette;
 
     /*Descriptors*/
     struct FrameDescriptors {
@@ -74,14 +73,9 @@ class CompositionPass : public GraphicPass
     void create_prev_frame_image();
 
   public:
-    CompositionPass(Graphics::Device* ctx,
-                    VkExtent2D        extent,
-                    ColorFormatType   colorFormat,
-                    Mesh*             vignette,
-                    bool              isDefault = true)
+    CompositionPass(Graphics::Device* ctx, VkExtent2D extent, ColorFormatType colorFormat, bool isDefault = true)
         : BasePass(ctx, extent, 1, 1, isDefault, "COMPOSITION")
-        , m_colorFormat(colorFormat)
-        , m_vignette(vignette) {
+        , m_colorFormat(colorFormat) {
     }
 
     inline void set_SSR_settings(SSR settings) {

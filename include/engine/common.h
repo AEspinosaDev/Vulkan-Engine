@@ -654,6 +654,29 @@ typedef enum TextWidgetType
     BULLET,
 } TextWidgetType;
 
+enum EnviromentType
+{
+    IMAGE_BASED_ENV = 0,
+    PROCEDURAL_ENV  = 1,
+};
+typedef enum class SkyAerosolType
+{
+    BACKGROUND         = 0,
+    DESERT_DUST        = 1,
+    MARITIME_CLEAN     = 2,
+    MARITIME_MINERAL   = 3,
+    POLAR_ANTARCTIC    = 4,
+    POLAR_ARCTIC       = 5,
+    REMOTE_CONTINENTAL = 6,
+    RURAL              = 7,
+    URBAN              = 8
+} AerosolType;
+enum class UpdateType
+{
+    PER_FRAME = 0,
+    ON_DEMAND = 1
+};
+
 VULKAN_ENGINE_NAMESPACE_END
 
 #endif

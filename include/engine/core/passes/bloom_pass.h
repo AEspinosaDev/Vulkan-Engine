@@ -33,7 +33,6 @@ class BloomPass : public BasePass
 {
   protected:
     ColorFormatType m_colorFormat = SRGBA_32F;
-    Mesh*           m_vignette;
 
     Graphics::DescriptorSet m_imageDescriptorSet;
 
@@ -50,9 +49,8 @@ class BloomPass : public BasePass
     std::vector<Graphics::Framebuffer> m_bloomFramebuffers;
 
   public:
-    BloomPass(Graphics::Device* ctx, Extent2D extent, Mesh* vignette, bool isDefault = false)
-        : BasePass(ctx, extent, 1, 1, isDefault, "BLOOM")
-        , m_vignette(vignette) {
+    BloomPass(Graphics::Device* ctx, Extent2D extent, bool isDefault = false)
+        : BasePass(ctx, extent, 1, 1, isDefault, "BLOOM") {
     }
 
     inline float get_bloom_strength() const {

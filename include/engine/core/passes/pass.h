@@ -187,6 +187,11 @@ class BasePass
      */
     virtual void cleanup();
 #pragma endregion
+
+    /*
+    Public static member. 
+    Vignette for rendering textures onto screen.*/
+    static Core::Geometry* vignette;
 };
 
 #pragma region IMAGE DEP

@@ -87,8 +87,7 @@ void PostProcessPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     cmd.bind_shaderpass(*shaderPass);
     cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
-    Geometry* g = m_vignette->get_geometry();
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)

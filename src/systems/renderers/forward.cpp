@@ -36,7 +36,7 @@ void ForwardRenderer::create_passes() {
 
     m_passes.resize(6, nullptr);
     // Enviroment Pass
-    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, Core::ResourceManager::VIGNETTE);
+    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device);
 
     // Shadow Pass
     m_passes[SHADOW_PASS] =
@@ -50,25 +50,21 @@ void ForwardRenderer::create_passes() {
                                                     Core::ImageDependency(ENVIROMENT_PASS, 1, {0})});
 
     // Bloom Pass
-    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent(), Core::ResourceManager::VIGNETTE);
+    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent());
     m_passes[BLOOM_PASS]->set_image_dependencies(
         {Core::ImageDependency(FORWARD_PASS,
                                0,
                                {m_settings.samplesMSAA > MSAASamples::x1 ? (uint32_t)2 : 0,
                                 m_settings.samplesMSAA > MSAASamples::x1 ? (uint32_t)3 : 1})});
     // Tonemapping
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device,
-                                                          m_window->get_extent(),
-                                                          m_settings.colorFormat,
-                                                          Core::ResourceManager::VIGNETTE,
-                                                          m_settings.softwareAA ? false : true);
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(
+        m_device, m_window->get_extent(), m_settings.colorFormat, m_settings.softwareAA ? false : true);
     m_passes[TONEMAPPIN_PASS]->set_image_dependencies({Core::ImageDependency(BLOOM_PASS, 0, {0})});
 
     // FXAA Pass
     m_passes[FXAA_PASS] = new Core::PostProcessPass(m_device,
                                                     m_window->get_extent(),
                                                     m_settings.colorFormat,
-                                                    Core::ResourceManager::VIGNETTE,
                                                     ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
                                                     "FXAA",
                                                     m_settings.softwareAA);

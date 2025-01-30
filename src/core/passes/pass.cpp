@@ -4,8 +4,10 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
+Core::Geometry* BasePass::vignette = nullptr;
+
 void BasePass::setup(std::vector<Graphics::Frame>& frames) {
-    std::vector<Graphics::AttachmentInfo>        attachments;
+    std::vector<Graphics::AttachmentInfo>    attachments;
     std::vector<Graphics::SubPassDependency> dependencies;
     setup_attachments(attachments, dependencies);
 
@@ -38,11 +40,10 @@ void BasePass::cleanup() {
 void BasePass::create_framebuffer() {
     if (!m_initiatized || !m_isGraphical)
         return;
-  
+
     for (size_t fb = 0; fb < m_framebuffers.size(); fb++)
     {
-        m_framebuffers[fb] =
-            m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth,fb);
+        m_framebuffers[fb] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, fb);
     }
 }
 

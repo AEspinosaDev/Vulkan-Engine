@@ -49,10 +49,11 @@ void DeferredRenderer::create_passes() {
     m_passes.resize(10, nullptr);
 
     // Sky Generation Pass
-    m_passes[SKY_PASS] = new Core::SkyPass(m_device, {1024, 512}, Core::ResourceManager::VIGNETTE);
+    m_passes[SKY_PASS] = new Core::SkyPass(m_device, {1024, 512});
 
     // Enviroment Pass
-    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, Core::ResourceManager::VIGNETTE);
+    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device);
+    m_passes[ENVIROMENT_PASS]->set_image_dependencies({Core::ImageDependency(SKY_PASS, 2, {0})});
 
     // Shadow Pass
     m_passes[SHADOW_PASS] =
@@ -65,43 +66,36 @@ void DeferredRenderer::create_passes() {
     // Geometry Pass
     m_passes[GEOMETRY_PASS] =
         new Core::GeometryPass(m_device, m_window->get_extent(), m_settings.colorFormat, m_settings.depthFormat);
-    m_passes[GEOMETRY_PASS]->set_image_dependencies(
-        {Core::ImageDependency(ENVIROMENT_PASS, 0, {0}), Core::ImageDependency(ENVIROMENT_PASS, 1, {0})});
+    m_passes[GEOMETRY_PASS]->set_image_dependencies({Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
+                                                     Core::ImageDependency(ENVIROMENT_PASS, 1, {0}),
+                                                     Core::ImageDependency(SKY_PASS, 2, {0})});
 
     // Pre-Composition Pass
-    m_passes[PRECOMPOSITION_PASS] =
-        new Core::PreCompositionPass(m_device, m_window->get_extent(), Core::ResourceManager::VIGNETTE);
+    m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, m_window->get_extent());
     m_passes[PRECOMPOSITION_PASS]->set_image_dependencies({Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1})});
 
     // Composition Pass
-    m_passes[COMPOSITION_PASS] =
-        new Core::CompositionPass(m_device, m_window->get_extent(), SRGBA_32F, Core::ResourceManager::VIGNETTE, false);
-    m_passes[COMPOSITION_PASS]->set_image_dependencies({
-        Core::ImageDependency(SHADOW_PASS, 0, {0}),
-        Core::ImageDependency(VOXELIZATION_PASS, {0}),
-        Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1, 2, 3, 4}),
-        Core::ImageDependency(PRECOMPOSITION_PASS, 1, {0}),
-        Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
-        Core::ImageDependency(ENVIROMENT_PASS, 1, {0}),
-    });
+    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(m_device, m_window->get_extent(), SRGBA_32F, false);
+    m_passes[COMPOSITION_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0}),
+                                                        Core::ImageDependency(VOXELIZATION_PASS, {0}),
+                                                        Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1, 2, 3, 4}),
+                                                        Core::ImageDependency(PRECOMPOSITION_PASS, 1, {0}),
+                                                        Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
+                                                        Core::ImageDependency(ENVIROMENT_PASS, 1, {0})});
 
     // Bloom Pass
-    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent(), Core::ResourceManager::VIGNETTE);
+    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent());
     m_passes[BLOOM_PASS]->set_image_dependencies({Core::ImageDependency(COMPOSITION_PASS, 0, {0, 1})});
 
     // Tonemapping
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device,
-                                                          m_window->get_extent(),
-                                                          m_settings.colorFormat,
-                                                          Core::ResourceManager::VIGNETTE,
-                                                          m_settings.softwareAA ? false : true);
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(
+        m_device, m_window->get_extent(), m_settings.colorFormat, m_settings.softwareAA ? false : true);
     m_passes[TONEMAPPIN_PASS]->set_image_dependencies({Core::ImageDependency(BLOOM_PASS, 0, {0})});
 
     // FXAA Pass
     m_passes[FXAA_PASS] = new Core::PostProcessPass(m_device,
                                                     m_window->get_extent(),
                                                     m_settings.colorFormat,
-                                                    Core::ResourceManager::VIGNETTE,
                                                     ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
                                                     "FXAA",
                                                     m_settings.softwareAA);

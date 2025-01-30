@@ -35,12 +35,10 @@ class TonemappingPass : public PostProcessPass
     TonemappingPass(Graphics::Device* ctx,
                     Extent2D          extent,
                     ColorFormatType   colorFormat,
-                    Mesh*             vignette,
                     bool              isDefault = true)
         : PostProcessPass(ctx,
                           extent,
                           colorFormat,
-                          vignette,
                           ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
                           "TONEMAPPING",
                           isDefault) {

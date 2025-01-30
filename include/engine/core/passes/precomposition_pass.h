@@ -38,7 +38,6 @@ future lighting passes.
 */
 class PreCompositionPass : public GraphicPass
 {
-    Mesh* m_vignette;
     /*Descriptors*/
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
@@ -55,9 +54,8 @@ class PreCompositionPass : public GraphicPass
     void create_samples_kernel();
 
   public:
-    PreCompositionPass(Graphics::Device* ctx, VkExtent2D extent, Mesh* vignette)
-        : BasePass(ctx, extent, 2, 1, false, "PRE-COMPOSITION")
-        , m_vignette(vignette) {
+    PreCompositionPass(Graphics::Device* ctx, VkExtent2D extent)
+        : BasePass(ctx, extent, 2, 1, false, "PRE-COMPOSITION") {
     }
 
     inline void set_SSAO_settings(AO settings) {

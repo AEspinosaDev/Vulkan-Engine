@@ -86,9 +86,16 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
     LayoutBinding accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 5);
     LayoutBinding noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 6);
-    m_descriptorPool.set_layout(
-        GLOBAL_LAYOUT,
-        {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding, accelBinding, noiseBinding});
+    LayoutBinding skyBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 7);
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT,
+                                {camBufferBinding,
+                                 sceneBufferBinding,
+                                 shadowBinding,
+                                 envBinding,
+                                 iblBinding,
+                                 accelBinding,
+                                 noiseBinding,
+                                 skyBinding});
 
     // PER-OBJECT SET
     LayoutBinding objectBufferBinding(
@@ -113,51 +120,55 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                              sizeof(CameraUniforms),
-                                              0,
-                                              &m_descriptors[i].globalDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              0);
+                                           sizeof(CameraUniforms),
+                                           0,
+                                           &m_descriptors[i].globalDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           0);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                              sizeof(SceneUniforms),
-                                              m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
-                                              &m_descriptors[i].globalDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              1);
+                                           sizeof(SceneUniforms),
+                                           m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                           &m_descriptors[i].globalDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           1);
 
         m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE),
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              &m_descriptors[i].globalDescritor,
-                                              3);
+                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           &m_descriptors[i].globalDescritor,
+                                           3);
 
         m_descriptorPool.update_descriptor(get_image(ResourceManager::textureResources[0]),
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              &m_descriptors[i].globalDescritor,
-                                              6);
+                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           &m_descriptors[i].globalDescritor,
+                                           6);
+        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE),
+                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           &m_descriptors[i].globalDescritor,
+                                           7);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[OBJECT_LAYOUT],
-                                              sizeof(ObjectUniforms),
-                                              0,
-                                              &m_descriptors[i].objectDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              0);
+                                           sizeof(ObjectUniforms),
+                                           0,
+                                           &m_descriptors[i].objectDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           0);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[OBJECT_LAYOUT],
-                                              sizeof(MaterialUniforms),
-                                              m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
-                                              &m_descriptors[i].objectDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              1);
+                                           sizeof(MaterialUniforms),
+                                           m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                           &m_descriptors[i].objectDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           1);
         // Set up enviroment fallback texture
         m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP),
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              &m_descriptors[i].globalDescritor,
-                                              3);
+                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           &m_descriptors[i].globalDescritor,
+                                           3);
         m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP),
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              &m_descriptors[i].globalDescritor,
-                                              4);
+                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           &m_descriptors[i].globalDescritor,
+                                           4);
     }
 }
 void GeometryPass::setup_shader_passes() {
@@ -205,6 +216,23 @@ void GeometryPass::setup_shader_passes() {
     skyboxPass->build(m_descriptorPool);
 
     m_shaderPasses["skybox"] = skyboxPass;
+
+    // GraphicShaderPass* skyplanePass = new GraphicShaderPass(
+    //     m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_projection.glsl");
+    // skyplanePass->settings.descriptorSetLayoutIDs  = {{0, true}};
+    // skyplanePass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
+    //                                                   {NORMAL_ATTRIBUTE, false},
+    //                                                   {UV_ATTRIBUTE, true},
+    //                                                   {TANGENT_ATTRIBUTE, false},
+    //                                                   {COLOR_ATTRIBUTE, false}};
+    // skyplanePass->graphicSettings.dynamicStates    = geomPass->graphicSettings.dynamicStates;
+    // skyplanePass->graphicSettings.blendAttachments = geomPass->graphicSettings.blendAttachments;
+    // // skyplanePass->graphicSettings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
+
+    // skyplanePass->build_shader_stages();
+    // skyplanePass->build(m_descriptorPool);
+
+    // m_shaderPasses["skyplane"] = skyplanePass;
 }
 void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
@@ -215,6 +243,26 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
+        // if (scene->get_skybox())
+        // {
+        //     if (scene->get_skybox()->is_active())
+        //     {
+
+        //         cmd.set_depth_test_enable(false);
+        //         cmd.set_depth_write_enable(false);
+        //         cmd.set_cull_mode(CullingMode::NO_CULLING);
+
+        //         ShaderPass* shaderPass = m_shaderPasses["skyplane"];
+
+        //         // Bind pipeline
+        //         cmd.bind_shaderpass(*shaderPass);
+
+        //         // GLOBAL LAYOUT BINDING
+        //         cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+
+        //         cmd.draw_geometry(*get_VAO(BasePass::vignette));
+        //     }
+        // }
 
         ShaderPass* shaderPass = m_shaderPasses["geometry"];
 
@@ -297,6 +345,8 @@ void GeometryPass::link_previous_images(std::vector<Graphics::Image> images) {
             &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
         m_descriptorPool.update_descriptor(
             &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+        m_descriptorPool.update_descriptor(
+            &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 7);
     }
 }
 
@@ -339,9 +389,9 @@ void GeometryPass::setup_material_descriptor(IMaterial* mat) {
             // SET DUMMY TEXTURE
             if (!mat->get_texture_binding_state()[pair.first])
                 m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE),
-                                                      LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                      &mat->get_texture_descriptor(),
-                                                      pair.first);
+                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                   &mat->get_texture_descriptor(),
+                                                   pair.first);
             mat->set_texture_binding_state(pair.first, true);
         }
     }

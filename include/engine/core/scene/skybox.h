@@ -16,10 +16,18 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
-enum EnviromentType
-{
-    IMAGE_BASED_ENV = 0,
-    PROCEDURAL_ENV  = 1,
+/*
+Settings for Procedural Sky Rendering
+*/
+struct SkySettings {
+    float          sunElevationDeg = 45.0f; // 0=horizon, 90=zenith
+    uint32_t       month           = 0;     // 0-11, January to December
+    float          altitude        = 0.5f;  // km
+    SkyAerosolType aerosol         = SkyAerosolType::URBAN;
+    Vec4           groundAlbedo    = Vec4(0.3);
+    uint32_t       resolution      = 1024;
+    bool           useForIBL       = true;
+    UpdateType     updateType      = UpdateType::PER_FRAME;
 };
 /*
 Skybox for rendering enviroments and IBL
@@ -36,12 +44,13 @@ class Skybox
     float          m_rotation             = 0.0f;
     uint32_t       m_irradianceResolution = 32;
     EnviromentType m_envType              = IMAGE_BASED_ENV;
-    float          m_time;
-    uint32_t       m_month;
-    uint32_t       m_aerosolType;
+    SkySettings    m_proceduralSky        = {};
 
-    bool m_updateEnviroment{true};
-    bool m_active{true};
+    // Query
+    bool m_updateEnviroment      = true; // For updating enviroment texture and cubemaps
+    bool m_updateTransmitanceLUT = true; // For updating proc.sky transmittance LUT
+    bool m_updateSky             = true; // For updating proc.sky texture
+    bool m_active                = true;
 
   public:
     Skybox(TextureHDR* env)
@@ -92,12 +101,6 @@ class Skybox
     inline void set_rotation(float r) {
         m_rotation = r;
     }
-    inline bool update_enviroment() const {
-        return m_updateEnviroment;
-    }
-    inline void set_update_enviroment(bool i) {
-        m_updateEnviroment = i;
-    }
     inline void set_active(const bool s) {
         m_active = s;
     }
@@ -110,6 +113,37 @@ class Skybox
     inline void set_irradiance_resolution(uint32_t r) {
         m_irradianceResolution = r;
         m_updateEnviroment     = true;
+    }
+    /*
+    Procedural Sky
+    */
+    inline void set_sky_settings(SkySettings settings) {
+        m_proceduralSky = settings;
+    }
+    /*
+    Procedural Sky
+    */
+    inline SkySettings get_sky_settings() const {
+        return m_proceduralSky;
+    }
+
+    inline bool update_enviroment() const {
+        return m_updateEnviroment;
+    }
+    inline void update_enviroment(bool i) {
+        m_updateEnviroment = i;
+    }
+    inline bool update_sky_transmitance() const {
+        return m_updateTransmitanceLUT;
+    }
+    inline void update_sky_transmitance(bool i) {
+        m_updateTransmitanceLUT = i;
+    }
+    inline bool update_sky() const {
+        return m_updateSky;
+    }
+    inline void update_sky(bool i) {
+        m_updateSky = i;
     }
 };
 

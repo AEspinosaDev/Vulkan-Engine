@@ -223,7 +223,6 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
 paintBloom:
 
     ShaderPass* shaderPass = m_shaderPasses["bloom"];
-    Geometry*   g          = m_vignette->get_geometry();
 
     cmd = currentFrame.commandBuffer;
 
@@ -234,7 +233,7 @@ paintBloom:
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_bloomStrength, sizeof(float));
     cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
-    cmd.draw_geometry(*get_VAO(g));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
