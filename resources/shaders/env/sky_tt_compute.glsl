@@ -26,6 +26,9 @@ void main() {
 
 layout(location = 0) in  vec2 v_uv;
 
+layout(push_constant) uniform Settings {
+    SkySettings sky;
+} settings;
 
 layout(location = 0) out vec4 outColor;
 
@@ -56,6 +59,8 @@ void main()
 
         get_atmosphere_collision_coefficients(
             altitude,
+            settings.sky.month,
+            settings.sky.aerosolTurbidity,
             aerosol_absorption, aerosol_scattering,
             molecular_absorption, molecular_scattering,
             extinction);

@@ -313,11 +313,13 @@ class ExplorerWidget : public Widget
     Core::Object3D* m_selectedObject{nullptr};
 
     bool m_showRendererSettings{false};
+    bool m_showSkySettings{false};
 
     virtual void render();
 
     void displayObject(Core::Object3D* const obj, int& counter);
     void displayRendererSettings();
+    void displaySkySettings();
 
   public:
     ExplorerWidget(Core::Scene* scene, Systems::BaseRenderer* renderer)

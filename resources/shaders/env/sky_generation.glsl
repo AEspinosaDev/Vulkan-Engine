@@ -18,13 +18,16 @@ void main() {
 
 layout(location = 0) in  vec2 v_uv;
 
+layout(push_constant) uniform Settings {
+    SkySettings sky;
+} settings;
 layout(set = 0, binding = 0) uniform sampler2D transmitanceLUT;
 
 layout(location = 0) out vec4 outColor;
 
 vec4 compute_inscattering(vec3 ray_origin, vec3 ray_dir, float t_d, out vec4 transmittance)
 {
-    vec3 sun_dir = get_sun_direction(5.0);
+    vec3 sun_dir = get_sun_direction(settings.sky.sunElevationDeg);
     float cos_theta = dot(-ray_dir, sun_dir);
 
     float molecular_phase = molecular_phase_function(cos_theta);
@@ -51,6 +54,8 @@ vec4 compute_inscattering(vec3 ray_origin, vec3 ray_dir, float t_d, out vec4 tra
         vec4 extinction;
         get_atmosphere_collision_coefficients(
             altitude,
+            settings.sky.month,
+            settings.sky.aerosolTurbidity,
             aerosol_absorption, aerosol_scattering,
             molecular_absorption, molecular_scattering,
             extinction);
@@ -59,7 +64,7 @@ vec4 compute_inscattering(vec3 ray_origin, vec3 ray_dir, float t_d, out vec4 tra
             transmitanceLUT, sample_cos_theta, normalized_altitude);
 
         vec4 ms = get_multiple_scattering(
-            transmitanceLUT, sample_cos_theta, normalized_altitude,
+            transmitanceLUT, settings.sky.groundAlbedo, sample_cos_theta, normalized_altitude,
             distance_to_earth_center);
 
         vec4 S = sun_spectral_irradiance *
@@ -93,12 +98,13 @@ void main()
                         cos(elev) * sin(azimuth),
                         sin(elev));
 
+    const float EYE_DISTANCE_TO_EARTH_CENTER    = EARTH_RADIUS + settings.sky.altitude;
     vec3 ray_origin = vec3(0.0, 0.0, EYE_DISTANCE_TO_EARTH_CENTER);
 
     float atmos_dist  = ray_sphere_intersection(ray_origin, ray_dir, ATMOSPHERE_RADIUS);
     float ground_dist = ray_sphere_intersection(ray_origin, ray_dir, EARTH_RADIUS);
     float t_d;
-    if (EYE_ALTITUDE < ATMOSPHERE_THICKNESS) {
+    if (settings.sky.altitude < ATMOSPHERE_THICKNESS) {
         // We are inside the atmosphere
         if (ground_dist < 0.0) {
             // No ground collision, use the distance to the outer atmosphere

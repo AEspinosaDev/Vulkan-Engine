@@ -133,6 +133,10 @@ void ExplorerWidget::render() {
             {
                 m_showRendererSettings = true;
             }
+            if (ImGui::MenuItem("Procedural Sky"))
+            {
+                m_showSkySettings = true;
+            }
             ImGui::EndMenu();
         }
 
@@ -144,10 +148,23 @@ void ExplorerWidget::render() {
 
         displayRendererSettings();
 
-        if (ImGui::Button("Close"))
-        {
-            m_showRendererSettings = false; // Close the window when the button is pressed
-        }
+        // if (ImGui::Button("Close"))
+        // {
+        //     m_showRendererSettings = false; // Close the window when the button is pressed
+        // }
+
+        ImGui::End();
+    }
+    if (m_showSkySettings)
+    {
+        ImGui::Begin("Sky Settings", &m_showSkySettings, ImGuiWindowFlags_None);
+
+        displaySkySettings();
+
+        // if (ImGui::Button("Close"))
+        // {
+        //     m_showSkySettings = false; // Close the window when the button is pressed
+        // }
 
         ImGui::End();
     }
@@ -266,14 +283,20 @@ void ExplorerWidget::render() {
             sky->set_active(skyboxActive);
         }
         float skyIntensity = sky->get_intensity();
-        if (ImGui::DragFloat("Env. Color Intensity", &skyIntensity, 0.05f, 0.0f, 2.0f))
+        if (ImGui::DragFloat("Sky Color Intensity", &skyIntensity, 0.05f, 0.0f, 2.0f))
         {
             sky->set_color_intensity(skyIntensity);
         }
         float skyRotation = sky->get_rotation();
-        if (ImGui::DragFloat("Env. Rotation", &skyRotation, 1.0f, 0.0f, 360.0f))
+        if (ImGui::DragFloat("Sky Rotation", &skyRotation, 1.0f, 0.0f, 360.0f))
         {
             sky->set_rotation(skyRotation);
+        }
+        const char* skyTypes[] = {"HDRi", "Procedural"};
+        int         skyType    = static_cast<int>(sky->get_sky_type());
+        if (ImGui::Combo("Sky Type", &skyType, skyTypes, IM_ARRAYSIZE(skyTypes)))
+        {
+            sky->set_sky_type(static_cast<EnviromentType>(skyType));
         }
     }
 
@@ -610,6 +633,82 @@ void ExplorerWidget::displayRendererSettings() {
         renderer->set_tonemapping_type(static_cast<Core::TonemappingType>(tonemapType));
     }
 }
+void ExplorerWidget::displaySkySettings() {
+    if (!m_scene->get_skybox())
+    {
+        ImGui::Text("NO SKYBOX...");
+        return;
+    }
+
+    Skybox*     sky         = m_scene->get_skybox();
+    SkySettings skySettings = sky->get_sky_settings();
+
+    // Sun Elevation (Degs)
+    if (ImGui::DragFloat("Sun Elevation (Degs)", &skySettings.sunElevationDeg, 1.0f, 0.0f, 90.0f))
+    {
+        sky->set_sky_settings(skySettings);
+    }
+
+    // Month
+    int skyMonth = static_cast<int>(skySettings.month);
+    if (ImGui::DragInt("Month", &skyMonth, 1, 0, 11))
+    {
+        skySettings.month = skyMonth;
+        sky->set_sky_settings(skySettings);
+    }
+
+    // Altitude (Kms)
+    if (ImGui::DragFloat("Altitude (Kms)", &skySettings.altitude, 0.1f, 0.0f, 100.0f))
+    {
+        sky->set_sky_settings(skySettings);
+    }
+
+    // Aerosol Type
+    const char* aerosolTypes[]  = {"BACKGROUND",
+                                   "DESERT DUST",
+                                   "MARITIME CLEAN",
+                                   "MARITIME MINERAL",
+                                   "POLAR ANTARCTIC",
+                                   "POLAR ARCTIC",
+                                   "REMOTE CONTINENTAL",
+                                   "RURAL",
+                                   "URBAN"};
+    static int  aerosol_current = static_cast<int>(skySettings.aerosol);
+    if (ImGui::Combo("Aerosol Type", &aerosol_current, aerosolTypes, IM_ARRAYSIZE(aerosolTypes)))
+    {
+        skySettings.aerosol = static_cast<SkyAerosolType>(aerosol_current);
+        sky->set_sky_settings(skySettings);
+    }
+
+    // Ground Albedo (Vec4)
+    if (ImGui::ColorEdit4("Ground Albedo", &skySettings.groundAlbedo.x))
+    {
+        sky->set_sky_settings(skySettings);
+    }
+
+    // Resolution (Combo)
+    const char* resolutions[] = {"512", "1024", "2048", "4096"};
+    static int  resolution_current =
+        static_cast<int>(log2(skySettings.resolution) - 8); // Assuming 1024 is the default base
+    if (ImGui::Combo("Resolution", &resolution_current, resolutions, IM_ARRAYSIZE(resolutions)))
+    {
+        skySettings.resolution =
+            static_cast<uint32_t>(pow(2, resolution_current + 8)); // Convert to actual resolution value
+        sky->set_sky_settings(skySettings);
+    }
+    if (ImGui::Checkbox("Use for IBL", &skySettings.useForIBL))
+        sky->set_sky_settings(skySettings);
+ 
+    // Update Type (Combo)
+    const char* updateTypes[]      = {"PER FRAME", "ON DEMAND"};
+    static int  updateType_current = static_cast<int>(skySettings.updateType);
+    if (ImGui::Combo("Update Type", &updateType_current, updateTypes, IM_ARRAYSIZE(updateTypes)))
+    {
+        skySettings.updateType = static_cast<UpdateType>(updateType_current);
+        sky->set_sky_settings(skySettings);
+    }
+}
+
 void Profiler::render() {
     ImGui::Text(" %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 }

@@ -20,14 +20,15 @@ namespace Core {
 Settings for Procedural Sky Rendering
 */
 struct SkySettings {
-    float          sunElevationDeg = 45.0f; // 0=horizon, 90=zenith
-    uint32_t       month           = 0;     // 0-11, January to December
-    float          altitude        = 0.5f;  // km
-    SkyAerosolType aerosol         = SkyAerosolType::URBAN;
-    Vec4           groundAlbedo    = Vec4(0.3);
-    uint32_t       resolution      = 1024;
-    bool           useForIBL       = true;
-    UpdateType     updateType      = UpdateType::PER_FRAME;
+    float          sunElevationDeg  = 45.0f; // 0=horizon, 90=zenith
+    uint32_t       month            = 0;     // 0-11, January to December
+    float          altitude         = 0.5f;  // km
+    SkyAerosolType aerosol          = SkyAerosolType::URBAN;
+    Vec4           groundAlbedo     = Vec4(0.3);
+    float          aerosolTurbidity = 1.0f;
+    uint32_t       resolution       = 512;
+    bool           useForIBL        = true;
+    UpdateType     updateType       = UpdateType::ON_DEMAND;
 };
 /*
 Skybox for rendering enviroments and IBL
@@ -114,11 +115,19 @@ class Skybox
         m_irradianceResolution = r;
         m_updateEnviroment     = true;
     }
+    inline void set_sky_type(EnviromentType type) {
+        m_updateEnviroment = true;
+        m_envType          = type;
+    }
+    inline EnviromentType get_sky_type() const {
+        return m_envType;
+    }
     /*
     Procedural Sky
     */
     inline void set_sky_settings(SkySettings settings) {
-        m_proceduralSky = settings;
+        m_proceduralSky    = settings;
+        m_updateEnviroment = true;
     }
     /*
     Procedural Sky

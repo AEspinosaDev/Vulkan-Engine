@@ -61,6 +61,7 @@ void SkyPass::setup_shader_passes() {
                                                {TANGENT_ATTRIBUTE, false},
                                                {COLOR_ATTRIBUTE, false}};
 
+
     ttPass->build_shader_stages();
     ttPass->build(m_descriptorPool);
 
@@ -71,6 +72,7 @@ void SkyPass::setup_shader_passes() {
     skyPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings))};
     skyPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
     skyPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
+    
 
     skyPass->build_shader_stages();
     skyPass->build(m_descriptorPool);
@@ -133,5 +135,31 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
 }
 
 } // namespace Core
+
+// struct Matrix4x4 {
+//     float m[4][4];
+// };
+
+// struct EulerAngles {
+//     float pitch; // Rotation around X-axis
+//     float yaw;   // Rotation around Y-axis
+//     float roll;  // Rotation around Z-axis
+// };
+
+// // Function to extract Euler angles from the view matrix
+// EulerAngles extractEulerAnglesFromViewMatrix(const Matrix4x4& viewMatrix) {
+//     // Extract the rotation matrix (upper-left 3x3)
+//     float r00 = viewMatrix.m[0][0], r01 = viewMatrix.m[0][1], r02 = viewMatrix.m[0][2];
+//     float r10 = viewMatrix.m[1][0], r11 = viewMatrix.m[1][1], r12 = viewMatrix.m[1][2];
+//     float r20 = viewMatrix.m[2][0], r21 = viewMatrix.m[2][1], r22 = viewMatrix.m[2][2];
+
+//     // Calculate yaw, pitch, and roll
+//     float yaw = std::atan2(r10, r00); // Yaw (rotation around Y-axis)
+//     float pitch = std::atan2(-r20, std::sqrt(r00 * r00 + r10 * r10)); // Pitch (rotation around X-axis)
+//     float roll = std::atan2(r21, r22); // Roll (rotation around Z-axis)
+
+//     // Return Euler angles
+//     return { pitch, yaw, roll };
+// }
 
 VULKAN_ENGINE_NAMESPACE_END

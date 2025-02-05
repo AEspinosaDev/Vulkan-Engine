@@ -53,7 +53,12 @@ layout(location = 0) in vec2 otexCoord;
 
 layout(location = 0) out vec4 fragmentColor;
 
+layout(push_constant) uniform Settings {
+    int type;
+} settings;
+
 layout(set = 0, binding = 0) uniform sampler2D u_panorama;
+layout(set = 0, binding = 3) uniform sampler2D u_panoramaProcedural;
 
 vec3 uvToXYZ(int face, vec2 uv)
 {
@@ -90,7 +95,7 @@ vec3 panoramaToCubeMap(int face, vec2 texCoord)
 	vec3 direction = normalize(scan);
 	vec2 src = dirToUV(direction);
 
-	return  texture(u_panorama, src).rgb;
+	return  settings.type == 0 ? texture( u_panorama , src).rgb :  texture( u_panoramaProcedural , src).rgb;
 }
 
 

@@ -57,7 +57,7 @@ void main()
     // Undo the non-linear transformation from the sky-view LUT
     float elev = sqrt(abs(theta) / (PI * 0.5)) * sign(theta) * 0.5 + 0.5;
 
-    vec3 col = texture(sky, vec2(azimuth, elev)).rgb;
+    vec3 col = texture(sky, vec2(azimuth, 1.0 -elev)).rgb;
 
 // #if TONEMAPPING_TECHNIQUE == 0
 //     // Apply exposure

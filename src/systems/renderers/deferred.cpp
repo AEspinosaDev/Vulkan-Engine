@@ -108,18 +108,35 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
     {
         if (skybox->update_enviroment())
         {
-            m_device->wait();
+
             Core::ResourceManager::upload_skybox_data(m_device, skybox);
-            const uint32_t HDRi_EXTENT       = skybox->get_enviroment_map()->get_size().height;
+            const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV
+                                                   ? skybox->get_enviroment_map()->get_size().height
+                                                   : skybox->get_sky_settings().resolution;
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
             m_passes[ENVIROMENT_PASS]->set_active(true);
-            m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
-            m_passes[ENVIROMENT_PASS]->update_framebuffer();
+            if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
+                m_passes[SKY_PASS]->set_active(true);
 
-            connect_pass(m_passes[GEOMETRY_PASS]);
-            connect_pass(m_passes[COMPOSITION_PASS]);
+            if (m_passes[ENVIROMENT_PASS]->get_extent().height != HDRi_EXTENT ||
+                get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
+            {
+                m_device->wait();
+                if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
+                {
+                    m_passes[SKY_PASS]->set_extent({HDRi_EXTENT * 2, HDRi_EXTENT});
+                    m_passes[SKY_PASS]->update_framebuffer();
+                    connect_pass(m_passes[ENVIROMENT_PASS]);
+                }
+
+                m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
+                m_passes[ENVIROMENT_PASS]->update_framebuffer();
+
+                connect_pass(m_passes[GEOMETRY_PASS]);
+                connect_pass(m_passes[COMPOSITION_PASS]);
+            }
         }
     }
 }

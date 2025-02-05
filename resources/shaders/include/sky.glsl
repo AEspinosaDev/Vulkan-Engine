@@ -1,17 +1,25 @@
 // Configurable parameters
+struct SkySettings {
+    float          sunElevationDeg; 
+    int            month; 
+    float          altitude; 
+    int            aerosol; 
+
+    vec4           groundAlbedo; 
+
+    float          aerosolTurbidity;
+    int            resolution; 
+    bool           useForIBL; 
+    int            updateType; 
+};
 
 #define ANIMATE_SUN 0
-// 0=equirectangular, 1=fisheye, 2=projection
-#define CAMERA_TYPE 2
+
 // 0=Background, 1=Desert Dust, 2=Maritime Clean, 3=Maritime Mineral,
 // 4=Polar Antarctic, 5=Polar Artic, 6=Remote Continental, 7=Rural, 8=Urban
 #define AEROSOL_TYPE 8
 
-const float SUN_ELEVATION_DEGREES = 0.0;    // 0=horizon, 90=zenith
-const float EYE_ALTITUDE          = 0.5;    // km
-const int   MONTH                 = 0;      // 0-11, January to December
 const float AEROSOL_TURBIDITY     = 1.0;
-const vec4  GROUND_ALBEDO         = vec4(0.3);
 
 // Ray marching steps. More steps mean better accuracy but worse performance
 const int TRANSMITTANCE_STEPS     = 32;
@@ -49,9 +57,8 @@ const float gg                      = g*g;
 const float EARTH_RADIUS                    = 6371.0; // km
 const float ATMOSPHERE_THICKNESS            = 100.0; // km
 const float ATMOSPHERE_RADIUS               = EARTH_RADIUS + ATMOSPHERE_THICKNESS;
-const float EYE_DISTANCE_TO_EARTH_CENTER    = EARTH_RADIUS + EYE_ALTITUDE;
-const float SUN_ZENITH_COS_ANGLE            = cos(radians(90.0 - SUN_ELEVATION_DEGREES));
-const vec3 SUN_DIR                          = vec3(-sqrt(1.0 - SUN_ZENITH_COS_ANGLE*SUN_ZENITH_COS_ANGLE), 0.0, SUN_ZENITH_COS_ANGLE);
+
+
 
 #if ENABLE_SPECTRAL == 1
 // Extraterrestial Solar Irradiance Spectra, units W * m^-2 * nm^-1
@@ -162,14 +169,10 @@ const float aerosol_background_divided_by_base_density = aerosol_background_dens
 
 //-----------------------------------------------------------------------------
 
-vec3 get_sun_direction(float time)
+vec3 get_sun_direction(float sunElevationDeg)
 {
-#if ANIMATE_SUN == 0
-    return SUN_DIR;
-#else
-    float a = sin(time*0.5 - 1.5) * 0.55 + 0.45;
-    return vec3(-sqrt(1.0 - a*a), 0.0, a);
-#endif
+    float sunZenithCosAngle = cos(radians(90.0 - sunElevationDeg));
+    return vec3(-sqrt(1.0 - sunZenithCosAngle*sunZenithCosAngle), 0.0, sunZenithCosAngle);
 }
 
 /*
@@ -216,7 +219,7 @@ float aerosol_phase_function(float cos_theta)
     return INV_4PI * (1.0 - gg) / (den * sqrt(den));
 }
 
-vec4 get_multiple_scattering(sampler2D transmittance_lut, float cos_theta, float normalized_height, float d)
+vec4 get_multiple_scattering(sampler2D transmittance_lut, vec4 groundAlbedo, float cos_theta, float normalized_height, float d)
 {
 #if ENABLE_MULTIPLE_SCATTERING == 1
     // Solid angle subtended by the planet from a point at d distance
@@ -230,7 +233,7 @@ vec4 get_multiple_scattering(sampler2D transmittance_lut, float cos_theta, float
         transmittance_from_lut(transmittance_lut, 1.0, normalized_height);
 
     // 2nd order scattering from the ground
-    vec4 L_ground = PHASE_ISOTROPIC * omega * (GROUND_ALBEDO / PI) * T_to_ground * T_ground_to_sample * cos_theta;
+    vec4 L_ground = PHASE_ISOTROPIC * omega * (groundAlbedo / PI) * T_to_ground * T_ground_to_sample * cos_theta;
 
     // Fit of Earth's multiple scattering coming from other points in the atmosphere
     vec4 L_ms = 0.02 * vec4(0.217, 0.347, 0.594, 1.0) * (1.0 / (1.0 + 5.0 * exp(-17.92 * cos_theta)));
@@ -254,12 +257,12 @@ vec4 get_molecular_scattering_coefficient(float h)
  * Return the molecular volume absorption coefficient (km^-1) for a given altitude
  * in kilometers.
  */
-vec4 get_molecular_absorption_coefficient(float h)
+vec4 get_molecular_absorption_coefficient(float h, int month)
 {
     h += 1e-4; // Avoid division by 0
     float t = log(h) - 3.22261;
     float density = 3.78547397e20 * (1.0 / h) * exp(-t * t * 5.55555555);
-    return ozone_absorption_cross_section * ozone_mean_monthly_dobson[MONTH] * density;
+    return ozone_absorption_cross_section * ozone_mean_monthly_dobson[month] * density;
 }
 
 float get_aerosol_density(float h)
@@ -277,6 +280,8 @@ float get_aerosol_density(float h)
  * atmospheric medium for a given point at an altitude h.
  */
 void get_atmosphere_collision_coefficients(in float h,
+                                           in int month,
+                                           in float turbidity,
                                            out vec4 aerosol_absorption,
                                            out vec4 aerosol_scattering,
                                            out vec4 molecular_absorption,
@@ -289,10 +294,10 @@ void get_atmosphere_collision_coefficients(in float h,
     aerosol_scattering = vec4(0.0);
 #else
     float aerosol_density = get_aerosol_density(h);
-    aerosol_absorption = aerosol_absorption_cross_section * aerosol_density * AEROSOL_TURBIDITY;
-    aerosol_scattering = aerosol_scattering_cross_section * aerosol_density * AEROSOL_TURBIDITY;
+    aerosol_absorption = aerosol_absorption_cross_section * aerosol_density * turbidity;
+    aerosol_scattering = aerosol_scattering_cross_section * aerosol_density * turbidity;
 #endif
-    molecular_absorption = get_molecular_absorption_coefficient(h);
+    molecular_absorption = get_molecular_absorption_coefficient(h, month);
     molecular_scattering = get_molecular_scattering_coefficient(h);
     extinction = aerosol_absorption + aerosol_scattering + molecular_absorption + molecular_scattering;
 }

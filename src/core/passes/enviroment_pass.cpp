@@ -39,7 +39,10 @@ void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding panoramaTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
     LayoutBinding enviromentTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
     LayoutBinding auxBufferBinding(UniformDataType::UNIFORM_BUFFER, SHADER_STAGE_FRAGMENT, 2);
-    m_descriptorPool.set_layout(0, {panoramaTextureBinding, enviromentTextureBinding, auxBufferBinding});
+    LayoutBinding proceduralPanoramaTextureBinding(
+        UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    m_descriptorPool.set_layout(
+        0, {panoramaTextureBinding, enviromentTextureBinding, auxBufferBinding, proceduralPanoramaTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(0, &m_envDescriptorSet);
 
@@ -83,6 +86,7 @@ void EnviromentPass::setup_shader_passes() {
                                                       {UV_ATTRIBUTE, true},
                                                       {TANGENT_ATTRIBUTE, false},
                                                       {COLOR_ATTRIBUTE, false}};
+    converterPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};
 
     converterPass->build_shader_stages();
     converterPass->build(m_descriptorPool);
@@ -130,11 +134,17 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     cmd.set_viewport(m_imageExtent);
     ShaderPass* shaderPass = m_shaderPasses["converter"];
     cmd.bind_shaderpass(*shaderPass);
+    int panoramaType = static_cast<int>(scene->get_skybox()->get_sky_type());
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &panoramaType, sizeof(float));
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
     cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /*Draw Diffuse Irradiance*/
+    if (scene->get_skybox()->get_sky_type() == EnviromentType::PROCEDURAL_ENV &&
+        !scene->get_skybox()->get_sky_settings().useForIBL)
+        goto jump;
+
     cmd.begin_renderpass(m_renderpass, m_framebuffers[1]);
     cmd.set_viewport(m_irradianceResolution);
     shaderPass = m_shaderPasses["irr"];
@@ -143,13 +153,14 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
+jump:
     /* Everything is updated, set to sleep */
     scene->get_skybox()->update_enviroment(false);
     set_active(false);
 }
 
 void EnviromentPass::link_previous_images(std::vector<Graphics::Image> images) {
-    // m_descriptorPool.update_descriptor(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 0);
+    m_descriptorPool.update_descriptor(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 3);
 }
 void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     if (!scene->get_skybox())
