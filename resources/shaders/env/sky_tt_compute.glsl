@@ -28,6 +28,7 @@ layout(location = 0) in  vec2 v_uv;
 
 layout(push_constant) uniform Settings {
     SkySettings sky;
+    AerosolParams aerosolParams;
 } settings;
 
 layout(location = 0) out vec4 outColor;
@@ -61,6 +62,7 @@ void main()
             altitude,
             settings.sky.month,
             settings.sky.aerosolTurbidity,
+            settings.aerosolParams,
             aerosol_absorption, aerosol_scattering,
             molecular_absorption, molecular_scattering,
             extinction);

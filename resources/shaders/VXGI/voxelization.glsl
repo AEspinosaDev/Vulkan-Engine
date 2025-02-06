@@ -192,7 +192,7 @@ void main() {
             //Diffuse Component ________________________
             vec3 lighting = vec3(0.0);
             lighting = evalDiffuseLighting( 
-                scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].worldPosition.xyz - _pos) : normalize(scene.lights[i].worldPosition.xyz), //wi                                                                                          //wo
+                scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].worldPosition.xyz - _pos) : normalize(-scene.lights[i].worldPosition.xyz), //wi                                                                                          //wo
                 scene.lights[i].color * computeAttenuation(scene.lights[i].worldPosition.xyz, _pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity             
                 );
 
@@ -207,10 +207,12 @@ void main() {
                                 TLAS, 
                                 samplerMap,
                                 _pos, 
-                                scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - _pos : scene.lights[i].shadowData.xyz,
+                                scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - _pos : -scene.lights[i].shadowData.xyz,
                                 1, 
-                                0.0, 
+                                0.0,
+                                scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].worldPosition.xyz - _pos) : 30.0, 
                                 0);
+                            
                     }
             
             color += lighting;

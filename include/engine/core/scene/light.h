@@ -200,6 +200,8 @@ class PointLight : public Light
 class DirectionalLight : public Light
 {
     Vec3 m_direction;
+    // Only works if using procedural sky as enviroment
+    bool m_useAsSun = false;
 
     static int m_instanceCount;
 
@@ -212,13 +214,22 @@ class DirectionalLight : public Light
         , m_direction(direction) {
         DirectionalLight::m_instanceCount++;
     }
-   
+
     inline Vec3 get_direction() const {
         return m_direction;
     }
     inline void set_direction(Vec3 d) {
         m_direction = d;
+        m_direction = math::normalize(m_direction); 
     }
+    inline bool use_as_sun() const {
+        return m_useAsSun;
+    }
+    inline void use_as_sun(bool op) {
+        m_useAsSun = op;
+    }
+
+    static Vec3 get_sun_direction(float elevationDeg, float rotationDeg);
 
     virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
 };

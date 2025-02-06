@@ -24,8 +24,10 @@ Graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const {
 }
 
 Graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const {
+
     Graphics::LightUniforms uniforms{};
     // Transform to camera view for shader
+
     uniforms.position      = cameraView * Vec4(m_direction, 0.0f);
     uniforms.position.w    = (float)m_lighType;
     uniforms.worldPosition = Vec4(m_direction, 0.0f);
@@ -38,6 +40,15 @@ Graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const {
     if (m_shadow.type == ShadowType::RAYTRACED_SHADOW)
         uniforms.dataSlot2 = {m_direction, m_shadow.raySamples};
     return uniforms;
+}
+Vec3 DirectionalLight::get_sun_direction(float elevationDeg, float rotationDeg) {
+    Vec3  sunDirection;
+    float sunElevationRad = math::radians(elevationDeg);
+    float sunRotationRad  = math::radians(rotationDeg);
+    sunDirection.x        = -cos(sunElevationRad) * sin(sunRotationRad);
+    sunDirection.y        = sin(sunElevationRad);
+    sunDirection.z        = -cos(sunElevationRad) * cos(sunRotationRad);
+    return math::normalize(sunDirection);
 }
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

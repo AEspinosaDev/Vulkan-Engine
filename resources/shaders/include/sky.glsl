@@ -13,13 +13,15 @@ struct SkySettings {
     int            updateType; 
 };
 
-#define ANIMATE_SUN 0
+struct AerosolParams {
+    vec4 aerosol_absorption_cross_section;
 
-// 0=Background, 1=Desert Dust, 2=Maritime Clean, 3=Maritime Mineral,
-// 4=Polar Antarctic, 5=Polar Artic, 6=Remote Continental, 7=Rural, 8=Urban
-#define AEROSOL_TYPE 8
+    vec4 aerosol_scattering_cross_section;
 
-const float AEROSOL_TURBIDITY     = 1.0;
+    float aerosol_base_density;
+    float aerosol_background_density;
+    float aerosol_height_scale;
+};
 
 // Ray marching steps. More steps mean better accuracy but worse performance
 const int TRANSMITTANCE_STEPS     = 32;
@@ -38,7 +40,6 @@ const float CAMERA_ROLL  =   0.0;
 #define ENABLE_MULTIPLE_SCATTERING 1
 #define ENABLE_AEROSOLS 1
 #define SHOW_RELATIVE_LUMINANCE 0
-#define TONEMAPPING_TECHNIQUE 0 // 0=ACES, 1=simple
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -97,75 +98,6 @@ const float ozone_mean_monthly_dobson[] = float[](
     290.0, // November
     315.0  // December
 );
-
-/*
- * Every aerosol type expects 5 parameters:
- * - Scattering cross section
- * - Absorption cross section
- * - Base density (km^-3)
- * - Background density (km^-3)
- * - Height scaling parameter
- * These parameters can be sent as uniforms.
- *
- * This model for aerosols and their corresponding parameters come from
- * "A Physically-Based Spatio-Temporal Sky Model"
- * by Guimera et al. (2018).
- */
-#if   AEROSOL_TYPE == 0 // Background
-const vec4 aerosol_absorption_cross_section = vec4(4.5517e-19, 5.9269e-19, 6.9143e-19, 8.5228e-19);
-const vec4 aerosol_scattering_cross_section = vec4(1.8921e-26, 1.6951e-26, 1.7436e-26, 2.1158e-26);
-const float aerosol_base_density = 2.584e17;
-const float aerosol_background_density = 2e6;
-#elif AEROSOL_TYPE == 1 // Desert Dust
-const vec4 aerosol_absorption_cross_section = vec4(4.6758e-16, 4.4654e-16, 4.1989e-16, 4.1493e-16);
-const vec4 aerosol_scattering_cross_section = vec4(2.9144e-16, 3.1463e-16, 3.3902e-16, 3.4298e-16);
-const float aerosol_base_density = 1.8662e18;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 2.0;
-#elif AEROSOL_TYPE == 2 // Maritime Clean
-const vec4 aerosol_absorption_cross_section = vec4(6.3312e-19, 7.5567e-19, 9.2627e-19, 1.0391e-18);
-const vec4 aerosol_scattering_cross_section = vec4(4.6539e-26, 2.721e-26, 4.1104e-26, 5.6249e-26);
-const float aerosol_base_density = 2.0266e17;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 0.9;
-#elif AEROSOL_TYPE == 3 // Maritime Mineral
-const vec4 aerosol_absorption_cross_section = vec4(6.9365e-19, 7.5951e-19, 8.2423e-19, 8.9101e-19);
-const vec4 aerosol_scattering_cross_section = vec4(2.3699e-19, 2.2439e-19, 2.2126e-19, 2.021e-19);
-const float aerosol_base_density = 2.0266e17;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 2.0;
-#elif AEROSOL_TYPE == 4 // Polar Antarctic
-const vec4 aerosol_absorption_cross_section = vec4(1.3399e-16, 1.3178e-16, 1.2909e-16, 1.3006e-16);
-const vec4 aerosol_scattering_cross_section = vec4(1.5506e-19, 1.809e-19, 2.3069e-19, 2.5804e-19);
-const float aerosol_base_density = 2.3864e16;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 30.0;
-#elif AEROSOL_TYPE == 5 // Polar Arctic
-const vec4 aerosol_absorption_cross_section = vec4(1.0364e-16, 1.0609e-16, 1.0193e-16, 1.0092e-16);
-const vec4 aerosol_scattering_cross_section = vec4(2.1609e-17, 2.2759e-17, 2.5089e-17, 2.6323e-17);
-const float aerosol_base_density = 2.3864e16;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 30.0;
-#elif AEROSOL_TYPE == 6 // Remote Continental
-const vec4 aerosol_absorption_cross_section = vec4(4.5307e-18, 5.0662e-18, 4.4877e-18, 3.7917e-18);
-const vec4 aerosol_scattering_cross_section = vec4(1.8764e-18, 1.746e-18, 1.6902e-18, 1.479e-18);
-const float aerosol_base_density = 6.103e18;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 0.73;
-#elif AEROSOL_TYPE == 7 // Rural
-const vec4 aerosol_absorption_cross_section = vec4(5.0393e-23, 8.0765e-23, 1.3823e-22, 2.3383e-22);
-const vec4 aerosol_scattering_cross_section = vec4(2.6004e-22, 2.4844e-22, 2.8362e-22, 2.7494e-22);
-const float aerosol_base_density = 8.544e18;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 0.73;
-#elif AEROSOL_TYPE == 8 // Urban
-const vec4 aerosol_absorption_cross_section = vec4(2.8722e-24, 4.6168e-24, 7.9706e-24, 1.3578e-23);
-const vec4 aerosol_scattering_cross_section = vec4(1.5908e-22, 1.7711e-22, 2.0942e-22, 2.4033e-22);
-const float aerosol_base_density = 1.3681e20;
-const float aerosol_background_density = 2e6;
-const float aerosol_height_scale = 0.73;
-#endif
-const float aerosol_background_divided_by_base_density = aerosol_background_density / aerosol_base_density;
 
 //-----------------------------------------------------------------------------
 
@@ -265,14 +197,15 @@ vec4 get_molecular_absorption_coefficient(float h, int month)
     return ozone_absorption_cross_section * ozone_mean_monthly_dobson[month] * density;
 }
 
-float get_aerosol_density(float h)
+float get_aerosol_density(float h, AerosolParams params)
 {
-#if AEROSOL_TYPE == 0 // Only for the Background aerosol type, no dependency on height
-    return aerosol_base_density * (1.0 + aerosol_background_divided_by_base_density);
-#else
-    return aerosol_base_density * (exp(-h / aerosol_height_scale)
+    const float aerosol_background_divided_by_base_density = params.aerosol_background_density / params.aerosol_base_density;
+    
+    if(params.aerosol_height_scale != 0.0)
+        return params.aerosol_base_density * (exp(-h / params.aerosol_height_scale)
         + aerosol_background_divided_by_base_density);
-#endif
+    else
+        return params.aerosol_base_density * (1.0 + aerosol_background_divided_by_base_density);
 }
 
 /*
@@ -282,6 +215,7 @@ float get_aerosol_density(float h)
 void get_atmosphere_collision_coefficients(in float h,
                                            in int month,
                                            in float turbidity,
+                                           in AerosolParams params,
                                            out vec4 aerosol_absorption,
                                            out vec4 aerosol_scattering,
                                            out vec4 molecular_absorption,
@@ -293,9 +227,9 @@ void get_atmosphere_collision_coefficients(in float h,
     aerosol_absorption = vec4(0.0);
     aerosol_scattering = vec4(0.0);
 #else
-    float aerosol_density = get_aerosol_density(h);
-    aerosol_absorption = aerosol_absorption_cross_section * aerosol_density * turbidity;
-    aerosol_scattering = aerosol_scattering_cross_section * aerosol_density * turbidity;
+    float aerosol_density = get_aerosol_density(h, params);
+    aerosol_absorption = params.aerosol_absorption_cross_section * aerosol_density * turbidity;
+    aerosol_scattering = params.aerosol_scattering_cross_section * aerosol_density * turbidity;
 #endif
     molecular_absorption = get_molecular_absorption_coefficient(h, month);
     molecular_scattering = get_molecular_scattering_coefficient(h);

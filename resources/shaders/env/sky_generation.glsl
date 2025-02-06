@@ -20,6 +20,7 @@ layout(location = 0) in  vec2 v_uv;
 
 layout(push_constant) uniform Settings {
     SkySettings sky;
+    AerosolParams aerosolParams;
 } settings;
 layout(set = 0, binding = 0) uniform sampler2D transmitanceLUT;
 
@@ -56,6 +57,7 @@ vec4 compute_inscattering(vec3 ray_origin, vec3 ray_dir, float t_d, out vec4 tra
             altitude,
             settings.sky.month,
             settings.sky.aerosolTurbidity,
+            settings.aerosolParams,
             aerosol_absorption, aerosol_scattering,
             molecular_absorption, molecular_scattering,
             extinction);

@@ -679,6 +679,10 @@ void ExplorerWidget::displaySkySettings() {
         skySettings.aerosol = static_cast<SkyAerosolType>(aerosol_current);
         sky->set_sky_settings(skySettings);
     }
+    if (ImGui::DragFloat("Aerosol Turbidity", &skySettings.aerosolTurbidity, 0.1f, 0.0f, 25.0f))
+    {
+        sky->set_sky_settings(skySettings);
+    }
 
     // Ground Albedo (Vec4)
     if (ImGui::ColorEdit4("Ground Albedo", &skySettings.groundAlbedo.x))
@@ -698,7 +702,7 @@ void ExplorerWidget::displaySkySettings() {
     }
     if (ImGui::Checkbox("Use for IBL", &skySettings.useForIBL))
         sky->set_sky_settings(skySettings);
- 
+
     // Update Type (Combo)
     const char* updateTypes[]      = {"PER FRAME", "ON DEMAND"};
     static int  updateType_current = static_cast<int>(skySettings.updateType);
@@ -1217,12 +1221,18 @@ void ObjectExplorerWidget::render() {
 
         if (light->get_light_type() == LightType::DIRECTIONAL)
         {
-            DirectionalLight* dirL   = static_cast<DirectionalLight*>(light);
-            float             dir[3] = {dirL->get_direction().x, dirL->get_direction().y, dirL->get_direction().z};
-            if (ImGui::DragFloat3("Direction", dir, 0.1f))
+            DirectionalLight* dirL     = static_cast<DirectionalLight*>(light);
+            float             dir[3]   = {dirL->get_direction().x, dirL->get_direction().y, dirL->get_direction().z};
+            bool              useAsSun = dirL->use_as_sun();
+            if (ImGui::Checkbox("Use As Sun", &useAsSun))
             {
-                static_cast<DirectionalLight*>(light)->set_direction(Vec3(dir[0], dir[1], dir[2]));
+                dirL->use_as_sun(useAsSun);
             };
+            if (!useAsSun)
+                if (ImGui::DragFloat3("Direction", dir, 0.05f, -1.0f, 1.0f))
+                {
+                    dirL->set_direction(Vec3(dir[0], dir[1], dir[2]));
+                };
         }
 
         float intensity = light->get_intensity();

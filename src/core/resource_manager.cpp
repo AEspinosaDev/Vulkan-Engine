@@ -124,6 +124,17 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     {
         if (l->is_active())
         {
+            /*Check if is directIonal and behaves as SUN*/
+            if (l->get_light_type() == LightType::DIRECTIONAL && scene->get_skybox())
+            {
+                DirectionalLight* dirL = static_cast<DirectionalLight*>(l);
+                if (dirL->use_as_sun())
+                {
+                    dirL->set_direction(-DirectionalLight::get_sun_direction(
+                        scene->get_skybox()->get_sky_settings().sunElevationDeg, sceneParams.envRotation - 90.0f));
+                }
+            }
+
             sceneParams.lightUniforms[lightIdx] = l->get_uniforms(camera->get_view());
             Mat4 depthProjectionMatrix =
                 math::perspective(math::radians(l->get_shadow_fov()), 1.0f, l->get_shadow_near(), l->get_shadow_far());

@@ -11,7 +11,7 @@
 #define EPSILON         0.001
 #endif  
 
-float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D randomPool, vec3 O, vec3 L, int numSamples, float area, int ditherFactor){
+float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D randomPool, vec3 O, vec3 L, int numSamples, float area, float tMax, int ditherFactor){
 	if(numSamples == 0) return 1.0;
 
 	//Shadow occlusion contribution
@@ -26,7 +26,7 @@ float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D randomPool
 		vec2 rng = blueNoiseSample(randomPool,i,ditherFactor).rg;
 		vec2 dsample = diskSample(rng,radius);
 
-		float tMax = length(L);
+		// float tMax = length(L);
 		vec3 dir = normalize(L + dsample.x * LTangent + dsample.y * LBitangent);
 
     	rayQueryEXT rayQuery;

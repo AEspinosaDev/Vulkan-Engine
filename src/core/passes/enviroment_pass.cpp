@@ -129,6 +129,8 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
 
     CommandBuffer cmd = currentFrame.commandBuffer;
 
+    SkySettings skySettings = scene->get_skybox()->get_sky_settings();
+
     /*Draw Cubemap*/
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
     cmd.set_viewport(m_imageExtent);
@@ -141,8 +143,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /*Draw Diffuse Irradiance*/
-    if (scene->get_skybox()->get_sky_type() == EnviromentType::PROCEDURAL_ENV &&
-        !scene->get_skybox()->get_sky_settings().useForIBL)
+    if (scene->get_skybox()->get_sky_type() == EnviromentType::PROCEDURAL_ENV && !skySettings.useForIBL)
         goto jump;
 
     cmd.begin_renderpass(m_renderpass, m_framebuffers[1]);
@@ -154,9 +155,11 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
 jump:
+
     /* Everything is updated, set to sleep */
     scene->get_skybox()->update_enviroment(false);
-    set_active(false);
+    if (skySettings.updateType == UpdateType::ON_DEMAND)
+        set_active(false);
 }
 
 void EnviromentPass::link_previous_images(std::vector<Graphics::Image> images) {

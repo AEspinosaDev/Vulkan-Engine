@@ -183,7 +183,7 @@ void main()
                         //Direct Component ________________________
                         vec3 lighting = vec3(0.0);
                         lighting = evalCookTorranceBRDF( 
-                            scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(scene.lights[i].position.xyz), //wi
+                            scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(-scene.lights[i].position.xyz), //wi
                             normalize(-g_pos),                                                                                           //wo
                             scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
                             brdf
@@ -200,9 +200,10 @@ void main()
                                     TLAS, 
                                     samplerMap,
                                     modelPos, 
-                                    scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : scene.lights[i].shadowData.xyz,
+                                    scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : -scene.lights[i].shadowData.xyz,
                                     int(scene.lights[i].shadowData.w), 
                                     scene.lights[i].area, 
+                                    scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].worldPosition.xyz - modelPos) : 30.0,
                                     0);
                         }
                     direct += lighting;

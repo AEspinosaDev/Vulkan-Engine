@@ -120,6 +120,8 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
             if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
                 m_passes[SKY_PASS]->set_active(true);
 
+            // ONLY IF: framebuffers needs to be resized
+            // -------------------------------------------------------------------
             if (m_passes[ENVIROMENT_PASS]->get_extent().height != HDRi_EXTENT ||
                 get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
             {

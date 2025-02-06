@@ -383,11 +383,11 @@
 
         <intensity value="10.0" />
         <color r="1.0" g="0.9" b="0.8" />
-        <direction x="2.0" y="30.0" z="5.0" />
+        <direction x="0.086" y="-0.97" z="0.21" />
 
         <Shadow type="rt">
-            <samples value="2" />
-            <area value="0.1" />
+            <samples value="1" />
+            <area value="0.0" />
         </Shadow>
     </Light>
 
