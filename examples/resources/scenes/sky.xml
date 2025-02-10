@@ -1,0 +1,41 @@
+<!-- VULKAN ENGINE SCENE EXAMPLE EXPECIFICATION -->
+<Scene>
+    <Resources path="C:/Dev/Vulkan-Engine/examples/resources/" />
+    <!-- CAMERA -->
+    <Camera type="perspective" fov="70" near="0.1" far="50">
+        <Transform>
+            <translate x="0.0" y="0.0" z="-5.2" />
+        </Transform>
+    </Camera>
+    <!-- MESHES -->
+    <Mesh type="plane" name="Floor">
+        <Transform>
+            <scale x="5.0" y="5.0" z="5.0" />
+            <translate x="0" y="-1.0" z="0" />
+            <rotate x="-90" y="0" z="0" />
+        </Transform>
+    </Mesh>
+    
+    <!-- LIGHTS -->
+    <Light type="directional" name="Light">
+
+        <intensity value="10.0" />
+        <color r="1" g="1" b="0.6" />
+        <direction x="0.086" y="-0.97" z="0.21" />
+
+        <Shadow type="rt">
+            <samples value="1" />
+            <area value="0.0" />
+        </Shadow>
+    </Light>
+   
+    <!-- ENVIROMENT -->
+    <Enviroment type="procedural">
+        <intensity value="0.5" />
+    </Enviroment>
+    <!-- FOG -->
+    <Fog intensity="30.0">
+        <color r="1" g="1" b="1" />
+    </Fog>
+
+</Scene>

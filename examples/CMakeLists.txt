@@ -14,12 +14,12 @@ add_executable(RendererApp  ${APP_SOURCES})
 add_executable(RotatingKabuto "rotating-kabuto/main.cpp" )
 
 #DEMO 3
-# --- Lighting scene setup ---
+# --- Procedural scene setup ---
 file(GLOB APPL_SOURCES
-"lighting-test/*.cpp"
-"lighting-test/*.h"
+"procedural-sky/*.cpp"
+"procedural-sky/*.h"
 )
-add_executable(LightingTest  ${APPL_SOURCES})
+add_executable(SkyTest  ${APPL_SOURCES})
 
 #DEMO 4
 # --- Raytracing Example ---
@@ -40,10 +40,10 @@ add_executable(SponzaApp  ${SPONZA_SOURCES})
 # Link projects against Engine lib
 target_link_libraries(RendererApp PRIVATE VulkanEngine)
 target_link_libraries(RotatingKabuto PRIVATE VulkanEngine)
-target_link_libraries(LightingTest PRIVATE VulkanEngine)
+target_link_libraries(SkyTest PRIVATE VulkanEngine)
 target_link_libraries(RaytracingApp PRIVATE VulkanEngine)
 target_link_libraries(SponzaApp PRIVATE VulkanEngine)
 
 target_compile_definitions(VulkanEngine PUBLIC EXAMPLES_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 
-set_property(TARGET RendererApp RotatingKabuto LightingTest RaytracingApp SponzaApp PROPERTY FOLDER "examples")
+set_property(TARGET RendererApp RotatingKabuto SkyTest RaytracingApp SponzaApp PROPERTY FOLDER "examples")

@@ -131,7 +131,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
                 if (dirL->use_as_sun())
                 {
                     dirL->set_direction(-DirectionalLight::get_sun_direction(
-                        scene->get_skybox()->get_sky_settings().sunElevationDeg, sceneParams.envRotation - 90.0f));
+                        scene->get_skybox()->get_sky_settings().sunElevationDeg, - sceneParams.envRotation - 90.0f));
                 }
             }
 

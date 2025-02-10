@@ -55,6 +55,7 @@ The main feautures of the library are:
 - On the fly shader compiling.
 - Diffuse and Specular IBL.
 - Physically Based Bloom.
+- Physically Based Sky.
 - Ray Marched SSR.
 - Scene and scene objects abstractions.
 - Texture loading with mipmapping.

@@ -68,7 +68,7 @@
         </Shadow>
     </Light>
     <!-- ENVIROMENT -->
-    <Enviroment type="skybox">
+    <Enviroment type="HDRi">
         <Filename value="textures/cloudy.hdr" />
         <intensity value="0.5" />
     </Enviroment>

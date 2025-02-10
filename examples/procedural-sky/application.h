@@ -31,7 +31,7 @@ class Application
     IWindow *m_window;
     Systems::BaseRenderer *m_renderer;
     Scene *m_scene;
-    Camera *camera;
+    Camera *m_camera;
     Tools::Controller *m_controller;
 
     Mesh *m_lightDummy;

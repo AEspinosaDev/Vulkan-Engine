@@ -1464,7 +1464,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                 scene->set_ambient_color(color);
             }
         }
-        if (ambientType == "skybox")
+        if (ambientType == "HDRi")
         {
             tinyxml2::XMLElement* filenameElement = ambientElement->FirstChildElement("Filename");
             if (filenameElement)
@@ -1484,6 +1484,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                                              TEXTURE_FORMAT_HDR,
                                              m_asyncLoad);
                 Core::Skybox* sky = new Core::Skybox(envMap);
+                sky->set_sky_type(EnviromentType::IMAGE_BASED_ENV);
                 if (ambientElement->FirstChildElement("intensity"))
                 {
                     sky->set_color_intensity(ambientElement->FirstChildElement("intensity")->FloatAttribute("value"));
@@ -1493,8 +1494,21 @@ void VKFW::Tools::Loaders::SceneLoader::load_scene(Core::Scene* const scene, con
                 scene->set_skybox(sky);
             }
         }
+        if (ambientType == "procedural")
+        {
 
-    } else
+            Core::Skybox* sky = new Core::Skybox();
+            sky->set_sky_type(EnviromentType::PROCEDURAL_ENV);
+            if (ambientElement->FirstChildElement("intensity"))
+            {
+                sky->set_color_intensity(ambientElement->FirstChildElement("intensity")->FloatAttribute("value"));
+                scene->set_ambient_intensity(ambientElement->FirstChildElement("intensity")->FloatAttribute("value"));
+            }
+            scene->set_skybox(sky);
+        }
+    }
+
+    else
     {
         scene->set_ambient_color(Vec3(0.0));
         scene->set_ambient_intensity(0.0f);
