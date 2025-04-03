@@ -80,6 +80,62 @@ Geometry* Geometry::create_cube() {
 
     return g;
 }
+Geometry* Geometry::create_cylinder(int segments, float radius, float height) {
+    Geometry* g = new Geometry();
+    std::vector<Graphics::Vertex> vertices;
+    std::vector<uint32_t> indices;
+    
+    float halfHeight = height / 2.0f;
+    float angleStep = 2.0f * 3.14159265358979323846 / segments;
+    
+    // Generate side vertices
+    for (int i = 0; i <= segments; i++) {
+        float angle = i * angleStep;
+        float x = radius * cos(angle);
+        float z = radius * sin(angle);
+        
+        vertices.push_back({{x, -halfHeight, z}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {i / (float)segments, 0.0f}, {0.0f, 0.0f, 0.0f}});
+        vertices.push_back({{x, halfHeight, z}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {i / (float)segments, 1.0f}, {0.0f, 0.0f, 0.0f}});
+    }
+    
+    // Side indices
+    for (int i = 0; i < segments; i++) {
+        int base = i * 2;
+        indices.push_back(base);
+        indices.push_back(base + 1);
+        indices.push_back(base + 2);
+        
+        indices.push_back(base + 1);
+        indices.push_back(base + 3);
+        indices.push_back(base + 2);
+    }
+    
+    // Top and bottom center vertices
+    int bottomCenterIdx = vertices.size();
+    vertices.push_back({{0.0f, -halfHeight, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}});
+    int topCenterIdx = vertices.size();
+    vertices.push_back({{0.0f, halfHeight, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}});
+    
+    // Top and bottom cap indices
+    for (int i = 0; i < segments; i++) {
+        int base = i * 2;
+        int next = ((i + 1) % segments) * 2;
+        
+        // Bottom cap
+        indices.push_back(bottomCenterIdx);
+        indices.push_back(base);
+        indices.push_back(next);
+        
+        // Top cap
+        indices.push_back(topCenterIdx);
+        indices.push_back(next + 1);
+        indices.push_back(base + 1);
+    }
+    
+    g->fill(vertices, indices);
+    return g;
+}
+
 void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
                                            const std::vector<uint32_t>&   indices) {
     if (!indices.empty())

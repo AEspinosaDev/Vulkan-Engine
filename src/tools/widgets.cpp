@@ -106,6 +106,16 @@ void ExplorerWidget::render() {
                 sph->set_name("Sphere");
                 m_scene->add(sph);
             }
+            if (ImGui::MenuItem("Cylinder"))
+            {
+               
+                Mesh* cyl = new Mesh();
+                Loaders::load_3D_file(cyl, ENGINE_RESOURCES_PATH "meshes/cylinder.obj", false);
+                auto mat = new PhysicalMaterial();
+                cyl->push_material(mat);
+                cyl->set_name("Cylinder");
+                m_scene->add(cyl);
+            }
 
             if (ImGui::MenuItem("Directional Light"))
             {

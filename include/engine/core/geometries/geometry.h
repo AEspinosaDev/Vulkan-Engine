@@ -102,6 +102,7 @@ class Geometry
     void             fill_voxel_array(std::vector<Graphics::Voxel> voxels);
     static Geometry* create_quad();
     static Geometry* create_cube();
+    static Geometry* create_cylinder(int segments = 1, float radius = 0.5, float height = 2.0);
     static void      compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
                                                  const std::vector<uint32_t>&   indices);
 };
