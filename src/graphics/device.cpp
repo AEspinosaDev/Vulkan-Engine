@@ -946,3 +946,4 @@ void Device::UploadContext::cleanup() {
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
+

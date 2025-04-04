@@ -2,10 +2,10 @@
 #include <filesystem>
 
 void Application::init(Systems::RendererSettings settings) {
-    m_window = new WindowGLFW("Procedural Sky", 1280, 1024);
+    m_window = new WindowGLFW("Procedural Sky Test", 1280, 1024);
 
     m_window->init();
-    m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
+    m_window->set_window_icon(TESTS_RESOURCES_PATH "textures/test.png");
 
     m_window->set_window_size_callback(
         std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -49,7 +49,7 @@ void Application::run(int argc, char* argv[]) {
 }
 
 void Application::setup() {
-    const std::string SCENE_PATH(EXAMPLES_RESOURCES_PATH "scenes/");
+    const std::string SCENE_PATH(TESTS_RESOURCES_PATH "scenes/");
 
     m_scene = new Scene();
     Tools::Loaders::SceneLoader loader(true);
@@ -60,6 +60,7 @@ void Application::setup() {
 
     m_camera     = m_scene->get_active_camera();
     m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::WASD);
+
 }
 
 void Application::setup_gui() {
