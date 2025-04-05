@@ -93,9 +93,10 @@ Once the project is opened in the IDE of choice, compile it in the desired mode,
 
 The project compiles dependencies, the 3D library, and the example applications directory, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
 
-3. Building of the demos directory is optional, and can be turned off in CMake:
+3. Building of the demos and tests directory is optional, and can be turned off in CMake:
 ```bash
 cmake -DBUILD_EXAMPLES=OFF /path/to/source
+cmake -DBUILD_TESTS=OFF /path/to/source
 ```
 4. Alternatively, you can click on the build.bat file to automatically build (in release mode) the entire project.
 
