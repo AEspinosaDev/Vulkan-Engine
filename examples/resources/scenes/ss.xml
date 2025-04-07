@@ -1,0 +1,601 @@
+<Scene>
+    <Resources path=""/>
+    <Camera far="50" near="0.1" fov="70">
+        <Transform>
+            <translate x="-2.0709484" y="0.86673754" z="-19.092039"/>
+            <rotate x="-6187.9448" y="183.34639" z="0"/>
+            <scale x="1" y="1" z="1"/>
+        </Transform>
+    </Camera>
+    <Mesh type="file" name="Sponza">
+        <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/walls.obj"/>
+        <Transform>
+            <translate x="0" y="-2" z="0"/>
+            <rotate x="0" y="0" z="0"/>
+            <scale x="1" y="1" z="1"/>
+        </Transform>
+        <Material type="physical">
+            <albedo r="0.5" g="0.5" b="0.5"/>
+            <opacity value="1"/>
+            <roughness value="0.89999998"/>
+            <metallic value="0"/>
+            <emission r="0" g="0" b="0"/>
+            <Textures>
+                <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Walls/Bricks_Diffuse.png"/>
+                <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Walls/Bricks_Normal.png"/>
+            </Textures>
+        </Material>
+        <Children>
+            <Mesh type="file" name="Arcs">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/arcs.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Arches/Arches_Diffuse.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Domes">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/boves.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Vaults/Ceiling_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Vaults/Ceiling_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Columns 2">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/columns2.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Columns/Column_C_Diffuse.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Columns Bottom">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/columnsBottom.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Columns/Column_A_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Columns/Column_A_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Columns Top">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/columnsTop.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Columns/Column_B_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Columns/Column_B_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Doors">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/doors.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Doors/Details_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Doors/Details_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Floor">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/floor.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Floor/Floor_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Floor/Floor_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Fountains">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/fountains.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Vase/Vase_Octagonal_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Vase/Vase_Octagonal_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Lion">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/lion.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lion/Lion_Head_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lion/Lion_Head_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Lion Base">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/lionBase.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lion/Lion_Shield_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lion/Lion_Shield_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Pols">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/pols.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.40000001"/>
+                    <metallic value="0.69999999"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Poles/FlagPoles_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Poles/FlagPoles_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Roof">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/roof.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.89999998"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Roof/Roof_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Roof/Roof_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Round Vases">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/smallFountains.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Vase/Vase_Round_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Vase/Vase_Round_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Leaves">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/leaves.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Leaves/Ivy_Diffuses.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Leaves/Ivy_Diffuse_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Vase Leaves">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/leaves2.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Leaves/Vase_Round_Plants_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Leaves/Vase_Round_Plants_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Lamp">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/lamps.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.30000001"/>
+                    <metallic value="0.89999998"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lamps/Vase_Hanging_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lamps/Vase_Hanging_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Lamp Hang">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/lampsHold.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.30000001"/>
+                    <metallic value="0.89999998"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lamps/Vase_Hanging_Chain_Diffuse.png"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Lamps/Vase_Hanging_Chain_Normal.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Knight">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/knight.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="-5"/>
+                    <rotate x="0" y="-225" z="0"/>
+                    <scale x="1.2" y="1.2" z="1.2"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.40000001"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Knight/Armor_Mat_albedo.jpeg"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Knight/Armor_Mat_Normal.png"/>
+                        <metalness path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Knight/Armor_Mat_metallic.png"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Statue">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/apollon_daphne.obj"/>
+                <Transform>
+                    <translate x="8.5" y="0" z="5.5"/>
+                    <rotate x="0" y="-90" z="0"/>
+                    <scale x="2" y="2" z="2"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Apollo/apollo_diffuse.jpg"/>
+                        <normals path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Apollo/apollo_normal.jpg"/>
+                        <roughness path="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/Apollo/apollo_roughness.jpg"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Curtain 0">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/curtain1.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.44117647" g="0" b="0"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Curtain 1">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/curtain2.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.015715124" g="0.53431374" b="0"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Curtain 2">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/curtain3.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0" g="0.023500789" b="0.79901958"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Round Curtain 0">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/topCurtain1.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0" g="0.15239328" b="0.74019611"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Round Curtain 1">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/topCurtain2.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.036043812" g="0.122549" b="0"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Round Curtain 2">
+                <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/meshes/topCurtain3.obj"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.21078432" g="0" b="0"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+            <Mesh type="file" name="Carpet">
+                <Filename value="None"/>
+                <Transform>
+                    <translate x="0" y="0" z="0"/>
+                    <rotate x="0" y="0" z="0"/>
+                    <scale x="1" y="1" z="1"/>
+                </Transform>
+                <Material type="physical">
+                    <albedo r="0.5" g="0.5" b="0.5"/>
+                    <opacity value="1"/>
+                    <roughness value="0.75"/>
+                    <metallic value="0"/>
+                    <emission r="0" g="0" b="0"/>
+                    <Textures>
+                        <albedo path="None"/>
+                        <normals path="None"/>
+                        <roughness path="None"/>
+                        <metalness path="None"/>
+                    </Textures>
+                </Material>
+                <Children/>
+            </Mesh>
+        </Children>
+    </Mesh>
+    <Light type="directional" name="Sun">
+        <direction x="-0.08766491" y="-0.99452192" z="-0.056930259"/>
+        <Transform>
+            <translate x="0" y="50" z="0"/>
+            <rotate x="0" y="0" z="0"/>
+            <scale x="1" y="1" z="1"/>
+        </Transform>
+        <intensity value="10"/>
+        <color r="1" g="0.89999998" b="0.80000001"/>
+        <Shadow type="rt">
+            <samples value="1"/>
+            <area value="0"/>
+        </Shadow>
+        <Children/>
+    </Light>
+    <Mesh type="file" name="Box">
+        <Filename value="C:/dev/Vulkan-Engine/resources/meshes/cube.obj"/>
+        <Transform>
+            <translate x="3.4000001" y="0" z="-12.3"/>
+            <rotate x="0" y="0" z="0"/>
+            <scale x="1" y="1" z="1"/>
+        </Transform>
+        <Material type="physical">
+            <albedo r="1" g="1" b="0.5"/>
+            <opacity value="1"/>
+            <roughness value="0.75"/>
+            <metallic value="0"/>
+            <emission r="1" g="0.35294116" b="0"/>
+            <Textures/>
+        </Material>
+        <Children/>
+    </Mesh>
+    <Enviroment type="skybox">
+        <Filename value="C:/Dev/Vulkan-Engine/examples/sponza/assets/textures/cloudy.hdr"/>
+        <intensity value="0.1"/>
+    </Enviroment>
+</Scene>

@@ -35,7 +35,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    a
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Emissive
+    // Material 2 (Emissive most of the time)
     attachments[4] = Graphics::AttachmentInfo(SRGBA_32F,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
