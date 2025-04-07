@@ -1,4 +1,4 @@
-#include "application.h"
+#include "test.h"
 #include <filesystem>
 
 void Application::init(Systems::RendererSettings settings) {
@@ -50,16 +50,41 @@ void Application::run(int argc, char* argv[]) {
 
 void Application::setup() {
     const std::string SCENE_PATH(TESTS_RESOURCES_PATH "scenes/");
+    const std::string MESH_PATH(TESTS_RESOURCES_PATH "meshes/");
+    const std::string TEXTURE_PATH(TESTS_RESOURCES_PATH "textures/");
 
-    m_scene = new Scene();
-    Tools::Loaders::SceneLoader loader(true);
-    loader.load_scene(m_scene, SCENE_PATH + "sky.xml");
+    auto camera = new Camera();
+    camera->set_position(Vec3(0.0f, 0.5f, -1.0f));
+    camera->set_far(100.0f);
+    camera->set_near(0.1f);
+    camera->set_field_of_view(70.0f);
+
+    m_scene = new Scene(camera);
+
+    m_scene->add(new PointLight());
+    m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
+    m_scene->get_lights()[0]->set_shadow_fov(25.0f);
+    m_scene->get_lights()[0]->set_intensity(1.0f);
+   
+    
+    Mesh*    headMesh = new Mesh();
+    auto     skinMaterial  = new PhysicalMaterial();
+    // Texture* toriiT    = new Texture();
+    // Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
+    headMesh->push_material(skinMaterial);
+    Tools::Loaders::load_3D_file(headMesh, MESH_PATH + "lee_perry.obj");
+    headMesh->set_name("Head");
+    headMesh->set_scale(2.0f);
+    headMesh->set_rotation({0.0, 180.0f, 0.0f});
+    m_scene->add(headMesh);
+
 
     m_scene->set_ambient_intensity(0.1f);
     m_scene->use_IBL(false);
 
     m_camera     = m_scene->get_active_camera();
-    m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::WASD);
+    m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::ORBITAL);
+    m_controller->set_orbital_center({0.0,0.5,0.0});
 
 }
 

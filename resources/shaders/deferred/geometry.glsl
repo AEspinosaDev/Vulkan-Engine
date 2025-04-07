@@ -80,7 +80,7 @@ layout(location = 0) out vec4 outPos;
 layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outAlbedo;
 layout(location = 3) out vec4 outMaterial; //U8
-layout(location = 4) out vec4 outEmissionF; //F32
+layout(location = 4) out vec4 outMaterial2; //F32
 // layout(location = 5) out vec4 outTemporal;
 
 #define EPSILON 0.1
@@ -92,7 +92,7 @@ vec3    g_albedo            = vec3(0.0);
 float   g_opacity           = 1.0;
 vec3    g_normal            = vec3(0.0);
 vec4    g_material          = vec4(0.0);
-vec3    g_emisison          = vec3(0.0);
+vec3    g_material2          = vec3(0.0);
 float   g_fresnelThreshold  = 0.0;
 
 void setupSurfaceProperties(){
@@ -125,8 +125,8 @@ void setupSurfaceProperties(){
             g_material.b = material.slot5.w== 1 ? mix(material.slot4.y, texture(materialText3, v_uv).r, material.slot4.z) : material.slot4.y; //AO
         }
 
-        g_emisison = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(materialText4, v_uv).rgb, material.slot7.w) : material.slot7.rgb;
-        g_emisison *= material.slot8.x;
+        g_material2 = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(materialText4, v_uv).rgb, material.slot7.w) : material.slot7.rgb;
+        g_material2 *= material.slot8.x;
 
         g_fresnelThreshold =  material.slot8.y;
 
@@ -145,6 +145,20 @@ void setupSurfaceProperties(){
         // TBD .........
         g_material.w = PHONG_MATERIAL;
     }
+    if(material.slot8.w == SKIN_MATERIAL){
+
+        //Setting skin surface properties
+        g_albedo = int(material.slot4.w)== 1 ? mix(material.slot1.rgb, texture(albedoTex, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
+        g_normal = int(material.slot5.x)== 1 ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize( v_normal );
+
+        g_material.r = material.slot5.y== 1 ? mix(material.slot3.w, texture(materialText1, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
+        g_material.g = material.slot6.x== 1 ? texture(materialText3, v_uv).r : 0.0 ;
+        g_material.b = material.slot5.w== 1 ? mix(material.slot4.y, texture(materialText2, v_uv).r, material.slot4.z) : material.slot4.y; //AO
+        
+        g_fresnelThreshold =  material.slot8.y;
+
+        g_material.w = SKIN_MATERIAL;
+    }
     
 
 }
@@ -162,7 +176,7 @@ void main() {
     outNormal   = vec4( g_normal , 1.0f );
     outAlbedo   = vec4(g_albedo,g_opacity);
     outMaterial = g_material; //w material ID
-    outEmissionF = vec4(g_emisison,g_fresnelThreshold); //w Fresnel Threshold 
+    outMaterial2 = vec4(g_material2,g_fresnelThreshold); //w Fresnel Threshold 
     // outTemporal = vec4(0.0); //TBD
 
 }

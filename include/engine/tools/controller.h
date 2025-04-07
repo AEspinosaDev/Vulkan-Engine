@@ -126,6 +126,13 @@ class Controller
     inline void set_window(Core::IWindow* w) {
         m_windowPtr = w;
     }
+    inline Vec3 get_orbital_center() const {
+        return m_orbitalCenter;
+    }
+    inline void set_orbital_center(Vec3 orbitalCenter) {
+        m_orbitalCenter = orbitalCenter;
+    }
+
     /*Not insert as GLFW callback!*/
     virtual void handle_keyboard(int key, int action, const float deltaTime);
     virtual void handle_mouse(float xpos, float ypos, bool constrainPitch = true);

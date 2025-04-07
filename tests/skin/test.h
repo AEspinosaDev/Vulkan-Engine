@@ -1,5 +1,5 @@
-#ifndef LIGHT_APP_H
-#define LIGHT_APP_H
+#ifndef LIGHT_TEST_H
+#define LIGHT_TEST_H
 
 #include <chrono>
 

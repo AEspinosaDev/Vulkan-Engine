@@ -271,6 +271,45 @@ void main()
         if(g_material.w == HAIR_STRAND_MATERIAL){
             //TBD ....
         }
+        //////////////////////////////////////
+        // SKIN 
+        //////////////////////////////////////
+        if(g_material.w == SKIN_MATERIAL){
+            //  //Direct Component ________________________
+            // for(int i = 0; i < scene.numLights; i++) {
+            //         //If inside liught area influence
+            //         if(isInAreaOfInfluence(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type))){
+
+            //             //Direct Component ________________________
+            //             vec3 lighting = vec3(0.0);
+            //             lighting = evalCookTorranceBRDF( 
+            //                 scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(-scene.lights[i].position.xyz), //wi
+            //                 normalize(-g_pos),                                                                                           //wo
+            //                 scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
+            //                 brdf
+            //                 );
+
+            //             //Visibility Component ________________________
+            //             if(scene.lights[i].shadowCast == 1) {
+            //                 if(scene.lights[i].shadowType == 0) //Classic
+            //                     lighting *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
+            //                 if(scene.lights[i].shadowType == 1) //VSM   
+            //                     lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
+            //                 if(scene.lights[i].shadowType == 2) //Raytraced  
+            //                     lighting *= computeRaytracedShadow(
+            //                         TLAS, 
+            //                         samplerMap,
+            //                         modelPos, 
+            //                         scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : -scene.lights[i].shadowData.xyz,
+            //                         int(scene.lights[i].shadowData.w), 
+            //                         scene.lights[i].area, 
+            //                         scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].worldPosition.xyz - modelPos) : 30.0,
+            //                         0);
+            //             }
+            //         direct += lighting;
+            //         }
+            // }
+        }
 
                
                     
