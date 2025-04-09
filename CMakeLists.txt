@@ -113,7 +113,8 @@ if(BUILD_EXAMPLES)
 endif()
 # Choose if building demos directory. User-Defined.
 option(BUILD_TESTS "Build Tests Directory" ON)
-if(BUILD_EXAMPLES)
+if(BUILD_TESTS)
+    enable_testing()
     add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
 endif()
 

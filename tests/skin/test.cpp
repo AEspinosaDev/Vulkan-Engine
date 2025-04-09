@@ -65,12 +65,18 @@ void Application::setup() {
     m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
     m_scene->get_lights()[0]->set_shadow_fov(25.0f);
     m_scene->get_lights()[0]->set_intensity(1.0f);
-   
-    
-    Mesh*    headMesh = new Mesh();
-    auto     skinMaterial  = new PhysicalMaterial();
-    // Texture* toriiT    = new Texture();
-    // Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
+    m_scene->get_lights()[0]->set_shadow_bias(0.001f);
+    m_scene->get_lights()[0]->set_shadow_softness(5);
+
+    Mesh*    headMesh     = new Mesh();
+    auto     skinMaterial = new PhysicalMaterial();
+    Texture* skinAlbedo   = new Texture();
+    Tools::Loaders::load_texture(skinAlbedo, TEXTURE_PATH + "perry_albedo.png");
+    skinMaterial->set_albedo_texture(skinAlbedo);
+    Texture* skinNormal = new Texture();
+    Tools::Loaders::load_texture(skinNormal, TEXTURE_PATH + "perry_normal.png", TEXTURE_FORMAT_UNORM);
+    skinMaterial->set_normal_texture(skinNormal);
+    skinMaterial->set_roughness(0.5);
     headMesh->push_material(skinMaterial);
     Tools::Loaders::load_3D_file(headMesh, MESH_PATH + "lee_perry.obj");
     headMesh->set_name("Head");
@@ -78,14 +84,12 @@ void Application::setup() {
     headMesh->set_rotation({0.0, 180.0f, 0.0f});
     m_scene->add(headMesh);
 
-
     m_scene->set_ambient_intensity(0.1f);
     m_scene->use_IBL(false);
 
     m_camera     = m_scene->get_active_camera();
     m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::ORBITAL);
-    m_controller->set_orbital_center({0.0,0.5,0.0});
-
+    m_controller->set_orbital_center({0.0, 0.5, 0.0});
 }
 
 void Application::setup_gui() {
@@ -117,6 +121,19 @@ void Application::setup_gui() {
 void Application::update() {
     if (!m_interface.overlay->wants_to_handle_input())
         m_controller->handle_keyboard(0, 0, m_time.delta);
+
+    // Rotate the vector around the ZX plane
+    auto light = m_scene->get_lights()[0];
+    if (animateLight)
+    {
+        float rotationAngle = glm::radians(10.0f * m_time.delta);
+        float _x = light->get_position().x * cos(rotationAngle) - light->get_position().z * sin(rotationAngle);
+        float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
+
+        light->set_position({_x, light->get_position().y, _z});
+    }
+    // static_cast<UnlitMaterial*>(static_cast<Mesh*>(light->get_children().front())->get_material(0))
+    //     ->set_color({light->get_color() * light->get_intensity(), 1.0f});
 
     m_interface.object->set_object(m_interface.scene->get_selected_object());
 }
