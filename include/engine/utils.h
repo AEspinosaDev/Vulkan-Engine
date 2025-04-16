@@ -12,19 +12,11 @@
 #include <chrono>
 #include <deque>
 #include <engine/common.h>
-#include <engine/graphics/utilities/initializers.h>
 #include <functional>
-
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
-namespace Graphics {
-
 namespace Utils {
-
-
 
 
 struct DeletionQueue {
@@ -61,12 +53,12 @@ class ManualTimer
     }
 };
 
-struct memory_buffer : public std::streambuf {
+struct MemoryBuffer : public std::streambuf {
     char*  p_start{nullptr};
     char*  p_end{nullptr};
     size_t size;
 
-    memory_buffer(char const* first_elem, size_t size)
+    MemoryBuffer(char const* first_elem, size_t size)
         : p_start(const_cast<char*>(first_elem))
         , p_end(p_start + size)
         , size(size) {
@@ -86,9 +78,9 @@ struct memory_buffer : public std::streambuf {
     }
 };
 
-struct memory_stream : virtual memory_buffer, public std::istream {
-    memory_stream(char const* first_elem, size_t size)
-        : memory_buffer(first_elem, size)
+struct MemoryStream : virtual MemoryBuffer, public std::istream {
+    MemoryStream(char const* first_elem, size_t size)
+        : MemoryBuffer(first_elem, size)
         , std::istream(static_cast<std::streambuf*>(this)) {
     }
 };
@@ -115,11 +107,10 @@ inline std::vector<uint8_t> read_file_binary(const std::string& pathToFile) {
     return fileBufferBytes;
 }
 
-
 Vec3 get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, glm::vec2& uv1, glm::vec2& uv2, glm::vec2& uv3, Vec3 normal);
 
 }; // namespace Utils
-} // namespace Graphics
+
 
 VULKAN_ENGINE_NAMESPACE_END
 

@@ -1,8 +1,6 @@
-#include <engine/graphics/utilities/utils.h>
+#include <engine/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-
-namespace Graphics {
 
 std::string Utils::trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\n\r");
@@ -47,8 +45,5 @@ Vec3 Utils::get_tangent_gram_smidt(Vec3&      p1,
     // return glm::normalize(tangent);
 }
 
-
-
-} // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END

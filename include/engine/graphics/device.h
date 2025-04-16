@@ -10,6 +10,7 @@
 #define CONTEXT_H
 
 #include <engine/common.h>
+#include <engine/utils.h>
 
 #include <engine/graphics/accel.h>
 #include <engine/graphics/command_buffer.h>
@@ -20,7 +21,6 @@
 #include <engine/graphics/swapchain.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
-#include <engine/graphics/utilities/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

@@ -148,6 +148,87 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh,
     return;
 }
 
+void VKFW::Tools::Loaders::load_OBJ2(Core::Mesh* const mesh,
+                                     const std::string fileName,
+                                     bool              importMaterials,
+                                     bool              calculateTangents,
+                                     bool              overrideGeometry) {
+
+    // Preparing output
+    tinyobj::attrib_t                attrib;
+    std::vector<tinyobj::shape_t>    shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string                      warn;
+    std::string                      err;
+
+    tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, fileName.c_str(), importMaterials ? nullptr : nullptr);
+
+    // Check for errors
+    if (!warn.empty())
+    {
+        DEBUG_LOG("WARN: " + warn);
+    }
+    if (!err.empty())
+    {
+        ERR_LOG(err);
+        DEBUG_LOG("ERROR: Couldn't load mesh");
+        return;
+    }
+
+    std::vector<Graphics::Vertex>           vertices;
+    std::vector<uint32_t>                   indices;
+    std::unordered_map<glm::vec3, uint32_t> unique_vertices;
+
+    for (const auto& shape : shapes)
+    {
+        for (const auto& index : shape.mesh.indices)
+        {
+            Graphics::Vertex vertex;
+            if (index.vertex_index >= 0)
+            {
+
+                vertex.pos   = {attrib.vertices[3 * index.vertex_index + 0],
+                                attrib.vertices[3 * index.vertex_index + 1],
+                                attrib.vertices[3 * index.vertex_index + 2]};
+                vertex.color = {attrib.colors[3 * index.vertex_index + 0],
+                                attrib.colors[3 * index.vertex_index + 1],
+                                attrib.colors[3 * index.vertex_index + 2]};
+            }
+            if (index.normal_index >= 0)
+            {
+                vertex.normal = {attrib.normals[3 * index.normal_index + 0],
+                                 attrib.normals[3 * index.normal_index + 1],
+                                 attrib.normals[3 * index.normal_index + 2]};
+            }
+
+            vertex.tangent = {0.0, 0.0, 0.0};
+
+            if (index.texcoord_index >= 0)
+            {
+                vertex.texCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0], attrib.texcoords[2 * index.texcoord_index + 1]};
+            }
+            
+
+            if (unique_vertices.count(vertex.pos) == 0)
+            {
+                unique_vertices[vertex.pos] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(vertex);
+            }
+
+            indices.push_back(unique_vertices[vertex.pos]);
+        }
+    }
+    if (calculateTangents)
+    {
+        Core::Geometry::compute_tangents_gram_smidt(vertices, indices);
+    }
+
+    Core::Geometry* g = new Core::Geometry();
+    g->fill(vertices, indices);
+    mesh->push_geometry(g);
+    mesh->set_file_route(fileName);
+}
 void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh,
                                     const std::string fileName,
                                     bool              preload,
@@ -163,8 +244,8 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh,
         // stream is a net win for parsing speed, about 40% faster.
         if (preload)
         {
-            byte_buffer = Graphics::Utils::read_file_binary(fileName);
-            file_stream.reset(new Graphics::Utils::memory_stream((char*)byte_buffer.data(), byte_buffer.size()));
+            byte_buffer = Utils::read_file_binary(fileName);
+            file_stream.reset(new Utils::MemoryStream((char*)byte_buffer.data(), byte_buffer.size()));
         } else
         {
             file_stream.reset(new std::ifstream(fileName, std::ios::binary));
@@ -271,7 +352,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh,
             if (verbose)
                 std::cerr << "tinyply exception: " << e.what() << std::endl;
         }
-        Graphics::Utils::ManualTimer readTimer;
+        Utils::ManualTimer readTimer;
 
         readTimer.start();
         file.read(*file_stream);

@@ -9,7 +9,7 @@
 #ifndef BOOTSTRAP_H
 #define BOOTSTRAP_H
 
-#include <engine/graphics/utilities/utils.h>
+#include <engine/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 

@@ -145,7 +145,7 @@ void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertic
             size_t i1 = indices[i + 1];
             size_t i2 = indices[i + 2];
 
-            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i0].pos,
+            Vec3 tangent = Utils::get_tangent_gram_smidt(vertices[i0].pos,
                                                                    vertices[i1].pos,
                                                                    vertices[i2].pos,
                                                                    vertices[i0].texCoord,
@@ -160,7 +160,7 @@ void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertic
     else
         for (size_t i = 0; i < vertices.size(); i += 3)
         {
-            Vec3 tangent = Graphics::Utils::get_tangent_gram_smidt(vertices[i].pos,
+            Vec3 tangent = Utils::get_tangent_gram_smidt(vertices[i].pos,
                                                                    vertices[i + 1].pos,
                                                                    vertices[i + 2].pos,
                                                                    vertices[i].texCoord,

@@ -57,7 +57,7 @@ class BaseRenderer
     std::vector<Core::BasePass*> m_passes;
 
     /*Automatic deletion queue*/
-    Graphics::Utils::DeletionQueue m_deletionQueue;
+    Utils::DeletionQueue m_deletionQueue;
 
     /*Query*/
     uint32_t m_currentFrame       = 0;

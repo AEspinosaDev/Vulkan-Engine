@@ -34,6 +34,11 @@ void load_OBJ(Core::Mesh* const mesh,
               bool              importMaterials   = false,
               bool              calculateTangents = false,
               bool              overrideGeometry  = false);
+void load_OBJ2(Core::Mesh* const mesh,
+              const std::string fileName,
+              bool              importMaterials   = false,
+              bool              calculateTangents = false,
+              bool              overrideGeometry  = false);
 
 void load_PLY(Core::Mesh* const mesh,
               const std::string fileName,

@@ -55,7 +55,7 @@ target_link_libraries(ImGuiFileDialog PUBLIC imgui )
 
 # Setup sources
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/add_module_files.cmake)
-set(ENGINE_SOURCES "")
+set(ENGINE_SOURCES "src/utils.cpp")
 set(ENGINE_HEADERS "")
 add_module_files(core ENGINE_SOURCES ENGINE_HEADERS)
 add_module_files(graphics ENGINE_SOURCES ENGINE_HEADERS)

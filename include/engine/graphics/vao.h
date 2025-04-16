@@ -9,8 +9,8 @@
 #ifndef VAO_H
 #define VAO_H
 
+#include <engine/utils.h>
 #include <engine/graphics/buffer.h>
-#include <engine/graphics/utilities/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
