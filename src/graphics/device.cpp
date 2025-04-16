@@ -17,17 +17,25 @@ void Device::init(void*           windowHandle,
     m_instance = Booter::create_instance("xxx", "VulkanDevice", m_enableValidationLayers, m_validationLayers);
     if (m_enableValidationLayers)
         m_debugMessenger = Booter::create_debug_messenger(m_instance);
+
     // Surface
     Extent2D actualExtent = m_swapchain.create_surface(m_instance, windowHandle, windowingSystem);
+
     // Get gpu
     m_gpu = Booter::pick_graphics_card_device(m_instance, m_swapchain.get_surface(), m_extensions);
+    // Store properties
+    vkGetPhysicalDeviceProperties(m_gpu, &m_properties);
+    vkGetPhysicalDeviceFeatures(m_gpu, &m_features);
+    vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProperties);
+
     // Create logical device
     m_handle = Booter::create_logical_device(m_queues,
                                              m_gpu,
-                                             Utils::get_gpu_features(m_gpu),
+                                             m_features,
                                              m_swapchain.get_surface(),
                                              m_enableValidationLayers,
                                              m_validationLayers);
+
     // Setup VMA
     m_allocator = Booter::setup_memory(m_instance, m_handle, m_gpu);
 
@@ -43,10 +51,6 @@ void Device::init(void*           windowHandle,
     create_upload_context();
     load_extensions(m_handle, m_instance);
 
-    // Get properties
-    vkGetPhysicalDeviceProperties(m_gpu, &m_properties);
-    vkGetPhysicalDeviceFeatures(m_gpu, &m_features);
-    vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProperties);
 
     //------<<<
 }
@@ -76,7 +80,7 @@ void Device::cleanup() {
 
     if (m_enableValidationLayers)
     {
-        Utils::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
+        Booter::destroy_debug_utils_messenger_EXT(m_instance, m_debugMessenger, nullptr);
     }
 
     m_swapchain.destroy_surface(m_instance);
@@ -185,13 +189,13 @@ CommandPool Device::create_command_pool(QueueType QueueType, CommandPoolCreateFl
     switch (QueueType)
     {
     case QueueType::GRAPHIC_QUEUE:
-        poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
+        poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
         break;
     case QueueType::COMPUTE_QUEUE:
-        poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).computeFamily.value();
+        poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).computeFamily.value();
         break;
     case QueueType::PRESENT_QUEUE:
-        poolInfo.queueFamilyIndex = Utils::find_queue_families(m_gpu, m_swapchain.get_surface()).presentFamily.value();
+        poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).presentFamily.value();
         break;
     }
     pool.queue     = m_queues[QueueType];

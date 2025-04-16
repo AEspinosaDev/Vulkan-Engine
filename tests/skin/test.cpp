@@ -35,6 +35,7 @@ void Application::run(int argc, char* argv[]) {
     settings.enableUI         = true;
     settings.enableRaytracing = true;
     settings.softwareAA       = true;
+    
 
     init(settings);
     while (!m_window->get_window_should_close())
@@ -64,6 +65,7 @@ void Application::setup() {
     m_scene->add(new PointLight());
     m_scene->get_lights()[0]->set_position({-3.0f, 3.0f, 0.0f});
     m_scene->get_lights()[0]->set_shadow_fov(25.0f);
+    m_scene->get_lights()[0]->set_shadow_target({0.0f,0.5f,0.0f});
     m_scene->get_lights()[0]->set_intensity(1.0f);
     m_scene->get_lights()[0]->set_shadow_bias(0.001f);
     m_scene->get_lights()[0]->set_shadow_softness(5);

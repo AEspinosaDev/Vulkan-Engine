@@ -61,15 +61,15 @@
 
 #define _LOG(msg)                                                                                                      \
     {                                                                                                                  \
-        std::cout << "VKEngine log: " << msg << std::endl;                                                             \
+        std::cout << "[VKEngine Log] " << msg << std::endl;                                                             \
     }
 #define DEBUG_LOG(msg)                                                                                                 \
     {                                                                                                                  \
-        std::cout << "VKEngine debug: " << msg << std::endl;                                                           \
+        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                           \
     }
 #define ERR_LOG(msg)                                                                                                   \
     {                                                                                                                  \
-        std::cerr << "VKEngine error: " << msg << std::endl;                                                           \
+        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                           \
     }
 #define VK_CHECK(x)                                                                                                    \
     do                                                                                                                 \

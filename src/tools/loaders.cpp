@@ -749,7 +749,7 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
     } else
     {
 #ifndef NDEBUG
-        DEBUG_LOG("Failed to load texture PNG file" + fileName);
+        ERR_LOG("Failed to load texture PNG file" + fileName);
 #endif
         return;
     };
@@ -771,7 +771,7 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std:
     } else
     {
 #ifndef NDEBUG
-        DEBUG_LOG("Failed to load texture HDRi file" + fileName);
+        ERR_LOG("Failed to load texture HDRi file" + fileName);
 #endif
         return;
     };
@@ -815,7 +815,7 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
     } else
     {
 #ifndef NDEBUG
-        DEBUG_LOG("Failed to load texture PNG file" + fileName);
+        ERR_LOG("Failed to load texture PNG file" + fileName);
 #endif
         return;
     };

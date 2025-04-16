@@ -24,26 +24,7 @@ namespace Graphics {
 
 namespace Utils {
 
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-    std::optional<uint32_t> computeFamily;
-    std::optional<uint32_t> transferFamily;
-    std::optional<uint32_t> sparseBindingFamily;
 
-    inline bool isComplete() const {
-        return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR        capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR>   presentModes;
-};
-
-QueueFamilyIndices      find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);
-SwapChainSupportDetails query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 
 struct DeletionQueue {
@@ -134,74 +115,6 @@ inline std::vector<uint8_t> read_file_binary(const std::string& pathToFile) {
     return fileBufferBytes;
 }
 
-VkPhysicalDeviceProperties get_gpu_properties(VkPhysicalDevice gpu);
-
-VkPhysicalDeviceFeatures get_gpu_features(VkPhysicalDevice gpu);
-inline bool              is_instance_extension_supported(const char* extensionName) {
-    uint32_t extensionCount;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-    std::vector<VkExtensionProperties> extensions(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-
-    for (const auto& extension : extensions)
-    {
-        if (strcmp(extension.extensionName, extensionName) == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-// Check if device extension is supported
-inline bool is_device_extension_supported(VkPhysicalDevice physicalDevice, const char* extensionName) {
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-
-    std::vector<VkExtensionProperties> extensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
-
-    for (const auto& extension : extensions)
-    {
-        if (strcmp(extension.extensionName, extensionName) == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-uint32_t find_memory_type(VkPhysicalDevice gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
-bool check_validation_layer_suport(std::vector<const char*> validationLayers);
-
-void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
-inline static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
-                                                           VkDebugUtilsMessageTypeFlagsEXT             messageType,
-                                                           const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                           void*                                       pUserData) {
-
-    std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
-
-    return VK_FALSE;
-}
-
-VkResult create_debug_utils_messenger_EXT(VkInstance                                instance,
-                                          const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                          const VkAllocationCallbacks*              pAllocator,
-                                          VkDebugUtilsMessengerEXT*                 pDebugMessenger);
-
-void destroy_debug_utils_messenger_EXT(VkInstance                   instance,
-                                       VkDebugUtilsMessengerEXT     debugMessenger,
-                                       const VkAllocationCallbacks* pAllocator);
-
-void log_available_extensions(std::vector<VkExtensionProperties> ext);
-
-void log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates);
 
 Vec3 get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, glm::vec2& uv1, glm::vec2& uv2, glm::vec2& uv3, Vec3 normal);
 

@@ -9,7 +9,7 @@ VkInstance Booter::create_instance(const char*              appName,
                                    const char*              engineName,
                                    bool                     validation,
                                    std::vector<const char*> validationLayers) {
-    if (validation && !Utils::check_validation_layer_suport(validationLayers))
+    if (validation && !Booter::check_validation_layer_suport(validationLayers))
     {
         throw VKFW_Exception(" validation layers requested, but not available!");
     }
@@ -37,7 +37,7 @@ VkInstance Booter::create_instance(const char*              appName,
         createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
-        Utils::populate_debug_messenger_create_info(debugCreateInfo);
+        Booter::populate_debug_messenger_create_info(debugCreateInfo);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
     } else
     {
@@ -70,10 +70,38 @@ std::vector<const char*> Booter::get_required_extensions(bool validation) {
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> supported_extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, supported_extensions.data());
-    Utils::log_available_extensions(supported_extensions);
+    Booter::log_available_extensions(supported_extensions);
 #endif
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     return extensions;
+}
+bool Booter::check_validation_layer_suport(std::vector<const char*> validationLayers) {
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : validationLayers)
+    {
+        bool layerFound = false;
+
+        for (const auto& layerProperties : availableLayers)
+        {
+            if (strcmp(layerName, layerProperties.layerName) == 0)
+            {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 #pragma region GPU
 
@@ -99,7 +127,7 @@ Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std
         candidates.insert(std::make_pair(score, device));
     }
 #ifndef NDEBUG
-    Utils::log_available_gpus(candidates);
+    Booter::log_available_gpus(candidates);
 #endif // !NDEBUG
 
     // Check if the best candidate is suitable at all
@@ -135,7 +163,7 @@ int Booter::rate_device_suitability(VkPhysicalDevice         device,
     // Maximum possible size of textures affects graphics quality
     score += deviceProperties.limits.maxImageDimension2D;
 
-    Utils::QueueFamilyIndices indices = Utils::find_queue_families(device, surface);
+    Booter::QueueFamilyIndices indices = Booter::find_queue_families(device, surface);
 
     // Application can't function without geometry shaders
     if (!deviceFeatures.geometryShader || !indices.isComplete())
@@ -145,7 +173,7 @@ int Booter::rate_device_suitability(VkPhysicalDevice         device,
     bool swapChainAdequate = false;
     if (check_device_extension_support(device, extensions))
     {
-        Utils::SwapChainSupportDetails swapChainSupport = Utils::query_swapchain_support(device, surface);
+        SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, surface);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         if (!swapChainAdequate)
             return 0;
@@ -174,6 +202,70 @@ bool Booter::check_device_extension_support(VkPhysicalDevice device, std::vector
     return requiredExtensions.empty();
 }
 
+Booter::SwapChainSupportDetails Booter::query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface) {
+    SwapChainSupportDetails details;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+    if (formatCount != 0)
+    {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+    }
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+    if (presentModeCount != 0)
+    {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+    }
+    return details;
+}
+
+Booter::QueueFamilyIndices Booter::find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface) {
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies)
+    {
+        // GRAPHIC SUPPORT
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.graphicsFamily = i;
+        }
+        // PRESENT SUPPORT
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        if (presentSupport)
+        {
+            indices.presentFamily = i;
+        }
+        // COMPUTE SUPPORT
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+        {
+            indices.computeFamily = i;
+        }
+
+        if (indices.isComplete())
+        {
+            break;
+        }
+
+        i++;
+    }
+
+    return indices;
+}
+
 #pragma region DEVICE
 VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& queues,
                                        VkPhysicalDevice                        gpu,
@@ -182,7 +274,7 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
                                        bool                                    validation,
                                        std::vector<const char*>                validationLayers) {
 
-    Utils::QueueFamilyIndices            queueFamilies = Utils::find_queue_families(gpu, surface);
+    Booter::QueueFamilyIndices           queueFamilies = Booter::find_queue_families(gpu, surface);
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t>                   uniqueQueueFamilies = {
         queueFamilies.graphicsFamily.value(), queueFamilies.presentFamily.value(), queueFamilies.computeFamily.value()};
@@ -206,12 +298,12 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
     enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-    if (Utils::is_device_extension_supported(gpu, "VK_NV_geometry_shader_passthrough"))
+    if (Booter::is_device_extension_supported(gpu, "VK_NV_geometry_shader_passthrough"))
         enabledExtensions.push_back("VK_NV_geometry_shader_passthrough");
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = {};
 
-    if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
+    if (Booter::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state"))
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state");
 
@@ -223,7 +315,7 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2Features = {};
 
-    if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state2"))
+    if (Booter::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state2"))
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state2");
 
@@ -235,7 +327,7 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3Features = {};
 
-    if (Utils::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state3"))
+    if (Booter::is_device_extension_supported(gpu, "VK_EXT_extended_dynamic_state3"))
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state3");
 
@@ -253,12 +345,12 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
     VkPhysicalDeviceRayQueryFeaturesKHR              rayQueryFeatures              = {};
 
     // Check RTX extensions
-    if (Utils::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        Utils::is_device_extension_supported(gpu, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-        Utils::is_device_extension_supported(gpu, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) &&
-        Utils::is_device_extension_supported(gpu, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-        Utils::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
-        Utils::is_device_extension_supported(gpu, VK_KHR_RAY_QUERY_EXTENSION_NAME))
+    if (Booter::is_device_extension_supported(gpu, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+        Booter::is_device_extension_supported(gpu, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+        Booter::is_device_extension_supported(gpu, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) &&
+        Booter::is_device_extension_supported(gpu, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+        Booter::is_device_extension_supported(gpu, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+        Booter::is_device_extension_supported(gpu, VK_KHR_RAY_QUERY_EXTENSION_NAME))
     {
 
         enabledExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -328,15 +420,50 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
 VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance) {
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    Utils::populate_debug_messenger_create_info(createInfo);
+    populate_debug_messenger_create_info(createInfo);
 
     VkDebugUtilsMessengerEXT debugMessenger{};
-    if (Utils::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+    if (Booter::create_debug_utils_messenger_EXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     {
         throw VKFW_Exception("failed to set up debug messenger!");
     }
     return debugMessenger;
 }
+void Booter::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+    createInfo                 = {};
+    createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
+}
+void Booter::destroy_debug_utils_messenger_EXT(VkInstance                   instance,
+                                               VkDebugUtilsMessengerEXT     debugMessenger,
+                                               const VkAllocationCallbacks* pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+VkResult Booter::create_debug_utils_messenger_EXT(VkInstance                                instance,
+                                                  const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                  const VkAllocationCallbacks*              pAllocator,
+                                                  VkDebugUtilsMessengerEXT*                 pDebugMessenger) {
+
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else
+    {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
 #pragma region VMA
 VmaAllocator Booter::setup_memory(VkInstance instance, VkDevice device, VkPhysicalDevice gpu) {
     VmaAllocatorCreateInfo allocatorInfo = {};
@@ -347,6 +474,65 @@ VmaAllocator Booter::setup_memory(VkInstance instance, VkDevice device, VkPhysic
     VmaAllocator memoryAllocator;
     vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
     return memoryAllocator;
+}
+#pragma region Utils
+bool Booter::is_instance_extension_supported(const char* extensionName) {
+    uint32_t extensionCount;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+    for (const auto& extension : extensions)
+    {
+        if (strcmp(extension.extensionName, extensionName) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Check if device extension is supported
+bool Booter::is_device_extension_supported(VkPhysicalDevice physicalDevice, const char* extensionName) {
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
+
+    for (const auto& extension : extensions)
+    {
+        if (strcmp(extension.extensionName, extensionName) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+void Booter::log_available_extensions(std::vector<VkExtensionProperties> ext) {
+    DEBUG_LOG("---------------------");
+    DEBUG_LOG("Available extensions");
+    DEBUG_LOG("---------------------");
+    for (const auto& extension : ext)
+    {
+        DEBUG_LOG(extension.extensionName);
+    }
+    DEBUG_LOG("---------------------");
+}
+void Booter::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates) {
+    DEBUG_LOG("---------------------");
+    DEBUG_LOG("Suitable Devices");
+    DEBUG_LOG("---------------------");
+    for (const auto& candidate : candidates)
+    {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(candidate.second, &deviceProperties);
+        DEBUG_LOG(deviceProperties.deviceName);
+    }
+    DEBUG_LOG("---------------------");
 }
 
 } // namespace Graphics

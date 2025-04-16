@@ -62,7 +62,7 @@ class Device
         void immediate_submit(std::function<void(CommandBuffer cmd)>&& function);
         void cleanup();
     };
-    UploadContext      m_uploadContext = {};
+    UploadContext m_uploadContext = {};
 
 #ifdef NDEBUG
     const bool m_enableValidationLayers{false};

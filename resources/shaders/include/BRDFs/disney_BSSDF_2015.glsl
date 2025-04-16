@@ -26,8 +26,6 @@ struct DisneyBSSDFSettings {
   vec2 samples[32];
 };
 
-
-
 float random(vec2 st) {
   return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
@@ -56,7 +54,7 @@ vec3 evalDisneyBSSDF(
 ) {
 
   const float EPS = 0.0001;
-  
+
     //SETTINGS
   const int sampleCount = 4;
   const float worldUnitScale = 1.0;
