@@ -73,7 +73,7 @@ void Application::setup_gui() {
     explorerPanel->add_child(new Tools::Space());
     explorerPanel->add_child(new Tools::ControllerWidget(m_controller));
     explorerPanel->add_child(new Tools::Separator());
-    explorerPanel->add_child(new Tools::TextLine(" Application average"));
+    explorerPanel->add_child(new Tools::TextLine("Application average"));
     explorerPanel->add_child(new Tools::Profiler());
     explorerPanel->add_child(new Tools::Space());
 

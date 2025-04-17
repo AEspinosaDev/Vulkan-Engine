@@ -55,7 +55,11 @@ class Scene : public Object3D
         case ObjectType::LIGHT:
             m_lights.push_back(static_cast<Light*>(obj));
             break;
+        default:
+            
+            break;
         }
+
         for (auto child : obj->get_children())
             classify_object(child);
     }

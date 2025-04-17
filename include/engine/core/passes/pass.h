@@ -87,6 +87,8 @@ class BasePass
                    : m_framebuffers.resize(m_device->get_swapchain().get_present_images().size());
         m_imageExtent = extent;
     }
+    virtual ~BasePass(){
+    }
 
 #pragma region Getters & Setters
 

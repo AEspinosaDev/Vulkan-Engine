@@ -97,14 +97,11 @@ class BaseRenderer
     inline void set_depth_format(ColorFormatType d) {
         m_settings.depthFormat = d;
     }
-    inline void set_enable_gui(bool op) {
-        m_settings.enableUI = op;
-    }
     inline std::vector<Core::BasePass*> get_render_passes() const {
         return m_passes;
     }
     inline void enable_gui_overlay(bool op) {
-        m_settings.enableUI;
+        m_settings.enableUI = op;
     }
     inline void set_sync_type(SyncType sync) {
         m_settings.screenSync = sync;

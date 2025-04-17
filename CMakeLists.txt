@@ -18,7 +18,7 @@ endif()
 
 
 # Set the platform (e.g., x64)
-set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed
+# set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed
 
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)

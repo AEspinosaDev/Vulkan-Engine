@@ -54,6 +54,8 @@ class Light : public Object3D
             m_nonRaytraceCount++;
     }
 
+    virtual ~Light(){}
+
     virtual inline Vec3 get_color() const {
         return m_color;
     }

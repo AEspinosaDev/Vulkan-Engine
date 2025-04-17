@@ -208,7 +208,6 @@ void VKFW::Tools::Loaders::load_OBJ2(Core::Mesh* const mesh,
                 vertex.texCoord = {
                     attrib.texcoords[2 * index.texcoord_index + 0], attrib.texcoords[2 * index.texcoord_index + 1]};
             }
-            
 
             if (unique_vertices.count(vertex.pos) == 0)
             {
@@ -826,6 +825,9 @@ void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture,
         case TEXTURE_FORMAT_HDR:
             texture->set_format(SRGBA_16F);
             break;
+        case TEXTURE_FORMAT_DEPTH:
+            texture->set_format(DEPTH_16F);
+            break;
         }
     } else
     {
@@ -891,6 +893,9 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture,
             break;
         case TEXTURE_FORMAT_HDR:
             texture->set_format(SRGBA_16F);
+            break;
+        case TEXTURE_FORMAT_DEPTH:
+            texture->set_format(DEPTH_16F);
             break;
         }
     } else
@@ -1416,24 +1421,31 @@ void VKFW::Tools::Loaders::SceneLoader::save_children(tinyxml2::XMLElement* pare
             tinyxml2::XMLElement* influenceElement = nullptr;
             switch (light->get_light_type())
             {
-            case LightType::POINT:
+            case LightType::POINT: {
                 lightElement->SetAttribute("type", "point");
-                influenceElement = doc->NewElement("influence");
+                auto* influenceElement = doc->NewElement("influence");
                 influenceElement->SetAttribute("value", static_cast<Core::PointLight*>(light)->get_area_of_effect());
                 lightElement->InsertEndChild(influenceElement);
                 break;
-            case LightType::DIRECTIONAL:
+            }
+
+            case LightType::DIRECTIONAL: {
                 lightElement->SetAttribute("type", "directional");
-                directionElement = doc->NewElement("direction");
-                Vec3 direction   = static_cast<Core::DirectionalLight*>(light)->get_direction();
+                auto* directionElement = doc->NewElement("direction");
+                Vec3  direction        = static_cast<Core::DirectionalLight*>(light)->get_direction();
                 directionElement->SetAttribute("x", direction.x);
                 directionElement->SetAttribute("y", direction.y);
                 directionElement->SetAttribute("z", direction.z);
                 lightElement->InsertEndChild(directionElement);
                 break;
-            case LightType::SPOT:
+            }
+
+            case LightType::SPOT: {
                 lightElement->SetAttribute("type", "spot");
                 break;
+            }
+            case LightType::AREA: {
+            }
             }
             lightElement->SetAttribute("name", light->get_name().c_str());
 

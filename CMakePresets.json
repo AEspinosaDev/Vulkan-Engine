@@ -1,0 +1,82 @@
+
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 16,
+        "patch": 0
+    },
+    
+    "configurePresets": [
+        {
+            "name": "ninja-debug",
+            "displayName": "Ninja (Debug)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/ninja-debug",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",         
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
+                "CMAKE_BUILD_TYPE": "Debug"
+              }
+           
+        },
+        {
+            "name": "ninja-release",
+            "displayName": "Ninja (Release)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/ninja-release",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",         
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
+                "CMAKE_BUILD_TYPE": "Release"
+              }
+        },
+        {
+            "name": "vs2022-x64-debug",
+            "displayName": "Visual Studio 2022 (x64) (Debug)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64", 
+            "binaryDir": "${sourceDir}/build/vs2022-x64-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "vs2022-x64-release",
+            "displayName": "Visual Studio 2022 (x64) (Release)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64", 
+            "binaryDir": "${sourceDir}/build/vs2022-x64-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ],
+    
+    "buildPresets": [
+        {
+            "name": "ninja-debug",
+            "configurePreset": "ninja-debug"
+        },
+        {
+            "name": "ninja-release",
+            "configurePreset": "ninja-release"
+        },
+        {
+            "name": "vs2022-x64-release",
+            "configurePreset": "vs2022-x64-release",
+            "configuration": "Release"
+        },
+        {
+            "name": "vs2022-x64-debug",
+            "configurePreset": "vs2022-x64-debug",
+            "configuration": "Debug"
+        }
+    ]
+}

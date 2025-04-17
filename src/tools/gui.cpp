@@ -1,10 +1,8 @@
 #include <engine/tools/gui.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
-namespace Tools
-{
-void GUIOverlay::render()
-{
+namespace Tools {
+void GUIOverlay::render() {
     PROFILING_EVENT()
 
     if (ImGui::GetCurrentContext())
@@ -20,6 +18,8 @@ void GUIOverlay::render()
             break;
         case CLASSIC:
             ImGui::StyleColorsClassic();
+            break;
+        default:
             break;
         }
 
