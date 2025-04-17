@@ -74,6 +74,7 @@ The prequisites for using this code are:
 - Windows 10, 11 (Although it should be easy enough to set it up for Linux).
 - Vulkan SDK 1.3.* installed. (With VMA and Shaderc libraries)
 - CMake installed.
+- Ninja (Optional but recommended to speed-up compilation time)
 
 1. Clone the repo:
    ```bash
@@ -87,7 +88,9 @@ The prequisites for using this code are:
    cmake ..
    ```
 
-The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in Visual Studio Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio.
+   
+
+The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in VS Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio or any other IDE.
 
 Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run. The CMake configuration is set for a 64-bit architecture, but it can be changed. CMake also takes care of automatically configuring the paths for resource files.
 
@@ -98,7 +101,7 @@ The project compiles dependencies, the 3D library, and the example applications 
 cmake -DBUILD_EXAMPLES=OFF /path/to/source
 cmake -DBUILD_TESTS=OFF /path/to/source
 ```
-4. Alternatively, you can click on the build.bat file to automatically build (in release mode) the entire project.
+4. Alternatively, you can click on any of the setup folder .bat files to compile and configure the project using you preferred backend. If using VS Code, you can change presents in the CMake Tools' bar. 
 
 ## Project Integration 🗄️
 
