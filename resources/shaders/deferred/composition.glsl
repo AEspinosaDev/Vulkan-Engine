@@ -88,6 +88,17 @@ vec3 g_emission;
 int g_isReflective;
 vec4 g_temp;
 
+float evalVisibility(int i, vec3 modelPos) {
+    if(scene.lights[i].shadowCast == 1) {
+        if(scene.lights[i].shadowType == 0) //Classic
+            return computeShadow(shadowMap, scene.lights[i], i, modelPos);
+        if(scene.lights[i].shadowType == 1) //VSM   
+            return computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
+        if(scene.lights[i].shadowType == 2) //Raytraced  
+            return computeRaytracedShadow(TLAS, samplerMap, modelPos, scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : -scene.lights[i].shadowData.xyz, int(scene.lights[i].shadowData.w), scene.lights[i].area, scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].worldPosition.xyz - modelPos) : 30.0, 0);
+    }
+}
+
 void main() {
 
     //////////////////////////////////////
@@ -177,14 +188,7 @@ void main() {
                         brdf);
 
                         //Visibility Component ________________________
-                        if(scene.lights[i].shadowCast == 1) {
-                            if(scene.lights[i].shadowType == 0) //Classic
-                                lighting *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
-                            if(scene.lights[i].shadowType == 1) //VSM   
-                                lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
-                            if(scene.lights[i].shadowType == 2) //Raytraced  
-                                lighting *= computeRaytracedShadow(TLAS, samplerMap, modelPos, scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : -scene.lights[i].shadowData.xyz, int(scene.lights[i].shadowData.w), scene.lights[i].area, scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].worldPosition.xyz - modelPos) : 30.0, 0);
-                        }
+                        lighting *= evalVisibility(i, modelPos);
                         direct += lighting;
                     }
                 }
@@ -250,14 +254,8 @@ void main() {
             //             // v_uv, camDist, positionBuffer, materialBuffer, materialBuffer, bsdf);
 
             //             //Visibility Component ________________________
-            //             if(scene.lights[i].shadowCast == 1) {
-            //                 if(scene.lights[i].shadowType == 0) //Classic
-            //                     lighting *= computeShadow(shadowMap, scene.lights[i], i, modelPos);
-            //                 if(scene.lights[i].shadowType == 1) //VSM   
-            //                     lighting *= computeVarianceShadow(shadowMap, scene.lights[i], i, modelPos);
-            //                 if(scene.lights[i].shadowType == 2) //Raytraced  
-            //                     lighting *= computeRaytracedShadow(TLAS, samplerMap, modelPos, scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].worldPosition.xyz - modelPos : -scene.lights[i].shadowData.xyz, int(scene.lights[i].shadowData.w), scene.lights[i].area, scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].worldPosition.xyz - modelPos) : 30.0, 0);
-            //             }
+                        // lighting *= evalVisibility(i,modelPos);
+            //            
             //             direct += lighting;
             //         }
             //     }

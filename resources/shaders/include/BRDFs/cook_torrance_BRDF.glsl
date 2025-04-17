@@ -80,10 +80,10 @@ vec3 evalCookTorranceBRDF(
     vec3 specular           = numerator / denominator;
 
     //Clamp specular value
-    float roughnessThreshold = 0.1;  
-    float smoothness = 1.0 - smoothstep(0.0, roughnessThreshold, brdf.roughness);
-    float specularScale = 1.0 - smoothness * 0.1;  // Scaling factor reduces specular at low roughness
-    specular *= specularScale;
+    float roughnessThreshold    = 0.1;  
+    float smoothness            = 1.0 - smoothstep(0.0, roughnessThreshold, brdf.roughness);
+    float specularScale         = 1.0 - smoothness * 0.1;  // Scaling factor reduces specular at low roughness
+    specular                    *= specularScale;
 
 	// Add to outgoing radiance result
     float lambertian        = max(dot(brdf.normal, wi), 0.0);

@@ -11,7 +11,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    a
     /////////////////////
     attachments.resize(6);
 
-    // Positions
+    // Positions + Depth
     attachments[0] = Graphics::AttachmentInfo(SRGBA_32F,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -24,7 +24,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    a
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Albedo
-    attachments[2] = Graphics::AttachmentInfo(SRGBA_32F,
+    attachments[2] = Graphics::AttachmentInfo(RGBA_8U,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -35,7 +35,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    a
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Material 2 (Emissive most of the time)
+    // Emissive
     attachments[4] = Graphics::AttachmentInfo(SRGBA_32F,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -217,22 +217,7 @@ void GeometryPass::setup_shader_passes() {
 
     m_shaderPasses["skybox"] = skyboxPass;
 
-    // GraphicShaderPass* skyplanePass = new GraphicShaderPass(
-    //     m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_projection.glsl");
-    // skyplanePass->settings.descriptorSetLayoutIDs  = {{0, true}};
-    // skyplanePass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
-    //                                                   {NORMAL_ATTRIBUTE, false},
-    //                                                   {UV_ATTRIBUTE, true},
-    //                                                   {TANGENT_ATTRIBUTE, false},
-    //                                                   {COLOR_ATTRIBUTE, false}};
-    // skyplanePass->graphicSettings.dynamicStates    = geomPass->graphicSettings.dynamicStates;
-    // skyplanePass->graphicSettings.blendAttachments = geomPass->graphicSettings.blendAttachments;
-    // // skyplanePass->graphicSettings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
-
-    // skyplanePass->build_shader_stages();
-    // skyplanePass->build(m_descriptorPool);
-
-    // m_shaderPasses["skyplane"] = skyplanePass;
+    
 }
 void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
@@ -243,26 +228,7 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
-        // if (scene->get_skybox())
-        // {
-        //     if (scene->get_skybox()->is_active())
-        //     {
-
-        //         cmd.set_depth_test_enable(false);
-        //         cmd.set_depth_write_enable(false);
-        //         cmd.set_cull_mode(CullingMode::NO_CULLING);
-
-        //         ShaderPass* shaderPass = m_shaderPasses["skyplane"];
-
-        //         // Bind pipeline
-        //         cmd.bind_shaderpass(*shaderPass);
-
-        //         // GLOBAL LAYOUT BINDING
-        //         cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-
-        //         cmd.draw_geometry(*get_VAO(BasePass::vignette));
-        //     }
-        // }
+        
 
         ShaderPass* shaderPass = m_shaderPasses["geometry"];
 
