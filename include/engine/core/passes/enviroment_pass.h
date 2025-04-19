@@ -8,7 +8,7 @@
 */
 #ifndef ENVIROMENT_PASS_H
 #define ENVIROMENT_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/textures/textureHDR.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -30,7 +30,7 @@ class EnviromentPass : public GraphicPass
 
   public:
     EnviromentPass(Graphics::Device* ctx)
-        : BasePass(ctx, {1, 1}, 2, CUBEMAP_FACES, false)
+        : GraphicPass(ctx, {1, 1}, 2, CUBEMAP_FACES, false)
         , m_format(SRGBA_32F)
         , m_irradianceResolution({1, 1}) {
     }
@@ -53,7 +53,7 @@ class EnviromentPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void update_framebuffer();
+    void resize_attachments();
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 

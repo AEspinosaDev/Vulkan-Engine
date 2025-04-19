@@ -7,9 +7,9 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
     update_enviroment(scene->get_skybox());
     BaseRenderer::on_before_render(scene);
 
-    m_passes[FORWARD_PASS]->set_attachment_clear_value(
+    static_cast<Core::GraphicPass*>(m_passes[FORWARD_PASS])->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 0);
-    m_passes[FORWARD_PASS]->set_attachment_clear_value(
+        static_cast<Core::GraphicPass*>(m_passes[FORWARD_PASS])->set_attachment_clear_value(
         {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 1);
 }
 
@@ -23,7 +23,7 @@ void ForwardRenderer::on_after_render(RenderResult& renderResult, Core::Scene* c
         const uint32_t SHADOW_RES = (uint32_t)m_shadowQuality;
 
         m_passes[SHADOW_PASS]->set_extent({SHADOW_RES, SHADOW_RES});
-        m_passes[SHADOW_PASS]->update_framebuffer();
+        m_passes[SHADOW_PASS]->resize_attachments();
 
         m_updateShadows = false;
 
@@ -86,7 +86,7 @@ void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
             m_passes[ENVIROMENT_PASS]->set_active(true);
             m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
-            m_passes[ENVIROMENT_PASS]->update_framebuffer();
+            m_passes[ENVIROMENT_PASS]->resize_attachments();
 
             connect_pass(m_passes[FORWARD_PASS]);
         }

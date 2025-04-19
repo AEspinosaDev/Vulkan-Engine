@@ -8,7 +8,7 @@
 */
 #ifndef COMPOSITION_PASS_H
 #define COMPOSITION_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -74,7 +74,7 @@ class CompositionPass : public GraphicPass
 
   public:
     CompositionPass(Graphics::Device* ctx, VkExtent2D extent, ColorFormatType colorFormat, bool isDefault = true)
-        : BasePass(ctx, extent, 1, 1, isDefault, "COMPOSITION")
+        : GraphicPass(ctx, extent, 1, 1, isDefault, "COMPOSITION")
         , m_colorFormat(colorFormat) {
     }
 
@@ -122,7 +122,7 @@ class CompositionPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void update_framebuffer();
+    void resize_attachments();
 
     void cleanup();
 };

@@ -48,12 +48,9 @@ void BaseRenderer::init() {
         }
     };
 
-    m_deletionQueue.push_function([=]() {
-        for (Core::BasePass* pass : m_passes)
-        {
-            pass->cleanup();
-        }
-    });
+    // m_deletionQueue.push_function([=]() {
+
+    // });
 
     if (m_settings.enableUI)
         init_gui();
@@ -82,17 +79,18 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     if (m_initialized)
     {
         m_deletionQueue.flush();
-
-        clean_resources();
-        Core::ResourceManager::clean_scene(scene);
-
-        if (m_settings.enableUI)
-            m_device->destroy_imgui();
-
         for (Core::BasePass* pass : m_passes)
         {
-            pass->clean_framebuffer();
+            pass->cleanup();
         }
+        
+        clean_resources();
+        Core::ResourceManager::clean_scene(scene);
+        
+        if (m_settings.enableUI)
+        m_device->destroy_imgui();
+        
+        
         m_device->cleanup();
     }
 
@@ -174,7 +172,8 @@ void BaseRenderer::connect_pass(Core::BasePass* const currentPass) {
     {
         if (dep.isFBO)
         {
-            Graphics::Framebuffer fbo = m_passes[dep.passID]->get_framebuffers()[dep.fboID];
+            Graphics::Framebuffer fbo =
+                static_cast<Core::GraphicPass*>(m_passes[dep.passID])->get_framebuffers()[dep.fboID];
             for (size_t i = 0; i < dep.attachmentIDs.size(); i++)
             {
                 images.push_back(fbo.attachmentImages[dep.attachmentIDs[i]]);
@@ -209,7 +208,7 @@ void BaseRenderer::update_framebuffers() {
             if (pass->resizeable())
             {
                 pass->set_extent(m_window->get_extent());
-                pass->update_framebuffer();
+                pass->resize_attachments();
             }
             connect_pass(pass);
         }
@@ -234,10 +233,11 @@ void BaseRenderer::init_gui() {
 
         void* windowHandle;
         m_window->get_handle(windowHandle);
-        m_device->init_imgui(windowHandle,
-                             m_window->get_windowing_system(),
-                             defaultPass->get_renderpass(),
-                             defaultPass->get_renderpass().attachmentsInfo[0].imageConfig.samples);
+        m_device->init_imgui(
+            windowHandle,
+            m_window->get_windowing_system(),
+            static_cast<Core::GraphicPass*>(defaultPass)->get_renderpass(),
+            static_cast<Core::GraphicPass*>(defaultPass)->get_renderpass().attachmentsInfo[0].imageConfig.samples);
     }
 }
 void BaseRenderer::init_resources() {
@@ -271,17 +271,13 @@ void BaseRenderer::init_resources() {
     Core::ResourceManager::textureResources.resize(2, nullptr);
 
     Core::Texture* samplerText = new Core::Texture();
-    Tools::Loaders::load_PNG(samplerText,
-                             ENGINE_RESOURCES_PATH "textures/blueNoise.png",
-                             TEXTURE_FORMAT_UNORM);
+    Tools::Loaders::load_PNG(samplerText, ENGINE_RESOURCES_PATH "textures/blueNoise.png", TEXTURE_FORMAT_UNORM);
     samplerText->set_use_mipmaps(false);
     Core::ResourceManager::upload_texture_data(m_device, samplerText);
     Core::ResourceManager::textureResources[0] = samplerText;
 
-     Core::TextureHDR* brdfText = new Core::TextureHDR();
-    Tools::Loaders::load_HDRi(brdfText,
-                              ENGINE_RESOURCES_PATH "textures/cookTorranceBRDF.png"
-                              );
+    Core::TextureHDR* brdfText = new Core::TextureHDR();
+    Tools::Loaders::load_HDRi(brdfText, ENGINE_RESOURCES_PATH "textures/cookTorranceBRDF.png");
     brdfText->set_adress_mode(ADDRESS_MODE_CLAMP_TO_BORDER);
     brdfText->set_use_mipmaps(false);
     Core::ResourceManager::upload_texture_data(m_device, brdfText);

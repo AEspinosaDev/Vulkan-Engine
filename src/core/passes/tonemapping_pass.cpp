@@ -41,7 +41,7 @@ void TonemappingPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     Data data = {m_exposure, static_cast<float>(m_tonemap)};
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &data, sizeof(float) * 2);
 
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)

@@ -4,22 +4,23 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void BloomPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&        attachments,
+void BloomPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
                                   std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::AttachmentInfo(m_colorFormat,
-                                          1,
-                                          m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                          LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                          m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
-                                                      : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                          COLOR_ATTACHMENT,
-                                          ASPECT_COLOR,
-                                          TEXTURE_2D,
-                                          FILTER_LINEAR,
-                                          ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] =
+        Graphics::AttachmentInfo(m_colorFormat,
+                                 1,
+                                 m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                 m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                             : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                 COLOR_ATTACHMENT,
+                                 ASPECT_COLOR,
+                                 TEXTURE_2D,
+                                 FILTER_LINEAR,
+                                 ADDRESS_MODE_CLAMP_TO_EDGE);
 
     attachments[0].isDefault = m_isDefault ? true : false;
 
@@ -109,118 +110,117 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
 
     CommandBuffer cmd;
 
-    if (m_bloomStrength == 0.0f)
-        goto paintBloom;
-
-    cmd = currentFrame.commandBuffer;
-
-    struct Mipmap {
-        uint32_t srcLevel;
-        uint32_t dstLevel;
-    };
-
-    const uint32_t WORK_GROUP_SIZE = 16;
-
-    cmd.pipeline_barrier(m_brightImage,
-                         LAYOUT_UNDEFINED,
-                         LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                         ACCESS_SHADER_WRITE,
-                         ACCESS_SHADER_READ,
-                         STAGE_FRAGMENT_SHADER,
-                         STAGE_COMPUTE_SHADER);
-    cmd.pipeline_barrier(m_bloomImage,
-                         LAYOUT_UNDEFINED,
-                         LAYOUT_GENERAL,
-                         ACCESS_SHADER_WRITE,
-                         ACCESS_SHADER_READ,
-                         STAGE_COMPUTE_SHADER,
-                         STAGE_COMPUTE_SHADER);
-
-    cmd.clear_image(m_bloomImage, LAYOUT_GENERAL);
-
-    ////////////////////////////////////////////////////////////
-    // DOWNSAMPLE
-    ////////////////////////////////////////////////////////////
-    ShaderPass* downSamplePass = m_shaderPasses["downsample"];
-    cmd.bind_shaderpass(*downSamplePass);
-
-    for (uint32_t i = 1; i < MIPMAP_LEVELS; i++)
+    if (m_bloomStrength != 0.0f)
     {
 
-        Mipmap mipmap = {i - 1, i};
+        cmd = currentFrame.commandBuffer;
 
-        cmd.push_constants(*downSamplePass, SHADER_STAGE_COMPUTE, &mipmap, sizeof(mipmap));
+        struct Mipmap {
+            uint32_t srcLevel;
+            uint32_t dstLevel;
+        };
 
-        cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *downSamplePass, {}, BINDING_TYPE_COMPUTE);
+        const uint32_t WORK_GROUP_SIZE = 16;
 
-        // Dispatch the compute shader
-        uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> i);
-        uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> i);
-        cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                              (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                              1});
-
-        cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
-                             LAYOUT_GENERAL,
+        cmd.pipeline_barrier(m_brightImage,
+                             LAYOUT_UNDEFINED,
+                             LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             ACCESS_SHADER_WRITE,
+                             ACCESS_SHADER_READ,
+                             STAGE_FRAGMENT_SHADER,
+                             STAGE_COMPUTE_SHADER);
+        cmd.pipeline_barrier(m_bloomImage,
+                             LAYOUT_UNDEFINED,
                              LAYOUT_GENERAL,
                              ACCESS_SHADER_WRITE,
                              ACCESS_SHADER_READ,
                              STAGE_COMPUTE_SHADER,
                              STAGE_COMPUTE_SHADER);
-    }
 
-    cmd.pipeline_barrier(m_brightImage,
-                         LAYOUT_UNDEFINED,
-                         LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                         ACCESS_SHADER_WRITE,
-                         ACCESS_SHADER_READ,
-                         STAGE_FRAGMENT_SHADER,
-                         STAGE_COMPUTE_SHADER);
+        cmd.clear_image(m_bloomImage, LAYOUT_GENERAL);
 
-    ////////////////////////////////////////////////////////////
-    // UPSAMPLE
-    ////////////////////////////////////////////////////////////
-    ShaderPass* upSamplePass = m_shaderPasses["upsample"];
-    cmd.bind_shaderpass(*upSamplePass);
+        ////////////////////////////////////////////////////////////
+        // DOWNSAMPLE
+        ////////////////////////////////////////////////////////////
+        ShaderPass* downSamplePass = m_shaderPasses["downsample"];
+        cmd.bind_shaderpass(*downSamplePass);
 
-    for (int32_t i = MIPMAP_LEVELS - 1; i > 0; i--)
-    {
+        for (uint32_t i = 1; i < MIPMAP_LEVELS; i++)
+        {
 
-        Mipmap mipmap = {(uint32_t)i, (uint32_t)i - 1};
+            Mipmap mipmap = {i - 1, i};
 
-        cmd.push_constants(*upSamplePass, SHADER_STAGE_COMPUTE, &mipmap, sizeof(mipmap));
+            cmd.push_constants(*downSamplePass, SHADER_STAGE_COMPUTE, &mipmap, sizeof(mipmap));
 
-        cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *upSamplePass, {}, BINDING_TYPE_COMPUTE);
+            cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *downSamplePass, {}, BINDING_TYPE_COMPUTE);
 
-        // Dispatch the compute shader
-        uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> (i - 1));
-        uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> (i - 1));
-        cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                              (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                              1});
+            // Dispatch the compute shader
+            uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> i);
+            uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> i);
+            cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                                  (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                                  1});
 
-        cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
-                             LAYOUT_GENERAL,
-                             LAYOUT_GENERAL,
+            cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
+                                 LAYOUT_GENERAL,
+                                 LAYOUT_GENERAL,
+                                 ACCESS_SHADER_WRITE,
+                                 ACCESS_SHADER_READ,
+                                 STAGE_COMPUTE_SHADER,
+                                 STAGE_COMPUTE_SHADER);
+        }
+
+        cmd.pipeline_barrier(m_brightImage,
+                             LAYOUT_UNDEFINED,
+                             LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              ACCESS_SHADER_WRITE,
                              ACCESS_SHADER_READ,
-                             STAGE_COMPUTE_SHADER,
+                             STAGE_FRAGMENT_SHADER,
+                             STAGE_COMPUTE_SHADER);
+
+        ////////////////////////////////////////////////////////////
+        // UPSAMPLE
+        ////////////////////////////////////////////////////////////
+        ShaderPass* upSamplePass = m_shaderPasses["upsample"];
+        cmd.bind_shaderpass(*upSamplePass);
+
+        for (int32_t i = MIPMAP_LEVELS - 1; i > 0; i--)
+        {
+
+            Mipmap mipmap = {(uint32_t)i, (uint32_t)i - 1};
+
+            cmd.push_constants(*upSamplePass, SHADER_STAGE_COMPUTE, &mipmap, sizeof(mipmap));
+
+            cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *upSamplePass, {}, BINDING_TYPE_COMPUTE);
+
+            // Dispatch the compute shader
+            uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> (i - 1));
+            uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> (i - 1));
+            cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                                  (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
+                                  1});
+
+            cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
+                                 LAYOUT_GENERAL,
+                                 LAYOUT_GENERAL,
+                                 ACCESS_SHADER_WRITE,
+                                 ACCESS_SHADER_READ,
+                                 STAGE_COMPUTE_SHADER,
+                                 STAGE_COMPUTE_SHADER);
+        }
+
+        // Prepare image to be read from
+        cmd.pipeline_barrier(m_bloomImage,
+                             LAYOUT_GENERAL,
+                             LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             ACCESS_SHADER_WRITE,
+                             ACCESS_SHADER_READ,
                              STAGE_COMPUTE_SHADER);
     }
 
-    // Prepare image to be read from
-    cmd.pipeline_barrier(m_bloomImage,
-                         LAYOUT_GENERAL,
-                         LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                         ACCESS_SHADER_WRITE,
-                         ACCESS_SHADER_READ,
-                         STAGE_COMPUTE_SHADER);
-
-
-////////////////////////////////////////////////////////////
-// ADD BLOOM
-////////////////////////////////////////////////////////////
-paintBloom:
+    ////////////////////////////////////////////////////////////
+    // ADD BLOOM
+    ////////////////////////////////////////////////////////////
 
     ShaderPass* shaderPass = m_shaderPasses["bloom"];
 
@@ -233,7 +233,7 @@ paintBloom:
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_bloomStrength, sizeof(float));
     cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
 
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
@@ -269,15 +269,13 @@ void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
     m_descriptorPool.update_descriptor(&m_brightImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
     m_descriptorPool.update_descriptor(&m_originalImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
 
-    m_descriptorPool.update_descriptor(
-        m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
+    m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
     m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
     m_descriptorPool.update_descriptor(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
-
 }
 
-void BloomPass::update_framebuffer() {
-    BasePass::update_framebuffer();
+void BloomPass::resize_attachments() {
+    GraphicPass::resize_attachments();
     m_bloomImage.cleanup();
     for (Image& img : m_bloomMipmaps)
     {
@@ -295,7 +293,7 @@ void BloomPass::cleanup() {
         img.sampler = VK_NULL_HANDLE;
         img.cleanup();
     }
-    BasePass::cleanup();
+    GraphicPass::cleanup();
 }
 
 } // namespace Core

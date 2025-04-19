@@ -35,8 +35,8 @@ void SkyPass::create_framebuffer() {
     m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 1);
     m_framebuffers[2] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 2);
 }
-void SkyPass::update_framebuffer() {
-    BasePass::update_framebuffer();
+void SkyPass::resize_attachments() {
+    GraphicPass::resize_attachments();
 
     // Update descriptor of previous framebuffer
     m_descriptorPool.update_descriptor(
@@ -125,7 +125,7 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     cmd.bind_shaderpass(*shaderPass);
     cmd.push_constants(
         *shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /* Sky Generation*/
@@ -137,7 +137,7 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     cmd.push_constants(
         *shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
     cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
     /* Sky Generation*/
@@ -149,7 +149,7 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     int projectionType = passSettings.sky.useForIBL;
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &projectionType, sizeof(int));
     cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[2]);
 
     /* Sky is updated, set to sleep */

@@ -16,7 +16,7 @@
 #include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 
 #include <engine/graphics/device.h>
 

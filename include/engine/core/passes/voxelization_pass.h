@@ -8,7 +8,7 @@
 */
 #ifndef VOXELIZATION_PASS_H
 #define VOXELIZATION_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/resource_manager.h>
 
 #define USE_IMG_ATOMIC_OPERATION
@@ -18,8 +18,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
 /*
-Performs an voxelization of the direct irradiance of the scene. For setting the edges of the volume it takes into account the
-AABB of the scene.
+Performs an voxelization of the direct irradiance of the scene. For setting the edges of the volume it takes into
+account the AABB of the scene.
 */
 class VoxelizationPass : public GraphicPass
 {
@@ -41,7 +41,7 @@ class VoxelizationPass : public GraphicPass
 
   public:
     VoxelizationPass(Graphics::Device* ctx, uint32_t resolution)
-        : BasePass(ctx, {resolution, resolution}, 1, 1, false, "VOXELIZATION") {
+        : GraphicPass(ctx, {resolution, resolution}, 1, 1, false, "VOXELIZATION") {
         m_resourceImages.resize(RESOURCE_IMAGES);
     }
 
@@ -56,12 +56,11 @@ class VoxelizationPass : public GraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void update_framebuffer();
+    void resize_attachments();
 
     void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
-    
-    void cleanup();
 
+    void cleanup();
 };
 
 } // namespace Core

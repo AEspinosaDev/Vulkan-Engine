@@ -8,7 +8,7 @@
 */
 #ifndef SKY_PASS_H
 #define SKY_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -51,7 +51,7 @@ class SkyPass : public GraphicPass
 
   public:
     SkyPass(Graphics::Device* ctx, Extent2D extent)
-        : BasePass(ctx, extent, 3, 1, false, "SKY GENERATION") {
+        : GraphicPass(ctx, extent, 3, 1, false, "SKY GENERATION") {
     }
 
     void create_framebuffer();
@@ -63,7 +63,7 @@ class SkyPass : public GraphicPass
 
     virtual void setup_shader_passes();
 
-    virtual void update_framebuffer();
+    virtual void resize_attachments();
 
     virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 };

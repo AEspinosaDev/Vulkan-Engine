@@ -139,7 +139,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     int panoramaType = static_cast<int>(scene->get_skybox()->get_sky_type());
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &panoramaType, sizeof(float));
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /*Draw Diffuse Irradiance*/
@@ -151,7 +151,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     shaderPass = m_shaderPasses["irr"];
     cmd.bind_shaderpass(*shaderPass);
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
 jump:
@@ -183,16 +183,16 @@ void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
 }
 
-void EnviromentPass::update_framebuffer() {
-    BasePass::update_framebuffer();
+void EnviromentPass::resize_attachments() {
+    GraphicPass::resize_attachments();
 
     // Update descriptor of previous framebuffer
     m_descriptorPool.update_descriptor(
         &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
 }
 void EnviromentPass::cleanup() {
-    BasePass::cleanup();
     m_captureBuffer.cleanup();
+    GraphicPass::cleanup();
 }
 } // namespace Core
 

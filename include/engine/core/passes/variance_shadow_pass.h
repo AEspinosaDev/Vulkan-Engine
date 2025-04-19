@@ -8,7 +8,7 @@
 */
 #ifndef VSM_PASS_H
 #define VSM_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -29,7 +29,7 @@ class VarianceShadowPass : public GraphicPass
 
   public:
     VarianceShadowPass(Graphics::Device* ctx, Extent2D extent, uint32_t numLights, ColorFormatType depthFormat)
-        : BasePass(ctx, extent, 1, numLights, false, "SHADOWS")
+        : GraphicPass(ctx, extent, 1, numLights, false, "SHADOWS")
         , m_depthFormat(depthFormat) {
     }
 

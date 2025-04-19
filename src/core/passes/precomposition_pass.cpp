@@ -181,7 +181,7 @@ void PreCompositionPass::render(Graphics::Frame& currentFrame, Scene* const scen
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_AO, sizeof(AO));
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
 
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
 
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
@@ -211,7 +211,7 @@ void PreCompositionPass::render(Graphics::Frame& currentFrame, Scene* const scen
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].blurImageDescritor, 1, *shaderPass);
 
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
 
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 }

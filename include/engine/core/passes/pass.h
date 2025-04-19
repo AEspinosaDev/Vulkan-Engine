@@ -34,13 +34,11 @@ struct ImageDependency;
 /*
 Core abstract class needed for a renderer to work.
 It controls the flow of the renderer state, what information and how it is being
-rendered/computed. It also gives access to the framebuffers containing the rendered data.
+rendered/computed.
 It can be inherited for full user control over the render/compute pipeline.
 */
 class BasePass;
-typedef BasePass GraphicPass;   // Sintax for graphic passes that draw primitives and rasterized them onto framebuffers
-typedef BasePass ComputePass;   // Sintax for passes focused on GPGPU
-typedef BasePass RaytracedPass; // Sintax for passes that only use the raytracing mode.
+typedef BasePass ComputePass; // Sintax for passes focused on GPGPU
 class BasePass
 {
   protected:
@@ -48,10 +46,6 @@ class BasePass
     Graphics::Device*                                          m_device         = nullptr;
     Graphics::DescriptorPool                                   m_descriptorPool = {};
     std::unordered_map<std::string, Graphics::BaseShaderPass*> m_shaderPasses;
-    // In case it is a graphical pass ... which is the most usual
-    Graphics::RenderPass               m_renderpass = {};
-    std::vector<Graphics::Framebuffer> m_framebuffers;
-    uint32_t                           m_framebufferImageDepth; // In case if multilayered rendering.
     // In case is not graphical or need auxiliar data, other graphic data can be stored onto these images
     std::vector<Graphics::Image> m_resourceImages;
 
@@ -66,28 +60,17 @@ class BasePass
     bool m_isDefault    = false;
     bool m_isGraphical  = true;
 
-    virtual void
-                 setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                                   std::vector<Graphics::SubPassDependency>& dependencies) = 0; // Only for graphical renderpasses
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) = 0;
     virtual void setup_shader_passes()                                = 0;
 
   public:
-    BasePass(Graphics::Device* ctx,
-             Extent2D          extent,
-             uint32_t          framebufferCount = 1,
-             uint32_t          framebufferDepth = 1,
-             bool              isDefault        = false,
-             std::string       name             = "UNNAMED PASS")
+    BasePass(Graphics::Device* ctx, Extent2D extent, bool isDefault = false, std::string name = "UNNAMED PASS")
         : m_device(ctx)
-        , m_framebufferImageDepth(framebufferDepth)
         , m_isDefault(isDefault)
-        , m_name(name) {
-        !isDefault ? m_framebuffers.resize(framebufferCount)
-                   : m_framebuffers.resize(m_device->get_swapchain().get_present_images().size());
-        m_imageExtent = extent;
+        , m_name(name)
+        , m_imageExtent(extent) {
     }
-    virtual ~BasePass(){
+    virtual ~BasePass() {
     }
 
 #pragma region Getters & Setters
@@ -104,19 +87,6 @@ class BasePass
     }
     inline void set_extent(Extent2D extent) {
         m_imageExtent = extent;
-    }
-
-    inline Graphics::RenderPass get_renderpass() const {
-        return m_renderpass;
-    }
-    inline std::vector<Graphics::Framebuffer> const get_framebuffers() const {
-        return m_framebuffers;
-    }
-    inline std::vector<Graphics::Image> const get_resource_images() const {
-        return m_resourceImages;
-    }
-    inline void set_attachment_clear_value(VkClearValue value, size_t attachmentLayout = 0) {
-        m_renderpass.attachmentsInfo[attachmentLayout].clearValue = value;
     }
 
     inline bool resizeable() const {
@@ -151,49 +121,27 @@ class BasePass
     inline std::vector<ImageDependency> get_image_dependencies() const {
         return m_imageDependencies;
     }
+    inline std::vector<Graphics::Image> const get_resource_images() const {
+        return m_resourceImages;
+    }
 
 #pragma endregion
 #pragma region Core Functions
     /*
     Setups de renderpass. Init, create framebuffers, pipelines and resources ...
     */
-    void setup(std::vector<Graphics::Frame>& frames);
+    virtual void setup(std::vector<Graphics::Frame>& frames);
 
     virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) = 0;
 
     virtual void update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
+    virtual void resize_attachments() {
+    }
     virtual void link_previous_images(std::vector<Graphics::Image> images) {
     }
-    /**
-     * Create framebuffers and images attached to them necessary for the
-     * renderpass to work. It also sets the extent of the renderpass.
-     */
-    virtual void create_framebuffer();
-    /**
-     * Destroy framebuffers and images attached to them necessary for the
-     * renderpass to work. If images have a sampler attached to them, contol the
-     * destruction of it too.
-     */
-    virtual void clean_framebuffer();
-    /**
-     * Recreates the renderpass with new parameters. Useful for example, when
-     * resizing the screen. It automatically manages framebuffer cleanup and
-     * regeneration
-     *
-     */
-    virtual void update_framebuffer();
-    /**
-     * Destroy the renderpass and its shaderpasses. Framebuffers are managed in a
-     * sepparate function for felxibilty matters
-     */
     virtual void cleanup();
 #pragma endregion
-
-    /*
-    Public static member. 
-    Vignette for rendering textures onto screen.*/
-    static Core::Geometry* vignette;
 };
 
 #pragma region IMAGE DEP

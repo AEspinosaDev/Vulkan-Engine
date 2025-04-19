@@ -8,7 +8,7 @@
 */
 #ifndef PRECOMPOSITION_PASS_H
 #define PRECOMPOSITION_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/resource_manager.h>
 #include <random>
 
@@ -55,7 +55,7 @@ class PreCompositionPass : public GraphicPass
 
   public:
     PreCompositionPass(Graphics::Device* ctx, VkExtent2D extent)
-        : BasePass(ctx, extent, 2, 1, false, "PRE-COMPOSITION") {
+        : GraphicPass(ctx, extent, 2, 1, false, "PRE-COMPOSITION") {
     }
 
     inline void set_SSAO_settings(AO settings) {

@@ -9,8 +9,9 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
     BaseRenderer::on_before_render(scene);
 
     // Set clear color
-    m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
-        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
+    static_cast<Core::GraphicPass*>(m_passes[GEOMETRY_PASS])
+        ->set_attachment_clear_value(
+            {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
 }
 
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
@@ -23,7 +24,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
         const uint32_t SHADOW_RES = (uint32_t)m_shadowQuality;
 
         m_passes[SHADOW_PASS]->set_extent({SHADOW_RES, SHADOW_RES});
-        m_passes[SHADOW_PASS]->update_framebuffer();
+        m_passes[SHADOW_PASS]->resize_attachments();
 
         m_updateShadows = false;
 
@@ -35,7 +36,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
 
         uint32_t voxelRes = get_pass<Core::CompositionPass*>(COMPOSITION_PASS)->get_VXGI_settings().resolution;
         m_passes[VOXELIZATION_PASS]->set_extent({voxelRes, voxelRes});
-        m_passes[VOXELIZATION_PASS]->update_framebuffer();
+        m_passes[VOXELIZATION_PASS]->resize_attachments();
 
         m_updateGI = false;
 
@@ -129,12 +130,12 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
                 if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
                 {
                     m_passes[SKY_PASS]->set_extent({HDRi_EXTENT * 2, HDRi_EXTENT});
-                    m_passes[SKY_PASS]->update_framebuffer();
+                    m_passes[SKY_PASS]->resize_attachments();
                     connect_pass(m_passes[ENVIROMENT_PASS]);
                 }
 
                 m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
-                m_passes[ENVIROMENT_PASS]->update_framebuffer();
+                m_passes[ENVIROMENT_PASS]->resize_attachments();
 
                 connect_pass(m_passes[GEOMETRY_PASS]);
                 connect_pass(m_passes[COMPOSITION_PASS]);

@@ -8,7 +8,7 @@
 */
 #ifndef FORWARD_PASS_H
 #define FORWARD_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/resource_manager.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
@@ -43,7 +43,7 @@ class ForwardPass : public GraphicPass
                 ColorFormatType   depthFormat,
                 MSAASamples       samples,
                 bool              isDefault = true)
-        : BasePass(ctx, extent, 1,1, isDefault, "FORWARD")
+        : GraphicPass(ctx, extent, 1,1, isDefault, "FORWARD")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat)
         , m_aa(samples) {

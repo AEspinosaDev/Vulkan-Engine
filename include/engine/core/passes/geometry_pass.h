@@ -8,7 +8,7 @@
 */
 #ifndef GEOMETRY_PASS_H
 #define GEOMETRY_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/resource_manager.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -39,7 +39,7 @@ class GeometryPass : public GraphicPass
                  ColorFormatType   colorFormat,
                  ColorFormatType   depthFormat,
                  bool              isDefault = false)
-        : BasePass(ctx, extent, 1, 1, isDefault, "GEOMETRY")
+        : GraphicPass(ctx, extent, 1, 1, isDefault, "GEOMETRY")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat) {
     }

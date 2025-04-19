@@ -9,7 +9,7 @@
 #ifndef BLOOM_PASS_H
 #define BLOOM_PASS_H
 
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -29,7 +29,7 @@ both X and Y axes.
 A (first downsampled image).
 - Finally, we mix the overall bloom contribution into the HDR source image, with a strong bias towards the HDR source.
 */
-class BloomPass : public BasePass
+class BloomPass : public GraphicPass
 {
   protected:
     ColorFormatType m_colorFormat = SRGBA_32F;
@@ -50,7 +50,7 @@ class BloomPass : public BasePass
 
   public:
     BloomPass(Graphics::Device* ctx, Extent2D extent, bool isDefault = false)
-        : BasePass(ctx, extent, 1, 1, isDefault, "BLOOM") {
+        : GraphicPass(ctx, extent, 1, 1, isDefault, "BLOOM") {
     }
 
     inline float get_bloom_strength() const {
@@ -71,7 +71,7 @@ class BloomPass : public BasePass
 
     void link_previous_images(std::vector<Graphics::Image> images);
 
-    void update_framebuffer();
+    void resize_attachments();
 
     void cleanup();
 };

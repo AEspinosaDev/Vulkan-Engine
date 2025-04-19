@@ -11,8 +11,8 @@ Core::Texture*               ResourceManager::FALLBACK_CUBEMAP = nullptr;
 void ResourceManager::init_basic_resources(Graphics::Device* const device) {
 
     // Setup vignette
-    Core::BasePass::vignette = Core::Geometry::create_quad();
-    upload_geometry_data(device, Core::BasePass::vignette);
+    Core::GraphicPass::vignette = Core::Geometry::create_quad();
+    upload_geometry_data(device, Core::GraphicPass::vignette);
 
     // Setup fallback texture
     if (!FALLBACK_TEXTURE) // If not user set
@@ -33,7 +33,7 @@ void ResourceManager::init_basic_resources(Graphics::Device* const device) {
 }
 
 void ResourceManager::clean_basic_resources() {
-    destroy_geometry_data(Core::BasePass::vignette);
+    destroy_geometry_data(Core::GraphicPass::vignette);
     destroy_texture_data(FALLBACK_TEXTURE);
     destroy_texture_data(FALLBACK_CUBEMAP);
     for (Core::ITexture* texture : textureResources)

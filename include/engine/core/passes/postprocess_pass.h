@@ -8,7 +8,7 @@
 */
 #ifndef POSTPROCESS_PASS_H
 #define POSTPROCESS_PASS_H
-#include <engine/core/passes/pass.h>
+#include <engine/core/passes/graphic_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -31,7 +31,7 @@ class PostProcessPass : public GraphicPass
                     std::string       shaderPath,
                     std::string       name      = "POST-PROCESS",
                     bool              isDefault = true)
-        : BasePass(ctx, extent, 1, 1, isDefault, name)
+        : GraphicPass(ctx, extent, 1, 1, isDefault, name)
         , m_colorFormat(colorFormat)
         , m_shaderPath(shaderPath) {
     }
@@ -47,9 +47,7 @@ class PostProcessPass : public GraphicPass
 
     virtual void link_previous_images(std::vector<Graphics::Image> images);
 
-    void clean_framebuffer() {
-        GraphicPass::clean_framebuffer();
-    }
+   
 };
 
 } // namespace Core

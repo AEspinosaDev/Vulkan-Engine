@@ -195,7 +195,7 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].gBufferDescritor, 1, *shaderPass);
 
-    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
@@ -279,8 +279,8 @@ void CompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
 }
 
 
-void CompositionPass::update_framebuffer() {
-    GraphicPass::update_framebuffer();
+void CompositionPass::resize_attachments() {
+    GraphicPass::resize_attachments();
     create_prev_frame_image();
 }
 
