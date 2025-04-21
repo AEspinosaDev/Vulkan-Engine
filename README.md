@@ -71,10 +71,10 @@ This project is a work in progress. It has a long way until becoming a decent li
 
 The prequisites for using this code are:
 
-- Windows 10, 11 (Although it should be easy enough to set it up for Linux).
-- Vulkan SDK 1.3.* installed. (With VMA and Shaderc libraries)
+- Windows (10, 11) or Ubuntu (22, 23).
+- Vulkan SDK 1.3.* installed. **(With VMA and Shaderc libraries)**
 - CMake installed.
-- Ninja (Optional but recommended to speed-up compilation time)
+- Ninja 🥷 (Optional but recommended to speed-up compilation time)
 
 1. Clone the repo:
    ```bash
@@ -92,16 +92,16 @@ The prequisites for using this code are:
 
 The project is configured in such a way that, during the build process, CMake takes care of automatically locating and linking all dependencies on the system, with exception of the Vulkan SDK, due to its more complex installation. This has been done to facilitate an easy and lightweight distribution of the source code, sparing the user the effort of manual configuration. Although the project has been implemented in VS Code, a practical file structure has been configured for CMake in case it is opened in Visual Studio or any other IDE.
 
-Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run. The CMake configuration is set for a 64-bit architecture, but it can be changed. CMake also takes care of automatically configuring the paths for resource files.
+Once the project is opened in the IDE of choice, compile it in the desired mode, and it would be ready to run (compile configurations json added for VS Code). CMake also takes care of automatically configuring the paths for resource files.
 
 The project compiles dependencies, the 3D library, and the example applications directory, which statically links against the 3D library. The library is a STATIC lib, do not try to link dynamically against it.
 
-3. Building of the demos and tests directory is optional, and can be turned off in CMake:
+3. Building of the demos and tests directory is **optional**, and can be turned off in CMake:
 ```bash
 cmake -DBUILD_EXAMPLES=OFF /path/to/source
 cmake -DBUILD_TESTS=OFF /path/to/source
 ```
-4. Alternatively, you can click on any of the setup folder .bat files to compile and configure the project using you preferred backend. If using VS Code, you can change presents in the CMake Tools' bar. 
+4. **Alternatively**, you can click on any of the setup folder **.bat files** to compile and configure the project using you preferred backend. If using VS Code, you can change presents in the CMake Tools' bar. 
 
 ## Project Integration 🗄️
 
@@ -326,3 +326,28 @@ With a little extra effort, you can create much richer and interactive applicati
 As you can see, the library is easy to use: with a window, a camera, a scene filled with some meshes and of course a renderer, you have everything you need to start working. 
 
 
+## FOR LINUX USERS ONLY
+
+In order for GLFW to compile you will need to install these dependencies:
+
+ ```bash
+sudo apt-get install libxkbcommon-x11-dev
+sudo apt-get install libxinerama-dev
+sudo apt-get install libxcursor-dev
+sudo apt-get install libxi-dev
+   ```
+
+This uses x11 backend, if you want to use Wayland install Wayland depedencies.
+
+After that, follow these steps:
+
+1. Download https://vulkan.lunarg.com/sdk/home (better this way than apt because it brings VMA and shaderc)
+2. Extract and install
+```bash
+chmod +x vulkansdk-linux-x.x.x.x-setup.run
+./vulkansdk-linux-x.x.x.x-setup.run
+   ```
+3. Setup enviroment variables
+```bash
+source ~/VulkanSDK/x.x.x.x.x/setup-env.sh
+   ```

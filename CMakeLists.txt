@@ -16,10 +16,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message("Using GCC")
 endif()
 
-
-# Set the platform (e.g., x64)
-# set(CMAKE_GENERATOR_PLATFORM x64) # or Win32, as needed
-
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,6 +29,10 @@ find_package(Vulkan REQUIRED)
 if(NOT Vulkan_FOUND)
     message(FATAL_ERROR "Vulkan SDK not found. Please install Vulkan SDK and ensure it's in your CMake search path.")
 endif()
+# if(UNIX)
+#     set(SHADERC_INCLUDE_DIRS $ENV{VULKAN_SDK}/include)
+#     set(SHADERC_LIBRARIES $ENV{VULKAN_SDK}/lib/libshaderc_combined.a)
+# endif()
 
 # Get the root path for Vulkan from the Vulkan_LIBRARY variable
 get_filename_component(VULKAN_SDK_ROOT ${Vulkan_LIBRARY} DIRECTORY)

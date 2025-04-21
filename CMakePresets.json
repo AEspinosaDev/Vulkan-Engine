@@ -12,7 +12,7 @@
             "name": "ninja-debug",
             "displayName": "Ninja (Debug)",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/ninja-debug",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "clang++",         
                 "CMAKE_C_COMPILER": "clang",
@@ -27,7 +27,7 @@
             "name": "ninja-release",
             "displayName": "Ninja (Release)",
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/ninja-release",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "clang++",         
                 "CMAKE_C_COMPILER": "clang",
@@ -42,7 +42,7 @@
             "displayName": "Visual Studio 2022 (x64) (Debug)",
             "generator": "Visual Studio 17 2022",
             "architecture": "x64", 
-            "binaryDir": "${sourceDir}/build/vs2022-x64-debug",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -52,11 +52,38 @@
             "displayName": "Visual Studio 2022 (x64) (Release)",
             "generator": "Visual Studio 17 2022",
             "architecture": "x64", 
-            "binaryDir": "${sourceDir}/build/vs2022-x64-release",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "GCC-x86_64-debug",
+            "displayName": "GCC (x86-64) (Debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "GCC-x86_64-release",
+            "displayName": "GCC (x86-64) (Release)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
+        
     ],
     
     "buildPresets": [
@@ -77,6 +104,16 @@
             "name": "vs2022-x64-debug",
             "configurePreset": "vs2022-x64-debug",
             "configuration": "Debug"
+        },
+        {
+            "name": "GCC-x86_64-debug",
+            "configurePreset": "GCC-x86_64-debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "GCC-x86_64-release",
+            "configurePreset": "GCC-x86_64-release",
+            "configuration": "Release"
         }
     ]
 }
