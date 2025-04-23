@@ -4,12 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void VarianceShadowPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void VarianceShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
                                            std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(2);
 
-    attachments[0] = Graphics::AttachmentInfo(m_format,
+    attachments[0] = Graphics::AttachmentConfig(m_format,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -20,7 +20,7 @@ void VarianceShadowPass::setup_attachments(std::vector<Graphics::AttachmentInfo>
                                               FILTER_LINEAR,
                                               ADDRESS_MODE_CLAMP_TO_BORDER);
 
-    attachments[1] = Graphics::AttachmentInfo(m_depthFormat,
+    attachments[1] = Graphics::AttachmentConfig(m_depthFormat,
                                               1,
                                               LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                               LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -139,7 +139,7 @@ void VarianceShadowPass::setup_shader_passes() {
     m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
-void VarianceShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void VarianceShadowPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
     if ((Core::Light::get_non_raytraced_count() == 0 && currentFrame.index > 0) || scene->get_lights().empty())
         return;

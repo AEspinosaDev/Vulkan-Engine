@@ -38,7 +38,7 @@
 
 //     virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-//     virtual void link_previous_images(std::vector<Graphics::Image> images);
+//     virtual void link_input_attachments(std::vector<Graphics::Image> images);
 
 //     void clean_framebuffer() {
 //         GraphicPass::clean_framebuffer();

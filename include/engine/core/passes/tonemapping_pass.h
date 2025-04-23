@@ -25,23 +25,34 @@ enum TonemappingType
 /*
 Tonemapping Pass.
 */
-class TonemappingPass : public PostProcessPass
+class TonemappingPass : public PostProcessPass<1, 1>
 {
   protected:
     float           m_exposure = 1.0f;
     TonemappingType m_tonemap  = FILMIC_TONEMAP;
 
   public:
-    TonemappingPass(Graphics::Device* ctx,
-                    Extent2D          extent,
-                    ColorFormatType   colorFormat,
-                    bool              isDefault = true)
-        : PostProcessPass(ctx,
+    /*
+
+               Input Attachments:
+               -
+               - Color
+
+               Output Attachments:
+               -
+               - Tonemapped Color
+
+           */
+    TonemappingPass(Graphics::Device*       device,
+                    const PassConfig<1, 1>& config,
+                    Extent2D                extent,
+                    ColorFormatType         colorFormat)
+        : PostProcessPass(device,
+                          config,
                           extent,
                           colorFormat,
                           ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
-                          "TONEMAPPING",
-                          isDefault) {
+                          "TONEMAPPING") {
     }
 
     inline float get_exposure() const {
@@ -59,7 +70,7 @@ class TonemappingPass : public PostProcessPass
 
     virtual void setup_shader_passes();
 
-    virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 };
 
 } // namespace Core

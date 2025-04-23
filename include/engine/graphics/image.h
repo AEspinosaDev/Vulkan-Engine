@@ -27,6 +27,7 @@ struct ImageConfig {
     uint32_t        baseMipLevel = 0;
     uint32_t        layers       = 1U;
     ImageLayout     layout       = LAYOUT_UNDEFINED;
+    ClearValue      clearValue   = {{{0.0, 0.0, 0.0, 1.0}}};
 };
 
 struct SamplerConfig {
@@ -56,6 +57,7 @@ struct Image {
     uint32_t    layers        = 1; // Layers for Cubemaps and Arrays
     uint32_t    mipLevels     = 1;
     uint32_t    baseMipLevel  = 0;
+    ClearValue  clearValue    = {{{0.0, 0.0, 0.0, 1.0}}};
 
     bool loadedOnCPU{false};
     bool loadedOnGPU{false};

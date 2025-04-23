@@ -21,7 +21,7 @@ namespace Core {
 Performs an voxelization of the direct irradiance of the scene. For setting the edges of the volume it takes into
 account the AABB of the scene.
 */
-class VoxelizationPass : public GraphicPass
+class VoxelizationPass : public BaseGraphicPass<1, 1>
 {
 #ifdef USE_IMG_ATOMIC_OPERATION
     const uint16_t RESOURCE_IMAGES = 4;
@@ -40,25 +40,37 @@ class VoxelizationPass : public GraphicPass
     void setup_material_descriptor(IMaterial* mat);
 
   public:
-    VoxelizationPass(Graphics::Device* ctx, uint32_t resolution)
-        : GraphicPass(ctx, {resolution, resolution}, 1, 1, false, "VOXELIZATION") {
-        m_resourceImages.resize(RESOURCE_IMAGES);
+    /*
+
+                 Input Attachments:
+                 -
+                 - Shadow Map
+
+                 Output Attachments:
+                 -
+                 - VoxeiLzed Irradiance (Texture 3D)
+
+             */
+    VoxelizationPass(Graphics::Device* device, const PassConfig<1, 1>& config, uint32_t resolution)
+        : BaseGraphicPass(device, config, {resolution, resolution}, 1, 1, "VOXELIZATION") {
     }
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                           std::vector<Graphics::SubPassDependency>& dependencies);
+    void create_framebuffer();
+
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
     void resize_attachments();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
     void cleanup();
 };

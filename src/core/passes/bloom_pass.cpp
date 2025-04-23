@@ -4,13 +4,13 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void BloomPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void BloomPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
                                   std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
     attachments[0] =
-        Graphics::AttachmentInfo(m_colorFormat,
+        Graphics::AttachmentConfig(m_colorFormat,
                                  1,
                                  m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                  LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -106,7 +106,7 @@ void BloomPass::setup_shader_passes() {
     m_shaderPasses["bloom"] = bloomPass;
 }
 
-void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void BloomPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
 
     CommandBuffer cmd;
 
@@ -122,7 +122,7 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
 
         const uint32_t WORK_GROUP_SIZE = 16;
 
-        cmd.pipeline_barrier(m_brightImage,
+        cmd.pipeline_barrier(*m_inAttachments[1],
                              LAYOUT_UNDEFINED,
                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              ACCESS_SHADER_WRITE,
@@ -155,8 +155,8 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
             cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *downSamplePass, {}, BINDING_TYPE_COMPUTE);
 
             // Dispatch the compute shader
-            uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> i);
-            uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> i);
+            uint32_t mipWidth  = std::max(1u, m_inAttachments[1]->extent.width >> i);
+            uint32_t mipHeight = std::max(1u, m_inAttachments[1]->extent.height >> i);
             cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
                                   (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
                                   1});
@@ -170,7 +170,7 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
                                  STAGE_COMPUTE_SHADER);
         }
 
-        cmd.pipeline_barrier(m_brightImage,
+        cmd.pipeline_barrier(*m_inAttachments[1],
                              LAYOUT_UNDEFINED,
                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              ACCESS_SHADER_WRITE,
@@ -194,8 +194,8 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
             cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *upSamplePass, {}, BINDING_TYPE_COMPUTE);
 
             // Dispatch the compute shader
-            uint32_t mipWidth  = std::max(1u, m_brightImage.extent.width >> (i - 1));
-            uint32_t mipHeight = std::max(1u, m_brightImage.extent.height >> (i - 1));
+            uint32_t mipWidth  = std::max(1u, m_inAttachments[1]->extent.width >> (i - 1));
+            uint32_t mipHeight = std::max(1u, m_inAttachments[1]->extent.height >> (i - 1));
             cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
                                   (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
                                   1});
@@ -233,22 +233,22 @@ void BloomPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_bloomStrength, sizeof(float));
     cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
 
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
-void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
+void BloomPass::link_input_attachments() {
 
-    m_originalImage = images[0];
-    m_brightImage   = images[1];
+    // m_originalImage = images[0];
+    // *m_inAttachments   = images[1];
 
     ImageConfig config  = {};
     config.usageFlags   = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_STORAGE | IMAGE_USAGE_TRANSFER_DST;
     config.mipLevels    = MIPMAP_LEVELS;
     config.baseMipLevel = 0;
     config.format       = m_colorFormat;
-    m_bloomImage        = m_device->create_image(m_brightImage.extent, config, true);
+    m_bloomImage        = m_device->create_image(m_inAttachments[1]->extent, config, true);
     m_bloomImage.create_view(config);
     SamplerConfig samplerConfig      = {};
     samplerConfig.minLod             = 0;
@@ -266,8 +266,8 @@ void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
         m_bloomMipmaps[i].create_view(config);
     }
 
-    m_descriptorPool.update_descriptor(&m_brightImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
-    m_descriptorPool.update_descriptor(&m_originalImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
+    m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
+    m_descriptorPool.update_descriptor(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
 
     m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
     m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
@@ -275,7 +275,7 @@ void BloomPass::link_previous_images(std::vector<Graphics::Image> images) {
 }
 
 void BloomPass::resize_attachments() {
-    GraphicPass::resize_attachments();
+    BaseGraphicPass::resize_attachments();
     m_bloomImage.cleanup();
     for (Image& img : m_bloomMipmaps)
     {
@@ -293,7 +293,7 @@ void BloomPass::cleanup() {
         img.sampler = VK_NULL_HANDLE;
         img.cleanup();
     }
-    GraphicPass::cleanup();
+    BaseGraphicPass::cleanup();
 }
 
 } // namespace Core

@@ -18,7 +18,7 @@ namespace Core {
 /*
 DEFERRED RENDERING GEOMETRY PASS
 */
-class GeometryPass : public GraphicPass
+class GeometryPass : public BaseGraphicPass<3, 6>
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
@@ -34,29 +34,44 @@ class GeometryPass : public GraphicPass
     void setup_material_descriptor(IMaterial* mat);
 
   public:
-    GeometryPass(Graphics::Device* ctx,
-                 Extent2D          extent,
-                 ColorFormatType   colorFormat,
-                 ColorFormatType   depthFormat,
-                 bool              isDefault = false)
-        : GraphicPass(ctx, extent, 1, 1, isDefault, "GEOMETRY")
+    /*
+        Input Attachments:
+        -
+        - Enviroment 
+        - Diffuse Enviroment Irradiance
+        - Sky
+
+        Output Attachments:
+        -
+        - Position buffer
+        - Normal buffer
+        - Albedo buffer
+        - Material buffer
+        - Emmissive buffer
+        - Depth buffer
+    */
+    GeometryPass(Graphics::Device*       device,
+                 const PassConfig<3, 6>& config,
+                 Extent2D                extent,
+                 ColorFormatType         colorFormat,
+                 ColorFormatType         depthFormat)
+        : BaseGraphicPass(device, config, extent, 1, 1, "GEOMETRY")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat) {
     }
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                           std::vector<Graphics::SubPassDependency>& dependencies);
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
-
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

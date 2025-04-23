@@ -22,7 +22,7 @@ void TonemappingPass::setup_shader_passes() {
     m_shaderPasses["pp"] = ppPass;
 }
 
-void TonemappingPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void TonemappingPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
@@ -41,7 +41,7 @@ void TonemappingPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     Data data = {m_exposure, static_cast<float>(m_tonemap)};
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &data, sizeof(float) * 2);
 
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)

@@ -20,12 +20,11 @@ namespace Graphics {
 /*
 Attachment info needed for Renderpasses and Framebuffers
 */
-struct AttachmentInfo {
+struct AttachmentConfig {
     //Image Info
     AttachmentType type          = AttachmentType::COLOR_ATTACHMENT;
     ImageConfig    imageConfig   = {};
     SamplerConfig  samplerConfig = {};
-    ClearValue     clearValue    = {};
     bool           isDefault     = false;
     
     //Renderpass Info
@@ -37,8 +36,8 @@ struct AttachmentInfo {
     ImageLayout       finalLayout      = LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     ImageLayout       attachmentLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    AttachmentInfo() {};
-    AttachmentInfo(ColorFormatType     format,
+    AttachmentConfig() {};
+    AttachmentConfig(ColorFormatType     format,
                    uint16_t            samples,
                    ImageLayout         final_Layout,
                    ImageLayout         attach_layout,
@@ -51,7 +50,6 @@ struct AttachmentInfo {
                    ClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
         : finalLayout(final_Layout)
         , attachmentLayout(attach_layout)
-        , clearValue(clearVal)
         , type(attachmentType) {
         imageConfig.format               = format;
         imageConfig.usageFlags           = usage;
@@ -60,7 +58,8 @@ struct AttachmentInfo {
         imageConfig.viewType             = viewType;
         samplerConfig.filters            = filter;
         samplerConfig.samplerAddressMode = addressMode;
-        clearValue.depthStencil.depth    = 1.0f;
+        imageConfig.clearValue = clearVal;
+        imageConfig.clearValue.depthStencil.depth    = 1.0f;
     };
 };
 
@@ -89,8 +88,8 @@ struct RenderPass {
     VkRenderPass handle = VK_NULL_HANDLE;
     VkDevice     device = VK_NULL_HANDLE;
 
-    std::vector<Graphics::AttachmentInfo>    attachmentsInfo;
-    std::vector<Graphics::SubPassDependency> dependenciesInfo;
+    std::vector<Graphics::AttachmentConfig>    attachmentsConfig;
+    std::vector<Graphics::SubPassDependency> dependenciesConfig;
 
     const char* debbugName = nullptr;
 

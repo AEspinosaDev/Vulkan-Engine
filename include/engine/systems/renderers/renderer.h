@@ -53,8 +53,9 @@ class BaseRenderer
     Core::IWindow*               m_window;
     RendererSettings             m_settings{};
 
-    /*Passes*/
+    /*Passes & Attachments*/
     std::vector<Core::BasePass*> m_passes;
+    std::vector<Graphics::Image> m_attachments;
 
     /*Automatic deletion queue*/
     Utils::DeletionQueue m_deletionQueue;
@@ -165,10 +166,6 @@ class BaseRenderer
     Clean all resources used
     */
     virtual void clean_resources();
-    /*
-    Link images of previous passes to current pass
-    */
-    void connect_pass(Core::BasePass* const currentPass);
     /*
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context

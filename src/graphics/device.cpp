@@ -29,12 +29,8 @@ void Device::init(void*           windowHandle,
     vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProperties);
 
     // Create logical device
-    m_handle = Booter::create_logical_device(m_queues,
-                                             m_gpu,
-                                             m_features,
-                                             m_swapchain.get_surface(),
-                                             m_enableValidationLayers,
-                                             m_validationLayers);
+    m_handle = Booter::create_logical_device(
+        m_queues, m_gpu, m_features, m_swapchain.get_surface(), m_enableValidationLayers, m_validationLayers);
 
     // Setup VMA
     m_allocator = Booter::setup_memory(m_instance, m_handle, m_gpu);
@@ -50,7 +46,6 @@ void Device::init(void*           windowHandle,
 
     create_upload_context();
     load_extensions(m_handle, m_instance);
-
 
     //------<<<
 }
@@ -145,10 +140,11 @@ Buffer Device::create_buffer(size_t              allocSize,
     return buffer;
 }
 Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps, VmaMemoryUsage memoryUsage) {
-    Image img  = {};
-    img.extent = extent;
-    img.device = m_handle;
-    img.memory = m_allocator;
+    Image img      = {};
+    img.extent     = extent;
+    img.device     = m_handle;
+    img.memory     = m_allocator;
+    img.clearValue = config.clearValue;
 
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage                   = memoryUsage;
@@ -189,7 +185,8 @@ CommandPool Device::create_command_pool(QueueType QueueType, CommandPoolCreateFl
     switch (QueueType)
     {
     case QueueType::GRAPHIC_QUEUE:
-        poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
+        poolInfo.queueFamilyIndex =
+            Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
         break;
     case QueueType::COMPUTE_QUEUE:
         poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).computeFamily.value();
@@ -263,7 +260,7 @@ DescriptorPool Device::create_descriptor_pool(uint32_t                       max
     VK_CHECK(vkCreateDescriptorPool(m_handle, &pool_info, nullptr, &pool.handle));
     return pool;
 }
-RenderPass Device::create_render_pass(std::vector<AttachmentInfo>&    attachments,
+RenderPass Device::create_render_pass(std::vector<AttachmentConfig>&  attachments,
                                       std::vector<SubPassDependency>& dependencies) {
     RenderPass rp = {};
     // ATTACHMENT SETUP ----------------------------------
@@ -347,44 +344,50 @@ RenderPass Device::create_render_pass(std::vector<AttachmentInfo>&    attachment
     {
         new VKFW_Exception("failed to create renderpass!");
     }
-    rp.attachmentsInfo  = attachments;
-    rp.dependenciesInfo = dependencies;
+    rp.attachmentsConfig  = attachments;
+    rp.dependenciesConfig = dependencies;
     return rp;
 } // namespace Graphics
-Framebuffer Device::create_framebuffer(RenderPass& renderpass, Extent2D extent, uint32_t layers, uint32_t id) {
+Framebuffer Device::create_framebuffer(RenderPass&          renderpass,
+                                       std::vector<Image*>& attachments,
+                                       Extent2D             extent,
+                                       uint32_t             layers,
+                                       uint32_t             id) {
+
     Framebuffer fbo = {};
     fbo.device      = m_handle;
     fbo.layers      = layers;
     fbo.extent      = extent;
 
     // Populate Image Attachments
-    fbo.attachmentImages.resize(renderpass.attachmentsInfo.size());
-    for (size_t i = 0; i < renderpass.attachmentsInfo.size(); i++)
+    fbo.attachmentImagesPtrs.resize(renderpass.attachmentsConfig.size());
+
+    std::vector<VkImageView> fboViewAttachments;
+    fboViewAttachments.resize(renderpass.attachmentsConfig.size());
+
+    for (size_t i = 0; i < renderpass.attachmentsConfig.size(); i++)
     {
-        if (!renderpass.attachmentsInfo[i].isDefault) // If its not present image
+        if (!renderpass.attachmentsConfig[i].isDefault) // If its not present image
         {
-            renderpass.attachmentsInfo[i].imageConfig.layers = layers;
-            fbo.attachmentImages[i]                          = create_image({extent.width, extent.height, 1},
-                                                   renderpass.attachmentsInfo[i].imageConfig,
-                                                   false); // No mipmap for attachment image :(
-            fbo.attachmentImages[i].create_view(renderpass.attachmentsInfo[i].imageConfig);
-            fbo.attachmentImages[i].create_sampler(renderpass.attachmentsInfo[i].samplerConfig);
+            renderpass.attachmentsConfig[i].imageConfig.layers = layers;
+            *attachments[i]                                    = create_image({extent.width, extent.height, 1},
+                                           renderpass.attachmentsConfig[i].imageConfig,
+                                           false); // No mipmap for attachment image :(
+            attachments[i]->create_view(renderpass.attachmentsConfig[i].imageConfig);
+            attachments[i]->create_sampler(renderpass.attachmentsConfig[i].samplerConfig);
+
+            fbo.attachmentImagesPtrs[i] = attachments[i]; // save pointer in framebuffer
+            fboViewAttachments[i] = attachments[i]->view;
+        } else{
+
+            fbo.attachmentImagesPtrs[i] = &m_swapchain.get_present_images()[id]; // save swapchain image pointer in framebuffer !!
+            fboViewAttachments[i] = m_swapchain.get_present_images()[id].view;
         }
     }
 
-    std::vector<VkImageView> viewAttachments;
-    viewAttachments.resize(renderpass.attachmentsInfo.size());
-    for (size_t i = 0; i < viewAttachments.size(); i++)
-    {
-        if (!renderpass.attachmentsInfo[i].isDefault)
-            viewAttachments[i] = fbo.attachmentImages[i].view;
-        else
-            viewAttachments[i] = m_swapchain.get_present_images()[id].view;
-    }
-
     VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.handle, extent);
-    fbInfo.pAttachments            = viewAttachments.data();
-    fbInfo.attachmentCount         = (uint32_t)viewAttachments.size();
+    fbInfo.pAttachments            = fboViewAttachments.data();
+    fbInfo.attachmentCount         = (uint32_t)fboViewAttachments.size();
     fbInfo.layers                  = layers;
 
     if (vkCreateFramebuffer(m_handle, &fbInfo, nullptr, &fbo.handle) != VK_SUCCESS)
@@ -394,16 +397,16 @@ Framebuffer Device::create_framebuffer(RenderPass& renderpass, Extent2D extent, 
     return fbo;
 }
 
-Framebuffer Device::create_framebuffer(RenderPass& renderpass, Image& img) {
+Framebuffer Device::create_framebuffer(RenderPass& renderpass, Image& attachment) {
     Framebuffer fbo = {};
     fbo.device      = m_handle;
-    fbo.layers      = img.layers;
+    fbo.layers      = attachment.layers;
 
     VkFramebufferCreateInfo fbInfo =
-        Init::framebuffer_create_info(renderpass.handle, {img.extent.width, img.extent.height});
-    fbInfo.pAttachments    = &img.view;
+        Init::framebuffer_create_info(renderpass.handle, {attachment.extent.width, attachment.extent.height});
+    fbInfo.pAttachments    = &attachment.view;
     fbInfo.attachmentCount = 1;
-    fbInfo.layers          = img.layers;
+    fbInfo.layers          = attachment.layers;
 
     if (vkCreateFramebuffer(m_handle, &fbInfo, nullptr, &fbo.handle) != VK_SUCCESS)
     {
@@ -950,4 +953,3 @@ void Device::UploadContext::cleanup() {
 } // namespace Graphics
 
 VULKAN_ENGINE_NAMESPACE_END
-

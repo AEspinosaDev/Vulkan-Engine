@@ -4,21 +4,21 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void SkyPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void SkyPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
                                 std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::AttachmentInfo(ColorFormatType::SRGBA_32F,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              COLOR_ATTACHMENT,
-                                              ASPECT_COLOR,
-                                              TEXTURE_2D,
-                                              FILTER_LINEAR,
-                                              ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] = Graphics::AttachmentConfig(ColorFormatType::SRGBA_32F,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                COLOR_ATTACHMENT,
+                                                ASPECT_COLOR,
+                                                TEXTURE_2D,
+                                                FILTER_LINEAR,
+                                                ADDRESS_MODE_CLAMP_TO_EDGE);
 
     dependencies.resize(1);
 
@@ -31,18 +31,20 @@ void SkyPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attach
 }
 void SkyPass::create_framebuffer() {
 
-    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 0);
-    m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 1);
-    m_framebuffers[2] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 2);
+    m_interAttachments.resize(2);
+    std::vector<Graphics::Image*> out1 = {&m_interAttachments[0]};
+    std::vector<Graphics::Image*> out2 = {&m_interAttachments[1]};
+    std::vector<Graphics::Image*> out3 = {m_outAttachments[0]};
+    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, out1, m_imageExtent, m_framebufferImageDepth, 0);
+    m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, out2, m_imageExtent, m_framebufferImageDepth, 1);
+    m_framebuffers[2] = m_device->create_framebuffer(m_renderpass, out3, m_imageExtent, m_framebufferImageDepth, 2);
 }
 void SkyPass::resize_attachments() {
-    GraphicPass::resize_attachments();
+    BaseGraphicPass::resize_attachments();
 
     // Update descriptor of previous framebuffer
-    m_descriptorPool.update_descriptor(
-        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
-    m_descriptorPool.update_descriptor(
-        &m_framebuffers[1].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
+    m_descriptorPool.update_descriptor(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
+    m_descriptorPool.update_descriptor(&m_interAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
 }
 void SkyPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
@@ -54,10 +56,8 @@ void SkyPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptor);
 
-    m_descriptorPool.update_descriptor(
-        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
-    m_descriptorPool.update_descriptor(
-        &m_framebuffers[1].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
+    m_descriptorPool.update_descriptor(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
+    m_descriptorPool.update_descriptor(&m_interAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
 }
 void SkyPass::setup_shader_passes() {
 
@@ -101,7 +101,7 @@ void SkyPass::setup_shader_passes() {
     m_shaderPasses["proj"] = projPass;
 }
 
-void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void SkyPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
     if (!scene->get_skybox())
         return;
@@ -125,7 +125,7 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     cmd.bind_shaderpass(*shaderPass);
     cmd.push_constants(
         *shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /* Sky Generation*/
@@ -137,7 +137,7 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     cmd.push_constants(
         *shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
     cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
     /* Sky Generation*/
@@ -149,7 +149,7 @@ void SkyPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t
     int projectionType = passSettings.sky.useForIBL;
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &projectionType, sizeof(int));
     cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[2]);
 
     /* Sky is updated, set to sleep */

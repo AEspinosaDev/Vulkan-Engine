@@ -20,7 +20,7 @@ namespace Core {
 /*
 STANDARD FORWARD LIGHTING PASS
 */
-class ForwardPass : public GraphicPass
+class ForwardPass : public BaseGraphicPass<3, 3>
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
@@ -37,32 +37,44 @@ class ForwardPass : public GraphicPass
     void setup_material_descriptor(IMaterial* mat);
 
   public:
-    ForwardPass(Graphics::Device* ctx,
+   /*
+        Input Attachments:
+        -
+        - Enviroment 
+        - Diffuse Enviroment Irradiance
+        - Sky
+
+        Output Attachments:
+        -
+        - Lighting
+        - Bright Lighting (HDR)
+        - Depth 
+    */
+    ForwardPass(Graphics::Device* device,
+                const PassConfig<3, 3>&  config,
                 Extent2D          extent,
                 ColorFormatType   colorFormat,
                 ColorFormatType   depthFormat,
-                MSAASamples       samples,
-                bool              isDefault = true)
-        : GraphicPass(ctx, extent, 1,1, isDefault, "FORWARD")
+                MSAASamples       samples)
+        : BaseGraphicPass(device, config, extent, 1, 1, "FORWARD")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat)
         , m_aa(samples) {
     }
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
                            std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
-    void set_envmap_descriptor(Graphics::Image env, Graphics::Image irr);
 };
 
 } // namespace Core

@@ -36,7 +36,7 @@ Pre-composition pass called before the Composition (Lighting) pass in a deferred
 SSAO and other lighting effects, such as blurring raytraced shadows by bilinear filering them, in order to be used in
 future lighting passes.
 */
-class PreCompositionPass : public GraphicPass
+class PreCompositionPass : public BaseGraphicPass<2, 1>
 {
     /*Descriptors*/
     struct FrameDescriptors {
@@ -54,8 +54,19 @@ class PreCompositionPass : public GraphicPass
     void create_samples_kernel();
 
   public:
-    PreCompositionPass(Graphics::Device* ctx, VkExtent2D extent)
-        : GraphicPass(ctx, extent, 2, 1, false, "PRE-COMPOSITION") {
+    /*
+            Input Attachments:
+            -
+            - Position
+            - Normals
+
+            Output Attachments:
+            -
+            - SSAO + RT
+
+        */
+    PreCompositionPass(Graphics::Device* device, const PassConfig<2, 1>& config, VkExtent2D extent)
+        : BaseGraphicPass(device, config, extent, 2, 1, "PRE-COMPOSITION") {
     }
 
     inline void set_SSAO_settings(AO settings) {
@@ -67,16 +78,18 @@ class PreCompositionPass : public GraphicPass
         return m_AO;
     };
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                           std::vector<Graphics::SubPassDependency>& dependencies);
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies);
+
+    void create_framebuffer();
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 

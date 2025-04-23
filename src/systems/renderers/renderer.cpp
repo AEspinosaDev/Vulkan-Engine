@@ -29,28 +29,17 @@ void BaseRenderer::init() {
                    m_settings.screenSync);
     // Init resources
     init_resources();
+    
     // User defined renderpasses
     create_passes();
     // Init renderpasses
     for (Core::BasePass* pass : m_passes)
-    {
         if (pass->is_active())
-        {
             pass->setup(m_frames);
-        }
-    };
     // Connect renderpasses
     for (Core::BasePass* pass : m_passes)
-    {
         if (pass->is_active())
-        {
-            connect_pass(pass);
-        }
-    };
-
-    // m_deletionQueue.push_function([=]() {
-
-    // });
+            pass->link_input_attachments();
 
     if (m_settings.enableUI)
         init_gui();
@@ -83,14 +72,13 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
         {
             pass->cleanup();
         }
-        
+
         clean_resources();
         Core::ResourceManager::clean_scene(scene);
-        
+
         if (m_settings.enableUI)
-        m_device->destroy_imgui();
-        
-        
+            m_device->destroy_imgui();
+
         m_device->cleanup();
     }
 
@@ -155,39 +143,12 @@ void BaseRenderer::render(Core::Scene* const scene) {
     for (Core::BasePass* pass : m_passes)
     {
         if (pass->is_active())
-            pass->render(m_frames[m_currentFrame], scene, imageIndex);
+            pass->execute(m_frames[m_currentFrame], scene, imageIndex);
     }
 
     RenderResult renderResult = m_device->submit_frame(m_frames[m_currentFrame], imageIndex);
 
     on_after_render(renderResult, scene);
-}
-
-void BaseRenderer::connect_pass(Core::BasePass* const currentPass) {
-    if (currentPass->get_image_dependencies().empty())
-        return;
-
-    std::vector<Graphics::Image> images;
-    for (auto& dep : currentPass->get_image_dependencies())
-    {
-        if (dep.isFBO)
-        {
-            Graphics::Framebuffer fbo =
-                static_cast<Core::GraphicPass*>(m_passes[dep.passID])->get_framebuffers()[dep.fboID];
-            for (size_t i = 0; i < dep.attachmentIDs.size(); i++)
-            {
-                images.push_back(fbo.attachmentImages[dep.attachmentIDs[i]]);
-            }
-        } else
-        {
-            std::vector<Graphics::Image> resourceImages = m_passes[dep.passID]->get_resource_images();
-            for (size_t i = 0; i < dep.attachmentIDs.size(); i++)
-            {
-                images.push_back(resourceImages[dep.attachmentIDs[i]]);
-            }
-        }
-    }
-    currentPass->link_previous_images(images);
 }
 
 void BaseRenderer::update_framebuffers() {
@@ -210,7 +171,7 @@ void BaseRenderer::update_framebuffers() {
                 pass->set_extent(m_window->get_extent());
                 pass->resize_attachments();
             }
-            connect_pass(pass);
+            pass->link_input_attachments();
         }
     };
 
@@ -233,11 +194,13 @@ void BaseRenderer::init_gui() {
 
         void* windowHandle;
         m_window->get_handle(windowHandle);
-        m_device->init_imgui(
-            windowHandle,
-            m_window->get_windowing_system(),
-            static_cast<Core::GraphicPass*>(defaultPass)->get_renderpass(),
-            static_cast<Core::GraphicPass*>(defaultPass)->get_renderpass().attachmentsInfo[0].imageConfig.samples);
+        m_device->init_imgui(windowHandle,
+                             m_window->get_windowing_system(),
+                             static_cast<Core::BaseGraphicPass<1, 0>*>(defaultPass)->get_renderpass(),
+                             static_cast<Core::BaseGraphicPass<1, 0>*>(defaultPass)
+                                 ->get_renderpass()
+                                 .attachmentsConfig[0]
+                                 .imageConfig.samples);
     }
 }
 void BaseRenderer::init_resources() {
@@ -286,9 +249,9 @@ void BaseRenderer::init_resources() {
 
 void BaseRenderer::clean_resources() {
     for (size_t i = 0; i < m_frames.size(); i++)
-    {
         m_frames[i].cleanup();
-    }
+    for (size_t i = 0; i < m_attachments.size(); i++)
+        m_attachments[i].cleanup();
     Core::ResourceManager::clean_basic_resources();
 }
 } // namespace Systems

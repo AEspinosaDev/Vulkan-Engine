@@ -29,7 +29,7 @@ both X and Y axes.
 A (first downsampled image).
 - Finally, we mix the overall bloom contribution into the HDR source image, with a strong bias towards the HDR source.
 */
-class BloomPass : public GraphicPass
+class BloomPass : public BaseGraphicPass<2, 1>
 {
   protected:
     ColorFormatType m_colorFormat = SRGBA_32F;
@@ -49,8 +49,19 @@ class BloomPass : public GraphicPass
     std::vector<Graphics::Framebuffer> m_bloomFramebuffers;
 
   public:
-    BloomPass(Graphics::Device* ctx, Extent2D extent, bool isDefault = false)
-        : GraphicPass(ctx, extent, 1, 1, isDefault, "BLOOM") {
+    /*
+          Input Attachments:
+          -
+          - Lighting
+          - Bright Lighting (HDR)
+
+          Output Attachments:
+          -
+          - Bloom + Lighting
+
+      */
+    BloomPass(Graphics::Device* device, const PassConfig<2, 1>& config, Extent2D extent)
+        : BaseGraphicPass(device, config, extent, 1, 1, "BLOOM") {
     }
 
     inline float get_bloom_strength() const {
@@ -60,16 +71,16 @@ class BloomPass : public GraphicPass
         m_bloomStrength = st;
     }
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                           std::vector<Graphics::SubPassDependency>& dependencies);
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
     void resize_attachments();
 

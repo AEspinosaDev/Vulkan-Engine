@@ -24,7 +24,7 @@ struct Framebuffer {
     Extent2D extent = {0, 0};
     uint32_t layers = 1;
 
-    std::vector<Image> attachmentImages;
+    std::vector<Image*> attachmentImagesPtrs;
 
     void cleanup();
 };

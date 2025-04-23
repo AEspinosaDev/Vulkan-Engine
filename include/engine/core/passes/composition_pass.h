@@ -47,7 +47,7 @@ struct VXGI { // Settings for Voxel Based GI
     uint32_t updateMode        = 0;
 };
 
-class CompositionPass : public GraphicPass
+class CompositionPass : public BaseGraphicPass<10, 2>
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
@@ -73,8 +73,23 @@ class CompositionPass : public GraphicPass
     void create_prev_frame_image();
 
   public:
-    CompositionPass(Graphics::Device* ctx, VkExtent2D extent, ColorFormatType colorFormat, bool isDefault = true)
-        : GraphicPass(ctx, extent, 1, 1, isDefault, "COMPOSITION")
+    /*
+            Input Attachments:
+            -
+            - Lighting
+            - Bright Lighting (HDR)
+
+            Output Attachments:
+            - Lighting
+            - Bright Lighting (HDR)
+
+        */
+    CompositionPass(Graphics::Device*        device,
+                    const PassConfig<10, 2>& config,
+                    VkExtent2D               extent,
+                    ColorFormatType          colorFormat,
+                    bool                     isDefault = true)
+        : BaseGraphicPass(device, config, extent, 1, 1, "COMPOSITION")
         , m_colorFormat(colorFormat) {
     }
 
@@ -109,16 +124,16 @@ class CompositionPass : public GraphicPass
         m_settings.AOtype = op;
     }
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                           std::vector<Graphics::SubPassDependency>& dependencies);
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies);
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     void setup_shader_passes();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene);
 

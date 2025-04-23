@@ -4,21 +4,21 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void EnviromentPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void EnviromentPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
                                        std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::AttachmentInfo(m_format,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              COLOR_ATTACHMENT,
-                                              ASPECT_COLOR,
-                                              TEXTURE_CUBE,
-                                              FILTER_LINEAR,
-                                              ADDRESS_MODE_CLAMP_TO_BORDER);
+    attachments[0] = Graphics::AttachmentConfig(m_format,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                COLOR_ATTACHMENT,
+                                                ASPECT_COLOR,
+                                                TEXTURE_CUBE,
+                                                FILTER_LINEAR,
+                                                ADDRESS_MODE_CLAMP_TO_BORDER);
 
     // Depdencies
     dependencies.resize(1);
@@ -29,8 +29,11 @@ void EnviromentPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&   
     m_isResizeable = false;
 }
 void EnviromentPass::create_framebuffer() {
-    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, m_imageExtent, m_framebufferImageDepth, 0);
-    m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, m_irradianceResolution, m_framebufferImageDepth, 1);
+    std::vector<Graphics::Image*> out1 = {m_outAttachments[0]};
+    std::vector<Graphics::Image*> out2 = {m_outAttachments[1]};
+    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, out1, m_imageExtent, m_framebufferImageDepth, 0);
+    m_framebuffers[1] =
+        m_device->create_framebuffer(m_renderpass, out2, m_irradianceResolution, m_framebufferImageDepth, 1);
 }
 void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
@@ -68,7 +71,7 @@ void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     // Set descriptors writes
     m_descriptorPool.update_descriptor(
-        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
+        m_outAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
     m_descriptorPool.update_descriptor(&m_captureBuffer, BUFFER_SIZE, 0, &m_envDescriptorSet, UNIFORM_BUFFER, 2);
 }
 void EnviromentPass::setup_shader_passes() {
@@ -118,12 +121,12 @@ void EnviromentPass::setup_shader_passes() {
     // TBD
 }
 
-void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void EnviromentPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     if (!scene->get_skybox())
     {
-        if (m_framebuffers[1].attachmentImages[0].currentLayout == LAYOUT_UNDEFINED)
+        if (m_framebuffers[1].attachmentImagesPtrs[0]->currentLayout == LAYOUT_UNDEFINED)
             currentFrame.commandBuffer.pipeline_barrier(
-                m_framebuffers[1].attachmentImages[0], LAYOUT_UNDEFINED, LAYOUT_SHADER_READ_ONLY_OPTIMAL, ACCESS_NONE);
+                *m_framebuffers[1].attachmentImagesPtrs[0], LAYOUT_UNDEFINED, LAYOUT_SHADER_READ_ONLY_OPTIMAL, ACCESS_NONE);
         return;
     }
 
@@ -139,7 +142,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     int panoramaType = static_cast<int>(scene->get_skybox()->get_sky_type());
     cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &panoramaType, sizeof(float));
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /*Draw Diffuse Irradiance*/
@@ -151,7 +154,7 @@ void EnviromentPass::render(Graphics::Frame& currentFrame, Scene* const scene, u
     shaderPass = m_shaderPasses["irr"];
     cmd.bind_shaderpass(*shaderPass);
     cmd.bind_descriptor_set(m_envDescriptorSet, 0, *shaderPass);
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);
 
 jump:
@@ -162,8 +165,8 @@ jump:
         set_active(false);
 }
 
-void EnviromentPass::link_previous_images(std::vector<Graphics::Image> images) {
-    m_descriptorPool.update_descriptor(&images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 3);
+void EnviromentPass::link_input_attachments() {
+    m_descriptorPool.update_descriptor(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 3);
 }
 void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     if (!scene->get_skybox())
@@ -184,15 +187,15 @@ void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
 }
 
 void EnviromentPass::resize_attachments() {
-    GraphicPass::resize_attachments();
+    BaseGraphicPass::resize_attachments();
 
     // Update descriptor of previous framebuffer
     m_descriptorPool.update_descriptor(
-        &m_framebuffers[0].attachmentImages[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
+        m_outAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
 }
 void EnviromentPass::cleanup() {
     m_captureBuffer.cleanup();
-    GraphicPass::cleanup();
+    BaseGraphicPass::cleanup();
 }
 } // namespace Core
 

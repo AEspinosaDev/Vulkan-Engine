@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
                                     std::vector<Graphics::SubPassDependency>& dependencies) {
 
     uint16_t samples      = static_cast<uint16_t>(m_aa);
@@ -13,7 +13,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    at
     attachments.resize(multisampled ? 4 : 2);
 
     attachments[0] =
-        Graphics::AttachmentInfo(m_colorFormat,
+        Graphics::AttachmentConfig(m_colorFormat,
                                  samples,
                                  m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
                                              : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -29,7 +29,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    at
     attachments[0].isDefault = m_isDefault ? (multisampled ? false : true) : false;
 
     // Bright color buffer. m_colorFormat should be in floating point.
-    attachments[1] = Graphics::AttachmentInfo(m_colorFormat,
+    attachments[1] = Graphics::AttachmentConfig(m_colorFormat,
                                               samples,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -40,11 +40,11 @@ void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    at
                                               FILTER_LINEAR,
                                               ADDRESS_MODE_CLAMP_TO_EDGE);
 
-    Graphics::AttachmentInfo resolveAttachment;
+    Graphics::AttachmentConfig resolveAttachment;
     if (multisampled)
     {
         attachments[2] =
-            Graphics::AttachmentInfo(m_colorFormat,
+            Graphics::AttachmentConfig(m_colorFormat,
                                      1,
                                      m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                      LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -55,7 +55,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    at
                                      TEXTURE_2D);
         attachments[2].isDefault = m_isDefault ? true : false;
 
-        attachments[3] = Graphics::AttachmentInfo(m_colorFormat,
+        attachments[3] = Graphics::AttachmentConfig(m_colorFormat,
                                                   1,
                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -67,7 +67,7 @@ void ForwardPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    at
                                                   ADDRESS_MODE_CLAMP_TO_EDGE);
     }
 
-    Graphics::AttachmentInfo depthAttachment = Graphics::AttachmentInfo(m_depthFormat,
+    Graphics::AttachmentConfig depthAttachment = Graphics::AttachmentConfig(m_depthFormat,
                                                                         samples,
                                                                         LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                                                         LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -289,7 +289,7 @@ void ForwardPass::setup_shader_passes() {
     }
 }
 
-void ForwardPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void ForwardPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
@@ -398,17 +398,17 @@ void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
         get_TLAS(scene)->binded = true;
     }
 }
-void ForwardPass::link_previous_images(std::vector<Image> images) {
+void ForwardPass::link_input_attachments() {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
-        m_descriptorPool.update_descriptor(&images[0],
+        m_descriptorPool.update_descriptor(m_inAttachments[0],
 
                                            //   VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                            LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                            &m_descriptors[i].globalDescritor,
                                            2);
-        m_descriptorPool.update_descriptor(&images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-        m_descriptorPool.update_descriptor(&images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+        m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorPool.update_descriptor(m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
     }
 }
 void ForwardPass::setup_material_descriptor(IMaterial* mat) {

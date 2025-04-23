@@ -120,15 +120,19 @@ class Device
                        bool           useMipmaps,
                        VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
-    Framebuffer create_framebuffer(RenderPass& renderpass, Extent2D extent, uint32_t layers = 1, uint32_t id = 0);
-    Framebuffer create_framebuffer(RenderPass& renderpass, Image& img);
+    Framebuffer create_framebuffer(RenderPass&          renderpass,
+                                   std::vector<Image*>& attachments,
+                                   Extent2D             extent,
+                                   uint32_t             layers = 1,
+                                   uint32_t             id     = 0);
+    Framebuffer create_framebuffer(RenderPass& renderpass, Image& attachment);
     Semaphore   create_semaphore();
     Fence       create_fence(bool signaled = true);
     /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
-    RenderPass create_render_pass(std::vector<AttachmentInfo>&    attachments,
+    RenderPass create_render_pass(std::vector<AttachmentConfig>&    attachments,
                                   std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
     DescriptorPool create_descriptor_pool(uint32_t                       maxSets,

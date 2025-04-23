@@ -25,6 +25,7 @@ PenaltyBreakBeforeFirstCallParameter: 0
 PointerAlignment: Left
 AlignTrailingComments: true
 SpaceBeforeParens: ControlStatements
+# SpacesInParens: true
 
 # Brace wrapping options
 BreakBeforeBraces: Custom
@@ -34,3 +35,5 @@ BraceWrapping:
     AfterEnum: true
     SplitEmptyFunction: true
     SplitEmptyRecord: true
+
+

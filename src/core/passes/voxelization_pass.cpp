@@ -7,21 +7,21 @@ namespace Core {
 void VoxelizationPass::create_voxelization_image() {
 
     // Actual Voxel Image
-    m_resourceImages[0].cleanup();
+    m_outAttachments[0]->cleanup();
 
     ImageConfig config = {};
     config.viewType    = TEXTURE_3D;
     config.format      = SRGBA_32F;
     config.usageFlags = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_STORAGE;
     config.mipLevels  = 9;
-    m_resourceImages[0] =
+    *m_outAttachments[0] =
         m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, true);
-    m_resourceImages[0].create_view(config);
+    m_outAttachments[0]->create_view(config);
 
     SamplerConfig samplerConfig      = {};
     samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_BORDER;
     samplerConfig.border             = BorderColor::FLOAT_OPAQUE_BLACK;
-    m_resourceImages[0].create_sampler(samplerConfig);
+    m_outAttachments[0]->create_sampler(samplerConfig);
 
 #ifdef USE_IMG_ATOMIC_OPERATION
     // Auxiliar One Channel Images
@@ -29,31 +29,32 @@ void VoxelizationPass::create_voxelization_image() {
     config.mipLevels         = 1;
     samplerConfig.filters    = FilterType::FILTER_NEAREST;
     samplerConfig.mipmapMode = MipmapMode::MIPMAP_NEAREST;
-    for (size_t i = 1; i < 4; i++)
+    m_interAttachments.resize(4);
+    for (size_t i = 0; i < 3; i++)
     {
 
-        m_resourceImages[i].cleanup();
-        m_resourceImages[i] =
+        m_interAttachments[i].cleanup();
+        m_interAttachments[i] =
             m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config, false);
-        m_resourceImages[i].create_view(config);
-        m_resourceImages[i].create_sampler(samplerConfig);
+        m_interAttachments[i].create_view(config);
+        m_interAttachments[i].create_sampler(samplerConfig);
     }
 #endif
 }
 
-void VoxelizationPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void VoxelizationPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
                                          std::vector<Graphics::SubPassDependency>& dependencies) {
 
     // m_imageExtent = {1, 1};
     attachments.resize(1);
 
-    attachments[0] = Graphics::AttachmentInfo(RGBA_8U,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              COLOR_ATTACHMENT,
-                                              ASPECT_COLOR);
+    attachments[0] = Graphics::AttachmentConfig(RGBA_8U,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                COLOR_ATTACHMENT,
+                                                ASPECT_COLOR);
     create_voxelization_image();
     // Depdencies
     dependencies.resize(2);
@@ -165,10 +166,10 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
                                            3);
         // Voxelization Image
         m_descriptorPool.update_descriptor(
-            &m_resourceImages[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+            m_outAttachments[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
 #ifdef USE_IMG_ATOMIC_OPERATION
         // Voxelization Aux.Images
-        std::vector<Graphics::Image> auxImages = {m_resourceImages[1], m_resourceImages[2], m_resourceImages[3]};
+        std::vector<Graphics::Image> auxImages = {m_interAttachments[0], m_interAttachments[1], m_interAttachments[2]};
         m_descriptorPool.update_descriptor(
             auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
         m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
@@ -210,15 +211,15 @@ void VoxelizationPass::setup_shader_passes() {
 
 #endif
 }
-void VoxelizationPass::link_previous_images(std::vector<Graphics::Image> images) {
+void VoxelizationPass::link_input_attachments() {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // Shadows
         m_descriptorPool.update_descriptor(
-            &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+            m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
     }
 }
-void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void VoxelizationPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
@@ -226,8 +227,18 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
     /*
     PREPARE VOXEL IMAGES TO BE USED IN SHADERS
     */
-    if (m_resourceImages[0].currentLayout == LAYOUT_UNDEFINED)
-        for (Graphics::Image& img : m_resourceImages)
+    if (m_outAttachments[0]->currentLayout == LAYOUT_UNDEFINED)
+    {
+
+        for (Graphics::Image* img : m_outAttachments)
+            cmd.pipeline_barrier(*img,
+                                 LAYOUT_UNDEFINED,
+                                 LAYOUT_GENERAL,
+                                 ACCESS_NONE,
+                                 ACCESS_SHADER_READ,
+                                 STAGE_TOP_OF_PIPE,
+                                 STAGE_FRAGMENT_SHADER);
+        for (Graphics::Image& img : m_interAttachments)
             cmd.pipeline_barrier(img,
                                  LAYOUT_UNDEFINED,
                                  LAYOUT_GENERAL,
@@ -235,12 +246,27 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
                                  ACCESS_SHADER_READ,
                                  STAGE_TOP_OF_PIPE,
                                  STAGE_FRAGMENT_SHADER);
+    }
 
     /*
     CLEAR IMAGES
     */
-    for (Graphics::Image& img : m_resourceImages)
-        cmd.clear_image(img, LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
+    int i = 1;
+    for (Graphics::Image* img : m_outAttachments)
+    {
+        if (i == 1)
+            break;
+        cmd.clear_image(*img, LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
+        i++;
+    }
+    for (Graphics::Image& img : m_interAttachments)
+        cmd.pipeline_barrier(img,
+                             LAYOUT_UNDEFINED,
+                             LAYOUT_GENERAL,
+                             ACCESS_NONE,
+                             ACCESS_SHADER_READ,
+                             STAGE_TOP_OF_PIPE,
+                             STAGE_FRAGMENT_SHADER);
 
     /*
     POPULATE AUXILIAR IMAGES WITH DIRECT IRRADIANCE
@@ -317,7 +343,7 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
     /*
        GENERATE MIPMAPS FOR UPPER IRRADIANCE LEVELS
        */
-    cmd.pipeline_barrier(m_resourceImages[0],
+    cmd.pipeline_barrier(*m_outAttachments[0],
                          LAYOUT_GENERAL,
                          LAYOUT_TRANSFER_DST_OPTIMAL,
                          ACCESS_SHADER_WRITE,
@@ -325,7 +351,7 @@ void VoxelizationPass::render(Graphics::Frame& currentFrame, Scene* const scene,
                          STAGE_COMPUTE_SHADER,
                          STAGE_TRANSFER);
 
-    cmd.generate_mipmaps(m_resourceImages[0], LAYOUT_TRANSFER_DST_OPTIMAL, LAYOUT_GENERAL);
+    cmd.generate_mipmaps(*m_outAttachments[0], LAYOUT_TRANSFER_DST_OPTIMAL, LAYOUT_GENERAL);
 }
 
 void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
@@ -350,8 +376,10 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
     }
 }
 void VoxelizationPass::resize_attachments() {
-    GraphicPass::resize_attachments();
-    for (Graphics::Image& img : m_resourceImages)
+    BaseGraphicPass::resize_attachments();
+    for (Graphics::Image* img : m_outAttachments)
+        img->cleanup();
+    for (Graphics::Image& img : m_interAttachments)
         img.cleanup();
     create_voxelization_image();
 
@@ -359,10 +387,10 @@ void VoxelizationPass::resize_attachments() {
     {
         // Voxelization Image
         m_descriptorPool.update_descriptor(
-            &m_resourceImages[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+            m_outAttachments[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
 #ifdef USE_IMG_ATOMIC_OPERATION
         // Voxelization Aux.Images
-        std::vector<Graphics::Image> auxImages = {m_resourceImages[1], m_resourceImages[2], m_resourceImages[3]};
+        std::vector<Graphics::Image> auxImages = {m_interAttachments[0], m_interAttachments[1], m_interAttachments[2]};
         m_descriptorPool.update_descriptor(
             auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
         m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
@@ -401,10 +429,21 @@ void VoxelizationPass::setup_material_descriptor(IMaterial* mat) {
         }
     }
 }
+
+void VoxelizationPass::create_framebuffer() {
+    std::vector<Graphics::Image*> out = {&m_interAttachments[3]};
+    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, out, m_imageExtent, m_framebufferImageDepth, 0);
+}
+
 void VoxelizationPass::cleanup() {
-    for (Graphics::Image& img : m_resourceImages)
-        img.cleanup();
-    GraphicPass::cleanup();
+    for (Graphics::Image* img : m_outAttachments)
+        img->cleanup();
+
+    for (size_t i = 0; i < m_interAttachments.size(); i++)
+    {
+        m_interAttachments[i].cleanup();
+    }
+    BaseGraphicPass::cleanup();
 }
 } // namespace Core
 

@@ -3,7 +3,7 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
-void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
                                      std::vector<Graphics::SubPassDependency>& dependencies) {
 
     //////////////////////
@@ -12,31 +12,31 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    a
     attachments.resize(6);
 
     // Positions + Depth
-    attachments[0] = Graphics::AttachmentInfo(SRGBA_32F,
+    attachments[0] = Graphics::AttachmentConfig(SRGBA_32F,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Normals
-    attachments[1] = Graphics::AttachmentInfo(SRGBA_32F,
+    attachments[1] = Graphics::AttachmentConfig(SRGBA_32F,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Albedo
-    attachments[2] = Graphics::AttachmentInfo(RGBA_8U,
+    attachments[2] = Graphics::AttachmentConfig(RGBA_8U,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Material
-    attachments[3] = Graphics::AttachmentInfo(RGBA_8U,
+    attachments[3] = Graphics::AttachmentConfig(RGBA_8U,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                               IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
     // Emissive
-    attachments[4] = Graphics::AttachmentInfo(SRGBA_32F,
+    attachments[4] = Graphics::AttachmentConfig(SRGBA_32F,
                                               1,
                                               LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -50,7 +50,7 @@ void GeometryPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    a
     //                                       IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Depth
-    attachments[5] = Graphics::AttachmentInfo(m_depthFormat,
+    attachments[5] = Graphics::AttachmentConfig(m_depthFormat,
                                               1,
                                               LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                               LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -219,7 +219,7 @@ void GeometryPass::setup_shader_passes() {
 
     
 }
-void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
@@ -303,16 +303,16 @@ void GeometryPass::render(Graphics::Frame& currentFrame, Scene* const scene, uin
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 
-void GeometryPass::link_previous_images(std::vector<Graphics::Image> images) {
+void GeometryPass::link_input_attachments() {
 
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         m_descriptorPool.update_descriptor(
-            &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+            m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
         m_descriptorPool.update_descriptor(
-            &images[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+            m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
         m_descriptorPool.update_descriptor(
-            &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 7);
+            m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 7);
     }
 }
 

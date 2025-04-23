@@ -9,9 +9,8 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
     BaseRenderer::on_before_render(scene);
 
     // Set clear color
-    static_cast<Core::GraphicPass*>(m_passes[GEOMETRY_PASS])
-        ->set_attachment_clear_value(
-            {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
+    m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
+        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
 }
 
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
@@ -28,7 +27,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
 
         m_updateShadows = false;
 
-        connect_pass(m_passes[COMPOSITION_PASS]);
+        m_passes[COMPOSITION_PASS]->link_input_attachments();
     }
     if (m_updateGI)
     {
@@ -40,67 +39,67 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
 
         m_updateGI = false;
 
-        connect_pass(m_passes[COMPOSITION_PASS]);
+        m_passes[COMPOSITION_PASS]->link_input_attachments();
     }
 }
 void DeferredRenderer::create_passes() {
     const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
     const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
+    //Create Passes and Attachments pool
+    //--------------------------------
     m_passes.resize(10, nullptr);
+    m_attachments.resize(17, {});
+    
+    // Arrange connectivity
+    //--------------------------------
+    Core::BasePass::attachmentPool = m_attachments;
 
-    // Sky Generation Pass
-    m_passes[SKY_PASS] = new Core::SkyPass(m_device, {1024, 512});
+    Core::PassConfig<0, 1>  skyPassConfig         = {{}, {0}};
+    Core::PassConfig<1, 2>  enviromentPassConfig  = {{0}, {1, 2}};
+    Core::PassConfig<0, 2>  shadowPassConfig      = {{}, {3, 4}};
+    Core::PassConfig<1, 1>  voxelPassConfig       = {{3}, {5}};
+    Core::PassConfig<3, 6>  geometryPassConfig    = {{1, 2, 0}, {6, 7, 8, 9, 10, 11}};
+    Core::PassConfig<2, 1>  preCompPassConfig     = {{6, 7}, {12}};
+    Core::PassConfig<10, 2> compPassConfig        = {{3, 5, 6, 7, 8, 9, 10, 12, 1, 2}, {13, 14}};
+    Core::PassConfig<2, 1>  bloomPassConfig       = {{13, 14}, {15}};
+    Core::PassConfig<1, 1>  toneMappingPassConfig = {{15}, {16}};
+    Core::PassConfig<1, 1>  FXAAPassConfig        = {{16}, {}};
+    toneMappingPassConfig.isDefault               = m_settings.softwareAA ? false : true;
+    FXAAPassConfig.isDefault                      = m_settings.softwareAA;
 
-    // Enviroment Pass
-    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device);
-    m_passes[ENVIROMENT_PASS]->set_image_dependencies({Core::ImageDependency(SKY_PASS, 2, {0})});
+    // Create passes
+    //--------------------------------
+    // m_passes[SKY_PASS]        = Systems::PassFactory::instance().create("MyCustomPass", m_device, &skyPassConfig).get();
 
-    // Shadow Pass
-    m_passes[SHADOW_PASS] =
-        new Core::VarianceShadowPass(m_device, {SHADOW_RES, SHADOW_RES}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
+    m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
+    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
+    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(
+        m_device, shadowPassConfig, {SHADOW_RES, SHADOW_RES}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
 
-    // Voxelization Pass
-    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, 256);
-    m_passes[VOXELIZATION_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0})});
+    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, voxelPassConfig, 256);
 
-    // Geometry Pass
-    m_passes[GEOMETRY_PASS] =
-        new Core::GeometryPass(m_device, m_window->get_extent(), m_settings.colorFormat, m_settings.depthFormat);
-    m_passes[GEOMETRY_PASS]->set_image_dependencies({Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
-                                                     Core::ImageDependency(ENVIROMENT_PASS, 1, {0}),
-                                                     Core::ImageDependency(SKY_PASS, 2, {0})});
+    m_passes[GEOMETRY_PASS] = new Core::GeometryPass(
+        m_device, geometryPassConfig, m_window->get_extent(), m_settings.colorFormat, m_settings.depthFormat);
 
-    // Pre-Composition Pass
-    m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, m_window->get_extent());
-    m_passes[PRECOMPOSITION_PASS]->set_image_dependencies({Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1})});
+    m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, preCompPassConfig, m_window->get_extent());
 
-    // Composition Pass
-    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(m_device, m_window->get_extent(), SRGBA_32F, false);
-    m_passes[COMPOSITION_PASS]->set_image_dependencies({Core::ImageDependency(SHADOW_PASS, 0, {0}),
-                                                        Core::ImageDependency(VOXELIZATION_PASS, {0}),
-                                                        Core::ImageDependency(GEOMETRY_PASS, 0, {0, 1, 2, 3, 4}),
-                                                        Core::ImageDependency(PRECOMPOSITION_PASS, 1, {0}),
-                                                        Core::ImageDependency(ENVIROMENT_PASS, 0, {0}),
-                                                        Core::ImageDependency(ENVIROMENT_PASS, 1, {0})});
+    m_passes[COMPOSITION_PASS] =
+        new Core::CompositionPass(m_device, compPassConfig, m_window->get_extent(), SRGBA_32F, false);
 
-    // Bloom Pass
-    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, m_window->get_extent());
-    m_passes[BLOOM_PASS]->set_image_dependencies({Core::ImageDependency(COMPOSITION_PASS, 0, {0, 1})});
+    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, m_window->get_extent());
 
-    // Tonemapping
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(
-        m_device, m_window->get_extent(), m_settings.colorFormat, m_settings.softwareAA ? false : true);
-    m_passes[TONEMAPPIN_PASS]->set_image_dependencies({Core::ImageDependency(BLOOM_PASS, 0, {0})});
+    m_passes[TONEMAPPIN_PASS] =
+        new Core::TonemappingPass(m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat);
 
-    // FXAA Pass
-    m_passes[FXAA_PASS] = new Core::PostProcessPass(m_device,
-                                                    m_window->get_extent(),
-                                                    m_settings.colorFormat,
-                                                    ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
-                                                    "FXAA",
-                                                    m_settings.softwareAA);
-    m_passes[FXAA_PASS]->set_image_dependencies({Core::ImageDependency(TONEMAPPIN_PASS, 0, {0})});
+    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 1>(m_device,
+                                                          FXAAPassConfig,
+                                                          m_window->get_extent(),
+                                                          m_settings.colorFormat,
+                                                          ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
+                                                          "FXAA");
+    //--------------------------------
+
     if (!m_settings.softwareAA)
         m_passes[FXAA_PASS]->set_active(false);
 }
@@ -131,14 +130,14 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
                 {
                     m_passes[SKY_PASS]->set_extent({HDRi_EXTENT * 2, HDRi_EXTENT});
                     m_passes[SKY_PASS]->resize_attachments();
-                    connect_pass(m_passes[ENVIROMENT_PASS]);
+                    m_passes[ENVIROMENT_PASS]->link_input_attachments();
                 }
 
                 m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
                 m_passes[ENVIROMENT_PASS]->resize_attachments();
 
-                connect_pass(m_passes[GEOMETRY_PASS]);
-                connect_pass(m_passes[COMPOSITION_PASS]);
+                m_passes[GEOMETRY_PASS]->link_input_attachments();
+                m_passes[COMPOSITION_PASS]->link_input_attachments();
             }
         }
     }

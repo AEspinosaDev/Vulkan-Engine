@@ -4,12 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void ShadowPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void ShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
                                    std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] = Graphics::AttachmentInfo(m_depthFormat,
+    attachments[0] = Graphics::AttachmentConfig(m_depthFormat,
                                               1,
                                               LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                               LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -138,7 +138,7 @@ void ShadowPass::setup_shader_passes() {
     m_shaderPasses["shadowLine"] = depthLinePass;
 }
 
-void ShadowPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void ShadowPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;

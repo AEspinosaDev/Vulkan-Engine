@@ -21,7 +21,7 @@ This pass does three things:
 - Performs a second renderpass to compute the diuffuse irradiance cubemap.
 - Performs a third renderpass to compute the specular irradiance cubemap.
 */
-class EnviromentPass : public GraphicPass
+class EnviromentPass : public BaseGraphicPass<1, 2>
 {
     ColorFormatType         m_format;
     Graphics::DescriptorSet m_envDescriptorSet;
@@ -29,8 +29,16 @@ class EnviromentPass : public GraphicPass
     Extent2D                m_irradianceResolution;
 
   public:
-    EnviromentPass(Graphics::Device* ctx)
-        : GraphicPass(ctx, {1, 1}, 2, CUBEMAP_FACES, false)
+    /*
+            
+            Output Attachments:
+            - 
+            - Enviroment Cubemap
+            - Diffuse Irradiance Cubemap
+
+        */
+    EnviromentPass(Graphics::Device* device, const PassConfig<1, 2>& config)
+        : BaseGraphicPass(device, config, {1, 1}, 2, CUBEMAP_FACES, "ENVIROMENT")
         , m_format(SRGBA_32F)
         , m_irradianceResolution({1, 1}) {
     }
@@ -42,8 +50,8 @@ class EnviromentPass : public GraphicPass
         m_irradianceResolution = {res, res};
     }
 
-    void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                           std::vector<Graphics::SubPassDependency>& dependencies);
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies);
 
     void create_framebuffer();
 
@@ -55,9 +63,9 @@ class EnviromentPass : public GraphicPass
 
     void resize_attachments();
 
-    void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    void link_previous_images(std::vector<Graphics::Image> images);
+    void link_input_attachments();
 
     void cleanup();
 };

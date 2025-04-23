@@ -117,12 +117,14 @@ void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, V
     VkRenderPassBeginInfo renderPassInfo = Init::renderpass_begin_info(renderpass.handle, fbo.extent, fbo.handle);
 
     std::vector<VkClearValue> clearValues;
-    clearValues.reserve(renderpass.attachmentsInfo.size());
+    clearValues.reserve(renderpass.attachmentsConfig.size());
 
-    for (size_t i = 0; i < renderpass.attachmentsInfo.size(); i++)
+    for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
     {
-        fbo.attachmentImages[i].currentLayout = renderpass.attachmentsInfo[i].initialLayout;
-        clearValues.push_back(renderpass.attachmentsInfo[i].clearValue);
+        fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].initialLayout;
+        clearValues.push_back( fbo.attachmentImagesPtrs[i]->clearValue);
+        // clearValues.push_back( renderpass.attachmentsConfig[i].imageConfig.clearValue);
+        
     }
 
     renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
@@ -131,9 +133,9 @@ void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, V
     vkCmdBeginRenderPass(handle, &renderPassInfo, subpassContents);
 }
 void CommandBuffer::end_renderpass(RenderPass& renderpass, Framebuffer& fbo) {
-    for (size_t i = 0; i < fbo.attachmentImages.size(); i++)
+    for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
     {
-        fbo.attachmentImages[i].currentLayout = renderpass.attachmentsInfo[i].finalLayout;
+        fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].finalLayout;
     }
     vkCmdEndRenderPass(handle);
 }

@@ -26,10 +26,20 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+#pragma region Config
 /*
-Data containing a dependicy image's location belonging to a previows pass
+Pass config
 */
-struct ImageDependency;
+template <std::size_t numberIN, std::size_t numberOUT> struct PassConfig {
+    // Connectivity Info
+    std::array<uint32_t, numberIN>  inAttachmentsIdx;
+    std::array<uint32_t, numberOUT> outAttachmentsIdx;
+    // Basic params
+    bool resizeable = true;
+    bool enabled    = true;
+    bool isDefault  = false;
+    bool graphical  = true;
+};
 
 /*
 Core abstract class needed for a renderer to work.
@@ -37,8 +47,6 @@ It controls the flow of the renderer state, what information and how it is being
 rendered/computed.
 It can be inherited for full user control over the render/compute pipeline.
 */
-class BasePass;
-typedef BasePass ComputePass; // Sintax for passes focused on GPGPU
 class BasePass
 {
   protected:
@@ -46,14 +54,16 @@ class BasePass
     Graphics::Device*                                          m_device         = nullptr;
     Graphics::DescriptorPool                                   m_descriptorPool = {};
     std::unordered_map<std::string, Graphics::BaseShaderPass*> m_shaderPasses;
-    // In case is not graphical or need auxiliar data, other graphic data can be stored onto these images
-    std::vector<Graphics::Image> m_resourceImages;
 
-    Extent2D                     m_imageExtent;
-    std::string                  m_name;
-    std::vector<ImageDependency> m_imageDependencies; // Previous passes image dependency list
+    // Attachment Images
+    std::vector<Graphics::Image*> m_inAttachments;
+    std::vector<Graphics::Image>  m_interAttachments; // Intermidiate (internal)
+    std::vector<Graphics::Image*> m_outAttachments;
 
-    // Query
+    // Params
+    Extent2D    m_imageExtent;
+    std::string m_name;
+    // Query params
     bool m_initiatized  = false;
     bool m_isResizeable = true;
     bool m_enabled      = true;
@@ -63,13 +73,30 @@ class BasePass
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) = 0;
     virtual void setup_shader_passes()                                = 0;
 
-  public:
-    BasePass(Graphics::Device* ctx, Extent2D extent, bool isDefault = false, std::string name = "UNNAMED PASS")
-        : m_device(ctx)
-        , m_isDefault(isDefault)
-        , m_name(name)
-        , m_imageExtent(extent) {
+    template <std::size_t numberIN, std::size_t numberOUT>
+    inline void store_attachments(PassConfig<numberIN, numberOUT> config) {
+
+        // Populate pass attachments vector from the attachment pool given their idx
+        m_inAttachments.resize(config.inAttachmentsIdx.size(), nullptr);
+        m_outAttachments.resize(config.outAttachmentsIdx.size(), nullptr);
+        for (size_t i = 0; i < config.inAttachmentsIdx.size(); i++)
+        {
+            m_inAttachments[i] = &BasePass::attachmentPool[config.inAttachmentsIdx[i]];
+        }
+        for (size_t i = 0; i < config.outAttachmentsIdx.size(); i++)
+        {
+            m_outAttachments[i] = &BasePass::attachmentPool[config.outAttachmentsIdx[i]];
+        }
     }
+
+  public:
+    BasePass(Graphics::Device* device,
+             Extent2D          extent,
+             bool              isGraphical,
+             bool              isResizeable,
+             bool              isDefault,
+             std::string       name = "UNNAMED PASS");
+
     virtual ~BasePass() {
     }
 
@@ -96,7 +123,7 @@ class BasePass
         m_isResizeable = op;
     }
     /**
-     * Check if its the renderpass that directly renders onto the backbuffer
+     * Check if its the pass that directly renders onto the backbuffer (swapchain)
      * (swapchain present image).
      */
     inline bool default_pass() const {
@@ -112,60 +139,37 @@ class BasePass
     inline std::unordered_map<std::string, Graphics::ShaderPass*> const get_shaderpasses() const {
         return m_shaderPasses;
     }
-    /*
-    Sets a vector of depedencies with different passes.
-    */
-    inline void set_image_dependencies(std::vector<ImageDependency> dependencies) {
-        m_imageDependencies = dependencies;
+    inline std::vector<Graphics::Image*> get_output_attachments() const {
+        return m_outAttachments;
     }
-    inline std::vector<ImageDependency> get_image_dependencies() const {
-        return m_imageDependencies;
+    inline std::vector<Graphics::Image*> get_input_attachments() const {
+        return m_inAttachments;
     }
-    inline std::vector<Graphics::Image> const get_resource_images() const {
-        return m_resourceImages;
+    inline void set_attachment_clear_value(ClearValue value, size_t attachmentIdx = 0) {
+        m_outAttachments[attachmentIdx]->clearValue = value;
     }
 
 #pragma endregion
 #pragma region Core Functions
-    /*
-    Setups de renderpass. Init, create framebuffers, pipelines and resources ...
-    */
     virtual void setup(std::vector<Graphics::Frame>& frames);
 
-    virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) = 0;
+    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) = 0;
 
     virtual void update_uniforms(uint32_t frameIndex, Scene* const scene) {
     }
     virtual void resize_attachments() {
     }
-    virtual void link_previous_images(std::vector<Graphics::Image> images) {
+    virtual void link_input_attachments() {
     }
     virtual void cleanup();
 #pragma endregion
+    /*
+       Public static member.
+       Vignette for rendering textures onto screen. (only if graphical)*/
+    static Core::Geometry*              vignette;
+    static std::vector<Graphics::Image> attachmentPool;
 };
 
-#pragma region IMAGE DEP
-
-struct ImageDependency {
-    uint32_t passID = 0; // The pass that produces this image
-    uint32_t fboID  = 0; // The FBO within the pass that produces this image
-    bool isFBO = true;   // If set to false, It will take the attachments from the pass resourceImages (Useful if not a
-                         // graphical pass).
-    std::vector<uint32_t> attachmentIDs; // The attachment indeces within the FBO
-
-    ImageDependency(uint32_t passId, u_int fboId, std::vector<uint32_t> attachmentIds)
-        : passID(passId)
-        , fboID(fboId)
-        , attachmentIDs(attachmentIds) {
-    }
-    ImageDependency(uint32_t passId, std::vector<uint32_t> attachmentIds)
-        : passID(passId)
-        , attachmentIDs(attachmentIds)
-        , isFBO(false) {
-    }
-};
-
-#pragma endregion
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -17,7 +17,8 @@ namespace Core {
 Generic Postprocess Pass. It recieves an image from a previous pass and performs a postptocess task defined by a shader
 on it. Can be inherited.
 */
-class PostProcessPass : public GraphicPass
+template <std::size_t numberIN, std::size_t numberOUT>
+class PostProcessPass : public BaseGraphicPass<numberIN, numberOUT>
 {
   protected:
     ColorFormatType         m_colorFormat;
@@ -25,30 +26,137 @@ class PostProcessPass : public GraphicPass
     std::string             m_shaderPath;
 
   public:
-    PostProcessPass(Graphics::Device* ctx,
-                    Extent2D          extent,
-                    ColorFormatType   colorFormat,
-                    std::string       shaderPath,
-                    std::string       name      = "POST-PROCESS",
-                    bool              isDefault = true)
-        : GraphicPass(ctx, extent, 1, 1, isDefault, name)
+    PostProcessPass(Graphics::Device*                      device,
+                    const PassConfig<numberIN, numberOUT>& config,
+                    Extent2D                               extent,
+                    ColorFormatType                        colorFormat,
+                    std::string                            shaderPath,
+                    std::string                            name = "POST-PROCESS")
+        : BaseGraphicPass<numberIN, numberOUT>(device, config, extent, 1, 1, name)
         , m_colorFormat(colorFormat)
         , m_shaderPath(shaderPath) {
     }
 
-    virtual void setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
-                                   std::vector<Graphics::SubPassDependency>& dependencies);
+    virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                                       std::vector<Graphics::SubPassDependency>& dependencies);
 
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
     virtual void setup_shader_passes();
 
-    virtual void render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
 
-    virtual void link_previous_images(std::vector<Graphics::Image> images);
-
-   
+    virtual void link_input_attachments();
 };
+
+#pragma region Implementation
+
+template <std::size_t numberIN, std::size_t numberOUT>
+void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(
+    std::vector<Graphics::AttachmentConfig>&  attachments,
+    std::vector<Graphics::SubPassDependency>& dependencies) {
+
+    attachments.resize(1);
+
+    attachments[0] =
+        Graphics::AttachmentConfig(m_colorFormat,
+                                   1,
+                                   this->m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                                     : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                   COLOR_ATTACHMENT,
+                                   ASPECT_COLOR,
+                                   TEXTURE_2D,
+                                   FILTER_LINEAR,
+                                   ADDRESS_MODE_CLAMP_TO_EDGE);
+
+    attachments[0].isDefault = this->m_isDefault ? true : false;
+
+    // Depdencies
+    if (!this->m_isDefault)
+    {
+        dependencies.resize(2);
+
+        dependencies[0] = Graphics::SubPassDependency(
+            STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0].srcAccessMask   = ACCESS_SHADER_READ;
+        dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
+        dependencies[1] =
+            Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+        dependencies[1].srcAccessMask   = ACCESS_COLOR_ATTACHMENT_WRITE;
+        dependencies[1].srcSubpass      = 0;
+        dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
+        dependencies[1].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
+    } else
+    {
+        dependencies.resize(1);
+
+        // dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        dependencies[0] = Graphics::SubPassDependency(
+            STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
+    }
+}
+template <std::size_t numberIN, std::size_t numberOUT>
+void PostProcessPass<numberIN, numberOUT>::setup_uniforms(std::vector<Graphics::Frame>& frames) {
+    // Init and configure local descriptors
+    this->m_descriptorPool = this->m_device->create_descriptor_pool(1, 1, 1, 1, 1);
+
+    Graphics::LayoutBinding outputTextureBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    this->m_descriptorPool.set_layout(GLOBAL_LAYOUT, {outputTextureBinding});
+
+    this->m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &this->m_imageDescriptorSet);
+}
+template <std::size_t numberIN, std::size_t numberOUT>
+void PostProcessPass<numberIN, numberOUT>::setup_shader_passes() {
+
+    Graphics::GraphicShaderPass* ppPass = new Graphics::GraphicShaderPass(
+        this->m_device->get_handle(), this->m_renderpass, this->m_imageExtent, this->m_shaderPath);
+    ppPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
+    ppPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
+                                               {NORMAL_ATTRIBUTE, false},
+                                               {UV_ATTRIBUTE, true},
+                                               {TANGENT_ATTRIBUTE, false},
+                                               {COLOR_ATTRIBUTE, false}};
+
+    ppPass->build_shader_stages();
+    ppPass->build(this->m_descriptorPool);
+
+    this->m_shaderPasses["pp"] = ppPass;
+}
+template <std::size_t numberIN, std::size_t numberOUT>
+void PostProcessPass<numberIN, numberOUT>::execute(Graphics::Frame& currentFrame,
+                                                   Scene* const     scene,
+                                                   uint32_t         presentImageIndex) {
+    PROFILING_EVENT()
+
+    Graphics::CommandBuffer cmd = currentFrame.commandBuffer;
+    cmd.begin_renderpass(this->m_renderpass, this->m_framebuffers[this->m_isDefault ? presentImageIndex : 0]);
+    cmd.set_viewport(this->m_imageExtent);
+
+    Graphics::ShaderPass* shaderPass = this->m_shaderPasses["pp"];
+
+    cmd.bind_shaderpass(*shaderPass);
+    cmd.bind_descriptor_set(m_imageDescriptorSet, 0, *shaderPass);
+
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
+
+    // Draw gui contents
+    if (this->m_isDefault && Graphics::Frame::guiEnabled)
+        cmd.draw_gui_data();
+
+    cmd.end_renderpass(this->m_renderpass, this->m_framebuffers[this->m_isDefault ? presentImageIndex : 0]);
+}
+template <std::size_t numberIN, std::size_t numberOUT>
+void PostProcessPass<numberIN, numberOUT>::link_input_attachments() {
+    uint32_t i = 0;
+    for (Graphics::Image* img : this->m_inAttachments)
+    {
+        this->m_descriptorPool.update_descriptor(img, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, i);
+        i++;
+    }
+}
 
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

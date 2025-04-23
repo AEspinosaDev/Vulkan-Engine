@@ -19,12 +19,12 @@ void CompositionPass::create_prev_frame_image() {
     samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
     m_prevFrame.create_sampler(samplerConfig);
 }
-void CompositionPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&    attachments,
+void CompositionPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
                                         std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(m_isDefault ? 1 : 2);
 
-    attachments[0] = Graphics::AttachmentInfo(
+    attachments[0] = Graphics::AttachmentConfig(
         m_colorFormat,
         1,
         LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -40,7 +40,7 @@ void CompositionPass::setup_attachments(std::vector<Graphics::AttachmentInfo>&  
     attachments[0].isDefault = m_isDefault ? true : false;
 
     if (!m_isDefault) // Bright color buffer. m_colorFormat should be in floating point.
-        attachments[1] = Graphics::AttachmentInfo(m_colorFormat,
+        attachments[1] = Graphics::AttachmentConfig(m_colorFormat,
                                                   1,
                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -169,7 +169,7 @@ void CompositionPass::setup_shader_passes() {
     m_shaderPasses["composition"] = compPass;
 }
 
-void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
+void CompositionPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     CommandBuffer cmd = currentFrame.commandBuffer;
@@ -195,7 +195,7 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].gBufferDescritor, 1, *shaderPass);
 
-    cmd.draw_geometry(*get_VAO(GraphicPass::vignette));
+    cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     // Draw gui contents
     if (m_isDefault && Frame::guiEnabled)
@@ -214,11 +214,11 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
                          STAGE_FRAGMENT_SHADER,
                          STAGE_TRANSFER);
 
-    cmd.blit_image(m_framebuffers[0].attachmentImages[0], m_prevFrame, FILTER_NEAREST);
+    cmd.blit_image(*m_outAttachments[0], m_prevFrame, FILTER_NEAREST);
 
     // m_prevFrame.generate_mipmaps(cmd.handle);
 
-    cmd.pipeline_barrier(m_framebuffers[0].attachmentImages[0],
+    cmd.pipeline_barrier(*m_outAttachments[0],
                          LAYOUT_TRANSFER_SRC_OPTIMAL,
                          m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                          ACCESS_TRANSFER_READ,
@@ -234,33 +234,33 @@ void CompositionPass::render(Graphics::Frame& currentFrame, Scene* const scene, 
                          STAGE_TRANSFER,
                          STAGE_FRAGMENT_SHADER);
 }
-void CompositionPass::link_previous_images(std::vector<Graphics::Image> images) {
+void CompositionPass::link_input_attachments() {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // SHADOWS
         m_descriptorPool.update_descriptor(
-            &images[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+            m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
         // VOXELIZATION
-        m_descriptorPool.update_descriptor(&images[1], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
+        m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
         // SET UP G-BUFFER
         m_descriptorPool.update_descriptor(
-            &images[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
+            m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
         m_descriptorPool.update_descriptor(
-            &images[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
+            m_inAttachments[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
         m_descriptorPool.update_descriptor(
-            &images[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 2);
+            m_inAttachments[4], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 2);
         m_descriptorPool.update_descriptor(
-            &images[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
+            m_inAttachments[5], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 3);
         m_descriptorPool.update_descriptor(
-            &images[6], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
+            m_inAttachments[6], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 4);
         // SSAO
         m_descriptorPool.update_descriptor(
-            &images[7], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 5);
+            m_inAttachments[7], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 5);
         // ENVIROMENT
         m_descriptorPool.update_descriptor(
-            &images[8], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+            m_inAttachments[8], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
         m_descriptorPool.update_descriptor(
-            &images[9], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+            m_inAttachments[9], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
         // PREV FRAME
         m_descriptorPool.update_descriptor(
             &m_prevFrame, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 6);
@@ -280,13 +280,13 @@ void CompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
 
 
 void CompositionPass::resize_attachments() {
-    GraphicPass::resize_attachments();
+    BaseGraphicPass::resize_attachments();
     create_prev_frame_image();
 }
 
 void CompositionPass::cleanup() {
     m_prevFrame.cleanup();
-    GraphicPass::cleanup();
+    BaseGraphicPass::cleanup();
 }
 
 } // namespace Core

@@ -337,7 +337,7 @@ sudo apt-get install libxcursor-dev
 sudo apt-get install libxi-dev
    ```
 
-This uses x11 backend, if you want to use Wayland install Wayland depedencies.
+This uses x11 as windowing system, if you want to use Wayland install Wayland depedencies.
 
 After that, follow these steps:
 
