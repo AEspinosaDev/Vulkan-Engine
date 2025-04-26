@@ -197,10 +197,6 @@ void CompositionPass::execute(Graphics::Frame& currentFrame, Scene* const scene,
 
     cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
-    // Draw gui contents
-    if (m_isDefault && Frame::guiEnabled)
-        cmd.draw_gui_data();
-
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
     /////////////////////////////////////////

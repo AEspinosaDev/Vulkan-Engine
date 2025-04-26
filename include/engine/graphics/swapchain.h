@@ -55,7 +55,7 @@ class Swapchain
     inline VkSurfaceKHR& get_surface() {
         return m_surface;
     }
-    inline VkFormat& get_image_format() {
+    inline VkFormat get_image_format() {
         return m_presentFormat;
     }
     inline std::vector<Image>& get_present_images() {

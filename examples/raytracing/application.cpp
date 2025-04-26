@@ -37,7 +37,7 @@ void Application::run(int argc, char* argv[]) {
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    settings.softwareAA       = true;
+    settings.softwareAA       = SoftwareAA::FXAA;
 
     init(settings);
     while (!m_window->get_window_should_close())

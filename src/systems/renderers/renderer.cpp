@@ -196,8 +196,8 @@ void BaseRenderer::init_gui() {
         m_window->get_handle(windowHandle);
         m_device->init_imgui(windowHandle,
                              m_window->get_windowing_system(),
-                             static_cast<Core::BaseGraphicPass<1, 0>*>(defaultPass)->get_renderpass(),
-                             static_cast<Core::BaseGraphicPass<1, 0>*>(defaultPass)
+                             static_cast<Core::BaseGraphicPass*>(defaultPass)->get_renderpass(),
+                             static_cast<Core::BaseGraphicPass*>(defaultPass)
                                  ->get_renderpass()
                                  .attachmentsConfig[0]
                                  .imageConfig.samples);

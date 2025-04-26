@@ -122,9 +122,8 @@ void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, V
     for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
     {
         fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].initialLayout;
-        clearValues.push_back( fbo.attachmentImagesPtrs[i]->clearValue);
+        clearValues.push_back(fbo.attachmentImagesPtrs[i]->clearValue);
         // clearValues.push_back( renderpass.attachmentsConfig[i].imageConfig.clearValue);
-        
     }
 
     renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
@@ -176,6 +175,8 @@ void CommandBuffer::bind_shaderpass(ShaderPass& pass) {
         break;
     case RT_QUEUE:
         vkCmdBindPipeline(handle, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pass.pipeline);
+        break;
+    default:
         break;
     }
 }

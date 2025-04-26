@@ -21,7 +21,7 @@ Transmittance LUT is based on "Precomputed Atmospheric Scattering" by Eric Brune
 
 Implementation by Fernando García Liñán 2023
 */
-class SkyPass : public BaseGraphicPass<0, 1>
+class SkyPass : public BaseGraphicPass
 {
   protected:
     Graphics::DescriptorSet m_imageDescriptor;
@@ -52,25 +52,26 @@ class SkyPass : public BaseGraphicPass<0, 1>
   public:
     /*
           Output Attachments:
-          - 
+          -
           - Sky Cubemap
       */
-    SkyPass(Graphics::Device* device, const PassConfig<0, 1>& config, Extent2D extent)
-        : BaseGraphicPass(device, config, extent, 3, 1, "SKY GENERATION") {
+    SkyPass(Graphics::Device* device, const PassLinkage<0, 1>& config, Extent2D extent)
+        : BaseGraphicPass(device, extent, 3, 1, false, false, "SKY GENERATION") {
+        BasePass::store_attachments<0, 1>(config);
     }
 
     void create_framebuffer();
 
     virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                       std::vector<Graphics::SubPassDependency>& dependencies);
+                                       std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames);
+    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    virtual void setup_shader_passes();
+    virtual void setup_shader_passes() override;
 
-    virtual void resize_attachments();
+    virtual void resize_attachments() override;
 
-    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 };
 
 } // namespace Core

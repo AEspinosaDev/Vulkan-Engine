@@ -9,10 +9,11 @@
 #include <engine/core/passes/geometry_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/precomposition_pass.h>
+#include <engine/core/passes/sky_pass.h>
 #include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/core/passes/voxelization_pass.h>
-#include <engine/core/passes/sky_pass.h>
+#include <engine/core/passes/gui_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -26,7 +27,7 @@ class DeferredRenderer : public BaseRenderer
   protected:
     enum RendererPasses
     {
-        SKY_PASS            = 0, 
+        SKY_PASS            = 0,
         ENVIROMENT_PASS     = 1,
         SHADOW_PASS         = 2,
         VOXELIZATION_PASS   = 3,
@@ -36,6 +37,7 @@ class DeferredRenderer : public BaseRenderer
         BLOOM_PASS          = 7,
         TONEMAPPIN_PASS     = 8,
         FXAA_PASS           = 9,
+        GUI_PASS            = 10,
     };
 
     // Graphic Settings

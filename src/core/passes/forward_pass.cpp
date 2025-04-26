@@ -369,10 +369,6 @@ void ForwardPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uin
         }
     }
 
-    // Draw gui contents
-    if (m_isDefault && Frame::guiEnabled)
-        cmd.draw_gui_data();
-
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 }
 

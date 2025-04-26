@@ -30,8 +30,7 @@ void BasePass::setup(std::vector<Graphics::Frame>& frames) {
     setup_shader_passes();
 }
 void BasePass::cleanup() {
-    if (!m_initiatized)
-        return;
+    CHECK_INITIALIZATION()
     for (auto pair : m_shaderPasses)
     {
         ShaderPass* pass = pair.second;

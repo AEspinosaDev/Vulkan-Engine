@@ -5,8 +5,10 @@
 #include <engine/core/passes/enviroment_pass.h>
 #include <engine/core/passes/forward_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
+#include <engine/core/passes/sky_pass.h>
 #include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
+#include <engine/core/passes/gui_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -22,12 +24,14 @@ class ForwardRenderer : public BaseRenderer
 
     enum RendererPasses
     {
-        ENVIROMENT_PASS = 0,
-        SHADOW_PASS     = 1,
-        FORWARD_PASS    = 2,
-        BLOOM_PASS      = 3,
-        TONEMAPPIN_PASS = 4,
-        FXAA_PASS       = 5,
+        SKY_PASS        = 0,
+        ENVIROMENT_PASS = 1,
+        SHADOW_PASS     = 2,
+        FORWARD_PASS    = 3,
+        BLOOM_PASS      = 4,
+        TONEMAPPIN_PASS = 5,
+        FXAA_PASS       = 6,
+        GUI_PASS        = 7
     };
 
     ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;

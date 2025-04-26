@@ -36,7 +36,7 @@ Pre-composition pass called before the Composition (Lighting) pass in a deferred
 SSAO and other lighting effects, such as blurring raytraced shadows by bilinear filering them, in order to be used in
 future lighting passes.
 */
-class PreCompositionPass : public BaseGraphicPass<2, 1>
+class PreCompositionPass : public BaseGraphicPass
 {
     /*Descriptors*/
     struct FrameDescriptors {
@@ -65,8 +65,9 @@ class PreCompositionPass : public BaseGraphicPass<2, 1>
             - SSAO + RT
 
         */
-    PreCompositionPass(Graphics::Device* device, const PassConfig<2, 1>& config, VkExtent2D extent)
-        : BaseGraphicPass(device, config, extent, 2, 1, "PRE-COMPOSITION") {
+    PreCompositionPass(Graphics::Device* device, const PassLinkage<2, 1>& config, VkExtent2D extent)
+        : BaseGraphicPass(device, extent, 2, 1, true, false, "PRE-COMPOSITION") {
+        BasePass::store_attachments<2, 1>(config);
     }
 
     inline void set_SSAO_settings(AO settings) {
@@ -79,21 +80,21 @@ class PreCompositionPass : public BaseGraphicPass<2, 1>
     };
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies);
+                               std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    void create_framebuffer();
+    void create_framebuffer() override;
 
-    void setup_uniforms(std::vector<Graphics::Frame>& frames);
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    void setup_shader_passes();
+    void setup_shader_passes() override;
 
-    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 
-    void link_input_attachments();
+    void link_input_attachments() override;
 
-    void update_uniforms(uint32_t frameIndex, Scene* const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene) override;
 
-    void cleanup();
+    void cleanup() override;
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

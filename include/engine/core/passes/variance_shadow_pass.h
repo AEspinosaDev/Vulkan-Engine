@@ -14,7 +14,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-class VarianceShadowPass : public BaseGraphicPass<0, 2>
+class VarianceShadowPass : public BaseGraphicPass
 {
     /* Config  */
     ColorFormatType m_format = SRG_32F;
@@ -36,23 +36,24 @@ class VarianceShadowPass : public BaseGraphicPass<0, 2>
                - Depth 2D Array
 
            */
-    VarianceShadowPass(Graphics::Device*       device,
-                       const PassConfig<0, 2>& config,
-                       Extent2D                extent,
-                       uint32_t                numLights,
-                       ColorFormatType         depthFormat)
-        : BaseGraphicPass(device, config, extent, 1, numLights, "SHADOWS")
+    VarianceShadowPass(Graphics::Device*        device,
+                       const PassLinkage<0, 2>& config,
+                       Extent2D                 extent,
+                       uint32_t                 numLights,
+                       ColorFormatType          depthFormat)
+        : BaseGraphicPass(device, extent, 1, numLights, false, false, "SHADOWS")
         , m_depthFormat(depthFormat) {
+        BasePass::store_attachments<0, 2>(config);
     }
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies);
+                               std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    void setup_uniforms(std::vector<Graphics::Frame>& frames);
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    void setup_shader_passes();
+    void setup_shader_passes() override;
 
-    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 };
 
 } // namespace Core

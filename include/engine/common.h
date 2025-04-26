@@ -64,15 +64,15 @@
 
 #define _LOG(msg)                                                                                                      \
     {                                                                                                                  \
-        std::cout << "[VKEngine Log] " << msg << std::endl;                                                             \
+        std::cout << "[VKEngine Log] " << msg << std::endl;                                                            \
     }
 #define DEBUG_LOG(msg)                                                                                                 \
     {                                                                                                                  \
-        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                           \
+        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                          \
     }
 #define ERR_LOG(msg)                                                                                                   \
     {                                                                                                                  \
-        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                           \
+        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                          \
     }
 #define VK_CHECK(x)                                                                                                    \
     do                                                                                                                 \
@@ -183,7 +183,12 @@ enum class ShadowResolution
     HIGH     = 2048,
     ULTRA    = 4096
 };
-
+enum class SoftwareAA
+{
+    NONE = 0,
+    FXAA = 1,
+    TAA  = 2
+};
 enum class SyncType
 {
     NONE             = 0, // No framerate cap (POTENTIAL TEARING)

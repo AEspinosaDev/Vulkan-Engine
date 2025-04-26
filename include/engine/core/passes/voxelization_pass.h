@@ -21,7 +21,7 @@ namespace Core {
 Performs an voxelization of the direct irradiance of the scene. For setting the edges of the volume it takes into
 account the AABB of the scene.
 */
-class VoxelizationPass : public BaseGraphicPass<1, 1>
+class VoxelizationPass : public BaseGraphicPass
 {
 #ifdef USE_IMG_ATOMIC_OPERATION
     const uint16_t RESOURCE_IMAGES = 4;
@@ -51,28 +51,29 @@ class VoxelizationPass : public BaseGraphicPass<1, 1>
                  - VoxeiLzed Irradiance (Texture 3D)
 
              */
-    VoxelizationPass(Graphics::Device* device, const PassConfig<1, 1>& config, uint32_t resolution)
-        : BaseGraphicPass(device, config, {resolution, resolution}, 1, 1, "VOXELIZATION") {
+    VoxelizationPass(Graphics::Device* device, const PassLinkage<1, 1>& config, uint32_t resolution)
+        : BaseGraphicPass(device, {resolution, resolution}, 1, 1, false, false, "VOXELIZATION") {
+        BasePass::store_attachments<1, 1>(config);
     }
 
-    void create_framebuffer();
+    void create_framebuffer() override;
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies);
+                               std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    void setup_uniforms(std::vector<Graphics::Frame>& frames);
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    void setup_shader_passes();
+    void setup_shader_passes() override;
 
-    void link_input_attachments();
+    void link_input_attachments() override;
 
-    void update_uniforms(uint32_t frameIndex, Scene* const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene) override;
 
-    void resize_attachments();
+    void resize_attachments() override;
 
-    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 
-    void cleanup();
+    void cleanup() override;
 };
 
 } // namespace Core

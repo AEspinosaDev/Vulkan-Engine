@@ -33,7 +33,7 @@ framebuffers. It controls the flow of the renderer state, what information and h
 access to the framebuffers containing the rendered data. It can be inherited for full user control over the render
 pipeline.
 */
-template <std::size_t numberIN, std::size_t numberOUT> class BaseGraphicPass : public BasePass
+class BaseGraphicPass : public BasePass
 {
   protected:
     Graphics::RenderPass               m_renderpass = {};
@@ -44,17 +44,17 @@ template <std::size_t numberIN, std::size_t numberOUT> class BaseGraphicPass : p
                                        std::vector<Graphics::SubPassDependency>& dependencies) = 0;
 
   public:
-    BaseGraphicPass(Graphics::Device*                      device,
-                    const PassConfig<numberIN, numberOUT>& config,
-                    Extent2D                               extent,
-                    uint32_t                               framebufferCount = 1,
-                    uint32_t                               framebufferDepth = 1,
-                    std::string                            name             = "GRAPHIC PASS")
+    BaseGraphicPass(Graphics::Device* device,
+                    Extent2D          extent,
+                    uint32_t          framebufferCount = 1,
+                    uint32_t          framebufferDepth = 1,
+                    bool              isResizeable     = true,
+                    bool              isDefault        = false,
+                    std::string       name             = "GRAPHIC PASS")
 
-        : BasePass(device, extent, config.graphical, config.resizeable, config.isDefault, name)
+        : BasePass(device, extent, true, isResizeable, isDefault, name)
         , m_framebufferImageDepth(framebufferDepth) {
-        BasePass::store_attachments<numberIN, numberOUT>(config);
-        !config.isDefault ? m_framebuffers.resize(framebufferCount)
+        !isDefault ? m_framebuffers.resize(framebufferCount)
                           : m_framebuffers.resize(device->get_swapchain().get_present_images().size());
     }
     virtual ~BaseGraphicPass() {
@@ -91,65 +91,6 @@ template <std::size_t numberIN, std::size_t numberOUT> class BaseGraphicPass : p
 
 #pragma endregion
 };
-
-#pragma region Implementation
-
-template <std::size_t numberIN, std::size_t numberOUT>
-void BaseGraphicPass<numberIN, numberOUT>::setup(std::vector<Graphics::Frame>& frames) {
-    std::vector<Graphics::AttachmentConfig>  attachments;
-    std::vector<Graphics::SubPassDependency> dependencies;
-    setup_out_attachments(attachments, dependencies);
-
-    if (!attachments.empty())
-    {
-        m_renderpass = m_device->create_render_pass(attachments, dependencies);
-        m_renderpass.set_debug_name(m_name.c_str());
-    } else
-        m_isGraphical = false;
-    m_initiatized = true;
-
-    create_framebuffer();
-    setup_uniforms(frames);
-    setup_shader_passes();
-}
-template <std::size_t numberIN, std::size_t numberOUT> void BaseGraphicPass<numberIN, numberOUT>::cleanup() {
-    m_renderpass.cleanup();
-    clean_framebuffer();
-    BasePass::cleanup();
-}
-template <std::size_t numberIN, std::size_t numberOUT> void BaseGraphicPass<numberIN, numberOUT>::create_framebuffer() {
-    if (!m_initiatized)
-        return;
-
-    for (size_t fb = 0; fb < m_framebuffers.size(); fb++)
-    {
-        m_framebuffers[fb] =
-            m_device->create_framebuffer(m_renderpass, m_outAttachments, m_imageExtent, m_framebufferImageDepth, fb);
-    }
-}
-template <std::size_t numberIN, std::size_t numberOUT> void BaseGraphicPass<numberIN, numberOUT>::clean_framebuffer() {
-    if (!m_initiatized)
-        return;
-    for (Graphics::Framebuffer& fb : m_framebuffers)
-        fb.cleanup();
-
-    for (size_t i = 0; i < m_interAttachments.size(); i++)
-    {
-        m_interAttachments[i].cleanup();
-    }
-
-    for (size_t i = 0; i < m_outAttachments.size(); i++)
-    {
-        m_outAttachments[i]->cleanup();
-    }
-}
-template <std::size_t numberIN, std::size_t numberOUT> void BaseGraphicPass<numberIN, numberOUT>::resize_attachments() {
-    if (!m_initiatized)
-        return;
-
-    clean_framebuffer();
-    create_framebuffer();
-}
 
 } // namespace Core
 

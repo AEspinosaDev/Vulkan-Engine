@@ -17,8 +17,7 @@ namespace Core {
 Generic Postprocess Pass. It recieves an image from a previous pass and performs a postptocess task defined by a shader
 on it. Can be inherited.
 */
-template <std::size_t numberIN, std::size_t numberOUT>
-class PostProcessPass : public BaseGraphicPass<numberIN, numberOUT>
+template <std::size_t numberIN, std::size_t numberOUT> class PostProcessPass : public BaseGraphicPass
 {
   protected:
     ColorFormatType         m_colorFormat;
@@ -26,15 +25,17 @@ class PostProcessPass : public BaseGraphicPass<numberIN, numberOUT>
     std::string             m_shaderPath;
 
   public:
-    PostProcessPass(Graphics::Device*                      device,
-                    const PassConfig<numberIN, numberOUT>& config,
-                    Extent2D                               extent,
-                    ColorFormatType                        colorFormat,
-                    std::string                            shaderPath,
-                    std::string                            name = "POST-PROCESS")
-        : BaseGraphicPass<numberIN, numberOUT>(device, config, extent, 1, 1, name)
+    PostProcessPass(Graphics::Device*                       device,
+                    const PassLinkage<numberIN, numberOUT>& config,
+                    Extent2D                                extent,
+                    ColorFormatType                         colorFormat,
+                    std::string                             shaderPath,
+                    std::string                             name      = "POST-PROCESS",
+                    bool                                    isDefault = false)
+        : BaseGraphicPass(device, extent, 1, 1, true, isDefault, name)
         , m_colorFormat(colorFormat)
         , m_shaderPath(shaderPath) {
+        BasePass::store_attachments<numberIN, numberOUT>(config);
     }
 
     virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
@@ -101,10 +102,15 @@ void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(
 template <std::size_t numberIN, std::size_t numberOUT>
 void PostProcessPass<numberIN, numberOUT>::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
-    this->m_descriptorPool = this->m_device->create_descriptor_pool(1, 1, 1, 1, 1);
+    this->m_descriptorPool = this->m_device->create_descriptor_pool(1, numberIN, 1, 1, 1);
 
-    Graphics::LayoutBinding outputTextureBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
-    this->m_descriptorPool.set_layout(GLOBAL_LAYOUT, {outputTextureBinding});
+    // Do this for every input image atachment
+    std::vector<VKFW::Graphics::LayoutBinding> bindings;
+    for (size_t i = 0; i < numberIN; i++)
+    {
+        bindings.push_back(Graphics::LayoutBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, i));
+    }
+    this->m_descriptorPool.set_layout(GLOBAL_LAYOUT, bindings);
 
     this->m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &this->m_imageDescriptorSet);
 }
@@ -143,18 +149,16 @@ void PostProcessPass<numberIN, numberOUT>::execute(Graphics::Frame& currentFrame
     cmd.draw_geometry(*get_VAO(BasePass::vignette));
 
     // Draw gui contents
-    if (this->m_isDefault && Graphics::Frame::guiEnabled)
-        cmd.draw_gui_data();
+    // if (this->m_isDefault && Graphics::Frame::guiEnabled)
+    //     cmd.draw_gui_data();
 
     cmd.end_renderpass(this->m_renderpass, this->m_framebuffers[this->m_isDefault ? presentImageIndex : 0]);
 }
 template <std::size_t numberIN, std::size_t numberOUT>
 void PostProcessPass<numberIN, numberOUT>::link_input_attachments() {
-    uint32_t i = 0;
-    for (Graphics::Image* img : this->m_inAttachments)
+    for (size_t i = 0; i < numberIN; i++)
     {
-        this->m_descriptorPool.update_descriptor(img, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, i);
-        i++;
+        this->m_descriptorPool.update_descriptor(this->m_inAttachments[i], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, i);
     }
 }
 

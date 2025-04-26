@@ -47,7 +47,7 @@ struct VXGI { // Settings for Voxel Based GI
     uint32_t updateMode        = 0;
 };
 
-class CompositionPass : public BaseGraphicPass<10, 2>
+class CompositionPass : public BaseGraphicPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
@@ -84,13 +84,14 @@ class CompositionPass : public BaseGraphicPass<10, 2>
             - Bright Lighting (HDR)
 
         */
-    CompositionPass(Graphics::Device*        device,
-                    const PassConfig<10, 2>& config,
-                    VkExtent2D               extent,
-                    ColorFormatType          colorFormat,
-                    bool                     isDefault = true)
-        : BaseGraphicPass(device, config, extent, 1, 1, "COMPOSITION")
+    CompositionPass(Graphics::Device*         device,
+                    const PassLinkage<10, 2>& config,
+                    VkExtent2D                extent,
+                    ColorFormatType           colorFormat,
+                    bool                      isDefault = false)
+        : BaseGraphicPass(device, extent, 1, 1, true, isDefault, "COMPOSITION")
         , m_colorFormat(colorFormat) {
+        BasePass::store_attachments<10, 2>(config);
     }
 
     inline void set_SSR_settings(SSR settings) {
@@ -125,21 +126,21 @@ class CompositionPass : public BaseGraphicPass<10, 2>
     }
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies);
+                               std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    void setup_uniforms(std::vector<Graphics::Frame>& frames);
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    void setup_shader_passes();
+    void setup_shader_passes() override;
 
-    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 
-    void link_input_attachments();
+    void link_input_attachments() override;
 
-    void update_uniforms(uint32_t frameIndex, Scene* const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene) override;
 
-    void resize_attachments();
+    void resize_attachments() override;
 
-    void cleanup();
+    void cleanup() override;
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

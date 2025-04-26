@@ -9,38 +9,36 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-using PassFactoryFunc = std::function<std::unique_ptr<Core::BasePass>(Graphics::Device*, void* /* config */)>;
-
 class PassFactory
 {
-  private:
-    std::unordered_map<std::string, PassFactoryFunc> m_factories;
-
   public:
     static PassFactory& instance() {
-        static PassFactory reg;
-        return reg;
+        static PassFactory instance;
+        return instance;
     }
 
-    void register_type(const std::string& type, PassFactoryFunc func) {
-        m_factories[type] = std::move(func);
+    template <typename T, typename ConfigT> void register_pass(const std::string& name) {
+        registry[name] = &make_pass<T, ConfigT>;
     }
 
-    std::unique_ptr<Core::BasePass> create(const std::string& type, Graphics::Device* dev, void* config) {
-        return m_factories.at(type)(dev, config);
+    std::unique_ptr<BasePass> create(const std::string& name, Graphics::Device* dev, void* config) const {
+        auto it = registry.find(name);
+        if (it != registry.end())
+        {
+            return it->second(dev, config);
+        }
+        throw std::runtime_error("Pass type not registered: " + name);
     }
+
+  private:
+    using CreatorFunc = std::function<std::unique_ptr<BasePass>(Graphics::Device*, void*)>;
+    std::unordered_map<std::string, CreatorFunc> registry;
+    PassFactory() = default;
 };
 
-template <typename T, typename ConfigT>
-std::unique_ptr<Core::BasePass> make_pass(Graphics::Device* device, void* config) {
-    return std::make_unique<T>(device, *reinterpret_cast<ConfigT*>(config));
-}
+#define REGISTER_PASS(factory, Type, ConfigT) factory.register_pass<Type, ConfigT>(#Type)
 
-#define REGISTER_PASS(PassType, ConfigType, NameStr)                                                                   \
-    static bool _##PassType##_registered = [] {                                                                        \
-        PassFactory::instance().register_type(NameStr, &make_pass<PassType, ConfigType>);                              \
-        return true;                                                                                                   \
-    }()
+#define REGISTER_PASS_ALIAS(factory, alias, Type, ConfigT) factory.register_pass<Type, ConfigT>(alias)
 
 } // namespace Core
 

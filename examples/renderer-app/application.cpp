@@ -18,7 +18,7 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    m_renderer = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    m_renderer = new Systems::ForwardRenderer(m_window, ShadowResolution::MEDIUM, settings);
 
     setup();
 
@@ -32,8 +32,7 @@ void Application::run(int argc, char* argv[]) {
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    settings.softwareAA       = true;
-    
+    settings.softwareAA       = SoftwareAA::FXAA;
 
     if (argc == 1)
         std::cout << "No arguments submitted, initializing with default parameters..." << std::endl;

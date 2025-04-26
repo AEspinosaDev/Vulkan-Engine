@@ -26,19 +26,19 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
+#define CHECK_INITIALIZATION()                                                                                            \
+    if (!this->m_initiatized)                                                                                                \
+        return;
+
 #pragma region Config
 /*
-Pass config
+Pass config <Input Attachments, Output Attachmetns>
 */
-template <std::size_t numberIN, std::size_t numberOUT> struct PassConfig {
+template <std::size_t numberIN, std::size_t numberOUT> struct PassLinkage {
     // Connectivity Info
+    std::vector<Graphics::Image>&   attachmentPool;
     std::array<uint32_t, numberIN>  inAttachmentsIdx;
     std::array<uint32_t, numberOUT> outAttachmentsIdx;
-    // Basic params
-    bool resizeable = true;
-    bool enabled    = true;
-    bool isDefault  = false;
-    bool graphical  = true;
 };
 
 /*
@@ -74,18 +74,18 @@ class BasePass
     virtual void setup_shader_passes()                                = 0;
 
     template <std::size_t numberIN, std::size_t numberOUT>
-    inline void store_attachments(PassConfig<numberIN, numberOUT> config) {
+    inline void store_attachments(const PassLinkage<numberIN, numberOUT>& linkage) {
 
         // Populate pass attachments vector from the attachment pool given their idx
-        m_inAttachments.resize(config.inAttachmentsIdx.size(), nullptr);
-        m_outAttachments.resize(config.outAttachmentsIdx.size(), nullptr);
-        for (size_t i = 0; i < config.inAttachmentsIdx.size(); i++)
+        m_inAttachments.resize(numberIN, nullptr);
+        m_outAttachments.resize(numberOUT, nullptr);
+        for (size_t i = 0; i < numberIN; i++)
         {
-            m_inAttachments[i] = &BasePass::attachmentPool[config.inAttachmentsIdx[i]];
+            m_inAttachments[i] = &linkage.attachmentPool[linkage.inAttachmentsIdx[i]];
         }
-        for (size_t i = 0; i < config.outAttachmentsIdx.size(); i++)
+        for (size_t i = 0; i < numberOUT; i++)
         {
-            m_outAttachments[i] = &BasePass::attachmentPool[config.outAttachmentsIdx[i]];
+            m_outAttachments[i] = &linkage.attachmentPool[linkage.outAttachmentsIdx[i]];
         }
     }
 

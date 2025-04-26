@@ -194,6 +194,8 @@ CommandPool Device::create_command_pool(QueueType QueueType, CommandPoolCreateFl
     case QueueType::PRESENT_QUEUE:
         poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).presentFamily.value();
         break;
+    default:
+        break;
     }
     pool.queue     = m_queues[QueueType];
     poolInfo.flags = Translator::get(flags);
@@ -377,10 +379,12 @@ Framebuffer Device::create_framebuffer(RenderPass&          renderpass,
             attachments[i]->create_sampler(renderpass.attachmentsConfig[i].samplerConfig);
 
             fbo.attachmentImagesPtrs[i] = attachments[i]; // save pointer in framebuffer
-            fboViewAttachments[i] = attachments[i]->view;
-        } else{
+            fboViewAttachments[i]       = attachments[i]->view;
+        } else
+        {
 
-            fbo.attachmentImagesPtrs[i] = &m_swapchain.get_present_images()[id]; // save swapchain image pointer in framebuffer !!
+            fbo.attachmentImagesPtrs[i] =
+                &m_swapchain.get_present_images()[id]; // save swapchain image pointer in framebuffer !!
             fboViewAttachments[i] = m_swapchain.get_present_images()[id].view;
         }
     }

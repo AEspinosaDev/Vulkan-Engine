@@ -43,39 +43,35 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
     }
 }
 void DeferredRenderer::create_passes() {
-    const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
-    const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
-    //Create Passes and Attachments pool
+    // Create Passes and Attachments pool
     //--------------------------------
-    m_passes.resize(10, nullptr);
-    m_attachments.resize(17, {});
-    
+    m_passes.resize(11, nullptr);
+    m_attachments.resize(17);
+
     // Arrange connectivity
     //--------------------------------
-    Core::BasePass::attachmentPool = m_attachments;
-
-    Core::PassConfig<0, 1>  skyPassConfig         = {{}, {0}};
-    Core::PassConfig<1, 2>  enviromentPassConfig  = {{0}, {1, 2}};
-    Core::PassConfig<0, 2>  shadowPassConfig      = {{}, {3, 4}};
-    Core::PassConfig<1, 1>  voxelPassConfig       = {{3}, {5}};
-    Core::PassConfig<3, 6>  geometryPassConfig    = {{1, 2, 0}, {6, 7, 8, 9, 10, 11}};
-    Core::PassConfig<2, 1>  preCompPassConfig     = {{6, 7}, {12}};
-    Core::PassConfig<10, 2> compPassConfig        = {{3, 5, 6, 7, 8, 9, 10, 12, 1, 2}, {13, 14}};
-    Core::PassConfig<2, 1>  bloomPassConfig       = {{13, 14}, {15}};
-    Core::PassConfig<1, 1>  toneMappingPassConfig = {{15}, {16}};
-    Core::PassConfig<1, 1>  FXAAPassConfig        = {{16}, {}};
-    toneMappingPassConfig.isDefault               = m_settings.softwareAA ? false : true;
-    FXAAPassConfig.isDefault                      = m_settings.softwareAA;
+    Core::PassLinkage<0, 1>  skyPassConfig         = {m_attachments, {}, {0}};
+    Core::PassLinkage<1, 2>  enviromentPassConfig  = {m_attachments, {0}, {1, 2}};
+    Core::PassLinkage<0, 2>  shadowPassConfig      = {m_attachments, {}, {3, 4}};
+    Core::PassLinkage<1, 1>  voxelPassConfig       = {m_attachments, {3}, {5}};
+    Core::PassLinkage<3, 6>  geometryPassConfig    = {m_attachments, {1, 2, 0}, {6, 7, 8, 9, 10, 11}};
+    Core::PassLinkage<2, 1>  preCompPassConfig     = {m_attachments, {6, 7}, {12}};
+    Core::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 6, 7, 8, 9, 10, 12, 1, 2}, {13, 14}};
+    Core::PassLinkage<2, 1>  bloomPassConfig       = {m_attachments, {13, 14}, {15}};
+    Core::PassLinkage<1, 1>  toneMappingPassConfig = {m_attachments, {15}, {16}};
+    Core::PassLinkage<1, 0>  FXAAPassConfig        = {m_attachments, {16}, {}};
 
     // Create passes
     //--------------------------------
-    // m_passes[SKY_PASS]        = Systems::PassFactory::instance().create("MyCustomPass", m_device, &skyPassConfig).get();
 
     m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
     m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(
-        m_device, shadowPassConfig, {SHADOW_RES, SHADOW_RES}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
+    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(m_device,
+                                                         shadowPassConfig,
+                                                             {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality},
+                                                         ENGINE_MAX_LIGHTS,
+                                                         m_settings.depthFormat);
 
     m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, voxelPassConfig, 256);
 
@@ -84,23 +80,29 @@ void DeferredRenderer::create_passes() {
 
     m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, preCompPassConfig, m_window->get_extent());
 
-    m_passes[COMPOSITION_PASS] =
-        new Core::CompositionPass(m_device, compPassConfig, m_window->get_extent(), SRGBA_32F, false);
+    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(m_device, compPassConfig, m_window->get_extent(), SRGBA_32F);
 
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, m_window->get_extent());
 
-    m_passes[TONEMAPPIN_PASS] =
-        new Core::TonemappingPass(m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat);
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device,
+                                                          toneMappingPassConfig,
+                                                          m_window->get_extent(),
+                                                          m_settings.colorFormat,
+                                                          m_settings.softwareAA == SoftwareAA::NONE ? true : false);
 
-    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 1>(m_device,
+    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 0>(m_device,
                                                           FXAAPassConfig,
                                                           m_window->get_extent(),
                                                           m_settings.colorFormat,
                                                           ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
-                                                          "FXAA");
+                                                          "FXAA",
+                                                          m_settings.softwareAA == SoftwareAA::FXAA ? true : false);
+
+    m_passes[GUI_PASS] = new Core::GUIPass(m_device, m_window->get_extent());
+
     //--------------------------------
 
-    if (!m_settings.softwareAA)
+    if ( m_settings.softwareAA != SoftwareAA::FXAA)
         m_passes[FXAA_PASS]->set_active(false);
 }
 void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {

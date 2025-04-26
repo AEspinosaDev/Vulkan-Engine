@@ -260,6 +260,13 @@ void VoxelizationPass::execute(Graphics::Frame& currentFrame, Scene* const scene
         i++;
     }
     for (Graphics::Image& img : m_interAttachments)
+    {
+        if (i == 3)
+            break;
+        cmd.clear_image(img, LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
+        i++;
+    }
+    for (Graphics::Image& img : m_interAttachments)
         cmd.pipeline_barrier(img,
                              LAYOUT_UNDEFINED,
                              LAYOUT_GENERAL,
@@ -376,12 +383,14 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
     }
 }
 void VoxelizationPass::resize_attachments() {
-    BaseGraphicPass::resize_attachments();
+    for (Graphics::Framebuffer& fb : m_framebuffers)
+    fb.cleanup();
     for (Graphics::Image* img : m_outAttachments)
         img->cleanup();
     for (Graphics::Image& img : m_interAttachments)
         img.cleanup();
     create_voxelization_image();
+    create_framebuffer();
 
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {

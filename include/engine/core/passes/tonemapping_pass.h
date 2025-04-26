@@ -44,15 +44,17 @@ class TonemappingPass : public PostProcessPass<1, 1>
 
            */
     TonemappingPass(Graphics::Device*       device,
-                    const PassConfig<1, 1>& config,
+                    const PassLinkage<1, 1>& config,
                     Extent2D                extent,
-                    ColorFormatType         colorFormat)
+                    ColorFormatType         colorFormat,
+                    bool                    isDefault = true)
         : PostProcessPass(device,
                           config,
                           extent,
                           colorFormat,
                           ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
-                          "TONEMAPPING") {
+                          "TONEMAPPING",
+                          isDefault) {
     }
 
     inline float get_exposure() const {
@@ -68,9 +70,9 @@ class TonemappingPass : public PostProcessPass<1, 1>
         m_tonemap = type;
     }
 
-    virtual void setup_shader_passes();
+    virtual void setup_shader_passes() override;
 
-    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 };
 
 } // namespace Core

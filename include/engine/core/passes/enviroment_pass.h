@@ -21,7 +21,7 @@ This pass does three things:
 - Performs a second renderpass to compute the diuffuse irradiance cubemap.
 - Performs a third renderpass to compute the specular irradiance cubemap.
 */
-class EnviromentPass : public BaseGraphicPass<1, 2>
+class EnviromentPass : public BaseGraphicPass
 {
     ColorFormatType         m_format;
     Graphics::DescriptorSet m_envDescriptorSet;
@@ -30,17 +30,18 @@ class EnviromentPass : public BaseGraphicPass<1, 2>
 
   public:
     /*
-            
+
             Output Attachments:
-            - 
+            -
             - Enviroment Cubemap
             - Diffuse Irradiance Cubemap
 
         */
-    EnviromentPass(Graphics::Device* device, const PassConfig<1, 2>& config)
-        : BaseGraphicPass(device, config, {1, 1}, 2, CUBEMAP_FACES, "ENVIROMENT")
+    EnviromentPass(Graphics::Device* device, const PassLinkage<1, 2>& config)
+        : BaseGraphicPass(device, {1, 1}, 2, CUBEMAP_FACES, false, false, "ENVIROMENT")
         , m_format(SRGBA_32F)
         , m_irradianceResolution({1, 1}) {
+        BasePass::store_attachments<1, 2>(config);
     }
 
     inline uint32_t get_irradiance_resolution() const {
@@ -51,23 +52,23 @@ class EnviromentPass : public BaseGraphicPass<1, 2>
     }
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies);
+                               std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    void create_framebuffer();
+    void create_framebuffer() override;
 
-    void setup_uniforms(std::vector<Graphics::Frame>& frames);
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    void setup_shader_passes();
+    void setup_shader_passes() override;
 
-    void update_uniforms(uint32_t frameIndex, Scene* const scene);
+    void update_uniforms(uint32_t frameIndex, Scene* const scene) override;
 
-    void resize_attachments();
+    void resize_attachments() override;
 
-    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0);
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 
-    void link_input_attachments();
+    void link_input_attachments() override;
 
-    void cleanup();
+    void cleanup() override;
 };
 
 } // namespace Core

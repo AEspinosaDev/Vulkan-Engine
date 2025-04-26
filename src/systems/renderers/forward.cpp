@@ -31,32 +31,33 @@ void ForwardRenderer::on_after_render(RenderResult& renderResult, Core::Scene* c
     }
 }
 void ForwardRenderer::create_passes() {
-    const uint32_t SHADOW_RES          = (uint32_t)m_shadowQuality;
-    const uint32_t totalImagesInFlight = (uint32_t)m_settings.bufferingType + 1;
 
     // Create Passes and Attachments pool
     //--------------------------------
-    m_passes.resize(6, nullptr);
-    m_attachments.resize(9, {});
+    m_passes.resize(8, nullptr);
+    m_attachments.resize(10);
 
     // Arrange connectivity
     //--------------------------------
-    Core::BasePass::attachmentPool = m_attachments;
 
-    Core::PassConfig<1, 2> enviromentPassConfig  = {{0}, {0, 1}};
-    Core::PassConfig<0, 2> shadowPassConfig      = {{}, {2, 3}};
-    Core::PassConfig<3, 3> forwardPassConfig     = {{2, 0, 1}, {4, 5, 6}};
-    Core::PassConfig<2, 1> bloomPassConfig       = {{4, 5}, {7}};
-    Core::PassConfig<1, 1> toneMappingPassConfig = {{7}, {8}};
-    Core::PassConfig<1, 1> FXAAPassConfig        = {{8}, {}};
-    toneMappingPassConfig.isDefault              = m_settings.softwareAA ? false : true;
-    FXAAPassConfig.isDefault                     = m_settings.softwareAA;
+    Core::PassLinkage<0, 1> skyPassConfig         = {m_attachments, {}, {0}};
+    Core::PassLinkage<1, 2> enviromentPassConfig  = {m_attachments, {0}, {1, 2}};
+    Core::PassLinkage<0, 2> shadowPassConfig      = {m_attachments, {}, {3, 4}};
+    Core::PassLinkage<3, 3> forwardPassConfig     = {m_attachments, {3, 1, 2}, {5, 6, 7}};
+    Core::PassLinkage<2, 1> bloomPassConfig       = {m_attachments, {5, 6}, {8}};
+    Core::PassLinkage<1, 1> toneMappingPassConfig = {m_attachments, {8}, {9}};
+    Core::PassLinkage<1, 0> FXAAPassConfig        = {m_attachments, {9}, {}};
 
     // Create passes
     //--------------------------------
+
+    m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
     m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(
-        m_device, shadowPassConfig, {SHADOW_RES, SHADOW_RES}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
+    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(m_device,
+                                                         shadowPassConfig,
+                                                             {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality},
+                                                         ENGINE_MAX_LIGHTS,
+                                                         m_settings.depthFormat);
 
     m_passes[FORWARD_PASS] = new Core::ForwardPass(m_device,
                                                    forwardPassConfig,
@@ -67,20 +68,21 @@ void ForwardRenderer::create_passes() {
 
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, m_window->get_extent());
 
-    m_passes[TONEMAPPIN_PASS] =
-        new Core::TonemappingPass(m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat);
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(
+        m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat,  m_settings.softwareAA == SoftwareAA::NONE ? true : false);
 
-    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 1>(m_device,
+    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 0>(m_device,
                                                           FXAAPassConfig,
                                                           m_window->get_extent(),
                                                           m_settings.colorFormat,
                                                           ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
-                                                          "FXAA");
+                                                          "FXAA",
+                                                          m_settings.softwareAA == SoftwareAA::FXAA ? true : false);
 
-    m_passes.resize(6, nullptr);
+    m_passes[GUI_PASS] = new Core::GUIPass(m_device, m_window->get_extent());
 
-    // if (!m_settings.softwareAA)
-    //     m_passes[FXAA_PASS]->set_active(false);
+    if ( m_settings.softwareAA != SoftwareAA::FXAA)
+    m_passes[FXAA_PASS]->set_active(false);
 }
 
 void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
@@ -88,17 +90,36 @@ void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
     {
         if (skybox->update_enviroment())
         {
-            m_device->wait();
+
             Core::ResourceManager::upload_skybox_data(m_device, skybox);
-            const uint32_t HDRi_EXTENT       = skybox->get_enviroment_map()->get_size().height;
+            const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV
+                                                   ? skybox->get_enviroment_map()->get_size().height
+                                                   : skybox->get_sky_settings().resolution;
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
             m_passes[ENVIROMENT_PASS]->set_active(true);
-            m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
-            m_passes[ENVIROMENT_PASS]->resize_attachments();
+            if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
+                m_passes[SKY_PASS]->set_active(true);
 
-            m_passes[FORWARD_PASS]->link_input_attachments();
+            // ONLY IF: framebuffers needs to be resized
+            // -------------------------------------------------------------------
+            if (m_passes[ENVIROMENT_PASS]->get_extent().height != HDRi_EXTENT ||
+                get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
+            {
+                m_device->wait();
+                if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
+                {
+                    m_passes[SKY_PASS]->set_extent({HDRi_EXTENT * 2, HDRi_EXTENT});
+                    m_passes[SKY_PASS]->resize_attachments();
+                    m_passes[ENVIROMENT_PASS]->link_input_attachments();
+                }
+
+                m_passes[ENVIROMENT_PASS]->set_extent({HDRi_EXTENT, HDRi_EXTENT});
+                m_passes[ENVIROMENT_PASS]->resize_attachments();
+
+                m_passes[FORWARD_PASS]->link_input_attachments();
+            }
         }
     }
 }

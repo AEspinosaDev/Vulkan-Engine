@@ -215,7 +215,7 @@ void main() {
                         scene.lights[i].type != DIRECTIONAL_LIGHT ? scene.lights[i].shadowData.xyz - v_modelPos : scene.lights[i].shadowData.xyz,
                         int(scene.lights[i].shadowData.w), 
                         scene.lights[i].area,
-                        scene.lights[i].type != DIRECTIONAL_LIGHT ? lenght(scene.lights[i].shadowData.xyz - v_modelPos) : 30.0, 
+                        scene.lights[i].type != DIRECTIONAL_LIGHT ? length(scene.lights[i].shadowData.xyz - v_modelPos) : 30.0, 
                         0);
             }
 

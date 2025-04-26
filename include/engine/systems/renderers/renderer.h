@@ -31,7 +31,7 @@ struct RendererSettings {
     ColorFormatType colorFormat      = SRGBA_8;
     ColorFormatType depthFormat      = DEPTH_32F;
     Vec4            clearColor       = Vec4{0.0, 0.0, 0.0, 1.0};
-    bool            softwareAA       = false;
+    SoftwareAA      softwareAA       = SoftwareAA::NONE;
     bool            autoClearColor   = true;
     bool            autoClearDepth   = true;
     bool            autoClearStencil = true;
