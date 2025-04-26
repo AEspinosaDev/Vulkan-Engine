@@ -240,7 +240,7 @@ void CompositionPass::link_input_attachments() {
         m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
         // SET UP G-BUFFER
         m_descriptorPool.update_descriptor(
-            m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
+            m_inAttachments[2], LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 0);
         m_descriptorPool.update_descriptor(
             m_inAttachments[3], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].gBufferDescritor, 1);
         m_descriptorPool.update_descriptor(

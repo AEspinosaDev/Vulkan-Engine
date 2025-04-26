@@ -4,13 +4,20 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems {
 
 void DeferredRenderer::on_before_render(Core::Scene* const scene) {
+    // Prepare for inverse Z rendering
+    auto cam = scene->get_active_camera();
+    if (cam)
+    {
+        if (!cam->inverse_Z())
+            scene->get_active_camera()->inverse_Z(true);
+    }
     // Update enviroment before
     update_enviroment(scene->get_skybox());
     BaseRenderer::on_before_render(scene);
 
-    // Set clear color
+    // Set clear color (On albedo buffer)
     m_passes[GEOMETRY_PASS]->set_attachment_clear_value(
-        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 2);
+        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 1);
 }
 
 void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
@@ -55,9 +62,9 @@ void DeferredRenderer::create_passes() {
     Core::PassLinkage<1, 2>  enviromentPassConfig  = {m_attachments, {0}, {1, 2}};
     Core::PassLinkage<0, 2>  shadowPassConfig      = {m_attachments, {}, {3, 4}};
     Core::PassLinkage<1, 1>  voxelPassConfig       = {m_attachments, {3}, {5}};
-    Core::PassLinkage<3, 6>  geometryPassConfig    = {m_attachments, {1, 2, 0}, {6, 7, 8, 9, 10, 11}};
-    Core::PassLinkage<2, 1>  preCompPassConfig     = {m_attachments, {6, 7}, {12}};
-    Core::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 6, 7, 8, 9, 10, 12, 1, 2}, {13, 14}};
+    Core::PassLinkage<3, 5>  geometryPassConfig    = {m_attachments, {1, 2, 0}, {6, 7, 8, 9, 10}};
+    Core::PassLinkage<2, 1>  preCompPassConfig     = {m_attachments, {10, 6}, {12}};
+    Core::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 10, 6, 7, 8, 9, 12, 1, 2}, {13, 14}};
     Core::PassLinkage<2, 1>  bloomPassConfig       = {m_attachments, {13, 14}, {15}};
     Core::PassLinkage<1, 1>  toneMappingPassConfig = {m_attachments, {15}, {16}};
     Core::PassLinkage<1, 0>  FXAAPassConfig        = {m_attachments, {16}, {}};
@@ -80,7 +87,7 @@ void DeferredRenderer::create_passes() {
 
     m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, preCompPassConfig, m_window->get_extent());
 
-    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(m_device, compPassConfig, m_window->get_extent(), SRGBA_32F);
+    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(m_device, compPassConfig, m_window->get_extent(), SRGBA_16F);
 
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, m_window->get_extent());
 
@@ -102,7 +109,7 @@ void DeferredRenderer::create_passes() {
 
     //--------------------------------
 
-    if ( m_settings.softwareAA != SoftwareAA::FXAA)
+    if (m_settings.softwareAA != SoftwareAA::FXAA)
         m_passes[FXAA_PASS]->set_active(false);
 }
 void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {

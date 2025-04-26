@@ -228,7 +228,7 @@ void PreCompositionPass::link_input_attachments() {
     {
         // SET UP G-BUFFER
         m_descriptorPool.update_descriptor(
-            m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2); // POSITION
+            m_inAttachments[0], LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2); // POSITION
         m_descriptorPool.update_descriptor(
             m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3); // NORMALS
         // RAW SSAO

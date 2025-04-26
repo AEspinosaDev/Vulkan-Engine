@@ -32,7 +32,7 @@ A (first downsampled image).
 class BloomPass : public BaseGraphicPass
 {
   protected:
-    ColorFormatType m_colorFormat = SRGBA_32F;
+    ColorFormatType m_colorFormat = SRGBA_16F;
 
     Graphics::DescriptorSet m_imageDescriptorSet;
 

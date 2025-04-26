@@ -3,60 +3,48 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
-void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
-                                     std::vector<Graphics::SubPassDependency>& dependencies) {
+void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                                         std::vector<Graphics::SubPassDependency>& dependencies) {
 
     //////////////////////
     // G - BUFFER
     /////////////////////
-    attachments.resize(6);
+    attachments.resize(5);
 
-    // Positions + Depth
-    attachments[0] = Graphics::AttachmentConfig(SRGBA_32F,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Normals
-    attachments[1] = Graphics::AttachmentConfig(SRGBA_32F,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Albedo
+    // Normals + VelX
+    attachments[0] = Graphics::AttachmentConfig(SRGBA_16F,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Albedo + Opacity
+    attachments[1] = Graphics::AttachmentConfig(RGBA_8U,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Material + ID
     attachments[2] = Graphics::AttachmentConfig(RGBA_8U,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Material
-    attachments[3] = Graphics::AttachmentConfig(RGBA_8U,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Emissive
-    attachments[4] = Graphics::AttachmentConfig(SRGBA_32F,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-
-    // Temporal
-    // attachments[5] = Graphics::Attachment(m_colorFormat,
-    //                                       1,
-    //                                       LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    //                                       LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //                                       IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    // Emissive + VelY
+    attachments[3] = Graphics::AttachmentConfig(SRGBA_16F,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
 
     // Depth
-    attachments[5] = Graphics::AttachmentConfig(m_depthFormat,
-                                              1,
-                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                              DEPTH_ATTACHMENT,
-                                              ASPECT_DEPTH);
+    attachments[4]                                           = Graphics::AttachmentConfig(m_depthFormat,
+                                                1,
+                                                LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                DEPTH_ATTACHMENT,
+                                                ASPECT_DEPTH);
+    attachments[4].imageConfig.clearValue.depthStencil.depth = 0.0f; // Inverse Z
 
     // Depdencies
     dependencies.resize(2);
@@ -191,8 +179,8 @@ void GeometryPass::setup_shader_passes() {
     geomPass->graphicSettings.blendAttachments = {Init::color_blend_attachment_state(false),
                                                   Init::color_blend_attachment_state(false),
                                                   Init::color_blend_attachment_state(false),
-                                                  Init::color_blend_attachment_state(false),
                                                   Init::color_blend_attachment_state(false)};
+    geomPass->graphicSettings.depthOp          = VK_COMPARE_OP_GREATER_OR_EQUAL;
 
     geomPass->build_shader_stages();
     geomPass->build(m_descriptorPool);
@@ -210,14 +198,11 @@ void GeometryPass::setup_shader_passes() {
                                                     {COLOR_ATTRIBUTE, false}};
     skyboxPass->graphicSettings.dynamicStates    = geomPass->graphicSettings.dynamicStates;
     skyboxPass->graphicSettings.blendAttachments = geomPass->graphicSettings.blendAttachments;
-    skyboxPass->graphicSettings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
 
     skyboxPass->build_shader_stages();
     skyboxPass->build(m_descriptorPool);
 
     m_shaderPasses["skybox"] = skyboxPass;
-
-    
 }
 void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
@@ -228,8 +213,27 @@ void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, ui
 
     if (scene->get_active_camera() && scene->get_active_camera()->is_active())
     {
-        
+        // Skybox
+        if (scene->get_skybox())
+        {
+            if (scene->get_skybox()->is_active())
+            {
 
+                cmd.set_depth_test_enable(false);
+                cmd.set_depth_write_enable(false);
+                cmd.set_cull_mode(CullingMode::NO_CULLING);
+
+                ShaderPass* shaderPass = m_shaderPasses["skybox"];
+
+                // Bind pipeline
+                cmd.bind_shaderpass(*shaderPass);
+
+                // GLOBAL LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+
+                cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
+            }
+        }
         ShaderPass* shaderPass = m_shaderPasses["geometry"];
 
         unsigned int mesh_idx = 0;
@@ -276,27 +280,6 @@ void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, ui
                 }
             }
             mesh_idx++;
-        }
-        // Skybox
-        if (scene->get_skybox())
-        {
-            if (scene->get_skybox()->is_active())
-            {
-
-                cmd.set_depth_test_enable(true);
-                cmd.set_depth_write_enable(true);
-                cmd.set_cull_mode(CullingMode::NO_CULLING);
-
-                ShaderPass* shaderPass = m_shaderPasses["skybox"];
-
-                // Bind pipeline
-                cmd.bind_shaderpass(*shaderPass);
-
-                // GLOBAL LAYOUT BINDING
-                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-
-                cmd.draw_geometry(*get_VAO(scene->get_skybox()->get_box()));
-            }
         }
     }
 

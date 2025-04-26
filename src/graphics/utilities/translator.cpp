@@ -46,6 +46,8 @@ VkFormat get(ColorFormatType colorFormatType) {
         return VK_FORMAT_D16_UNORM;
     case ColorFormatType::DEPTH_32F:
         return VK_FORMAT_D32_SFLOAT;
+    case ColorFormatType::RGB10A2:
+        return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     default:
         throw std::invalid_argument("VKEngine error: Unknown ColorFormatType");
     }

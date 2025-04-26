@@ -51,6 +51,7 @@ class Camera : public Object3D
 
   private:
     Mat4 m_view;
+
     Mat4 m_proj;
 
     Frustum m_frustrum;
@@ -63,6 +64,7 @@ class Camera : public Object3D
 
     bool m_perspective{true};
     bool m_frustrumCulling{true};
+    bool m_inverse_Z{false};
 
     static int m_instanceCount;
 
@@ -76,7 +78,6 @@ class Camera : public Object3D
         Camera::m_instanceCount++;
     }
 
-    
     inline void set_field_of_view(float fov) {
         m_fov   = fov;
         isDirty = true;
@@ -86,12 +87,21 @@ class Camera : public Object3D
     }
     inline void set_projection(int width, int height) {
         m_aspect = (float)width / (float)height;
-        m_proj = math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_near, m_far);
-        // m_proj = math::ortho(0.0f,(float)width,0.0f,(float)height,m_near,m_far);
+        if (m_perspective)
+            m_proj = !m_inverse_Z ? math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_near, m_far)
+                                  : math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_far, m_near);
+        else
+            m_proj = math::ortho(0.0f, (float)width, 0.0f, (float)height, m_near, m_far);
         m_proj[1][1] *= -1; // Because Vulkan
     }
     inline Mat4 get_projection() const {
         return m_proj;
+    }
+    inline bool inverse_Z() const {
+        return m_inverse_Z;
+    }
+    inline void inverse_Z(bool op) {
+        m_inverse_Z = op;
     }
     inline Mat4 get_view() {
         if (isDirty)

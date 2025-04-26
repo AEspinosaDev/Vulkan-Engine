@@ -2,86 +2,80 @@
 #define MAX_SSAO_SAMPLES 64
 #endif
 // Classic SSAO
-float SSAO(sampler2D vPosBuffer,
-      vec3 vPos,
-      vec3 vNormal, 
-      vec3 randomDir,
-      vec4 samples[MAX_SSAO_SAMPLES],
-      const int KERNEL_SIZE, 
-      const float RADIUS, 
-      const float BIAS){
+float SSAO(
+    sampler2D depthBuffer,
+    vec2 uv,
+    vec3 vPos,
+    vec3 vNormal,
+    vec3 randomDir,
+    vec4 samples[MAX_SSAO_SAMPLES],
+    const int KERNEL_SIZE,
+    const float RADIUS,
+    const float BIAS
+) {
 
     vec3 tangent = normalize(randomDir - vNormal * dot(randomDir, vNormal));
     vec3 bitangent = cross(vNormal, tangent);
     mat3 TBN = mat3(tangent, bitangent, vNormal);
 
     float occlusion = 0.0;
-    for(int i = 0; i < KERNEL_SIZE; ++i)
-    {
+    for(int i = 0; i < KERNEL_SIZE; ++i) {
         // get sample position
         vec3 samplePos = TBN * samples[i].xyz; // from tangent to view-space
         samplePos = vPos + samplePos * RADIUS; 
-        
-        // project sample position (to sample texture) (to get position on screen/texture)
-        vec4 offset = vec4(samplePos, 1.0);
-        offset = camera.proj * offset; 
-        offset.xyz /= offset.w; 
-        offset.xyz = offset.xyz * 0.5 + 0.5; 
 
-        // get sample depth
-        // float sampleDepth = texture(depthBuffer, offset.xy).r; // get depth value of kernel sample
-        float sampleDepth = texture(vPosBuffer, offset.xy).z; // get depth value of kernel sample
-        
-        // range check & accumulate
-        float rangeCheck = smoothstep(0.0, 1.0, RADIUS / abs(vPos.z - sampleDepth));
-        occlusion += (sampleDepth >= samplePos.z + BIAS ? 1.0 : 0.0) * rangeCheck;           
+        // project sample position to texture coordinates
+        vec4 offset = camera.proj * vec4(samplePos, 1.0);
+        offset.xyz /= offset.w;
+        offset.xy = offset.xy * 0.5 + 0.5;
+
+        if(offset.x < 0.0 || offset.x > 1.0 || offset.y < 0.0 || offset.y > 1.0)
+            continue; // outside screen
+
+        float sampleDepth = texture(depthBuffer, offset.xy).r;
+        vec2 ndc = uv * 2.0 - 1.0;
+        vec4 clip = vec4(ndc, sampleDepth, 1.0);
+        vec4 viewPos = camera.invProj * clip;
+        viewPos /= viewPos.w;
+        vec3 sampleFragPos = viewPos.xyz;
+
+        float rangeCheck = smoothstep(0.0, 1.0, RADIUS / abs(vPos.z - sampleFragPos.z));
+        occlusion += (sampleFragPos.z >= samplePos.z + BIAS ? 1.0 : 0.0) * rangeCheck;
     }
-    occlusion = 1.0 - (occlusion / KERNEL_SIZE);
+
+    occlusion = 1.0 - (occlusion / float(KERNEL_SIZE));
     return occlusion;
 }
 
-// https://www.cs.rpi.edu/~cutler/classes/advancedgraphics/S11/final_projects/chamberlin_sullivan.pdf
-// float UnsharpSSAO(sampler2D ssaoMap){
-
-//     const float kernelDimension = 15.0;
-//     const ivec2 screenSize = textureSize(ssaoMap,0);
-
+// float SSAO_fast(
+//     sampler2D depthTex,
+//     vec2 uv,
+//     vec4 samples[MAX_SSAO_SAMPLES],
+//     int KERNEL_SIZE,
+//     float RADIUS,
+//     float BIAS
+// ) {
+//     float centerDepth = texture(depthTex, uv).r;
 //     float occlusion = 0.0;
 
-//     int i = int(gl_FragCoord.x);
-//     int j = int(gl_FragCoord.y);
+//     for(int i = 0; i < KERNEL_SIZE; ++i) {
+//         vec3 sampleVec = samples[i].xyz;
 
-//     int maxX = i + int(floor(kernelDimension*0.5));
-//     int maxY = j + int(floor(kernelDimension*0.5));
+//         // Rotate sample vector using randomDir (optional for better noise)
+//         vec2 sampleOffset = vec2(dot(sampleVec, vec3(1, 0, 0)), dot(sampleVec, vec3(0, 1, 0)));
+//         sampleOffset = normalize(sampleOffset);
 
-//     float sampX;
-//     float sampY;
+//         vec2 sampleUV = uv + sampleOffset * RADIUS * 1.0 / (float)textureSize();
 
-//     float neighborCount = 0;
+//         float sampleDepth = texture(depthTex, sampleUV).r;
 
-//     for (int x = i - int(floor(kernelDimension*0.5)); x < maxX; x++) {
-//     for (int y = j - int(floor(kernelDimension*0.5)); y < maxY; y++) {
-    
-//     sampX = float(x) / screenSize.x;
-//     sampY = float(y) / screenSize.y;
+//         float range = RADIUS;
+//         float depthDiff = centerDepth - sampleDepth;
 
-//     if (sampX >= 0.0 && sampX <= 1.0 && sampY >= 0.0 && sampY <= 1.0 &&
-    
-//     abs( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a,0.1,100.0) -
-//      linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a, 0.1,100.0)) < 0.02) {
-//     occlusion +=   linearizeDepth(texture(ssaoMap,vec2(sampX,sampY)).a,0.1,100.0);
-//     neighborCount++;
-//     }
-//     }
+//         float rangeCheck = smoothstep(0.0, 1.0, RADIUS / abs(depthDiff + 0.0001));
+//         occlusion += (depthDiff > BIAS ? 1.0 : 0.0) * rangeCheck;
 //     }
 
-//     occlusion = occlusion / neighborCount;
-     
-     
-//     occlusion = 20 * ( linearizeDepth(texture(ssaoMap,gl_FragCoord.xy / screenSize.xy).a, 0.1,100.0) - max(0.0, occlusion));
-
-
-//   return occlusion;
-
+//     occlusion = 1.0 - (occlusion / float(KERNEL_SIZE));
+//     return occlusion;
 // }
-

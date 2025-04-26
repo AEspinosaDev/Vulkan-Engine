@@ -60,7 +60,7 @@ class SkyPass : public BaseGraphicPass
         BasePass::store_attachments<0, 1>(config);
     }
 
-    void create_framebuffer();
+    void create_framebuffer() override;
 
     virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
                                        std::vector<Graphics::SubPassDependency>& dependencies) override;

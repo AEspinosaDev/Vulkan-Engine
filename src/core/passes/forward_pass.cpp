@@ -4,8 +4,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
-                                    std::vector<Graphics::SubPassDependency>& dependencies) {
+void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                                        std::vector<Graphics::SubPassDependency>& dependencies) {
 
     uint16_t samples      = static_cast<uint16_t>(m_aa);
     bool     multisampled = samples > 1;
@@ -14,67 +14,68 @@ void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&
 
     attachments[0] =
         Graphics::AttachmentConfig(m_colorFormat,
-                                 samples,
-                                 m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
-                                             : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                 !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
-                                              : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-                                 COLOR_ATTACHMENT,
-                                 ASPECT_COLOR,
-                                 TEXTURE_2D,
-                                 FILTER_LINEAR,
-                                 ADDRESS_MODE_CLAMP_TO_EDGE);
+                                   samples,
+                                   m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT)
+                                               : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
+                                                : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
+                                   COLOR_ATTACHMENT,
+                                   ASPECT_COLOR,
+                                   TEXTURE_2D,
+                                   FILTER_LINEAR,
+                                   ADDRESS_MODE_CLAMP_TO_EDGE);
 
     attachments[0].isDefault = m_isDefault ? (multisampled ? false : true) : false;
 
     // Bright color buffer. m_colorFormat should be in floating point.
     attachments[1] = Graphics::AttachmentConfig(m_colorFormat,
-                                              samples,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              COLOR_ATTACHMENT,
-                                              ASPECT_COLOR,
-                                              TEXTURE_2D,
-                                              FILTER_LINEAR,
-                                              ADDRESS_MODE_CLAMP_TO_EDGE);
+                                                samples,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                COLOR_ATTACHMENT,
+                                                ASPECT_COLOR,
+                                                TEXTURE_2D,
+                                                FILTER_LINEAR,
+                                                ADDRESS_MODE_CLAMP_TO_EDGE);
 
     Graphics::AttachmentConfig resolveAttachment;
     if (multisampled)
     {
+        m_interAttachments.resize(2);
         attachments[2] =
             Graphics::AttachmentConfig(m_colorFormat,
-                                     1,
-                                     m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                     LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                     !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
-                                                  : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-                                     RESOLVE_ATTACHMENT,
-                                     ASPECT_COLOR,
-                                     TEXTURE_2D);
+                                       1,
+                                       m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                       LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                       !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED
+                                                    : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
+                                       RESOLVE_ATTACHMENT,
+                                       ASPECT_COLOR,
+                                       TEXTURE_2D);
         attachments[2].isDefault = m_isDefault ? true : false;
 
         attachments[3] = Graphics::AttachmentConfig(m_colorFormat,
-                                                  1,
-                                                  LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                  LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                  IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                                  RESOLVE_ATTACHMENT,
-                                                  ASPECT_COLOR,
-                                                  TEXTURE_2D,
-                                                  FILTER_LINEAR,
-                                                  ADDRESS_MODE_CLAMP_TO_EDGE);
+                                                    1,
+                                                    LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                    LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                    IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                    RESOLVE_ATTACHMENT,
+                                                    ASPECT_COLOR,
+                                                    TEXTURE_2D,
+                                                    FILTER_LINEAR,
+                                                    ADDRESS_MODE_CLAMP_TO_EDGE);
     }
 
     Graphics::AttachmentConfig depthAttachment = Graphics::AttachmentConfig(m_depthFormat,
-                                                                        samples,
-                                                                        LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                        LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                                        IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                                                        DEPTH_ATTACHMENT,
-                                                                        ASPECT_DEPTH,
-                                                                        TEXTURE_2D);
+                                                                            samples,
+                                                                            LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                            LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                                            IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                                                            DEPTH_ATTACHMENT,
+                                                                            ASPECT_DEPTH,
+                                                                            TEXTURE_2D);
     attachments.push_back(depthAttachment);
 
     // Depdencies
@@ -85,6 +86,26 @@ void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&
         STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[1] = Graphics::SubPassDependency(
         STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
+}
+void ForwardPass::create_framebuffer() {
+    CHECK_INITIALIZATION()
+
+    if (m_aa == MSAASamples::x1) //IF NOT MULTISAMPLED
+        for (size_t fb = 0; fb < m_framebuffers.size(); fb++)
+            m_framebuffers[fb] = m_device->create_framebuffer(
+                m_renderpass, m_outAttachments, m_imageExtent, m_framebufferImageDepth, fb);
+
+    else
+    {
+        std::vector<VKFW::Graphics::Image*> allAttachments{&m_interAttachments[0],
+                                                           &m_interAttachments[1],
+                                                           m_outAttachments[0],
+                                                           m_outAttachments[1],
+                                                           m_outAttachments[2]};
+        for (size_t fb = 0; fb < m_framebuffers.size(); fb++)
+            m_framebuffers[fb] =
+                m_device->create_framebuffer(m_renderpass, allAttachments, m_imageExtent, m_framebufferImageDepth, fb);
+    }
 }
 void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
@@ -403,8 +424,10 @@ void ForwardPass::link_input_attachments() {
                                            LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                            &m_descriptors[i].globalDescritor,
                                            2);
-        m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-        m_descriptorPool.update_descriptor(m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+        m_descriptorPool.update_descriptor(
+            m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptorPool.update_descriptor(
+            m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
     }
 }
 void ForwardPass::setup_material_descriptor(IMaterial* mat) {

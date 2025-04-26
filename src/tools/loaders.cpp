@@ -1006,7 +1006,7 @@ void VKFW::Tools::Loaders::SceneLoader::load_children(tinyxml2::XMLElement* elem
         }
         if (meshType == "cube")
         {
-            mesh->push_geometry(Core::Geometry::create_cube());
+            mesh->push_geometry(Core::Geometry::create_simple_cube());
         }
 
         /*

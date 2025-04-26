@@ -56,11 +56,11 @@ class Skybox
   public:
     Skybox(TextureHDR* env)
         : m_env(env) {
-        m_box = Geometry::create_cube();
+        m_box = Geometry::create_simple_cube();
     }
     Skybox()
         : m_env(nullptr) {
-        m_box = Geometry::create_cube();
+        m_box = Geometry::create_simple_cube();
     }
     ~Skybox() {
         delete m_box;

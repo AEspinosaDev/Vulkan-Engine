@@ -76,12 +76,10 @@ layout(set = 2, binding = 4) uniform sampler2D materialText3;
 layout(set = 2, binding = 5) uniform sampler2D materialText4;
 
 //Output
-layout(location = 0) out vec4 outPos;
-layout(location = 1) out vec4 outNormal;
-layout(location = 2) out vec4 outAlbedo;
-layout(location = 3) out vec4 outMaterial; //U8
-layout(location = 4) out vec4 outEmissive; //F32
-// layout(location = 5) out vec4 outTemporal;
+layout(location = 0) out vec4 outNormal; //16F
+layout(location = 1) out vec4 outAlbedo; //U8
+layout(location = 2) out vec4 outMaterial; //U8
+layout(location = 3) out vec4 outEmissive; //16F
 
 #define EPSILON 0.1
 
@@ -172,11 +170,9 @@ void main() {
         if(g_opacity<1-EPSILON) discard;
     } //Alpha test
 
-    outPos      = vec4(v_pos,gl_FragCoord.z);
     outNormal   = vec4( g_normal , 1.0f );
     outAlbedo   = vec4(g_albedo,g_opacity);
     outMaterial = g_material; //w material ID
     outEmissive = vec4(g_emissive,g_fresnelThreshold); //w Fresnel Threshold 
-    // outTemporal = vec4(0.0); //TBD
 
 }

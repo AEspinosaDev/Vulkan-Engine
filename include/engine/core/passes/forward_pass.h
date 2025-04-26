@@ -67,6 +67,8 @@ class ForwardPass : public BaseGraphicPass
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
                                std::vector<Graphics::SubPassDependency>& dependencies) override;
 
+    void create_framebuffer() override;
+
     void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
     void setup_shader_passes() override;

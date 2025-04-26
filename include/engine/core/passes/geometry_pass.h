@@ -43,22 +43,21 @@ class GeometryPass : public BaseGraphicPass
 
         Output Attachments:
         -
-        - Position buffer
-        - Normal buffer
+        - Normal + VelX buffer
         - Albedo buffer
         - Material buffer
-        - Emmissive buffer
+        - Emmissive + VelY buffer
         - Depth buffer
     */
     GeometryPass(Graphics::Device*        device,
-                 const PassLinkage<3, 6>& config,
+                 const PassLinkage<3, 5>& config,
                  Extent2D                 extent,
                  ColorFormatType          colorFormat,
                  ColorFormatType          depthFormat)
         : BaseGraphicPass(device, extent, 1, 1, true, false, "GEOMETRY")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat) {
-        BasePass::store_attachments<3, 6>(config);
+        BasePass::store_attachments<3, 5>(config);
     }
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,

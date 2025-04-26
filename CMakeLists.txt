@@ -109,13 +109,13 @@ endif()
 # Choose if building demos directory. User-Defined.
 option(BUILD_EXAMPLES "Build Examples Directory" ON)
 if(BUILD_EXAMPLES)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/examples)
 endif()
 # Choose if building demos directory. User-Defined.
 option(BUILD_TESTS "Build Tests Directory" ON)
 if(BUILD_TESTS)
     enable_testing()
-    add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
 
 target_compile_definitions(VulkanEngine PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
