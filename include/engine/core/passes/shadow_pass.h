@@ -14,7 +14,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-class ShadowPass : public BaseGraphicPass
+class ShadowPass final : public BaseGraphicPass
 {
     /* Config  */
     ColorFormatType m_depthFormat;

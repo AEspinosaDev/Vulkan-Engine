@@ -14,7 +14,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-class VarianceShadowPass : public BaseGraphicPass
+class VarianceShadowPass final : public BaseGraphicPass
 {
     /* Config  */
     ColorFormatType m_format = SRG_32F;

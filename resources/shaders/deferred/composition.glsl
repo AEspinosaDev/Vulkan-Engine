@@ -55,11 +55,8 @@ layout(set = 1, binding = 0) uniform sampler2D depthBuffer;
 layout(set = 1, binding = 1) uniform sampler2D normalBuffer;
 layout(set = 1, binding = 2) uniform sampler2D colorBuffer;
 layout(set = 1, binding = 3) uniform sampler2D materialBuffer;
-layout(set = 1, binding = 4) uniform sampler2D emissionBuffer;
-
+layout(set = 1, binding = 4) uniform sampler2D velocityEmissionBuffer;
 layout(set = 1, binding = 5) uniform sampler2D preCompositionBuffer;
-//TEMPORAL
-layout(set = 1, binding = 6) uniform sampler2D prevBuffer;
 
 //SETTINGS
 layout(push_constant) uniform Settings {
@@ -105,10 +102,10 @@ void main() {
     //////////////////////////////////////
     // SETUP SURFACE
     //////////////////////////////////////
-    g_depth =  texture(depthBuffer, v_uv).r;
+    g_depth = texture(depthBuffer, v_uv).r;
 
     // Build position from depth buffer
-    vec2 ndc = v_uv * 2.0 - 1.0;              
+    vec2 ndc = v_uv * 2.0 - 1.0;
     vec4 clip = vec4(ndc, g_depth, 1.0);
     vec4 viewPos = camera.invProj * clip;
     viewPos /= viewPos.w;
@@ -119,9 +116,9 @@ void main() {
     g_albedo = colorData.rgb;
     g_opacity = colorData.w;
     g_material = texture(materialBuffer, v_uv);
-    vec4 emissionFresnelThreshold = texture(emissionBuffer, v_uv);
-    g_emission = emissionFresnelThreshold.rgb;
-    g_isReflective = int(emissionFresnelThreshold.w);
+    vec4 velocityEmission = texture(velocityEmissionBuffer, v_uv);
+    g_emission = g_albedo * velocityEmission.b;
+    g_isReflective = int(velocityEmission.w);
     g_temp = vec4(0.0);
     ///////////////////////////////////
     // PRE-COMPUTED DATA
@@ -216,7 +213,7 @@ void main() {
                 if(settings.ssr.enabled == 1 && g_isReflective == 1) {
                     vec3 modelPos = vec3(camera.invView * vec4(g_pos, 1.0));
                     vec3 fresnel = fresnelSchlick(max(dot(g_normal, normalize(g_pos)), 0.0), brdf.F0);
-                    reflectedColor = performSSR(settings.ssr, g_pos, g_normal, modelPos, depthBuffer, prevBuffer, brdf.metalness, brdf.roughness, fresnel);
+                    // reflectedColor = performSSR(settings.ssr, g_pos, g_normal, modelPos, depthBuffer, prevBuffer, brdf.metalness, brdf.roughness, fresnel);
                 }
 
             }
@@ -280,7 +277,7 @@ void main() {
 
     //Fog ________________________________
         if(scene.enableFog) {
-            float f = computeFog(1.0-g_depth);
+            float f = computeFog(1.0 - g_depth);
             color = f * color + (1 - f) * scene.fogColor.rgb;
         }
 

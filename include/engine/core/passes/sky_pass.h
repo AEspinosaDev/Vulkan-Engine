@@ -21,7 +21,7 @@ Transmittance LUT is based on "Precomputed Atmospheric Scattering" by Eric Brune
 
 Implementation by Fernando García Liñán 2023
 */
-class SkyPass : public BaseGraphicPass
+class SkyPass final : public BaseGraphicPass
 {
   protected:
     Graphics::DescriptorSet m_imageDescriptor;
@@ -62,16 +62,16 @@ class SkyPass : public BaseGraphicPass
 
     void create_framebuffer() override;
 
-    virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                       std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                               std::vector<Graphics::SubPassDependency>& dependencies) override;
 
-    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 
-    virtual void setup_shader_passes() override;
+    void setup_shader_passes() override;
 
-    virtual void resize_attachments() override;
+    void resize_attachments() override;
 
-    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 };
 
 } // namespace Core

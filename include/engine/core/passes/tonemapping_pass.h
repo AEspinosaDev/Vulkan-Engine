@@ -25,7 +25,7 @@ enum TonemappingType
 /*
 Tonemapping Pass.
 */
-class TonemappingPass : public PostProcessPass<1, 1>
+class TonemappingPass final : public PostProcessPass<1, 1>
 {
   protected:
     float           m_exposure = 1.0f;
@@ -43,11 +43,11 @@ class TonemappingPass : public PostProcessPass<1, 1>
                - Tonemapped Color
 
            */
-    TonemappingPass(Graphics::Device*       device,
+    TonemappingPass(Graphics::Device*        device,
                     const PassLinkage<1, 1>& config,
-                    Extent2D                extent,
-                    ColorFormatType         colorFormat,
-                    bool                    isDefault = true)
+                    Extent2D                 extent,
+                    ColorFormatType          colorFormat,
+                    bool                     isDefault = true)
         : PostProcessPass(device,
                           config,
                           extent,
@@ -70,9 +70,9 @@ class TonemappingPass : public PostProcessPass<1, 1>
         m_tonemap = type;
     }
 
-    virtual void setup_shader_passes() override;
+    void setup_shader_passes() override;
 
-    virtual void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
+    void execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex = 0) override;
 };
 
 } // namespace Core

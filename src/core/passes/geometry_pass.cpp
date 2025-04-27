@@ -11,7 +11,7 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
     /////////////////////
     attachments.resize(5);
 
-    // Normals + VelX
+    // Normals + Depth
     attachments[0] = Graphics::AttachmentConfig(SRGBA_16F,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -29,7 +29,7 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                                 IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
-    // Emissive + VelY
+    // Velocity + Emissive strength
     attachments[3] = Graphics::AttachmentConfig(SRGBA_16F,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,

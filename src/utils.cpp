@@ -23,9 +23,9 @@ std::string Utils::read_file(const std::string& filePath) {
 Vec3 Utils::get_tangent_gram_smidt(Vec3&      p1,
                                    Vec3&      p2,
                                    Vec3&      p3,
-                                   glm::vec2& uv1,
-                                   glm::vec2& uv2,
-                                   glm::vec2& uv3,
+                                   Vec2& uv1,
+                                   Vec2& uv2,
+                                   Vec2& uv3,
                                    Vec3       normal) {
 
     Vec3      edge1    = p2 - p1;

@@ -12,6 +12,8 @@
 #define SQRT2 1.414213
 #endif
 
+// #define HIGH_QUALITY_VXGI
+
 //Settings
 struct VXGI {
 	float 	strength;
@@ -24,6 +26,7 @@ struct VXGI {
 	uint 	updateMode;
 };
 // Randomly Uniformly Dist. generated cone directions
+#ifdef HIGH_QUALITY_VXGI
 const int DIFFUSE_CONE_COUNT 			= 16;
 const vec3 DIFFUSE_CONE_DIRECTIONS[16] 	= {
     	vec3(0.57735, 0.57735, 0.57735),
@@ -42,7 +45,20 @@ const vec3 DIFFUSE_CONE_DIRECTIONS[16] 	= {
     	vec3(0.182696, 0.388844, -0.903007),
     	vec3(-0.182696, 0.388844, 0.903007),
     	vec3(0.182696, -0.388844, 0.903007)
-	};
+};
+#else
+const int DIFFUSE_CONE_COUNT = 8;
+const vec3 DIFFUSE_CONE_DIRECTIONS[8] = {
+    vec3(0.57735, 0.57735, 0.57735),   // Top-center
+    vec3(0.57735, -0.57735, 0.57735),  // Bottom-center
+    vec3(-0.57735, 0.57735, 0.57735),  // Top-left
+    vec3(-0.57735, -0.57735, 0.57735), // Bottom-left
+    vec3(0.57735, 0.57735, -0.57735),  // Top-right
+    vec3(0.57735, -0.57735, -0.57735), // Bottom-right
+    vec3(-0.57735, 0.57735, -0.57735), // Top-back
+    vec3(-0.57735, -0.57735, -0.57735) // Bottom-back
+};
+#endif
 
 vec4 traceCone(sampler3D voxelization, vec3 origin, vec3 direction, const float MAX_DISTANCE ,const float CONE_SPREAD, const float VOXEL_WORLD_SIZE)
 {

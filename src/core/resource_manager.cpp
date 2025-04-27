@@ -7,6 +7,7 @@ namespace Core {
 std::vector<Core::ITexture*> ResourceManager::textureResources;
 Core::Texture*               ResourceManager::FALLBACK_TEXTURE = nullptr;
 Core::Texture*               ResourceManager::FALLBACK_CUBEMAP = nullptr;
+Mat4                         ResourceManager::prevViewProj;
 
 void ResourceManager::init_basic_resources(Graphics::Device* const device) {
 
@@ -42,7 +43,8 @@ void ResourceManager::clean_basic_resources() {
 void ResourceManager::update_global_data(Graphics::Device* const device,
                                          Graphics::Frame* const  currentFrame,
                                          Core::Scene* const      scene,
-                                         Core::IWindow* const    window) {
+                                         Core::IWindow* const    window,
+                                         bool                    jitterCamera) {
     PROFILING_EVENT()
     /*
     CAMERA UNIFORMS LOAD
@@ -77,7 +79,14 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
         0.0f,
         1.0f,
     };
-    camData.unormProj = W * camData.proj;
+    camData.unormProj     = W * camData.proj;
+    camData.prevViewProj  = prevViewProj;
+    static int frameIndex = 0;
+    frameIndex            = (frameIndex + 1) % 16;
+    camData.jitter        = jitterCamera
+                                ? Utils::get_halton_jitter(frameIndex, window->get_extent().width, window->get_extent().height)
+                                : Vec2{0.0, 0.0};
+
     /*Other intersting Camera Data*/
     camData.position     = Vec4(camera->get_position(), 0.0f);
     camData.screenExtent = {window->get_extent().width, window->get_extent().height};
@@ -131,7 +140,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
                 if (dirL->use_as_sun())
                 {
                     dirL->set_direction(-DirectionalLight::get_sun_direction(
-                        scene->get_skybox()->get_sky_settings().sunElevationDeg, - sceneParams.envRotation - 90.0f));
+                        scene->get_skybox()->get_sky_settings().sunElevationDeg, -sceneParams.envRotation - 90.0f));
                 }
             }
 

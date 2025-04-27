@@ -18,7 +18,7 @@ namespace Core {
 /*
 DEFERRED RENDERING GEOMETRY PASS
 */
-class GeometryPass : public BaseGraphicPass
+class GeometryPass final : public BaseGraphicPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
@@ -43,10 +43,10 @@ class GeometryPass : public BaseGraphicPass
 
         Output Attachments:
         -
-        - Normal + VelX buffer
+        - Normal buffer
         - Albedo buffer
         - Material buffer
-        - Emmissive + VelY buffer
+        - Velocity + Emissive buffer
         - Depth buffer
     */
     GeometryPass(Graphics::Device*        device,

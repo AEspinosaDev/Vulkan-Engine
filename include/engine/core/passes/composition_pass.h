@@ -47,7 +47,7 @@ struct VXGI { // Settings for Voxel Based GI
     uint32_t updateMode        = 0;
 };
 
-class CompositionPass : public BaseGraphicPass
+class CompositionPass final : public BaseGraphicPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;
@@ -59,8 +59,6 @@ class CompositionPass : public BaseGraphicPass
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-    Graphics::Image m_prevFrame;
-
     struct Settings {
         OutputBuffer outputBuffer = OutputBuffer::LIGHTING;
         int          enableAO     = 1;
@@ -69,8 +67,6 @@ class CompositionPass : public BaseGraphicPass
         SSR          ssr          = {};
     };
     Settings m_settings = {};
-
-    void create_prev_frame_image();
 
   public:
     /*
@@ -138,9 +134,6 @@ class CompositionPass : public BaseGraphicPass
 
     void update_uniforms(uint32_t frameIndex, Scene* const scene) override;
 
-    void resize_attachments() override;
-
-    void cleanup() override;
 };
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

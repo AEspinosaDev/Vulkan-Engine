@@ -10,6 +10,7 @@
 #define CAMERA_H
 
 #include <engine/core/scene/object3D.h>
+#include <engine/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -51,7 +52,6 @@ class Camera : public Object3D
 
   private:
     Mat4 m_view;
-
     Mat4 m_proj;
 
     Frustum m_frustrum;
@@ -92,11 +92,13 @@ class Camera : public Object3D
                                   : math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_far, m_near);
         else
             m_proj = math::ortho(0.0f, (float)width, 0.0f, (float)height, m_near, m_far);
+
         m_proj[1][1] *= -1; // Because Vulkan
     }
     inline Mat4 get_projection() const {
         return m_proj;
     }
+
     inline bool inverse_Z() const {
         return m_inverse_Z;
     }

@@ -20,7 +20,7 @@ namespace Core {
 /*
 STANDARD FORWARD LIGHTING PASS
 */
-class ForwardPass : public BaseGraphicPass
+class ForwardPass final : public BaseGraphicPass
 {
     /*Setup*/
     ColorFormatType m_colorFormat;

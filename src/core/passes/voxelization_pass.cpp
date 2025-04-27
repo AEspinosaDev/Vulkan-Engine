@@ -43,7 +43,7 @@ void VoxelizationPass::create_voxelization_image() {
 }
 
 void VoxelizationPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                         std::vector<Graphics::SubPassDependency>& dependencies) {
+                                             std::vector<Graphics::SubPassDependency>& dependencies) {
 
     // m_imageExtent = {1, 1};
     attachments.resize(1);
@@ -251,29 +251,19 @@ void VoxelizationPass::execute(Graphics::Frame& currentFrame, Scene* const scene
     /*
     CLEAR IMAGES
     */
-    int i = 1;
     for (Graphics::Image* img : m_outAttachments)
-    {
-        if (i == 1)
-            break;
         cmd.clear_image(*img, LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
-        i++;
-    }
-    for (Graphics::Image& img : m_interAttachments)
+    for (size_t i = 0; i < 3; i++)
     {
-        if (i == 3)
-            break;
-        cmd.clear_image(img, LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
-        i++;
-    }
-    for (Graphics::Image& img : m_interAttachments)
-        cmd.pipeline_barrier(img,
+        cmd.clear_image(m_interAttachments[i], LAYOUT_GENERAL, ASPECT_COLOR, Vec4(0.0));
+        cmd.pipeline_barrier(m_interAttachments[i],
                              LAYOUT_UNDEFINED,
                              LAYOUT_GENERAL,
                              ACCESS_NONE,
                              ACCESS_SHADER_READ,
                              STAGE_TOP_OF_PIPE,
                              STAGE_FRAGMENT_SHADER);
+    }
 
     /*
     POPULATE AUXILIAR IMAGES WITH DIRECT IRRADIANCE
@@ -384,7 +374,7 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
 }
 void VoxelizationPass::resize_attachments() {
     for (Graphics::Framebuffer& fb : m_framebuffers)
-    fb.cleanup();
+        fb.cleanup();
     for (Graphics::Image* img : m_outAttachments)
         img->cleanup();
     for (Graphics::Image& img : m_interAttachments)

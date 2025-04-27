@@ -4,30 +4,30 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void VarianceShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
-                                           std::vector<Graphics::SubPassDependency>& dependencies) {
+void VarianceShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                                               std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(2);
 
     attachments[0] = Graphics::AttachmentConfig(m_format,
-                                              1,
-                                              LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                              LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                              COLOR_ATTACHMENT,
-                                              ASPECT_COLOR,
-                                              TEXTURE_2D_ARRAY,
-                                              FILTER_LINEAR,
-                                              ADDRESS_MODE_CLAMP_TO_BORDER);
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                COLOR_ATTACHMENT,
+                                                ASPECT_COLOR,
+                                                TEXTURE_2D_ARRAY,
+                                                FILTER_LINEAR,
+                                                ADDRESS_MODE_CLAMP_TO_BORDER);
 
     attachments[1] = Graphics::AttachmentConfig(m_depthFormat,
-                                              1,
-                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                              LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                              IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
-                                              DEPTH_ATTACHMENT,
-                                              ASPECT_DEPTH,
-                                              TEXTURE_2D_ARRAY);
+                                                1,
+                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                                                DEPTH_ATTACHMENT,
+                                                ASPECT_DEPTH,
+                                                TEXTURE_2D_ARRAY);
 
     // Depdencies
     dependencies.resize(2);
@@ -68,32 +68,32 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[0],
-                                              sizeof(CameraUniforms),
-                                              0,
-                                              &m_descriptors[i].globalDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              0);
+                                           sizeof(CameraUniforms),
+                                           0,
+                                           &m_descriptors[i].globalDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           0);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[0],
-                                              sizeof(SceneUniforms),
-                                              m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
-                                              &m_descriptors[i].globalDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              1);
+                                           sizeof(SceneUniforms),
+                                           m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                           &m_descriptors[i].globalDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           1);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[1],
-                                              sizeof(ObjectUniforms),
-                                              0,
-                                              &m_descriptors[i].objectDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              0);
+                                           sizeof(ObjectUniforms),
+                                           0,
+                                           &m_descriptors[i].objectDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           0);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[1],
-                                              sizeof(MaterialUniforms),
-                                              m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
-                                              &m_descriptors[i].objectDescritor,
-                                              UNIFORM_DYNAMIC_BUFFER,
-                                              1);
+                                           sizeof(MaterialUniforms),
+                                           m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                           &m_descriptors[i].objectDescritor,
+                                           UNIFORM_DYNAMIC_BUFFER,
+                                           1);
     }
 }
 void VarianceShadowPass::setup_shader_passes() {
@@ -141,10 +141,21 @@ void VarianceShadowPass::setup_shader_passes() {
 
 void VarianceShadowPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
-    if ((Core::Light::get_non_raytraced_count() == 0 && currentFrame.index > 0) || scene->get_lights().empty())
-        return;
-
     CommandBuffer cmd = currentFrame.commandBuffer;
+    if ((Core::Light::get_non_raytraced_count() == 0) || scene->get_lights().empty())
+    {
+        if (m_outAttachments[0]->currentLayout == LAYOUT_UNDEFINED)
+            cmd.pipeline_barrier(*m_outAttachments[0],
+                                 LAYOUT_UNDEFINED,
+                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                 ACCESS_NONE,
+                                 ACCESS_SHADER_READ,
+                                 STAGE_TOP_OF_PIPE,
+                                 STAGE_FRAGMENT_SHADER);
+
+        return;
+    }
+
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
     cmd.set_viewport(m_imageExtent);
 

@@ -3,17 +3,18 @@
 
 #include <engine/systems/renderers/renderer.h>
 
+#include <engine/core/passes/TAA_pass.h>
 #include <engine/core/passes/bloom_pass.h>
 #include <engine/core/passes/composition_pass.h>
 #include <engine/core/passes/enviroment_pass.h>
 #include <engine/core/passes/geometry_pass.h>
+#include <engine/core/passes/gui_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/precomposition_pass.h>
 #include <engine/core/passes/sky_pass.h>
 #include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
 #include <engine/core/passes/voxelization_pass.h>
-#include <engine/core/passes/gui_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -36,7 +37,7 @@ class DeferredRenderer : public BaseRenderer
         COMPOSITION_PASS    = 6,
         BLOOM_PASS          = 7,
         TONEMAPPIN_PASS     = 8,
-        FXAA_PASS           = 9,
+        AA_PASS             = 9,
         GUI_PASS            = 10,
     };
 

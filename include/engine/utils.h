@@ -18,7 +18,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Utils {
 
-
 struct DeletionQueue {
     std::deque<std::function<void()>> deletors;
 
@@ -107,10 +106,33 @@ inline std::vector<uint8_t> read_file_binary(const std::string& pathToFile) {
     return fileBufferBytes;
 }
 
-Vec3 get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, glm::vec2& uv1, glm::vec2& uv2, glm::vec2& uv3, Vec3 normal);
+Vec3 get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, Vec2& uv1, Vec2& uv2, Vec2& uv3, Vec3 normal);
+
+inline float halton(int index, int base) {
+    float f      = 1.0f;
+    float result = 0.0f;
+
+    while (index > 0)
+    {
+        f      = f / (float)base;
+        result = result + f * (index % base);
+        index  = index / base;
+    }
+
+    return result;
+}
+
+inline Vec2 get_halton_jitter(int frameIndex, int screenWidth, int screenHeight) {
+    float jitterX = halton(frameIndex, 2) - 0.5f;
+    float jitterY = halton(frameIndex, 3) - 0.5f;
+
+    float pixelWidth  = 1.0f / (float)screenWidth;
+    float pixelHeight = 1.0f / (float)screenHeight;
+
+    return Vec2(jitterX * pixelWidth, jitterY * pixelHeight);
+}
 
 }; // namespace Utils
-
 
 VULKAN_ENGINE_NAMESPACE_END
 

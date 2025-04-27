@@ -20,7 +20,7 @@ attachment. As it is designed to be at the last step of the pipeline.
 
 This pass takes the default pass image (swapchain image)
 */
-class GUIPass : public BaseGraphicPass
+class GUIPass final : public BaseGraphicPass
 {
 
   public:
@@ -28,9 +28,9 @@ class GUIPass : public BaseGraphicPass
         : BaseGraphicPass(device, extent, 1, 1, true, true, "GUI") {
     }
 
-    virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) override {
+    void setup_uniforms(std::vector<Graphics::Frame>& frames) override {
     }
-    virtual void setup_shader_passes() override {
+    void setup_shader_passes() override {
     }
 
     void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,

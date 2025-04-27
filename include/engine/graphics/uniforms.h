@@ -23,10 +23,12 @@ struct CameraUniforms {
     Mat4  invProj;
     Mat4  invViewProj;
     Mat4  unormProj;
+    Mat4  prevViewProj;
     Vec4  position;
     Vec2  screenExtent;
     float nearPlane;
     float farPlane;
+    Vec2 jitter;
 };
 
 struct LightUniforms {

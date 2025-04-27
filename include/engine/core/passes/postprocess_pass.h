@@ -64,7 +64,7 @@ void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(
                                    1,
                                    this->m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                    LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT 
                                                      : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
                                    COLOR_ATTACHMENT,
                                    ASPECT_COLOR,

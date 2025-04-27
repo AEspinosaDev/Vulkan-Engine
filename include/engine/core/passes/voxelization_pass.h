@@ -21,7 +21,7 @@ namespace Core {
 Performs an voxelization of the direct irradiance of the scene. For setting the edges of the volume it takes into
 account the AABB of the scene.
 */
-class VoxelizationPass : public BaseGraphicPass
+class VoxelizationPass final : public BaseGraphicPass
 {
 #ifdef USE_IMG_ATOMIC_OPERATION
     const uint16_t RESOURCE_IMAGES = 4;

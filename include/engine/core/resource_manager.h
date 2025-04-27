@@ -12,11 +12,11 @@
 
 #include <engine/common.h>
 #include <engine/core/materials/material.h>
+#include <engine/core/passes/graphic_pass.h>
 #include <engine/core/textures/texture.h>
 #include <engine/core/textures/textureLDR.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
-#include <engine/core/passes/graphic_pass.h>
 
 #include <engine/graphics/device.h>
 
@@ -38,9 +38,10 @@ class ResourceManager
     Texture Resources
     */
     static std::vector<Core::ITexture*> textureResources;
-    static Core::Texture*              FALLBACK_TEXTURE;
-    static Core::Texture*              FALLBACK_CUBEMAP;
-   
+    static Core::Texture*               FALLBACK_TEXTURE;
+    static Core::Texture*               FALLBACK_CUBEMAP;
+    static Mat4                         prevViewProj;
+
     /*
     Creates and initiates basic rendering resources such as fallback textures and a vignette
     */
@@ -53,7 +54,8 @@ class ResourceManager
     static void update_global_data(Graphics::Device* const device,
                                    Graphics::Frame* const  currentFrame,
                                    Core::Scene* const      scene,
-                                   Core::IWindow* const    window);
+                                   Core::IWindow* const    window,
+                                   bool                    jitterCamera);
     /*
     Object descriptor layouts uniforms buffer upload to GPU
     */

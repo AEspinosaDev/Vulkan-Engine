@@ -9,7 +9,7 @@ void DeferredRenderer::on_before_render(Core::Scene* const scene) {
     if (cam)
     {
         if (!cam->inverse_Z())
-            scene->get_active_camera()->inverse_Z(true);
+            cam->inverse_Z(true);
     }
     // Update enviroment before
     update_enviroment(scene->get_skybox());
@@ -67,6 +67,7 @@ void DeferredRenderer::create_passes() {
     Core::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 10, 6, 7, 8, 9, 12, 1, 2}, {13, 14}};
     Core::PassLinkage<2, 1>  bloomPassConfig       = {m_attachments, {13, 14}, {15}};
     Core::PassLinkage<1, 1>  toneMappingPassConfig = {m_attachments, {15}, {16}};
+    Core::PassLinkage<2, 0>  TAAPassConfig         = {m_attachments, {16, 9}, {}};
     Core::PassLinkage<1, 0>  FXAAPassConfig        = {m_attachments, {16}, {}};
 
     // Create passes
@@ -96,21 +97,28 @@ void DeferredRenderer::create_passes() {
                                                           m_window->get_extent(),
                                                           m_settings.colorFormat,
                                                           m_settings.softwareAA == SoftwareAA::NONE ? true : false);
-
-    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 0>(m_device,
-                                                          FXAAPassConfig,
-                                                          m_window->get_extent(),
-                                                          m_settings.colorFormat,
-                                                          ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
-                                                          "FXAA",
-                                                          m_settings.softwareAA == SoftwareAA::FXAA ? true : false);
+                                                          
+    if (m_settings.softwareAA == SoftwareAA::FXAA || m_settings.softwareAA == SoftwareAA::NONE )
+        m_passes[AA_PASS] = new Core::PostProcessPass<1, 0>(m_device,
+                                                            FXAAPassConfig,
+                                                            m_window->get_extent(),
+                                                            m_settings.colorFormat,
+                                                            ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
+                                                            "FXAA",
+                                                            m_settings.softwareAA == SoftwareAA::FXAA ? true : false);
+    if (m_settings.softwareAA == SoftwareAA::TAA)
+        m_passes[AA_PASS] = new Core::TAAPass(m_device,
+                                              TAAPassConfig,
+                                              m_window->get_extent(),
+                                              m_settings.colorFormat,
+                                              m_settings.softwareAA == SoftwareAA::TAA ? true : false);
 
     m_passes[GUI_PASS] = new Core::GUIPass(m_device, m_window->get_extent());
 
     //--------------------------------
 
-    if (m_settings.softwareAA != SoftwareAA::FXAA)
-        m_passes[FXAA_PASS]->set_active(false);
+    if (m_settings.softwareAA == SoftwareAA::NONE)
+        m_passes[AA_PASS]->set_active(false);
 }
 void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
     if (skybox)

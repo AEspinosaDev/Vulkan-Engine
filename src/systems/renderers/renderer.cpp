@@ -29,7 +29,7 @@ void BaseRenderer::init() {
                    m_settings.screenSync);
     // Init resources
     init_resources();
-    
+
     // User defined renderpasses
     create_passes();
     // Init renderpasses
@@ -93,7 +93,7 @@ void BaseRenderer::create_passes() {
 void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
 
-    Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, m_window);
+    Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.softwareAA == SoftwareAA::TAA);
     Core::ResourceManager::update_object_data(
         m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
 
@@ -106,6 +106,10 @@ void BaseRenderer::on_before_render(Core::Scene* const scene) {
 
 void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
     PROFILING_EVENT()
+
+    // Save old camera state
+    auto camera = scene->get_active_camera();
+    Core::ResourceManager::prevViewProj =  camera->get_projection() * camera->get_view();
 
     if (renderResult == RenderResult::ERROR_OUT_OF_DATE_KHR || renderResult == RenderResult::SUBOPTIMAL_KHR ||
         m_window->is_resized() || m_updateFramebuffers)
@@ -125,6 +129,9 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     if (!m_initialized)
         init();
+
+    if (!scene->get_active_camera())
+        return;
 
     uint32_t     imageIndex;
     RenderResult result = m_device->wait_frame(m_frames[m_currentFrame], imageIndex);

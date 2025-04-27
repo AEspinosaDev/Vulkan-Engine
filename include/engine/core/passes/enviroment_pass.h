@@ -21,7 +21,7 @@ This pass does three things:
 - Performs a second renderpass to compute the diuffuse irradiance cubemap.
 - Performs a third renderpass to compute the specular irradiance cubemap.
 */
-class EnviromentPass : public BaseGraphicPass
+class EnviromentPass final : public BaseGraphicPass
 {
     ColorFormatType         m_format;
     Graphics::DescriptorSet m_envDescriptorSet;

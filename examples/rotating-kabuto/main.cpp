@@ -32,7 +32,7 @@ int main() {
         window->init();
 
         Systems::RendererSettings settings{};
-        settings.samplesMSAA = MSAASamples::x1;
+        settings.samplesMSAA = MSAASamples::x4;
         settings.clearColor  = Vec4(0.0, 0.0, 0.0, 1.0);
 
         Systems::BaseRenderer* renderer =

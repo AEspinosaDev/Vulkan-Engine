@@ -90,7 +90,7 @@ void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&
 void ForwardPass::create_framebuffer() {
     CHECK_INITIALIZATION()
 
-    if (m_aa == MSAASamples::x1) //IF NOT MULTISAMPLED
+    if (m_aa == MSAASamples::x1) // IF NOT MULTISAMPLED
         for (size_t fb = 0; fb < m_framebuffers.size(); fb++)
             m_framebuffers[fb] = m_device->create_framebuffer(
                 m_renderpass, m_outAttachments, m_imageExtent, m_framebufferImageDepth, fb);
@@ -312,6 +312,9 @@ void ForwardPass::setup_shader_passes() {
 
 void ForwardPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
+
+    for (size_t i = 0; i < 2; i++)
+        m_interAttachments[i].clearValue = m_outAttachments[i]->clearValue;
 
     CommandBuffer cmd = currentFrame.commandBuffer;
     cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);

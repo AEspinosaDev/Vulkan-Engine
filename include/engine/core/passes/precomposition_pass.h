@@ -36,7 +36,7 @@ Pre-composition pass called before the Composition (Lighting) pass in a deferred
 SSAO and other lighting effects, such as blurring raytraced shadows by bilinear filering them, in order to be used in
 future lighting passes.
 */
-class PreCompositionPass : public BaseGraphicPass
+class PreCompositionPass final : public BaseGraphicPass
 {
     /*Descriptors*/
     struct FrameDescriptors {

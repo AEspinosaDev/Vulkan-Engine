@@ -29,7 +29,7 @@ both X and Y axes.
 A (first downsampled image).
 - Finally, we mix the overall bloom contribution into the HDR source image, with a strong bias towards the HDR source.
 */
-class BloomPass : public BaseGraphicPass
+class BloomPass final : public BaseGraphicPass
 {
   protected:
     ColorFormatType m_colorFormat = SRGBA_16F;
