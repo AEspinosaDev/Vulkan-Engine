@@ -17,6 +17,7 @@
 #include <engine/systems/renderers/renderer.h>
 #include <engine/tools/controller.h>
 #include <engine/tools/loaders.h>
+#include <engine/tools/scene_loader.h>
 #include <filesystem>
 #include <functional>
 

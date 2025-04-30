@@ -8,7 +8,7 @@ BinPackArguments: false
 BinPackParameters: false
 
 # Column limit to trigger line wrapping
-ColumnLimit: 120  # Adjust as needed; lower value ensures more wrapping
+ColumnLimit: 160  # Adjust as needed; lower value ensures more wrapping
 
 IndentWidth: 4
 TabWidth: 4

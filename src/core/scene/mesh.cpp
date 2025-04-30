@@ -10,20 +10,20 @@ void BoundingSphere::setup(Mesh* const mesh) {
 
     for (Geometry* g : mesh->get_geometries())
     {
-        const GeometricData* stats = g->get_properties();
+        const GeometricData& stats = g->get_properties();
 
-        if (stats->maxCoords.x > maxCoords.x)
-            maxCoords.x = stats->maxCoords.x;
-        if (stats->maxCoords.y > maxCoords.y)
-            maxCoords.y = stats->maxCoords.y;
-        if (stats->maxCoords.z > maxCoords.z)
-            maxCoords.z = stats->maxCoords.z;
-        if (stats->minCoords.x < minCoords.x)
-            minCoords.x = stats->minCoords.x;
-        if (stats->minCoords.y < minCoords.y)
-            minCoords.y = stats->minCoords.y;
-        if (stats->minCoords.z < minCoords.z)
-            minCoords.z = stats->minCoords.z;
+        if (stats.maxCoords.x > maxCoords.x)
+            maxCoords.x = stats.maxCoords.x;
+        if (stats.maxCoords.y > maxCoords.y)
+            maxCoords.y = stats.maxCoords.y;
+        if (stats.maxCoords.z > maxCoords.z)
+            maxCoords.z = stats.maxCoords.z;
+        if (stats.minCoords.x < minCoords.x)
+            minCoords.x = stats.minCoords.x;
+        if (stats.minCoords.y < minCoords.y)
+            minCoords.y = stats.minCoords.y;
+        if (stats.minCoords.z < minCoords.z)
+            minCoords.z = stats.minCoords.z;
     }
 
     center = (maxCoords + minCoords) * 0.5f;

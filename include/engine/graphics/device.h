@@ -95,10 +95,7 @@ class Device
               uint32_t        framesPerFlight,
               ColorFormatType presentFormat,
               SyncType        presentMode);
-    void update_swapchain(Extent2D        surfaceExtent,
-                          uint32_t        framesPerFlight,
-                          ColorFormatType presentFormat,
-                          SyncType        presentMode);
+    void update_swapchain(Extent2D surfaceExtent, uint32_t framesPerFlight, ColorFormatType presentFormat, SyncType presentMode);
     void cleanup();
 
     /*
@@ -107,24 +104,13 @@ class Device
     */
 
     /*Create Buffer using Vulkan Memory Allocator (VMA)*/
-    Buffer
-    create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize = 0);
+    Buffer create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize = 0);
     /*Create Buffer*/
-    Buffer create_buffer(size_t              allocSize,
-                         BufferUsageFlags    usage,
-                         MemoryPropertyFlags memoryProperties,
-                         uint32_t            strideSize = 0);
+    Buffer create_buffer(size_t allocSize, BufferUsageFlags usage, MemoryPropertyFlags memoryProperties, uint32_t strideSize = 0);
     /*Create Image*/
-    Image create_image(Extent3D       extent,
-                       ImageConfig    config,
-                       bool           useMipmaps,
-                       VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
+    Image create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Framebuffer Object*/
-    Framebuffer create_framebuffer(RenderPass&          renderpass,
-                                   std::vector<Image*>& attachments,
-                                   Extent2D             extent,
-                                   uint32_t             layers = 1,
-                                   uint32_t             id     = 0);
+    Framebuffer create_framebuffer(RenderPass& renderpass, std::vector<Image*>& attachments, Extent2D extent, uint32_t layers = 1, uint32_t id = 0);
     Framebuffer create_framebuffer(RenderPass& renderpass, Image& attachment);
     Semaphore   create_semaphore();
     Fence       create_fence(bool signaled = true);
@@ -132,8 +118,7 @@ class Device
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
-    RenderPass create_render_pass(std::vector<AttachmentConfig>&    attachments,
-                                  std::vector<SubPassDependency>& dependencies);
+    RenderPass create_render_pass(std::vector<AttachmentConfig>& attachments, std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
     DescriptorPool create_descriptor_pool(uint32_t                       maxSets,
                                           uint32_t                       numUBO,
@@ -149,11 +134,9 @@ class Device
                                           uint32_t                       numIAttachment       = 0,
                                           VkDescriptorPoolCreateFlagBits flag                 = {});
     /*Create Command Pool*/
-    CommandPool create_command_pool(QueueType              QueueType,
-                                    CommandPoolCreateFlags flags = COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
+    CommandPool create_command_pool(QueueType QueueType, CommandPoolCreateFlags flags = COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
     /*Create command buffer*/
-    CommandBuffer create_command_buffer(CommandPool        commandPool,
-                                        CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY);
+    CommandBuffer create_command_buffer(CommandPool commandPool, CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY);
     /*Create shader pass*/
     // ShaderPass build_shader_pass(const std::string shaderFile, PipelineSettings sett = {});
 
@@ -181,12 +164,7 @@ class Device
                               const void*   iboData,
                               size_t        voxelSize = 0,
                               const void*   voxelData = nullptr);
-    void upload_texture_image(Image&        img,
-                              ImageConfig   config,
-                              SamplerConfig samplerConfig,
-                              const void*   imgCache,
-                              size_t        bytesPerPixel,
-                              bool          mipmapping);
+    void upload_texture_image(Image& img, ImageConfig config, SamplerConfig samplerConfig, const void* imgCache, size_t bytesPerPixel);
     void upload_BLAS(BLAS& accel, VAO& vao);
     void upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
     /*

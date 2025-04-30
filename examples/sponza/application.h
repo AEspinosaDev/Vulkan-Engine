@@ -10,6 +10,7 @@
 #include <engine/tools/controller.h>
 #include <engine/tools/gui.h>
 #include <engine/tools/loaders.h>
+#include <engine/tools/scene_loader.h>
 
 /**
  * Example app

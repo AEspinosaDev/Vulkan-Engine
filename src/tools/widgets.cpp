@@ -198,7 +198,7 @@ void ExplorerWidget::render() {
     {
         if (ImGuiFileDialog::Instance()->IsOk())
         {
-            Loaders::SceneLoader sceneLoader;
+            SceneLoader sceneLoader;
             std::string          filePath = ImGuiFileDialog::Instance()->GetFilePathName();
             sceneLoader.save_scene(m_scene, filePath);
         }
@@ -209,7 +209,7 @@ void ExplorerWidget::render() {
     {
         if (ImGuiFileDialog::Instance()->IsOk())
         {
-            Loaders::SceneLoader sceneLoader;
+            SceneLoader sceneLoader;
             std::string          filePath = ImGuiFileDialog::Instance()->GetFilePathName();
             sceneLoader.load_scene(m_scene, filePath);
         }

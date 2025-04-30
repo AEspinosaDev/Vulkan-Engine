@@ -7,10 +7,8 @@ void ForwardRenderer::on_before_render(Core::Scene* const scene) {
     update_enviroment(scene->get_skybox());
     BaseRenderer::on_before_render(scene);
 
-    m_passes[FORWARD_PASS]->set_attachment_clear_value(
-        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 0);
-    m_passes[FORWARD_PASS]->set_attachment_clear_value(
-        {m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 1);
+    m_passes[FORWARD_PASS]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 0);
+    m_passes[FORWARD_PASS]->set_attachment_clear_value({m_settings.clearColor.r, m_settings.clearColor.g, m_settings.clearColor.b, m_settings.clearColor.a}, 1);
 }
 
 void ForwardRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
@@ -45,44 +43,31 @@ void ForwardRenderer::create_passes() {
     Core::PassLinkage<0, 2> shadowPassConfig      = {m_attachments, {}, {3, 4}};
     Core::PassLinkage<3, 3> forwardPassConfig     = {m_attachments, {3, 1, 2}, {5, 6, 7}};
     Core::PassLinkage<2, 1> bloomPassConfig       = {m_attachments, {5, 6}, {8}};
-    Core::PassLinkage<1, 1> toneMappingPassConfig = {m_attachments, {8}, {9}};
-    Core::PassLinkage<1, 0> FXAAPassConfig        = {m_attachments, {9}, {}};
+    Core::PassLinkage<1, 1> FXAAPassConfig        = {m_attachments, {8}, {9}};
+    Core::PassLinkage<1, 0> toneMappingPassConfig = {m_attachments, {9}};
 
     // Create passes
     //--------------------------------
 
     m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
     m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(m_device,
-                                                         shadowPassConfig,
-                                                             {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality},
-                                                         ENGINE_MAX_LIGHTS,
-                                                         m_settings.depthFormat);
+    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(
+        m_device, shadowPassConfig, {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
 
-    m_passes[FORWARD_PASS] = new Core::ForwardPass(m_device,
-                                                   forwardPassConfig,
-                                                   m_window->get_extent(),
-                                                   m_settings.colorFormat,
-                                                   m_settings.depthFormat,
-                                                   m_settings.samplesMSAA);
+    m_passes[FORWARD_PASS] =
+        new Core::ForwardPass(m_device, forwardPassConfig, m_window->get_extent(), SRGBA_16F, m_settings.depthFormat, m_settings.samplesMSAA);
 
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, m_window->get_extent());
 
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(
-        m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat,  m_settings.softwareAA == SoftwareAA::NONE ? true : false);
+    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 1>(
+        m_device, FXAAPassConfig, m_window->get_extent(), SRGBA_16F, ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl", "FXAA", false);
 
-    m_passes[FXAA_PASS] = new Core::PostProcessPass<1, 0>(m_device,
-                                                          FXAAPassConfig,
-                                                          m_window->get_extent(),
-                                                          m_settings.colorFormat,
-                                                          ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
-                                                          "FXAA",
-                                                          m_settings.softwareAA == SoftwareAA::FXAA ? true : false);
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat, true);
 
     m_passes[GUI_PASS] = new Core::GUIPass(m_device, m_window->get_extent());
 
-    if ( m_settings.softwareAA != SoftwareAA::FXAA)
-    m_passes[FXAA_PASS]->set_active(false);
+    if (m_settings.softwareAA != SoftwareAA::FXAA)
+        m_passes[FXAA_PASS]->set_active(false);
 }
 
 void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
@@ -92,9 +77,8 @@ void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
         {
 
             Core::ResourceManager::upload_skybox_data(m_device, skybox);
-            const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV
-                                                   ? skybox->get_enviroment_map()->get_size().height
-                                                   : skybox->get_sky_settings().resolution;
+            const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV ? skybox->get_enviroment_map()->get_size().height
+                                                                                                         : skybox->get_sky_settings().resolution;
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);

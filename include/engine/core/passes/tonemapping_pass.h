@@ -25,11 +25,13 @@ enum TonemappingType
 /*
 Tonemapping Pass.
 */
-class TonemappingPass final : public PostProcessPass<1, 1>
+class TonemappingPass final : public PostProcessPass<1, 0>
 {
   protected:
     float           m_exposure = 1.0f;
     TonemappingType m_tonemap  = FILMIC_TONEMAP;
+
+    void setup_input_image_mipmaps();
 
   public:
     /*
@@ -43,18 +45,9 @@ class TonemappingPass final : public PostProcessPass<1, 1>
                - Tonemapped Color
 
            */
-    TonemappingPass(Graphics::Device*        device,
-                    const PassLinkage<1, 1>& config,
-                    Extent2D                 extent,
-                    ColorFormatType          colorFormat,
-                    bool                     isDefault = true)
-        : PostProcessPass(device,
-                          config,
-                          extent,
-                          colorFormat,
-                          ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl",
-                          "TONEMAPPING",
-                          isDefault) {
+    TonemappingPass(Graphics::Device* device, const PassLinkage<1, 0>& config, Extent2D extent, ColorFormatType colorFormat, bool isDefault = true)
+        : PostProcessPass(device, config, extent, colorFormat, ENGINE_RESOURCES_PATH "shaders/misc/tonemapping.glsl", "TONEMAPPING", isDefault) {
+        m_interAttachments.resize(1);
     }
 
     inline float get_exposure() const {

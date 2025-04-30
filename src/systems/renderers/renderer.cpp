@@ -94,8 +94,7 @@ void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
 
     Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.softwareAA == SoftwareAA::TAA);
-    Core::ResourceManager::update_object_data(
-        m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
+    Core::ResourceManager::update_object_data(m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
 
     for (Core::BasePass* pass : m_passes)
     {
@@ -108,11 +107,10 @@ void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* cons
     PROFILING_EVENT()
 
     // Save old camera state
-    auto camera = scene->get_active_camera();
-    Core::ResourceManager::prevViewProj =  camera->get_projection() * camera->get_view();
+    auto camera                         = scene->get_active_camera();
+    Core::ResourceManager::prevViewProj = camera->get_projection() * camera->get_view();
 
-    if (renderResult == RenderResult::ERROR_OUT_OF_DATE_KHR || renderResult == RenderResult::SUBOPTIMAL_KHR ||
-        m_window->is_resized() || m_updateFramebuffers)
+    if (renderResult == RenderResult::ERROR_OUT_OF_DATE_KHR || renderResult == RenderResult::SUBOPTIMAL_KHR || m_window->is_resized() || m_updateFramebuffers)
     {
         m_window->set_resized(false);
         update_framebuffers();
@@ -163,24 +161,22 @@ void BaseRenderer::update_framebuffers() {
     m_window->update_framebuffer();
 
     m_device->wait();
-    m_device->update_swapchain(m_window->get_extent(),
-                               static_cast<uint32_t>(m_settings.bufferingType),
-                               m_settings.colorFormat,
-                               m_settings.screenSync);
+    m_device->update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType), m_settings.colorFormat, m_settings.screenSync);
 
     // Renderpass framebuffer updating
     for (Core::BasePass* pass : m_passes)
     {
         if (pass->is_active())
-        {
             if (pass->resizeable())
             {
                 pass->set_extent(m_window->get_extent());
                 pass->resize_attachments();
             }
-            pass->link_input_attachments();
-        }
     };
+    // Connect renderpasses
+    for (Core::BasePass* pass : m_passes)
+        if (pass->is_active())
+            pass->link_input_attachments();
 
     m_updateFramebuffers = false;
 }
@@ -204,10 +200,7 @@ void BaseRenderer::init_gui() {
         m_device->init_imgui(windowHandle,
                              m_window->get_windowing_system(),
                              static_cast<Core::BaseGraphicPass*>(defaultPass)->get_renderpass(),
-                             static_cast<Core::BaseGraphicPass*>(defaultPass)
-                                 ->get_renderpass()
-                                 .attachmentsConfig[0]
-                                 .imageConfig.samples);
+                             static_cast<Core::BaseGraphicPass*>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
     }
 }
 void BaseRenderer::init_resources() {
@@ -219,19 +212,17 @@ void BaseRenderer::init_resources() {
     for (size_t i = 0; i < m_frames.size(); i++)
     {
         // Global Buffer
-        const size_t     globalStrideSize = (m_device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) +
-                                         m_device->pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
-        Graphics::Buffer globalBuffer     = m_device->create_buffer_VMA(
-            globalStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
+        const size_t globalStrideSize =
+            (m_device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) + m_device->pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
+        Graphics::Buffer globalBuffer =
+            m_device->create_buffer_VMA(globalStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
         m_frames[i].uniformBuffers.push_back(globalBuffer);
 
         // Object Buffer
-        const size_t     objectStrideSize = (m_device->pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) +
-                                         m_device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
-        Graphics::Buffer objectBuffer     = m_device->create_buffer_VMA(ENGINE_MAX_OBJECTS * objectStrideSize,
-                                                                    BUFFER_USAGE_UNIFORM_BUFFER,
-                                                                    VMA_MEMORY_USAGE_CPU_TO_GPU,
-                                                                    (uint32_t)objectStrideSize);
+        const size_t objectStrideSize =
+            (m_device->pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) + m_device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+        Graphics::Buffer objectBuffer = m_device->create_buffer_VMA(
+            ENGINE_MAX_OBJECTS * objectStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
         m_frames[i].uniformBuffers.push_back(objectBuffer);
     }
 

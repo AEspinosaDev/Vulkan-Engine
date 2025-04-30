@@ -4,23 +4,21 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void BloomPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&    attachments,
-                                  std::vector<Graphics::SubPassDependency>& dependencies) {
+void BloomPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
-    attachments[0] =
-        Graphics::AttachmentConfig(m_colorFormat,
-                                 1,
-                                 m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                 m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
-                                             : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                 COLOR_ATTACHMENT,
-                                 ASPECT_COLOR,
-                                 TEXTURE_2D,
-                                 FILTER_LINEAR,
-                                 ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] = Graphics::AttachmentConfig(
+        m_colorFormat,
+        1,
+        m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+        COLOR_ATTACHMENT,
+        ASPECT_COLOR,
+        TEXTURE_2D,
+        FILTER_LINEAR,
+        ADDRESS_MODE_CLAMP_TO_EDGE);
 
     attachments[0].isDefault = m_isDefault ? true : false;
 
@@ -29,11 +27,9 @@ void BloomPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  
     {
         dependencies.resize(2);
 
-        dependencies[0] = Graphics::SubPassDependency(
-            STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0]               = Graphics::SubPassDependency(STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
         dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
-        dependencies[1] =
-            Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+        dependencies[1]               = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
         dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
         dependencies[1].srcSubpass    = 0;
         dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
@@ -42,8 +38,7 @@ void BloomPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  
         dependencies.resize(1);
 
         // dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[0] = Graphics::SubPassDependency(
-            STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0] = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     }
 }
 void BloomPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
@@ -53,15 +48,13 @@ void BloomPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding brightBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_COMPUTE, 0); // HDR input bright image
     LayoutBinding imageBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1); // HDR input color image
 
-    LayoutBinding bloomMipsImgBinding(
-        UNIFORM_STORAGE_IMAGE, SHADER_STAGE_COMPUTE, 2, MIPMAP_LEVELS); // Bloom image mipmaps
+    LayoutBinding bloomMipsImgBinding(UNIFORM_STORAGE_IMAGE, SHADER_STAGE_COMPUTE, 2, MIPMAP_LEVELS); // Bloom image mipmaps
     LayoutBinding bloomMipsSamplBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_COMPUTE, 3, MIPMAP_LEVELS);
 
     LayoutBinding bloomBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4); // Resolved bloom image
                                                                                           // binding
 
-    m_descriptorPool.set_layout(
-        GLOBAL_LAYOUT, {brightBinding, imageBinding, bloomMipsImgBinding, bloomMipsSamplBinding, bloomBinding});
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {brightBinding, imageBinding, bloomMipsImgBinding, bloomMipsSamplBinding, bloomBinding});
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptorSet);
 }
@@ -70,8 +63,7 @@ void BloomPass::setup_shader_passes() {
     const uint32_t MIPMAP_UNIFORM_SIZE   = sizeof(uint32_t) * 2.0f;
     const uint32_t SETTINGS_UNIFORM_SIZE = sizeof(float);
 
-    ComputeShaderPass* downsamplePass =
-        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/downsample.glsl");
+    ComputeShaderPass* downsamplePass               = new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/downsample.glsl");
     downsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     downsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
@@ -80,8 +72,7 @@ void BloomPass::setup_shader_passes() {
 
     m_shaderPasses["downsample"] = downsamplePass;
 
-    ComputeShaderPass* upsamplePass =
-        new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/upsample.glsl");
+    ComputeShaderPass* upsamplePass               = new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/upsample.glsl");
     upsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     upsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
@@ -90,14 +81,11 @@ void BloomPass::setup_shader_passes() {
 
     m_shaderPasses["upsample"] = upsamplePass;
 
-    GraphicShaderPass* bloomPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/bloom/compose.glsl");
+    GraphicShaderPass* bloomPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/bloom/compose.glsl");
     bloomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    bloomPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
-                                                  {NORMAL_ATTRIBUTE, false},
-                                                  {UV_ATTRIBUTE, true},
-                                                  {TANGENT_ATTRIBUTE, false},
-                                                  {COLOR_ATTRIBUTE, false}};
+    bloomPass->graphicSettings.attributes      = {
+        {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     bloomPass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_FRAGMENT, SETTINGS_UNIFORM_SIZE));
 
     bloomPass->build_shader_stages();
@@ -129,13 +117,8 @@ void BloomPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint3
                              ACCESS_SHADER_READ,
                              STAGE_FRAGMENT_SHADER,
                              STAGE_COMPUTE_SHADER);
-        cmd.pipeline_barrier(m_bloomImage,
-                             LAYOUT_UNDEFINED,
-                             LAYOUT_GENERAL,
-                             ACCESS_SHADER_WRITE,
-                             ACCESS_SHADER_READ,
-                             STAGE_COMPUTE_SHADER,
-                             STAGE_COMPUTE_SHADER);
+        cmd.pipeline_barrier(
+            m_bloomImage, LAYOUT_UNDEFINED, LAYOUT_GENERAL, ACCESS_SHADER_WRITE, ACCESS_SHADER_READ, STAGE_COMPUTE_SHADER, STAGE_COMPUTE_SHADER);
 
         cmd.clear_image(m_bloomImage, LAYOUT_GENERAL);
 
@@ -157,9 +140,7 @@ void BloomPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint3
             // Dispatch the compute shader
             uint32_t mipWidth  = std::max(1u, m_inAttachments[1]->extent.width >> i);
             uint32_t mipHeight = std::max(1u, m_inAttachments[1]->extent.height >> i);
-            cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                                  (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                                  1});
+            cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE, (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE, 1});
 
             cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
                                  LAYOUT_GENERAL,
@@ -196,9 +177,7 @@ void BloomPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint3
             // Dispatch the compute shader
             uint32_t mipWidth  = std::max(1u, m_inAttachments[1]->extent.width >> (i - 1));
             uint32_t mipHeight = std::max(1u, m_inAttachments[1]->extent.height >> (i - 1));
-            cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                                  (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE,
-                                  1});
+            cmd.dispatch_compute({(mipWidth + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE, (mipHeight + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE, 1});
 
             cmd.pipeline_barrier(m_bloomMipmaps[mipmap.dstLevel],
                                  LAYOUT_GENERAL,
@@ -210,12 +189,7 @@ void BloomPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint3
         }
 
         // Prepare image to be read from
-        cmd.pipeline_barrier(m_bloomImage,
-                             LAYOUT_GENERAL,
-                             LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             ACCESS_SHADER_WRITE,
-                             ACCESS_SHADER_READ,
-                             STAGE_COMPUTE_SHADER);
+        cmd.pipeline_barrier(m_bloomImage, LAYOUT_GENERAL, LAYOUT_SHADER_READ_ONLY_OPTIMAL, ACCESS_SHADER_WRITE, ACCESS_SHADER_READ, STAGE_COMPUTE_SHADER);
     }
 
     ////////////////////////////////////////////////////////////
@@ -248,7 +222,8 @@ void BloomPass::link_input_attachments() {
     config.mipLevels    = MIPMAP_LEVELS;
     config.baseMipLevel = 0;
     config.format       = m_colorFormat;
-    m_bloomImage        = m_device->create_image(m_inAttachments[1]->extent, config, true);
+    config.useMipmaps   = true;
+    m_bloomImage        = m_device->create_image(m_inAttachments[1]->extent, config);
     m_bloomImage.create_view(config);
     SamplerConfig samplerConfig      = {};
     samplerConfig.minLod             = 0;

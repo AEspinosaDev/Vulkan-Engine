@@ -29,20 +29,13 @@ void Device::init(void*           windowHandle,
     vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProperties);
 
     // Create logical device
-    m_handle = Booter::create_logical_device(
-        m_queues, m_gpu, m_features, m_swapchain.get_surface(), m_enableValidationLayers, m_validationLayers);
+    m_handle = Booter::create_logical_device(m_queues, m_gpu, m_features, m_swapchain.get_surface(), m_enableValidationLayers, m_validationLayers);
 
     // Setup VMA
     m_allocator = Booter::setup_memory(m_instance, m_handle, m_gpu);
 
     // Create swapchain
-    m_swapchain.create(m_gpu,
-                       m_handle,
-                       actualExtent,
-                       surfaceExtent,
-                       framesPerFlight,
-                       Translator::get(presentFormat),
-                       Translator::get(presentMode));
+    m_swapchain.create(m_gpu, m_handle, actualExtent, surfaceExtent, framesPerFlight, Translator::get(presentFormat), Translator::get(presentMode));
 
     create_upload_context();
     load_extensions(m_handle, m_instance);
@@ -50,17 +43,8 @@ void Device::init(void*           windowHandle,
     //------<<<
 }
 
-void Device::update_swapchain(Extent2D        surfaceExtent,
-                              uint32_t        framesPerFlight,
-                              ColorFormatType presentFormat,
-                              SyncType        presentMode) {
-    m_swapchain.create(m_gpu,
-                       m_handle,
-                       surfaceExtent,
-                       surfaceExtent,
-                       framesPerFlight,
-                       Translator::get(presentFormat),
-                       Translator::get(presentMode));
+void Device::update_swapchain(Extent2D surfaceExtent, uint32_t framesPerFlight, ColorFormatType presentFormat, SyncType presentMode) {
+    m_swapchain.create(m_gpu, m_handle, surfaceExtent, surfaceExtent, framesPerFlight, Translator::get(presentFormat), Translator::get(presentMode));
 }
 
 void Device::cleanup() {
@@ -82,8 +66,7 @@ void Device::cleanup() {
     vkDestroyInstance(m_instance, nullptr);
 }
 
-Buffer
-Device::create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize) {
+Buffer Device::create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, uint32_t strideSize) {
 
     Buffer buffer = {};
 
@@ -104,10 +87,7 @@ Device::create_buffer_VMA(size_t allocSize, BufferUsageFlags usage, VmaMemoryUsa
 
     return buffer;
 }
-Buffer Device::create_buffer(size_t              allocSize,
-                             BufferUsageFlags    usage,
-                             MemoryPropertyFlags memoryProperties,
-                             uint32_t            strideSize) {
+Buffer Device::create_buffer(size_t allocSize, BufferUsageFlags usage, MemoryPropertyFlags memoryProperties, uint32_t strideSize) {
     Buffer buffer = {};
 
     VkBufferCreateInfo bufferCreateInfo{};
@@ -139,7 +119,7 @@ Buffer Device::create_buffer(size_t              allocSize,
 
     return buffer;
 }
-Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps, VmaMemoryUsage memoryUsage) {
+Image Device::create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage memoryUsage) {
     Image img      = {};
     img.extent     = extent;
     img.device     = m_handle;
@@ -150,7 +130,7 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
     img_allocinfo.usage                   = memoryUsage;
 
     uint32_t maxMip = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
-    img.mipLevels   = useMipmaps ? config.mipLevels <= maxMip ? config.mipLevels : maxMip : 1;
+    img.mipLevels   = config.useMipmaps ? config.mipLevels <= maxMip ? config.mipLevels : maxMip : 1;
 
     img.baseMipLevel = config.baseMipLevel;
     img.layers       = config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
@@ -161,16 +141,15 @@ Image Device::create_image(Extent3D extent, ImageConfig config, bool useMipmaps,
     if (config.viewType == TextureTypeFlagBits::TEXTURE_1D || config.viewType == TextureTypeFlagBits::TEXTURE_1D_ARRAY)
         imageType = VK_IMAGE_TYPE_1D;
 
-    VkImageCreateInfo img_info = Init::image_create_info(
-        Translator::get(config.format),
-        Translator::get(config.usageFlags),
-        extent,
-        img.mipLevels,
-        static_cast<VkSampleCountFlagBits>(config.samples),
-        img.layers,
-        imageType,
-        config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
-    img_info.initialLayout = Translator::get(config.layout);
+    VkImageCreateInfo img_info = Init::image_create_info(Translator::get(config.format),
+                                                         Translator::get(config.usageFlags),
+                                                         extent,
+                                                         img.mipLevels,
+                                                         static_cast<VkSampleCountFlagBits>(config.samples),
+                                                         img.layers,
+                                                         imageType,
+                                                         config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
+    img_info.initialLayout     = Translator::get(config.layout);
 
     VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
 
@@ -185,8 +164,7 @@ CommandPool Device::create_command_pool(QueueType QueueType, CommandPoolCreateFl
     switch (QueueType)
     {
     case QueueType::GRAPHIC_QUEUE:
-        poolInfo.queueFamilyIndex =
-            Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
+        poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).graphicsFamily.value();
         break;
     case QueueType::COMPUTE_QUEUE:
         poolInfo.queueFamilyIndex = Booter::find_queue_families(m_gpu, m_swapchain.get_surface()).computeFamily.value();
@@ -207,12 +185,11 @@ CommandPool Device::create_command_pool(QueueType QueueType, CommandPoolCreateFl
     return pool;
 }
 CommandBuffer Device::create_command_buffer(CommandPool commandPool, CommandBufferLevel level) {
-    CommandBuffer cmd = {};
-    cmd.device        = m_handle;
-    cmd.pool          = commandPool.handle;
-    cmd.queue         = commandPool.queue;
-    VkCommandBufferAllocateInfo cmdAllocInfo =
-        Init::command_buffer_allocate_info(commandPool.handle, 1, Translator::get(level));
+    CommandBuffer cmd                        = {};
+    cmd.device                               = m_handle;
+    cmd.pool                                 = commandPool.handle;
+    cmd.queue                                = commandPool.queue;
+    VkCommandBufferAllocateInfo cmdAllocInfo = Init::command_buffer_allocate_info(commandPool.handle, 1, Translator::get(level));
     VK_CHECK(vkAllocateCommandBuffers(m_handle, &cmdAllocInfo, &cmd.handle));
     return cmd;
 }
@@ -262,8 +239,7 @@ DescriptorPool Device::create_descriptor_pool(uint32_t                       max
     VK_CHECK(vkCreateDescriptorPool(m_handle, &pool_info, nullptr, &pool.handle));
     return pool;
 }
-RenderPass Device::create_render_pass(std::vector<AttachmentConfig>&  attachments,
-                                      std::vector<SubPassDependency>& dependencies) {
+RenderPass Device::create_render_pass(std::vector<AttachmentConfig>& attachments, std::vector<SubPassDependency>& dependencies) {
     RenderPass rp = {};
     // ATTACHMENT SETUP ----------------------------------
     rp.device = m_handle;
@@ -291,8 +267,7 @@ RenderPass Device::create_render_pass(std::vector<AttachmentConfig>&  attachment
         switch (attachments[i].type)
         {
         case AttachmentType::COLOR_ATTACHMENT:
-            colorAttachmentRefs.push_back(
-                Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout)));
+            colorAttachmentRefs.push_back(Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout)));
             break;
         case AttachmentType::DEPTH_ATTACHMENT:
             hasDepthAttachment = true;
@@ -300,8 +275,7 @@ RenderPass Device::create_render_pass(std::vector<AttachmentConfig>&  attachment
             break;
         case AttachmentType::RESOLVE_ATTACHMENT:
             hasResolveAttachment = true;
-            resolveAttachemtRefs.push_back(
-                Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout)));
+            resolveAttachemtRefs.push_back(Init::attachment_reference(i, Translator::get(attachments[i].attachmentLayout)));
             break;
         }
     }
@@ -350,11 +324,7 @@ RenderPass Device::create_render_pass(std::vector<AttachmentConfig>&  attachment
     rp.dependenciesConfig = dependencies;
     return rp;
 } // namespace Graphics
-Framebuffer Device::create_framebuffer(RenderPass&          renderpass,
-                                       std::vector<Image*>& attachments,
-                                       Extent2D             extent,
-                                       uint32_t             layers,
-                                       uint32_t             id) {
+Framebuffer Device::create_framebuffer(RenderPass& renderpass, std::vector<Image*>& attachments, Extent2D extent, uint32_t layers, uint32_t id) {
 
     Framebuffer fbo = {};
     fbo.device      = m_handle;
@@ -372,9 +342,7 @@ Framebuffer Device::create_framebuffer(RenderPass&          renderpass,
         if (!renderpass.attachmentsConfig[i].isDefault) // If its not present image
         {
             renderpass.attachmentsConfig[i].imageConfig.layers = layers;
-            *attachments[i]                                    = create_image({extent.width, extent.height, 1},
-                                           renderpass.attachmentsConfig[i].imageConfig,
-                                           false); // No mipmap for attachment image :(
+            *attachments[i]                                    = create_image({extent.width, extent.height, 1}, renderpass.attachmentsConfig[i].imageConfig);
             attachments[i]->create_view(renderpass.attachmentsConfig[i].imageConfig);
             attachments[i]->create_sampler(renderpass.attachmentsConfig[i].samplerConfig);
 
@@ -383,9 +351,8 @@ Framebuffer Device::create_framebuffer(RenderPass&          renderpass,
         } else
         {
 
-            fbo.attachmentImagesPtrs[i] =
-                &m_swapchain.get_present_images()[id]; // save swapchain image pointer in framebuffer !!
-            fboViewAttachments[i] = m_swapchain.get_present_images()[id].view;
+            fbo.attachmentImagesPtrs[i] = &m_swapchain.get_present_images()[id]; // save swapchain image pointer in framebuffer !!
+            fboViewAttachments[i]       = m_swapchain.get_present_images()[id].view;
         }
     }
 
@@ -406,11 +373,10 @@ Framebuffer Device::create_framebuffer(RenderPass& renderpass, Image& attachment
     fbo.device      = m_handle;
     fbo.layers      = attachment.layers;
 
-    VkFramebufferCreateInfo fbInfo =
-        Init::framebuffer_create_info(renderpass.handle, {attachment.extent.width, attachment.extent.height});
-    fbInfo.pAttachments    = &attachment.view;
-    fbInfo.attachmentCount = 1;
-    fbInfo.layers          = attachment.layers;
+    VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.handle, {attachment.extent.width, attachment.extent.height});
+    fbInfo.pAttachments            = &attachment.view;
+    fbInfo.attachmentCount         = 1;
+    fbInfo.layers                  = attachment.layers;
 
     if (vkCreateFramebuffer(m_handle, &fbInfo, nullptr, &fbo.handle) != VK_SUCCESS)
     {
@@ -433,11 +399,11 @@ Fence Device::create_fence(bool signaled) {
     return fence;
 }
 Frame Device::create_frame(uint16_t id) {
-    Frame frame              = {};
-    frame.index              = id;
-    frame.commandPool        = create_command_pool(QueueType::GRAPHIC_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
-    frame.commandBuffer      = create_command_buffer(frame.commandPool);
-    frame.computeCommandPool = create_command_pool(QueueType::COMPUTE_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
+    Frame frame                = {};
+    frame.index                = id;
+    frame.commandPool          = create_command_pool(QueueType::GRAPHIC_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
+    frame.commandBuffer        = create_command_buffer(frame.commandPool);
+    frame.computeCommandPool   = create_command_pool(QueueType::COMPUTE_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
     frame.computeCommandBuffer = create_command_buffer(frame.computeCommandPool);
     frame.renderFence          = create_fence();
     frame.renderSemaphore      = create_semaphore();
@@ -466,8 +432,7 @@ RenderResult Device::submit_frame(Frame& frame, uint32_t imageIndex) {
 }
 RenderResult Device::aquire_present_image(Semaphore& waitSemahpore, uint32_t& imageIndex) {
 
-    VkResult result = vkAcquireNextImageKHR(
-        m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.handle, VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.handle, VK_NULL_HANDLE, &imageIndex);
     return static_cast<RenderResult>(result);
 }
 
@@ -501,11 +466,10 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
     vboStagingBuffer.upload_data(vboData, vboSize);
 
     // GPU vertex buffer
-    vao.vbo =
-        create_buffer_VMA(vboSize,
-                          BUFFER_USAGE_VERTEX_BUFFER | BUFFER_USAGE_TRANSFER_DST | BUFFER_USAGE_SHADER_DEVICE_ADDRESS |
-                              BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
-                          VMA_MEMORY_USAGE_GPU_ONLY);
+    vao.vbo = create_buffer_VMA(
+        vboSize,
+        BUFFER_USAGE_VERTEX_BUFFER | BUFFER_USAGE_TRANSFER_DST | BUFFER_USAGE_SHADER_DEVICE_ADDRESS | BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
+        VMA_MEMORY_USAGE_GPU_ONLY);
 
     m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_buffer(vboStagingBuffer, vao.vbo, vboSize); });
 
@@ -519,13 +483,11 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
 
         // GPU index buffer
         vao.ibo = create_buffer_VMA(iboSize,
-                                    BUFFER_USAGE_INDEX_BUFFER | BUFFER_USAGE_TRANSFER_DST |
-                                        BUFFER_USAGE_SHADER_DEVICE_ADDRESS |
+                                    BUFFER_USAGE_INDEX_BUFFER | BUFFER_USAGE_TRANSFER_DST | BUFFER_USAGE_SHADER_DEVICE_ADDRESS |
                                         BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
                                     VMA_MEMORY_USAGE_GPU_ONLY);
 
-        m_uploadContext.immediate_submit(
-            [&](CommandBuffer cmd) { cmd.copy_buffer(iboStagingBuffer, vao.ibo, iboSize); });
+        m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_buffer(iboStagingBuffer, vao.ibo, iboSize); });
 
         iboStagingBuffer.cleanup();
     }
@@ -536,32 +498,26 @@ void Device::upload_vertex_arrays(VertexArrays& vao,
         voxelStagingBuffer.upload_data(voxelData, voxelSize);
 
         // GPU Voxel buffer
-        vao.voxelBuffer = create_buffer_VMA(voxelSize,
-                                            BUFFER_USAGE_TRANSFER_DST | BUFFER_USAGE_SHADER_DEVICE_ADDRESS |
-                                                BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
-                                            VMA_MEMORY_USAGE_GPU_ONLY);
+        vao.voxelBuffer =
+            create_buffer_VMA(voxelSize,
+                              BUFFER_USAGE_TRANSFER_DST | BUFFER_USAGE_SHADER_DEVICE_ADDRESS | BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
+                              VMA_MEMORY_USAGE_GPU_ONLY);
 
-        m_uploadContext.immediate_submit(
-            [&](CommandBuffer cmd) { cmd.copy_buffer(voxelStagingBuffer, vao.voxelBuffer, voxelSize); });
+        m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_buffer(voxelStagingBuffer, vao.voxelBuffer, voxelSize); });
 
         voxelStagingBuffer.cleanup();
     }
 
     vao.loadedOnGPU = true;
 }
-void Device::upload_texture_image(Image&        img,
-                                  ImageConfig   config,
-                                  SamplerConfig samplerConfig,
-                                  const void*   imgCache,
-                                  size_t        bytesPerPixel,
-                                  bool          mipmapping) {
+void Device::upload_texture_image(Image& img, ImageConfig config, SamplerConfig samplerConfig, const void* imgCache, size_t bytesPerPixel) {
     PROFILING_EVENT()
 
     // CREATE IMAGE
     config.usageFlags  = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST;
     config.samples     = 1;
     config.aspectFlags = ASPECT_COLOR;
-    img                = create_image(img.extent, config, mipmapping);
+    img                = create_image(img.extent, config);
     img.create_view(config);
 
     VkDeviceSize imageSize = img.extent.width * img.extent.height * img.extent.depth * bytesPerPixel;
@@ -614,10 +570,9 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
         if (vao.indexCount > 0)
             indexBufferDeviceAddress.deviceAddress = vao.ibo.get_device_address();
 
-        accelerationStructureGeometry.flags        = VK_GEOMETRY_OPAQUE_BIT_KHR;
-        accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-        accelerationStructureGeometry.geometry.triangles.sType =
-            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+        accelerationStructureGeometry.flags                           = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        accelerationStructureGeometry.geometryType                    = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+        accelerationStructureGeometry.geometry.triangles.sType        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
         accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         accelerationStructureGeometry.geometry.triangles.vertexData   = vertexBufferDeviceAddress;
         accelerationStructureGeometry.geometry.triangles.maxVertex    = vao.vertexCount - 1;
@@ -635,28 +590,24 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     {
         voxelBufferDeviceAddress.deviceAddress = vao.voxelBuffer.get_device_address();
 
-        accelerationStructureGeometry.flags        = VK_GEOMETRY_OPAQUE_BIT_KHR;
-        accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
-        accelerationStructureGeometry.geometry.aabbs.sType =
-            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+        accelerationStructureGeometry.flags                = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        accelerationStructureGeometry.geometryType         = VK_GEOMETRY_TYPE_AABBS_KHR;
+        accelerationStructureGeometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
 
         accelerationStructureGeometry.geometry.aabbs.data.deviceAddress = vao.voxelBuffer.get_device_address();
         accelerationStructureGeometry.geometry.aabbs.stride             = sizeof(Voxel); // Stride between AABBs
     }
 
     // SIZE INFO -----------------------------------------------------------
-    VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
-        Init::acceleration_structure_build_geometry_info();
-    accelerationStructureBuildGeometryInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelerationStructureBuildGeometryInfo.flags         = accel.dynamic
-                                                               ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-                                                             VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-                                                               : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = Init::acceleration_structure_build_geometry_info();
+    accelerationStructureBuildGeometryInfo.type                                        = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    accelerationStructureBuildGeometryInfo.flags =
+        accel.dynamic ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                      : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     accelerationStructureBuildGeometryInfo.geometryCount = 1;
     accelerationStructureBuildGeometryInfo.pGeometries   = &accelerationStructureGeometry;
 
-    VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo =
-        Init::acceleration_structure_build_sizes_info();
+    VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo = Init::acceleration_structure_build_sizes_info();
 
     const uint32_t numPrimitives = accel.topology == AccelGeometryType::TRIANGLES ? vao.indexCount / 3 : vao.voxelCount;
     vkGetAccelerationStructureBuildSizes(m_handle,
@@ -684,18 +635,16 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     }
 
     // Create a small scratch buffer used during build of the bottom level acceleration structure
-    Buffer scratchBuffer = create_buffer(accel.buffer.size,
-                                         BUFFER_USAGE_STORAGE_BUFFER | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
-                                         MEMORY_PROPERTY_DEVICE_LOCAL);
+    Buffer scratchBuffer = create_buffer(accel.buffer.size, BUFFER_USAGE_STORAGE_BUFFER | BUFFER_USAGE_SHADER_DEVICE_ADDRESS, MEMORY_PROPERTY_DEVICE_LOCAL);
 
     VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
     accelerationBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelerationBuildGeometryInfo.flags = accel.dynamic ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-                                                              VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-                                                        : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelerationBuildGeometryInfo.mode = accel.dynamic && accel.handle ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
-                                                                       : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    accelerationBuildGeometryInfo.flags = accel.dynamic
+                                              ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                                              : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelerationBuildGeometryInfo.mode =
+        accel.dynamic && accel.handle ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     accelerationBuildGeometryInfo.dstAccelerationStructure  = accel.handle;
     accelerationBuildGeometryInfo.geometryCount             = 1;
     accelerationBuildGeometryInfo.pGeometries               = &accelerationStructureGeometry;
@@ -706,18 +655,16 @@ void Device::upload_BLAS(BLAS& accel, VAO& vao) {
     accelerationStructureBuildRangeInfo.primitiveOffset                                         = 0;
     accelerationStructureBuildRangeInfo.firstVertex                                             = 0;
     accelerationStructureBuildRangeInfo.transformOffset                                         = 0;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = {
-        &accelerationStructureBuildRangeInfo};
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = {&accelerationStructureBuildRangeInfo};
 
     m_uploadContext.immediate_submit([&](CommandBuffer cmd) {
-        vkCmdBuildAccelerationStructures(
-            cmd.handle, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
+        vkCmdBuildAccelerationStructures(cmd.handle, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
     });
 
     VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
-    accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+    accelerationDeviceAddressInfo.sType                 = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
     accelerationDeviceAddressInfo.accelerationStructure = accel.handle;
-    accel.deviceAdress = vkGetAccelerationStructureDeviceAddress(m_handle, &accelerationDeviceAddressInfo);
+    accel.deviceAdress                                  = vkGetAccelerationStructureDeviceAddress(m_handle, &accelerationDeviceAddressInfo);
 
     scratchBuffer.cleanup();
 
@@ -750,10 +697,9 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     }
 
     // Create a buffer for the instances -----------------------------------------------------------
-    Buffer instanceBuffer =
-        create_buffer(sizeof(VkAccelerationStructureInstanceKHR) * instances.size(),
-                      BUFFER_USAGE_SHADER_DEVICE_ADDRESS | BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
-                      MEMORY_PROPERTY_HOST_VISIBLE | MEMORY_PROPERTY_HOST_COHERENT);
+    Buffer instanceBuffer = create_buffer(sizeof(VkAccelerationStructureInstanceKHR) * instances.size(),
+                                          BUFFER_USAGE_SHADER_DEVICE_ADDRESS | BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY,
+                                          MEMORY_PROPERTY_HOST_VISIBLE | MEMORY_PROPERTY_HOST_COHERENT);
     instanceBuffer.upload_data(instances.data(), sizeof(VkAccelerationStructureInstanceKHR) * instances.size());
 
     VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
@@ -762,25 +708,21 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     VkAccelerationStructureGeometryKHR accelerationStructureGeometry = Init::acceleration_structure_geometry();
     accelerationStructureGeometry.geometryType                       = VK_GEOMETRY_TYPE_INSTANCES_KHR;
     accelerationStructureGeometry.flags                              = VK_GEOMETRY_OPAQUE_BIT_KHR;
-    accelerationStructureGeometry.geometry.instances.sType =
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+    accelerationStructureGeometry.geometry.instances.sType           = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     accelerationStructureGeometry.geometry.instances.arrayOfPointers = VK_FALSE;
     accelerationStructureGeometry.geometry.instances.data            = instanceDataDeviceAddress;
 
-    VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
-        Init::acceleration_structure_build_geometry_info();
-    accelerationStructureBuildGeometryInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    accelerationStructureBuildGeometryInfo.flags         = accel.dynamic
-                                                               ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-                                                             VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-                                                               : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = Init::acceleration_structure_build_geometry_info();
+    accelerationStructureBuildGeometryInfo.type                                        = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    accelerationStructureBuildGeometryInfo.flags =
+        accel.dynamic ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                      : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     accelerationStructureBuildGeometryInfo.geometryCount = 1;
     accelerationStructureBuildGeometryInfo.pGeometries   = &accelerationStructureGeometry;
 
     uint32_t primitiveCount = static_cast<uint32_t>(instances.size());
 
-    VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo =
-        Init::acceleration_structure_build_sizes_info();
+    VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo = Init::acceleration_structure_build_sizes_info();
     vkGetAccelerationStructureBuildSizes(m_handle,
                                          VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                                          &accelerationStructureBuildGeometryInfo,
@@ -805,18 +747,16 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     };
 
     // Create a small scratch buffer used during build of the bottom level acceleration structure
-    Buffer scratchBuffer = create_buffer(accelerationStructureBuildSizesInfo.buildScratchSize,
-                                         BUFFER_USAGE_STORAGE_BUFFER | BUFFER_USAGE_SHADER_DEVICE_ADDRESS,
-                                         MEMORY_PROPERTY_DEVICE_LOCAL);
+    Buffer scratchBuffer = create_buffer(
+        accelerationStructureBuildSizesInfo.buildScratchSize, BUFFER_USAGE_STORAGE_BUFFER | BUFFER_USAGE_SHADER_DEVICE_ADDRESS, MEMORY_PROPERTY_DEVICE_LOCAL);
 
-    VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo =
-        Init::acceleration_structure_build_geometry_info();
-    accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    accelerationBuildGeometryInfo.flags = accel.dynamic ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-                                                              VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-                                                        : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelerationBuildGeometryInfo.mode = accel.dynamic && accel.handle ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
-                                                                       : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo = Init::acceleration_structure_build_geometry_info();
+    accelerationBuildGeometryInfo.type                                        = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    accelerationBuildGeometryInfo.flags                                       = accel.dynamic
+                                                                                    ? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+                                                                                    : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelerationBuildGeometryInfo.mode =
+        accel.dynamic && accel.handle ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     accelerationBuildGeometryInfo.dstAccelerationStructure  = accel.handle;
     accelerationBuildGeometryInfo.geometryCount             = 1;
     accelerationBuildGeometryInfo.pGeometries               = &accelerationStructureGeometry;
@@ -827,18 +767,16 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     accelerationStructureBuildRangeInfo.primitiveOffset                                         = 0;
     accelerationStructureBuildRangeInfo.firstVertex                                             = 0;
     accelerationStructureBuildRangeInfo.transformOffset                                         = 0;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = {
-        &accelerationStructureBuildRangeInfo};
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = {&accelerationStructureBuildRangeInfo};
 
     m_uploadContext.immediate_submit([&](CommandBuffer cmd) {
-        vkCmdBuildAccelerationStructures(
-            cmd.handle, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
+        vkCmdBuildAccelerationStructures(cmd.handle, 1, &accelerationBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
     });
 
     VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
-    accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+    accelerationDeviceAddressInfo.sType                 = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
     accelerationDeviceAddressInfo.accelerationStructure = accel.handle;
-    accel.deviceAdress = vkGetAccelerationStructureDeviceAddress(m_handle, &accelerationDeviceAddressInfo);
+    accel.deviceAdress                                  = vkGetAccelerationStructureDeviceAddress(m_handle, &accelerationDeviceAddressInfo);
 
     scratchBuffer.cleanup();
     instanceBuffer.cleanup();
@@ -854,19 +792,8 @@ void Device::wait_queue(QueueType queueType) {
 }
 void Device::init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples) {
 
-    m_guiPool = create_descriptor_pool(1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       1000,
-                                       VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
+    m_guiPool =
+        create_descriptor_pool(1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

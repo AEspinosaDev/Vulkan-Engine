@@ -29,8 +29,8 @@ class ForwardRenderer : public BaseRenderer
         SHADOW_PASS     = 2,
         FORWARD_PASS    = 3,
         BLOOM_PASS      = 4,
-        TONEMAPPIN_PASS = 5,
-        FXAA_PASS       = 6,
+        FXAA_PASS       = 5,
+        TONEMAPPIN_PASS = 6,
         GUI_PASS        = 7
     };
 

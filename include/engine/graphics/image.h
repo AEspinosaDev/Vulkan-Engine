@@ -25,6 +25,7 @@ struct ImageConfig {
     uint16_t        samples      = 1U;
     uint32_t        mipLevels    = 1U;
     uint32_t        baseMipLevel = 0;
+    bool            useMipmaps   = false;
     uint32_t        layers       = 1U;
     ImageLayout     layout       = LAYOUT_UNDEFINED;
     ClearValue      clearValue   = {{{0.0, 0.0, 0.0, 1.0}}};

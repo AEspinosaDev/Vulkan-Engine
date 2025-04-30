@@ -180,10 +180,21 @@ void VarianceShadowPass::execute(Graphics::Frame& currentFrame, Scene* const sce
                     Geometry*  g   = m->get_geometry(i);
                     IMaterial* mat = m->get_material(g->get_material_ID());
 
-                    ShaderPass* shaderPass =
-                        mat->get_shaderpass_ID() != "hairstr" && mat->get_shaderpass_ID() != "hairstr2"
-                            ? m_shaderPasses["shadowTri"]
-                            : m_shaderPasses["shadowLine"];
+                    ShaderPass* shaderPass;
+                    switch (g->get_properties().topology)
+                    {
+                    case Topology::TRIANGLES:
+                        shaderPass = m_shaderPasses["shadowTri"];
+                        break;
+                    case Topology::LINES_TO_TRIANGLES:
+                        shaderPass = m_shaderPasses["shadowLine"];
+                        break;
+                    case Topology::LINES:
+                        shaderPass = m_shaderPasses["shadowLine"];
+                        break;
+                    default:
+                        break;
+                    }
 
                     cmd.set_depth_test_enable(mat->get_parameters().depthTest);
                     cmd.set_depth_write_enable(mat->get_parameters().depthWrite);

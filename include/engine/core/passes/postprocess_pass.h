@@ -38,8 +38,7 @@ template <std::size_t numberIN, std::size_t numberOUT> class PostProcessPass : p
         BasePass::store_attachments<numberIN, numberOUT>(config);
     }
 
-    virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                       std::vector<Graphics::SubPassDependency>& dependencies);
+    virtual void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies);
 
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames);
 
@@ -53,9 +52,8 @@ template <std::size_t numberIN, std::size_t numberOUT> class PostProcessPass : p
 #pragma region Implementation
 
 template <std::size_t numberIN, std::size_t numberOUT>
-void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(
-    std::vector<Graphics::AttachmentConfig>&  attachments,
-    std::vector<Graphics::SubPassDependency>& dependencies) {
+void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
+                                                                 std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
@@ -64,27 +62,27 @@ void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(
                                    1,
                                    this->m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                    LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT 
-                                                     : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                                     : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
                                    COLOR_ATTACHMENT,
                                    ASPECT_COLOR,
                                    TEXTURE_2D,
                                    FILTER_LINEAR,
                                    ADDRESS_MODE_CLAMP_TO_EDGE);
 
-    attachments[0].isDefault = this->m_isDefault ? true : false;
+    attachments[0].isDefault              = this->m_isDefault ? true : false;
+    // attachments[0].imageConfig.mipLevels  = static_cast<uint32_t>(std::floor(std::log2(std::max(this->m_imageExtent.width, this->m_imageExtent.height)))) + 1;
+    // attachments[0].imageConfig.useMipmaps = true;
 
     // Depdencies
     if (!this->m_isDefault)
     {
         dependencies.resize(2);
 
-        dependencies[0] = Graphics::SubPassDependency(
-            STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0]                 = Graphics::SubPassDependency(STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
         dependencies[0].srcAccessMask   = ACCESS_SHADER_READ;
         dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
-        dependencies[1] =
-            Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+        dependencies[1]                 = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
         dependencies[1].srcAccessMask   = ACCESS_COLOR_ATTACHMENT_WRITE;
         dependencies[1].srcSubpass      = 0;
         dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
@@ -94,13 +92,11 @@ void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(
         dependencies.resize(1);
 
         // dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[0] = Graphics::SubPassDependency(
-            STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0] = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
         dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
     }
 }
-template <std::size_t numberIN, std::size_t numberOUT>
-void PostProcessPass<numberIN, numberOUT>::setup_uniforms(std::vector<Graphics::Frame>& frames) {
+template <std::size_t numberIN, std::size_t numberOUT> void PostProcessPass<numberIN, numberOUT>::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
     this->m_descriptorPool = this->m_device->create_descriptor_pool(1, numberIN, 1, 1, 1);
 
@@ -114,17 +110,13 @@ void PostProcessPass<numberIN, numberOUT>::setup_uniforms(std::vector<Graphics::
 
     this->m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &this->m_imageDescriptorSet);
 }
-template <std::size_t numberIN, std::size_t numberOUT>
-void PostProcessPass<numberIN, numberOUT>::setup_shader_passes() {
+template <std::size_t numberIN, std::size_t numberOUT> void PostProcessPass<numberIN, numberOUT>::setup_shader_passes() {
 
-    Graphics::GraphicShaderPass* ppPass = new Graphics::GraphicShaderPass(
-        this->m_device->get_handle(), this->m_renderpass, this->m_imageExtent, this->m_shaderPath);
+    Graphics::GraphicShaderPass* ppPass =
+        new Graphics::GraphicShaderPass(this->m_device->get_handle(), this->m_renderpass, this->m_imageExtent, this->m_shaderPath);
     ppPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    ppPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
-                                               {NORMAL_ATTRIBUTE, false},
-                                               {UV_ATTRIBUTE, true},
-                                               {TANGENT_ATTRIBUTE, false},
-                                               {COLOR_ATTRIBUTE, false}};
+    ppPass->graphicSettings.attributes      = {
+        {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     ppPass->build_shader_stages();
     ppPass->build(this->m_descriptorPool);
@@ -132,9 +124,7 @@ void PostProcessPass<numberIN, numberOUT>::setup_shader_passes() {
     this->m_shaderPasses["pp"] = ppPass;
 }
 template <std::size_t numberIN, std::size_t numberOUT>
-void PostProcessPass<numberIN, numberOUT>::execute(Graphics::Frame& currentFrame,
-                                                   Scene* const     scene,
-                                                   uint32_t         presentImageIndex) {
+void PostProcessPass<numberIN, numberOUT>::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
     PROFILING_EVENT()
 
     Graphics::CommandBuffer cmd = currentFrame.commandBuffer;
@@ -154,8 +144,7 @@ void PostProcessPass<numberIN, numberOUT>::execute(Graphics::Frame& currentFrame
 
     cmd.end_renderpass(this->m_renderpass, this->m_framebuffers[this->m_isDefault ? presentImageIndex : 0]);
 }
-template <std::size_t numberIN, std::size_t numberOUT>
-void PostProcessPass<numberIN, numberOUT>::link_input_attachments() {
+template <std::size_t numberIN, std::size_t numberOUT> void PostProcessPass<numberIN, numberOUT>::link_input_attachments() {
     for (size_t i = 0; i < numberIN; i++)
     {
         this->m_descriptorPool.update_descriptor(this->m_inAttachments[i], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, i);

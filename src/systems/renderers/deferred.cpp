@@ -66,25 +66,21 @@ void DeferredRenderer::create_passes() {
     Core::PassLinkage<2, 1>  preCompPassConfig     = {m_attachments, {10, 6}, {12}};
     Core::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 10, 6, 7, 8, 9, 12, 1, 2}, {13, 14}};
     Core::PassLinkage<2, 1>  bloomPassConfig       = {m_attachments, {13, 14}, {15}};
-    Core::PassLinkage<1, 1>  toneMappingPassConfig = {m_attachments, {15}, {16}};
-    Core::PassLinkage<2, 0>  TAAPassConfig         = {m_attachments, {16, 9}, {}};
-    Core::PassLinkage<1, 0>  FXAAPassConfig        = {m_attachments, {16}, {}};
+    Core::PassLinkage<2, 1>  TAAPassConfig         = {m_attachments, {15, 9}, {16}};
+    Core::PassLinkage<1, 1>  FXAAPassConfig        = {m_attachments, {15}, {16}};
+    Core::PassLinkage<1, 0>  toneMappingPassConfig = {m_attachments, {16}};
 
     // Create passes
     //--------------------------------
 
     m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
     m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(m_device,
-                                                         shadowPassConfig,
-                                                             {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality},
-                                                         ENGINE_MAX_LIGHTS,
-                                                         m_settings.depthFormat);
+    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(
+        m_device, shadowPassConfig, {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
 
     m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, voxelPassConfig, 256);
 
-    m_passes[GEOMETRY_PASS] = new Core::GeometryPass(
-        m_device, geometryPassConfig, m_window->get_extent(), m_settings.colorFormat, m_settings.depthFormat);
+    m_passes[GEOMETRY_PASS] = new Core::GeometryPass(m_device, geometryPassConfig, m_window->get_extent(), m_settings.colorFormat, m_settings.depthFormat);
 
     m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, preCompPassConfig, m_window->get_extent());
 
@@ -92,26 +88,13 @@ void DeferredRenderer::create_passes() {
 
     m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, m_window->get_extent());
 
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device,
-                                                          toneMappingPassConfig,
-                                                          m_window->get_extent(),
-                                                          m_settings.colorFormat,
-                                                          m_settings.softwareAA == SoftwareAA::NONE ? true : false);
-                                                          
-    if (m_settings.softwareAA == SoftwareAA::FXAA || m_settings.softwareAA == SoftwareAA::NONE )
-        m_passes[AA_PASS] = new Core::PostProcessPass<1, 0>(m_device,
-                                                            FXAAPassConfig,
-                                                            m_window->get_extent(),
-                                                            m_settings.colorFormat,
-                                                            ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl",
-                                                            "FXAA",
-                                                            m_settings.softwareAA == SoftwareAA::FXAA ? true : false);
+    if (m_settings.softwareAA == SoftwareAA::FXAA || m_settings.softwareAA == SoftwareAA::NONE)
+        m_passes[AA_PASS] = new Core::PostProcessPass<1, 1>(
+            m_device, FXAAPassConfig, m_window->get_extent(), SRGBA_16F, ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl", "FXAA", false);
     if (m_settings.softwareAA == SoftwareAA::TAA)
-        m_passes[AA_PASS] = new Core::TAAPass(m_device,
-                                              TAAPassConfig,
-                                              m_window->get_extent(),
-                                              m_settings.colorFormat,
-                                              m_settings.softwareAA == SoftwareAA::TAA ? true : false);
+        m_passes[AA_PASS] = new Core::TAAPass(m_device, TAAPassConfig, m_window->get_extent(), SRGBA_16F, false);
+
+    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device, toneMappingPassConfig, m_window->get_extent(), m_settings.colorFormat, true);
 
     m_passes[GUI_PASS] = new Core::GUIPass(m_device, m_window->get_extent());
 
@@ -127,9 +110,8 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
         {
 
             Core::ResourceManager::upload_skybox_data(m_device, skybox);
-            const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV
-                                                   ? skybox->get_enviroment_map()->get_size().height
-                                                   : skybox->get_sky_settings().resolution;
+            const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV ? skybox->get_enviroment_map()->get_size().height
+                                                                                                         : skybox->get_sky_settings().resolution;
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
             get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);

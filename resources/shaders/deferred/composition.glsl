@@ -144,9 +144,9 @@ void main() {
 
             vec3 modelPos = (camera.invView * vec4(g_pos.xyz, 1.0)).xyz;
             vec3 modelNormal = (camera.invView * vec4(g_normal.xyz, 0.0)).xyz;
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // PHYSICAL 
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             if(g_material.w == PHYSICAL_MATERIAL) {
             //Populate BRDF ________________________
                 CookTorranceBRDF brdf;
@@ -156,7 +156,6 @@ void main() {
                 brdf.roughness = g_material.x;
                 brdf.metalness = g_material.y;
                 brdf.ao = g_material.z;
-            // brdf.emission;
                 brdf.F0 = vec3(0.04);
                 brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
                 brdf.emission = g_emission;
@@ -217,52 +216,52 @@ void main() {
                 }
 
             }
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // PHONG 
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             if(g_material.w == PHONG_MATERIAL) {
 
             //TBD ....
             }
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // HAIR 
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             if(g_material.w == HAIR_STRAND_MATERIAL) {
-            //TBD ....
+                MarschnerBSDF bsdf;
+                bsdf.tangent = normalize(g_normal);
+                bsdf.baseColor = g_albedo;
+                bsdf.beta = g_material.r;
+                // bsdf.shift = g_material.g;
+                bsdf.shift = 5.2;
+                bsdf.ior = 1.55;
+                bsdf.Rpower = 2.0;
+                bsdf.TTpower = 2.0;
+                bsdf.TRTpower = 2.0;
+
+
+                //Direct Component ________________________
+                for(int i = 0; i < scene.numLights; i++) {
+                    //If inside liught area influence
+                    if(isInAreaOfInfluence(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type))) {
+
+                        vec3 lighting = evalMarschnerBSDF(normalize(scene.lights[i].position.xyz - g_pos), normalize(-g_pos), scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type)) * scene.lights[i].intensity, bsdf,true,true,true);
+
+                        //Visibility Component ________________________
+                        lighting *= evalVisibility(i, modelPos);
+                        direct += lighting;
+                      
+                    }
+                }
+            //Emission Component ________________________
+                direct += g_emission;
+            //Ambient Component ________________________
+                 ambient = (scene.ambientIntensity * scene.ambientColor) * bsdf.baseColor;
             }
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // SKIN 
-        //////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             if(g_material.w == SKIN_MATERIAL) {
-             //Populate BSDF ________________________
-                // DisneyBSSDF bsdf;
-                // bsdf.albedo = g_albedo;
-                // bsdf.opacity = g_opacity;
-                // bsdf.normal = g_normal;
-                // bsdf.mask = g_material.w;
-                // bsdf.thickness = thickness;
-            // bsdf.roughness = g_material.x;
-            // bsdf.ao = g_material.z;
-
-            // //Direct Component ________________________
-            //     for(int i = 0; i < scene.numLights; i++) {
-            //         //If inside liught area influence
-            //         if(isInAreaOfInfluence(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type))) {
-
-            //             //Direct Component ________________________
-            //             vec3 lighting = vec3(0.0);
-            //             float camDist = length(g_pos);
-            //             // lighting = evalDisneyBSSDF(scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(-scene.lights[i].position.xyz), //wi
-            //             // normalize(-g_pos),                                                                                           //wo
-            //             // scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type)) * scene.lights[i].intensity,              //radiance
-            //             // v_uv, camDist, positionBuffer, materialBuffer, materialBuffer, bsdf);
-
-            //             //Visibility Component ________________________
-                        // lighting *= evalVisibility(i,modelPos);
-            //            
-            //             direct += lighting;
-            //         }
-            //     }
+             
             }
 
             color = direct + indirect.rgb + ambient + reflectedColor;
@@ -304,3 +303,34 @@ void main() {
         outBrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 
 }
+
+
+//Populate BSDF ________________________
+                // DisneyBSSDF bsdf;
+                // bsdf.albedo = g_albedo;
+                // bsdf.opacity = g_opacity;
+                // bsdf.normal = g_normal;
+                // bsdf.mask = g_material.w;
+                // bsdf.thickness = thickness;
+            // bsdf.roughness = g_material.x;
+            // bsdf.ao = g_material.z;
+
+            // //Direct Component ________________________
+            //     for(int i = 0; i < scene.numLights; i++) {
+            //         //If inside liught area influence
+            //         if(isInAreaOfInfluence(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type))) {
+
+            //             //Direct Component ________________________
+            //             vec3 lighting = vec3(0.0);
+            //             float camDist = length(g_pos);
+            //             // lighting = evalDisneyBSSDF(scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(-scene.lights[i].position.xyz), //wi
+            //             // normalize(-g_pos),                                                                                           //wo
+            //             // scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type)) * scene.lights[i].intensity,              //radiance
+            //             // v_uv, camDist, positionBuffer, materialBuffer, materialBuffer, bsdf);
+
+            //             //Visibility Component ________________________
+                        // lighting *= evalVisibility(i,modelPos);
+            //            
+            //             direct += lighting;
+            //         }
+            //     }

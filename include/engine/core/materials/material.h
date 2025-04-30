@@ -39,7 +39,7 @@ class IMaterial
     friend class Renderer;
 
   public:
-    static IMaterial* DEBUG_MATERIAL;
+    static IMaterial* debugMaterial;
 
     IMaterial(std::string shaderPassID)
         : m_shaderPassID(shaderPassID) {

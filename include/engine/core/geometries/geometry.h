@@ -20,10 +20,21 @@ namespace Core {
 
 class Geometry;
 
+enum class Topology
+{
+    TRIANGLES          = 0,
+    LINES              = 1,
+    LINES_TO_TRIANGLES = 2,
+    OTHER              = 3
+};
+
 struct GeometricData {
     std::vector<uint32_t>         vertexIndex;
     std::vector<Graphics::Vertex> vertexData;
     std::vector<Graphics::Voxel>  voxelData;
+
+    // Topology
+    Topology topology{Topology::TRIANGLES};
 
     // Stats
     Vec3 maxCoords;
@@ -55,6 +66,9 @@ class Geometry
     Geometry() {
     }
 
+    ~Geometry() {
+    }
+
     inline size_t get_material_ID() const {
         return m_materialID;
     }
@@ -69,8 +83,12 @@ class Geometry
         return !m_properties.vertexIndex.empty();
     }
 
-    inline const GeometricData* get_properties() const {
-        return &m_properties;
+    inline const GeometricData& get_properties() const {
+        return m_properties;
+    }
+    /* Use it carefully, might break the mesh visualization */
+    inline void set_topology(Topology topology) {
+        m_properties.topology = topology;
     }
     /*
     Use Voxel Acceleration Structure
@@ -93,19 +111,21 @@ class Geometry
     inline void dynamic_AS(bool op) {
         m_BLAS.dynamic = op;
     }
-    ~Geometry() {
-    }
 
-    void             fill(std::vector<Graphics::Vertex> vertexInfo);
-    void             fill(std::vector<Graphics::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex);
-    void             fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber);
-    void             fill_voxel_array(std::vector<Graphics::Voxel> voxels);
+    void fill(std::vector<Graphics::Vertex> vertexInfo, Topology topology = Topology::TRIANGLES);
+    void fill(std::vector<Graphics::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex, Topology topology = Topology::TRIANGLES);
+    void fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber, Topology topology = Topology::TRIANGLES);
+
+    void fill_voxel_array(std::vector<Graphics::Voxel> voxels);
+
+    /* Primitive creator helpers */
     static Geometry* create_quad();
-    static Geometry* create_simple_cube(); //Not for shading geometry
-    static Geometry* create_cube(); 
+    static Geometry* create_simple_cube(); // Not for shading geometry
+    static Geometry* create_cube();
     static Geometry* create_cylinder(int segments = 1, float radius = 0.5, float height = 2.0);
-    static void      compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
-                                                 const std::vector<uint32_t>&   indices);
+
+    /* Other useful data */
+    static void compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices, const std::vector<uint32_t>& indices);
 };
 
 Graphics::VertexArrays* const get_VAO(Geometry* g);

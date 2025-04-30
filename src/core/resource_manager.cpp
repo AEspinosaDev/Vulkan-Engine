@@ -83,9 +83,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     camData.prevViewProj  = prevViewProj;
     static int frameIndex = 0;
     frameIndex            = (frameIndex + 1) % 16;
-    camData.jitter        = jitterCamera
-                                ? Utils::get_halton_jitter(frameIndex, window->get_extent().width, window->get_extent().height)
-                                : Vec2{0.0, 0.0};
+    camData.jitter        = jitterCamera ? Utils::get_halton_jitter(frameIndex, window->get_extent().width, window->get_extent().height) : Vec2{0.0, 0.0};
 
     /*Other intersting Camera Data*/
     camData.position     = Vec4(camera->get_position(), 0.0f);
@@ -100,8 +98,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     */
 
     Graphics::SceneUniforms sceneParams;
-    sceneParams.fogParams = {
-        camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
+    sceneParams.fogParams       = {camera->get_near(), camera->get_far(), scene->get_fog_intensity(), scene->is_fog_enabled()};
     sceneParams.fogColorAndSSAO = Vec4(scene->get_fog_color(), 0.0f);
     sceneParams.SSAOtype        = 0;
     sceneParams.emphasizeAO     = false;
@@ -124,8 +121,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     std::vector<Core::Light*> lights = scene->get_lights();
     if (lights.size() > ENGINE_MAX_LIGHTS)
         std::sort(lights.begin(), lights.end(), [=](Core::Light* a, Core::Light* b) {
-            return math::length(a->get_position() - camera->get_position()) <
-                   math::length(b->get_position() - camera->get_position());
+            return math::length(a->get_position() - camera->get_position()) < math::length(b->get_position() - camera->get_position());
         });
 
     size_t lightIdx{0};
@@ -139,15 +135,14 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
                 DirectionalLight* dirL = static_cast<DirectionalLight*>(l);
                 if (dirL->use_as_sun())
                 {
-                    dirL->set_direction(-DirectionalLight::get_sun_direction(
-                        scene->get_skybox()->get_sky_settings().sunElevationDeg, -sceneParams.envRotation - 90.0f));
+                    dirL->set_direction(
+                        -DirectionalLight::get_sun_direction(scene->get_skybox()->get_sky_settings().sunElevationDeg, -sceneParams.envRotation - 90.0f));
                 }
             }
 
             sceneParams.lightUniforms[lightIdx] = l->get_uniforms(camera->get_view());
-            Mat4 depthProjectionMatrix =
-                math::perspective(math::radians(l->get_shadow_fov()), 1.0f, l->get_shadow_near(), l->get_shadow_far());
-            Mat4 depthViewMatrix = math::lookAt(l->get_position(), l->get_shadow_target(), Vec3(0, 1, 0));
+            Mat4 depthProjectionMatrix          = math::perspective(math::radians(l->get_shadow_fov()), 1.0f, l->get_shadow_near(), l->get_shadow_far());
+            Mat4 depthViewMatrix                = math::lookAt(l->get_position(), l->get_shadow_target(), Vec3(0, 1, 0));
             sceneParams.lightUniforms[lightIdx].viewProj = depthProjectionMatrix * depthViewMatrix;
             lightIdx++;
         }
@@ -157,9 +152,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     sceneParams.numLights = static_cast<int>(lights.size());
 
     currentFrame->uniformBuffers[GLOBAL_LAYOUT].upload_data(
-        &sceneParams,
-        sizeof(Graphics::SceneUniforms),
-        device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
+        &sceneParams, sizeof(Graphics::SceneUniforms), device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
 }
 void ResourceManager::update_object_data(Graphics::Device* const device,
                                          Graphics::Frame* const  currentFrame,
@@ -187,8 +180,7 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
             std::map<float, Core::Mesh*> sorted;
             for (unsigned int i = 0; i < blendMeshes.size(); i++)
             {
-                float distance =
-                    glm::distance(scene->get_active_camera()->get_position(), blendMeshes[i]->get_position());
+                float distance   = glm::distance(scene->get_active_camera()->get_position(), blendMeshes[i]->get_position());
                 sorted[distance] = blendMeshes[i];
             }
 
@@ -207,20 +199,18 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
         {
             if (m) // If mesh exists
             {
-                if (m->is_active() &&              // Check if is active
-                    m->get_num_geometries() > 0 && // Check if has geometry
-                    m->get_bounding_volume()->is_on_frustrum(
-                        scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
+                if (m->is_active() &&                                                                     // Check if is active
+                    m->get_num_geometries() > 0 &&                                                        // Check if has geometry
+                    m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
                 {
                     // Offset calculation
                     uint32_t objectOffset = currentFrame->uniformBuffers[OBJECT_LAYOUT].strideSize * mesh_idx;
 
                     Graphics::ObjectUniforms objectData;
                     objectData.model        = m->get_model_matrix();
-                    objectData.otherParams1 = {m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), false};
+                    objectData.otherParams1 = {m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), 0.1f};
                     objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
-                    currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(
-                        &objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
+                    currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(&objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
 
                     for (size_t i = 0; i < m->get_num_geometries(); i++)
                     {
@@ -234,7 +224,10 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
                         // Object material setup
                         Core::IMaterial* mat = m->get_material(g->get_material_ID());
                         if (!mat)
-                            mat = Core::IMaterial::DEBUG_MATERIAL;
+                        {
+                            m->push_material(Core::IMaterial::debugMaterial);
+                        }
+                        mat = m->get_material(g->get_material_ID());
                         if (mat)
                         {
                             auto textures = mat->get_textures();
@@ -283,6 +276,7 @@ void ResourceManager::upload_texture_data(Graphics::Device* const device, Core::
             config.viewType                       = textSettings.type;
             config.format                         = textSettings.format;
             config.mipLevels                      = textSettings.maxMipLevel;
+            config.useMipmaps                     = textSettings.useMipmaps;
             samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
             samplerConfig.filters                 = textSettings.filter;
             samplerConfig.maxLod                  = textSettings.maxMipLevel;
@@ -291,8 +285,7 @@ void ResourceManager::upload_texture_data(Graphics::Device* const device, Core::
 
             void* imgCache{nullptr};
             t->get_image_cache(imgCache);
-            device->upload_texture_image(
-                *get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel(), t->get_settings().useMipmaps);
+            device->upload_texture_image(*get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel());
         }
     }
 }
@@ -301,9 +294,7 @@ void ResourceManager::destroy_texture_data(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-void ResourceManager::upload_geometry_data(Graphics::Device* const device,
-                                           Core::Geometry* const   g,
-                                           bool                    createAccelStructure) {
+void ResourceManager::upload_geometry_data(Graphics::Device* const device, Core::Geometry* const g, bool createAccelStructure) {
     PROFILING_EVENT()
     /*
     VERTEX ARRAYS
@@ -311,16 +302,15 @@ void ResourceManager::upload_geometry_data(Graphics::Device* const device,
     Graphics::VertexArrays* rd = get_VAO(g);
     if (!rd->loadedOnGPU)
     {
-        const Core::GeometricData* gd        = g->get_properties();
-        size_t                     vboSize   = sizeof(gd->vertexData[0]) * gd->vertexData.size();
-        size_t                     iboSize   = sizeof(gd->vertexIndex[0]) * gd->vertexIndex.size();
-        size_t                     voxelSize = sizeof(gd->voxelData[0]) * gd->voxelData.size();
-        rd->indexCount                       = gd->vertexIndex.size();
-        rd->vertexCount                      = gd->vertexData.size();
-        rd->voxelCount                       = gd->voxelData.size();
+        const Core::GeometricData& gd        = g->get_properties();
+        size_t                     vboSize   = sizeof(gd.vertexData[0]) * gd.vertexData.size();
+        size_t                     iboSize   = sizeof(gd.vertexIndex[0]) * gd.vertexIndex.size();
+        size_t                     voxelSize = sizeof(gd.voxelData[0]) * gd.voxelData.size();
+        rd->indexCount                       = gd.vertexIndex.size();
+        rd->vertexCount                      = gd.vertexData.size();
+        rd->voxelCount                       = gd.voxelData.size();
 
-        device->upload_vertex_arrays(
-            *rd, vboSize, gd->vertexData.data(), iboSize, gd->vertexIndex.data(), voxelSize, gd->voxelData.data());
+        device->upload_vertex_arrays(*rd, vboSize, gd.vertexData.data(), iboSize, gd.vertexIndex.data(), voxelSize, gd.voxelData.data());
     }
     /*
     ACCELERATION STRUCTURE
@@ -359,14 +349,14 @@ void ResourceManager::upload_skybox_data(Graphics::Device* const device, Core::S
                 Graphics::SamplerConfig samplerConfig = {};
                 Core::TextureSettings   textSettings  = envMap->get_settings();
                 config.format                         = textSettings.format;
+                config.useMipmaps                     = textSettings.useMipmaps;
                 samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
                 samplerConfig.filters                 = textSettings.filter;
                 samplerConfig.samplerAddressMode      = textSettings.adressMode;
 
                 void* imgCache{nullptr};
                 envMap->get_image_cache(imgCache);
-                device->upload_texture_image(
-                    *get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel(), false);
+                device->upload_texture_image(*get_image(envMap), config, samplerConfig, imgCache, envMap->get_bytes_per_pixel());
             }
         }
     }

@@ -4,24 +4,27 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-void Geometry::fill(std::vector<Graphics::Vertex> vertexInfo) {
+void Geometry::fill(std::vector<Graphics::Vertex> vertexInfo, Topology topology) {
     m_properties.vertexData = vertexInfo;
     m_properties.compute_statistics();
+    m_properties.topology = topology;
     m_properties.loaded = true;
 }
-void Geometry::fill(std::vector<Graphics::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex) {
+void Geometry::fill(std::vector<Graphics::Vertex> vertexInfo, std::vector<uint32_t> vertexIndex, Topology topology) {
     m_properties.vertexData  = vertexInfo;
     m_properties.vertexIndex = vertexIndex;
     m_properties.compute_statistics();
+    m_properties.topology = topology;
     m_properties.loaded = true;
 }
 
-void Geometry::fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber) {
+void Geometry::fill(Vec3* pos, Vec3* normal, Vec2* uv, Vec3* tangent, uint32_t vertNumber, Topology topology) {
     for (size_t i = 0; i < vertNumber; i++)
     {
         m_properties.vertexData.push_back({pos[i], normal[i], tangent[i], uv[i], Vec3(1.0)});
     }
     m_properties.compute_statistics();
+    m_properties.topology = topology;
     m_properties.loaded = true;
 }
 
@@ -67,16 +70,15 @@ Geometry* Geometry::create_quad() {
 Geometry* Geometry::create_simple_cube() {
     Geometry* g = new Geometry();
 
-    g->fill(
-        {{{-1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},  // 0
-         {{-1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}, // 1
-         {{1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},  // 2
-         {{1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},   // 3
-         {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},   // 4
-         {{-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},  // 5
-         {{1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},   // 6
-         {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},   // 7
-        {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 0, 3, 7, 7, 4, 0, 1, 5, 6, 6, 2, 1, 0, 1, 5, 5, 4, 0, 2, 3, 7, 7, 6, 2});
+    g->fill({{{-1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},  // 0
+             {{-1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}, // 1
+             {{1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},  // 2
+             {{1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},   // 3
+             {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},   // 4
+             {{-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},  // 5
+             {{1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},   // 6
+             {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},   // 7
+            {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 0, 3, 7, 7, 4, 0, 1, 5, 6, 6, 2, 1, 0, 1, 5, 5, 4, 0, 2, 3, 7, 7, 6, 2});
 
     return g;
 }
@@ -181,16 +183,8 @@ Geometry* Geometry::create_cylinder(int segments, float radius, float height) {
         float x     = radius * cos(angle);
         float z     = radius * sin(angle);
 
-        vertices.push_back({{x, -halfHeight, z},
-                            {0.0f, 0.0f, 0.0f},
-                            {0.0f, 0.0f, 0.0f},
-                            {i / (float)segments, 0.0f},
-                            {0.0f, 0.0f, 0.0f}});
-        vertices.push_back({{x, halfHeight, z},
-                            {0.0f, 0.0f, 0.0f},
-                            {0.0f, 0.0f, 0.0f},
-                            {i / (float)segments, 1.0f},
-                            {0.0f, 0.0f, 0.0f}});
+        vertices.push_back({{x, -halfHeight, z}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {i / (float)segments, 0.0f}, {0.0f, 0.0f, 0.0f}});
+        vertices.push_back({{x, halfHeight, z}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {i / (float)segments, 1.0f}, {0.0f, 0.0f, 0.0f}});
     }
 
     // Side indices
@@ -208,11 +202,9 @@ Geometry* Geometry::create_cylinder(int segments, float radius, float height) {
 
     // Top and bottom center vertices
     int bottomCenterIdx = vertices.size();
-    vertices.push_back(
-        {{0.0f, -halfHeight, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}});
+    vertices.push_back({{0.0f, -halfHeight, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}});
     int topCenterIdx = vertices.size();
-    vertices.push_back(
-        {{0.0f, halfHeight, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}});
+    vertices.push_back({{0.0f, halfHeight, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}});
 
     // Top and bottom cap indices
     for (int i = 0; i < segments; i++)
@@ -235,8 +227,7 @@ Geometry* Geometry::create_cylinder(int segments, float radius, float height) {
     return g;
 }
 
-void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices,
-                                           const std::vector<uint32_t>&   indices) {
+void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertices, const std::vector<uint32_t>& indices) {
     if (!indices.empty())
         for (size_t i = 0; i < indices.size(); i += 3)
         {
@@ -244,13 +235,8 @@ void Geometry::compute_tangents_gram_smidt(std::vector<Graphics::Vertex>& vertic
             size_t i1 = indices[i + 1];
             size_t i2 = indices[i + 2];
 
-            Vec3 tangent = Utils::get_tangent_gram_smidt(vertices[i0].pos,
-                                                         vertices[i1].pos,
-                                                         vertices[i2].pos,
-                                                         vertices[i0].texCoord,
-                                                         vertices[i1].texCoord,
-                                                         vertices[i2].texCoord,
-                                                         vertices[i0].normal);
+            Vec3 tangent = Utils::get_tangent_gram_smidt(
+                vertices[i0].pos, vertices[i1].pos, vertices[i2].pos, vertices[i0].texCoord, vertices[i1].texCoord, vertices[i2].texCoord, vertices[i0].normal);
 
             vertices[i0].tangent += tangent;
             vertices[i1].tangent += tangent;

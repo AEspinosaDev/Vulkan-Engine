@@ -39,6 +39,7 @@ Graphics::MaterialUniforms HairStrandMaterial::get_uniforms() const
     uniforms.dataSlot3 = {m_scatter, m_shift, m_ior, m_glints};
     uniforms.dataSlot4 = {m_useScatter, m_coloredScatter, m_R, m_TT};
     uniforms.dataSlot5 = {m_TRT, m_occlusion, 0.0f, 0.0f};
+    uniforms.dataSlot8.w = 0.4f;
 
     return uniforms;
 }

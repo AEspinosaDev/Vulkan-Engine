@@ -36,8 +36,8 @@ class DeferredRenderer : public BaseRenderer
         PRECOMPOSITION_PASS = 5,
         COMPOSITION_PASS    = 6,
         BLOOM_PASS          = 7,
-        TONEMAPPIN_PASS     = 8,
-        AA_PASS             = 9,
+        AA_PASS             = 8,
+        TONEMAPPIN_PASS     = 9,
         GUI_PASS            = 10,
     };
 

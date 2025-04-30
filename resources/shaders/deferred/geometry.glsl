@@ -154,7 +154,9 @@ void setupSurfaceProperties() {
         g_material.w = UNLIT_MATERIAL;
     }
     if(material.slot8.w == HAIR_STRAND_MATERIAL) {
-        // TBD .........
+        g_albedo = material.slot1.rgb;
+        g_material.r = material.slot2.w; //Roughness
+        g_material.g = material.slot3.y; //Shift
         g_material.w = HAIR_STRAND_MATERIAL;
     }
     if(material.slot8.w == PHONG_MATERIAL) {

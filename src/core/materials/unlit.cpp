@@ -2,7 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
-IMaterial* IMaterial::DEBUG_MATERIAL = nullptr;
+
 
 Graphics::MaterialUniforms UnlitMaterial::get_uniforms() const {
     Graphics::MaterialUniforms uniforms;

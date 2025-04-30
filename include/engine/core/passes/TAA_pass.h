@@ -17,7 +17,7 @@ namespace Core {
 /*
 Tempopral Filtering Pass.
 */
-class TAAPass final : public PostProcessPass<2, 0>
+class TAAPass final : public PostProcessPass<2, 1>
 {
   public:
     /*
@@ -34,7 +34,7 @@ class TAAPass final : public PostProcessPass<2, 0>
 
            */
     TAAPass(Graphics::Device*        device,
-            const PassLinkage<2, 0>& linkage,
+            const PassLinkage<2, 1>& linkage,
             Extent2D                 extent,
             ColorFormatType          colorFormat,
             bool                     isDefault = true)

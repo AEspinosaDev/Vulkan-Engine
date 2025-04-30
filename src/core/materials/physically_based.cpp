@@ -2,6 +2,7 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
+IMaterial*                 IMaterial::debugMaterial = new PhysicalMaterial(Vec4(0.5f,0.5f,0.5f,1.0));
 Graphics::MaterialUniforms PhysicalMaterial::get_uniforms() const {
 
     Graphics::MaterialUniforms uniforms;

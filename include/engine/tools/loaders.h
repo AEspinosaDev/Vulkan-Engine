@@ -29,31 +29,23 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 // Load functions for several mesh and image files
 namespace Tools::Loaders {
-void load_OBJ(Core::Mesh* const mesh,
+void load_OBJ(Core::Mesh* const mesh, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
+void load_OBJ_topology(Core::Mesh* const mesh,
+              Core::Topology    topology,
               const std::string fileName,
               bool              importMaterials   = false,
-              bool              calculateTangents = false,
-              bool              overrideGeometry  = false);
-void load_OBJ2(Core::Mesh* const mesh,
-              const std::string fileName,
-              bool              importMaterials   = false,
-              bool              calculateTangents = false,
-              bool              overrideGeometry  = false);
+              bool              calculateTangents = false);
 
 void load_PLY(Core::Mesh* const mesh,
               const std::string fileName,
               bool              preload           = true,
               bool              verbose           = false,
-              bool              calculateTangents = false,
-              bool              overrideGeometry  = false);
+              bool              calculateTangents = false);
 /*
 Generic loader. It automatically parses the file and find the needed loader for the file extension. Can be called
 asynchronously
 */
-void load_3D_file(Core::Mesh* const mesh,
-                  const std::string fileName,
-                  bool              asynCall         = true,
-                  bool              overrideGeometry = false);
+void load_3D_file(Core::Mesh* const mesh, const std::string fileName, bool asynCall = true);
 /*
 Use on .hair files.
 */
@@ -61,16 +53,11 @@ void load_hair(Core::Mesh* const mesh, const char* fileName);
 /*
 Load image texture
 */
-void load_texture(Core::ITexture*   texture,
-                  const std::string fileName,
-                  TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB,
-                  bool              asyncCall     = true);
+void load_texture(Core::ITexture* texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB, bool asyncCall = true);
 /*
 Load .png file.
  */
-void load_PNG(Core::Texture* const texture,
-              const std::string    fileName,
-              TextureFormatType    textureFormat = TEXTURE_FORMAT_SRGB);
+void load_PNG(Core::Texture* const texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
 /*
 Load .hrd
 */
@@ -79,29 +66,8 @@ void load_HDRi(Core::TextureHDR* const texture, const std::string fileName);
 Load texture as 3D image. It will require and image with all the layers defined. The larger of their extent properties
 will be used for computing the depth if no depthy input is given. PNG or JPEG available.
 */
-void load_3D_texture(Core::ITexture* const texture,
-                     const std::string     fileName,
-                     uint16_t              depth         = 0,
-                     TextureFormatType     textureFormat = TEXTURE_FORMAT_SRGB);
+void load_3D_texture(Core::ITexture* const texture, const std::string fileName, uint16_t depth = 0, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
 
-/*Loads and save a scene from XML file*/
-class SceneLoader
-{
-    bool            m_asyncLoad;
-    Core::Transform load_transform(tinyxml2::XMLElement* obj);
-    void            save_transform(const Core::Transform& transform, tinyxml2::XMLElement* parentElement);
-    void load_children(tinyxml2::XMLElement* element, Core::Object3D* const parent, std::string resourcesPath);
-    void save_children(tinyxml2::XMLElement* parentElement, Core::Object3D* const parent);
-
-  public:
-    SceneLoader(bool asyncLoading = true)
-        : m_asyncLoad(asyncLoading) {
-    }
-    /*Loads a scene from an XML file*/
-    void load_scene(Core::Scene* const scene, const std::string fileName);
-    /*Saves a scene to an XML file*/
-    void save_scene(Core::Scene* const scene, const std::string fileName);
-};
 
 }; // namespace Tools::Loaders
 
