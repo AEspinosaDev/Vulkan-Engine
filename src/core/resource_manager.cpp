@@ -275,8 +275,7 @@ void ResourceManager::upload_texture_data(Graphics::Device* const device, Core::
             Core::TextureSettings   textSettings  = t->get_settings();
             config.viewType                       = textSettings.type;
             config.format                         = textSettings.format;
-            config.mipLevels                      = textSettings.maxMipLevel;
-            config.useMipmaps                     = textSettings.useMipmaps;
+            config.mipLevels                      = textSettings.useMipmaps ? textSettings.maxMipLevel : 1;
             samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
             samplerConfig.filters                 = textSettings.filter;
             samplerConfig.maxLod                  = textSettings.maxMipLevel;
@@ -349,7 +348,6 @@ void ResourceManager::upload_skybox_data(Graphics::Device* const device, Core::S
                 Graphics::SamplerConfig samplerConfig = {};
                 Core::TextureSettings   textSettings  = envMap->get_settings();
                 config.format                         = textSettings.format;
-                config.useMipmaps                     = textSettings.useMipmaps;
                 samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
                 samplerConfig.filters                 = textSettings.filter;
                 samplerConfig.samplerAddressMode      = textSettings.adressMode;

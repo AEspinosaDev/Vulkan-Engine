@@ -146,20 +146,22 @@ Buffer Device::create_buffer(size_t allocSize, BufferUsageFlags usage, MemoryPro
     return buffer;
 }
 Image Device::create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage memoryUsage) {
-    Image img      = {};
-    img.extent     = extent;
-    img.device     = m_handle;
-    img.memory     = m_allocator;
-    img.clearValue = config.clearValue;
+    Image img  = {};
+    img.extent = extent;
+    img.device = m_handle;
+    img.memory = m_allocator;
+
+    img.config = config;
 
     VmaAllocationCreateInfo img_allocinfo = {};
     img_allocinfo.usage                   = memoryUsage;
 
-    uint32_t maxMip = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
-    img.mipLevels   = config.useMipmaps ? config.mipLevels <= maxMip ? config.mipLevels : maxMip : 1;
+    // Check mip levels
+    uint32_t maxMip      = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
+    img.config.mipLevels = config.mipLevels <= maxMip ? config.mipLevels : maxMip;
 
-    img.baseMipLevel = config.baseMipLevel;
-    img.layers       = config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
+    // Check layers
+    img.config.layers = config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? CUBEMAP_FACES : config.layers;
 
     VkImageType imageType = VK_IMAGE_TYPE_2D;
     if (config.viewType == TextureTypeFlagBits::TEXTURE_3D)
@@ -167,14 +169,14 @@ Image Device::create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage m
     if (config.viewType == TextureTypeFlagBits::TEXTURE_1D || config.viewType == TextureTypeFlagBits::TEXTURE_1D_ARRAY)
         imageType = VK_IMAGE_TYPE_1D;
 
-    VkImageCreateInfo img_info = Init::image_create_info(Translator::get(config.format),
-                                                         Translator::get(config.usageFlags),
+    VkImageCreateInfo img_info = Init::image_create_info(Translator::get(img.config.format),
+                                                         Translator::get(img.config.usageFlags),
                                                          extent,
-                                                         img.mipLevels,
+                                                         img.config.mipLevels,
                                                          static_cast<VkSampleCountFlagBits>(config.samples),
-                                                         img.layers,
+                                                         img.config.layers,
                                                          imageType,
-                                                         config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
+                                                         img.config.viewType == TextureTypeFlagBits::TEXTURE_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0);
     img_info.initialLayout     = Translator::get(config.layout);
 
     VK_CHECK(vmaCreateImage(m_allocator, &img_info, &img_allocinfo, &img.handle, &img.allocation, nullptr));
@@ -397,12 +399,12 @@ Framebuffer Device::create_framebuffer(RenderPass& renderpass, std::vector<Image
 Framebuffer Device::create_framebuffer(RenderPass& renderpass, Image& attachment) {
     Framebuffer fbo = {};
     fbo.device      = m_handle;
-    fbo.layers      = attachment.layers;
+    fbo.layers      = attachment.config.layers;
 
     VkFramebufferCreateInfo fbInfo = Init::framebuffer_create_info(renderpass.handle, {attachment.extent.width, attachment.extent.height});
     fbInfo.pAttachments            = &attachment.view;
     fbInfo.attachmentCount         = 1;
-    fbInfo.layers                  = attachment.layers;
+    fbInfo.layers                  = attachment.config.layers;
 
     if (vkCreateFramebuffer(m_handle, &fbInfo, nullptr, &fbo.handle) != VK_SUCCESS)
     {
@@ -557,7 +559,7 @@ void Device::upload_texture_image(Image& img, ImageConfig config, SamplerConfig 
     stagingBuffer.cleanup();
 
     // GENERATE MIPMAPS
-    if (img.mipLevels > 1)
+    if (img.config.mipLevels > 1)
     {
         VkFormatProperties formatProperties;
         vkGetPhysicalDeviceFormatProperties(m_gpu, Translator::get(config.format), &formatProperties);
@@ -810,11 +812,14 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
 
     accel.device = m_handle;
 }
-void Device::download_texture_image(Image& img, void*& imgCache, size_t& outSize) {
-    const uint32_t SIZE = img.extent.width * img.extent.height * img.extent.depth * 4;
-    outSize             = SIZE;
-    imgCache            = malloc(SIZE);
-    Buffer cpuBuffer    = create_buffer(SIZE, BUFFER_USAGE_TRANSFER_DST, MEMORY_PROPERTY_HOST_VISIBLE, MEMORY_PROPERTY_HOST_COHERENT);
+void Device::download_texture_image(Image& img, void*& imgCache, size_t& size, size_t& channels) {
+    channels                        = Utils::get_channel_count(img.config.format);
+    const uint32_t SIZE_PER_PIXEL = Utils::get_pixel_size_in_bytes(img.config.format);
+    const uint32_t SIZE_IN_BYTES    = img.extent.width * img.extent.height * img.extent.depth * SIZE_PER_PIXEL;
+    size                            = SIZE_IN_BYTES;
+    
+    imgCache                        = malloc(SIZE_IN_BYTES);
+    Buffer cpuBuffer                = create_buffer(SIZE_IN_BYTES, BUFFER_USAGE_TRANSFER_DST, MEMORY_PROPERTY_HOST_VISIBLE, MEMORY_PROPERTY_HOST_COHERENT);
 
     m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_image_to_buffer(img, cpuBuffer); });
 

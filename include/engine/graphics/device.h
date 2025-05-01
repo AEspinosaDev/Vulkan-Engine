@@ -170,7 +170,7 @@ class Device
     void upload_texture_image(Image& img, ImageConfig config, SamplerConfig samplerConfig, const void* imgCache, size_t bytesPerPixel);
     void upload_BLAS(BLAS& accel, VAO& vao);
     void upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
-    void download_texture_image(Image& img, void*& imgCache, size_t& outSize);
+    void download_texture_image(Image& img, void*& imgCache, size_t& size, size_t& channels);
     /*
     MISC
     -----------------------------------------------

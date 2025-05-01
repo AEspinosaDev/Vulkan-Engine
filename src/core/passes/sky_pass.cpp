@@ -4,8 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void SkyPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                std::vector<Graphics::SubPassDependency>& dependencies) {
+void SkyPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
@@ -23,8 +22,7 @@ void SkyPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  at
     dependencies.resize(1);
 
     // dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    dependencies[0] = Graphics::SubPassDependency(
-        STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[0]                 = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
 
     m_isResizeable = false;
@@ -35,9 +33,9 @@ void SkyPass::create_framebuffer() {
     std::vector<Graphics::Image*> out1 = {&m_interAttachments[0]};
     std::vector<Graphics::Image*> out2 = {&m_interAttachments[1]};
     std::vector<Graphics::Image*> out3 = {m_outAttachments[0]};
-    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, out1, m_imageExtent, m_framebufferImageDepth, 0);
-    m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, out2, m_imageExtent, m_framebufferImageDepth, 1);
-    m_framebuffers[2] = m_device->create_framebuffer(m_renderpass, out3, m_imageExtent, m_framebufferImageDepth, 2);
+    m_framebuffers[0]                  = m_device->create_framebuffer(m_renderpass, out1, m_imageExtent, m_framebufferImageDepth, 0);
+    m_framebuffers[1]                  = m_device->create_framebuffer(m_renderpass, out2, m_imageExtent, m_framebufferImageDepth, 1);
+    m_framebuffers[2]                  = m_device->create_framebuffer(m_renderpass, out3, m_imageExtent, m_framebufferImageDepth, 2);
 }
 void SkyPass::resize_attachments() {
     BaseGraphicPass::resize_attachments();
@@ -61,26 +59,19 @@ void SkyPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 }
 void SkyPass::setup_shader_passes() {
 
-    GraphicShaderPass* ttPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_tt_compute.glsl");
-    ttPass->settings.pushConstants = {
-        PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings) + sizeof(AerosolParams))};
+    GraphicShaderPass* ttPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/sky_tt_compute.glsl"));
+    ttPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings) + sizeof(AerosolParams))};
     ttPass->settings.descriptorSetLayoutIDs = {{0, true}};
-    ttPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
-                                               {NORMAL_ATTRIBUTE, false},
-                                               {UV_ATTRIBUTE, true},
-                                               {TANGENT_ATTRIBUTE, false},
-                                               {COLOR_ATTRIBUTE, false}};
+    ttPass->graphicSettings.attributes      = {
+        {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     ttPass->build_shader_stages();
     ttPass->build(m_descriptorPool);
 
     m_shaderPasses["tt"] = ttPass;
 
-    GraphicShaderPass* skyPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_generation.glsl");
-    skyPass->settings.pushConstants = {
-        PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings) + sizeof(AerosolParams))};
+    GraphicShaderPass* skyPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/sky_generation.glsl"));
+    skyPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings) + sizeof(AerosolParams))};
     skyPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
     skyPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
 
@@ -89,8 +80,7 @@ void SkyPass::setup_shader_passes() {
 
     m_shaderPasses["sky"] = skyPass;
 
-    GraphicShaderPass* projPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/env/sky_projection.glsl");
+    GraphicShaderPass* projPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/sky_projection.glsl"));
     projPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(int))};
     projPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
     projPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
@@ -123,8 +113,7 @@ void SkyPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_
     cmd.set_viewport(m_imageExtent);
     ShaderPass* shaderPass = m_shaderPasses["tt"];
     cmd.bind_shaderpass(*shaderPass);
-    cmd.push_constants(
-        *shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
     cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
 
@@ -134,8 +123,7 @@ void SkyPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_
     cmd.set_viewport(m_imageExtent);
     shaderPass = m_shaderPasses["sky"];
     cmd.bind_shaderpass(*shaderPass);
-    cmd.push_constants(
-        *shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
+    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &passSettings, sizeof(Core::SkySettings) + sizeof(AerosolParams));
     cmd.bind_descriptor_set(m_imageDescriptor, 0, *shaderPass);
     cmd.draw_geometry(*get_VAO(BasePass::vignette));
     cmd.end_renderpass(m_renderpass, m_framebuffers[1]);

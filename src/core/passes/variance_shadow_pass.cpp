@@ -4,8 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
 
-void VarianceShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                               std::vector<Graphics::SubPassDependency>& dependencies) {
+void VarianceShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(2);
 
@@ -32,47 +31,35 @@ void VarianceShadowPass::setup_out_attachments(std::vector<Graphics::AttachmentC
     // Depdencies
     dependencies.resize(2);
 
-    dependencies[0] = Graphics::SubPassDependency(
-        STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
-    dependencies[1] = Graphics::SubPassDependency(
-        STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
+    dependencies[0] = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[1] = Graphics::SubPassDependency(STAGE_EARLY_FRAGMENT_TESTS, STAGE_EARLY_FRAGMENT_TESTS, ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE);
 
     m_isResizeable = false;
 }
 void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
-    m_descriptorPool = m_device->create_descriptor_pool(
-        ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS);
+    m_descriptorPool = m_device->create_descriptor_pool(ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS, ENGINE_MAX_OBJECTS);
     m_descriptors.resize(frames.size());
 
     // GLOBAL SET
-    LayoutBinding camBufferBinding(
-        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
-    LayoutBinding sceneBufferBinding(
-        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding camBufferBinding(UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding sceneBufferBinding(UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
     LayoutBinding shadowBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
     LayoutBinding envBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
     LayoutBinding iblBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
-    m_descriptorPool.set_layout(
-        GLOBAL_LAYOUT, {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
+    m_descriptorPool.set_layout(GLOBAL_LAYOUT, {camBufferBinding, sceneBufferBinding, shadowBinding, envBinding, iblBinding});
 
     // PER-OBJECT SET
-    LayoutBinding objectBufferBinding(
-        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
-    LayoutBinding materialBufferBinding(
-        UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding objectBufferBinding(UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding materialBufferBinding(UNIFORM_DYNAMIC_BUFFER, SHADER_STAGE_VERTEX | SHADER_STAGE_GEOMETRY | SHADER_STAGE_FRAGMENT, 1);
     m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     for (size_t i = 0; i < frames.size(); i++)
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[0],
-                                           sizeof(CameraUniforms),
-                                           0,
-                                           &m_descriptors[i].globalDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           0);
+        m_descriptorPool.update_descriptor(
+            &frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0, &m_descriptors[i].globalDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[0],
                                            sizeof(SceneUniforms),
                                            m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
@@ -82,12 +69,8 @@ void VarianceShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[1],
-                                           sizeof(ObjectUniforms),
-                                           0,
-                                           &m_descriptors[i].objectDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           0);
+        m_descriptorPool.update_descriptor(
+            &frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0, &m_descriptors[i].objectDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
         m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[1],
                                            sizeof(MaterialUniforms),
                                            m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
@@ -103,33 +86,26 @@ void VarianceShadowPass::setup_shader_passes() {
     PipelineSettings        settings{};
     GraphicPipelineSettings gfxSettings{};
     settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    gfxSettings.attributes          = {{POSITION_ATTRIBUTE, true},
-                                       {NORMAL_ATTRIBUTE, false},
-                                       {UV_ATTRIBUTE, false},
-                                       {TANGENT_ATTRIBUTE, false},
-                                       {COLOR_ATTRIBUTE, false}};
-    gfxSettings.dynamicStates       = {VK_DYNAMIC_STATE_VIEWPORT,
-                                       VK_DYNAMIC_STATE_SCISSOR,
-                                       VK_DYNAMIC_STATE_DEPTH_BIAS,
-                                       VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
-                                       VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
-                                       VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
-                                       VK_DYNAMIC_STATE_CULL_MODE};
+    gfxSettings.attributes          = {
+        {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
+    gfxSettings.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
+                                 VK_DYNAMIC_STATE_SCISSOR,
+                                 VK_DYNAMIC_STATE_DEPTH_BIAS,
+                                 VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
+                                 VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+                                 VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
+                                 VK_DYNAMIC_STATE_CULL_MODE};
     // settings.blendAttachments       = {};
 
-    GraphicShaderPass* depthPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/shadows/vsm_geom.glsl");
-    depthPass->settings        = settings;
-    depthPass->graphicSettings = gfxSettings;
+    GraphicShaderPass* depthPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_geom.glsl"));
+    depthPass->settings          = settings;
+    depthPass->graphicSettings   = gfxSettings;
     depthPass->build_shader_stages();
     depthPass->build(m_descriptorPool);
     m_shaderPasses["shadowTri"] = depthPass;
 
     GraphicShaderPass* depthLinePass =
-        new GraphicShaderPass(m_device->get_handle(),
-                              m_renderpass,
-                              m_imageExtent,
-                              ENGINE_RESOURCES_PATH "shaders/shadows/vsm_line_geom.glsl");
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_line_geom.glsl"));
     depthLinePass->settings                    = settings;
     depthLinePass->graphicSettings             = gfxSettings;
     depthLinePass->graphicSettings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -198,17 +174,13 @@ void VarianceShadowPass::execute(Graphics::Frame& currentFrame, Scene* const sce
 
                     cmd.set_depth_test_enable(mat->get_parameters().depthTest);
                     cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
-                    cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling
-                                                                        : CullingMode::NO_CULLING);
+                    cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
 
                     cmd.bind_shaderpass(*shaderPass);
                     // GLOBAL LAYOUT BINDING
                     cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
                     // PER OBJECT LAYOUT BINDING
-                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor,
-                                            1,
-                                            *shaderPass,
-                                            {objectOffset, objectOffset});
+                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
 
                     // DRAW
                     cmd.draw_geometry(*get_VAO(g));

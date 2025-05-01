@@ -21,8 +21,20 @@ Renders a given scene data to a given window using forward rendering. Fully para
 */
 class ForwardRenderer : public BaseRenderer
 {
+  protected:
+    /*Query*/
+    bool m_updateShadows = false;
 
-    enum RendererPasses
+    virtual void on_before_render(Core::Scene* const scene) override;
+
+    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene) override;
+
+    virtual void create_passes() override;
+
+    virtual void update_enviroment(Core::Skybox* const skybox);
+
+  public:
+    enum Passes
     {
         SKY_PASS        = 0,
         ENVIROMENT_PASS = 1,
@@ -34,30 +46,24 @@ class ForwardRenderer : public BaseRenderer
         GUI_PASS        = 7
     };
 
-    ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
-    bool             m_updateShadows = false;
-
-  public:
+    ForwardRenderer(Core::IWindow* window)
+        : BaseRenderer(window) {
+    }
+    ForwardRenderer(Core::IWindow* window, RendererSettings settings = {})
+        : BaseRenderer(window, settings) {
+    }
     // Headless instantiation
     ForwardRenderer(Extent2D displayExtent = {800, 800})
         : BaseRenderer(displayExtent) {
     }
-    ForwardRenderer(Core::IWindow* window)
-        : BaseRenderer(window) {
-    }
-    ForwardRenderer(Core::IWindow* window, ShadowResolution shadowQuality = ShadowResolution::MEDIUM, RendererSettings settings = {})
-        : BaseRenderer(window, settings)
-        , m_shadowQuality(shadowQuality) {
+
+    virtual inline void set_settings(RendererSettings settings) override {
+        if (m_settings.shadowQuality != settings.shadowQuality)
+            m_updateShadows = true;
+
+        BaseRenderer::set_settings(settings);
     }
 
-    inline ShadowResolution get_shadow_quality() const {
-        return m_shadowQuality;
-    }
-    inline void set_shadow_quality(ShadowResolution quality) {
-        m_shadowQuality = quality;
-        if (m_initialized)
-            m_updateShadows = true;
-    }
     inline float get_bloom_strength() const {
         if (m_passes[BLOOM_PASS])
         {
@@ -71,15 +77,6 @@ class ForwardRenderer : public BaseRenderer
             static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(st);
         }
     }
-
-  protected:
-    virtual void on_before_render(Core::Scene* const scene);
-
-    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
-
-    virtual void create_passes();
-
-    virtual void update_enviroment(Core::Skybox* const skybox);
 };
 } // namespace Systems
 VULKAN_ENGINE_NAMESPACE_END

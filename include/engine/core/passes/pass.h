@@ -146,7 +146,7 @@ class BasePass
         return m_inAttachments;
     }
     inline void set_attachment_clear_value(ClearValue value, size_t attachmentIdx = 0) {
-        m_outAttachments[attachmentIdx]->clearValue = value;
+        m_outAttachments[attachmentIdx]->config.clearValue = value;
     }
 
 #pragma endregion

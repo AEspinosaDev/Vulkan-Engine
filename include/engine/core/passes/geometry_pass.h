@@ -21,8 +21,8 @@ DEFERRED RENDERING GEOMETRY PASS
 class GeometryPass final : public BaseGraphicPass
 {
     /*Setup*/
-    ColorFormatType m_colorFormat;
     ColorFormatType m_depthFormat;
+    ColorFormatType m_floatFormat;
 
     /*Descriptors*/
     struct FrameDescriptors {
@@ -49,19 +49,14 @@ class GeometryPass final : public BaseGraphicPass
         - Velocity + Emissive buffer
         - Depth buffer
     */
-    GeometryPass(Graphics::Device*        device,
-                 const PassLinkage<3, 5>& config,
-                 Extent2D                 extent,
-                 ColorFormatType          colorFormat,
-                 ColorFormatType          depthFormat)
+    GeometryPass(Graphics::Device* device, const PassLinkage<3, 5>& config, Extent2D extent, ColorFormatType floatingPointFormat, ColorFormatType depthFormat)
         : BaseGraphicPass(device, extent, 1, 1, true, false, "GEOMETRY")
-        , m_colorFormat(colorFormat)
-        , m_depthFormat(depthFormat) {
+        , m_depthFormat(depthFormat)
+        , m_floatFormat(floatingPointFormat) {
         BasePass::store_attachments<3, 5>(config);
     }
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 

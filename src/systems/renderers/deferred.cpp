@@ -27,7 +27,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
     {
         m_device->wait_idle();
 
-        const uint32_t SHADOW_RES = (uint32_t)m_shadowQuality;
+        const uint32_t SHADOW_RES = (uint32_t)m_settings.shadowQuality;
 
         m_passes[SHADOW_PASS]->set_extent({SHADOW_RES, SHADOW_RES});
         m_passes[SHADOW_PASS]->resize_attachments();
@@ -56,8 +56,11 @@ void DeferredRenderer::create_passes() {
     m_passes.resize(11, nullptr);
     m_attachments.resize(18);
 
-    // Main display extent
-    const Extent2D DISPLAY_EXTENT = !m_headless ? m_window->get_extent() : m_headlessExtent;
+    // Main configs 
+    const Extent2D        DISPLAY_EXTENT = !m_headless ? m_window->get_extent() : m_headlessExtent;
+    const ColorFormatType HDR_FORMAT     = m_settings.highDynamicPrecission == FloatPrecission::F16 ? SRGBA_16F : SRGBA_32F;
+    const ColorFormatType DEPTH_FORMAT   = m_settings.depthPrecission == FloatPrecission::F16 ? DEPTH_16F : DEPTH_32F;
+    const Extent2D        SHADOW_RES     = {(uint32_t)m_settings.shadowQuality, (uint32_t)m_settings.shadowQuality};
 
     // Arrange connectivity
     //--------------------------------
@@ -76,28 +79,23 @@ void DeferredRenderer::create_passes() {
     // Create passes
     //--------------------------------
 
-    m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
-    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(
-        m_device, shadowPassConfig, {(uint32_t)m_shadowQuality, (uint32_t)m_shadowQuality}, ENGINE_MAX_LIGHTS, m_settings.depthFormat);
-
-    m_passes[VOXELIZATION_PASS] = new Core::VoxelizationPass(m_device, voxelPassConfig, 256);
-
-    m_passes[GEOMETRY_PASS] = new Core::GeometryPass(m_device, geometryPassConfig, DISPLAY_EXTENT, m_settings.colorFormat, m_settings.depthFormat);
-
+    m_passes[SKY_PASS]            = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
+    m_passes[ENVIROMENT_PASS]     = new Core::EnviromentPass(m_device, enviromentPassConfig);
+    m_passes[SHADOW_PASS]         = new Core::VarianceShadowPass(m_device, shadowPassConfig, SHADOW_RES, ENGINE_MAX_LIGHTS, DEPTH_FORMAT);
+    m_passes[VOXELIZATION_PASS]   = new Core::VoxelizationPass(m_device, voxelPassConfig, 256);
+    m_passes[GEOMETRY_PASS]       = new Core::GeometryPass(m_device, geometryPassConfig, DISPLAY_EXTENT, HDR_FORMAT, DEPTH_FORMAT);
     m_passes[PRECOMPOSITION_PASS] = new Core::PreCompositionPass(m_device, preCompPassConfig, DISPLAY_EXTENT);
-
-    m_passes[COMPOSITION_PASS] = new Core::CompositionPass(m_device, compPassConfig, DISPLAY_EXTENT, SRGBA_16F);
-
-    m_passes[BLOOM_PASS] = new Core::BloomPass(m_device, bloomPassConfig, DISPLAY_EXTENT);
+    m_passes[COMPOSITION_PASS]    = new Core::CompositionPass(m_device, compPassConfig, DISPLAY_EXTENT, HDR_FORMAT);
+    m_passes[BLOOM_PASS]          = new Core::BloomPass(m_device, bloomPassConfig, DISPLAY_EXTENT, HDR_FORMAT);
 
     if (m_settings.softwareAA == SoftwareAA::FXAA || m_settings.softwareAA == SoftwareAA::NONE)
         m_passes[AA_PASS] =
-            new Core::PostProcessPass<1, 1>(m_device, FXAAPassConfig, DISPLAY_EXTENT, SRGBA_16F, ENGINE_RESOURCES_PATH "shaders/aa/fxaa.glsl", "FXAA", false);
+            new Core::PostProcessPass<1, 1>(m_device, FXAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, (Paths::RESOURCES_PATH / "shaders/aa/fxaa.glsl").string(), "FXAA", false);
     if (m_settings.softwareAA == SoftwareAA::TAA)
-        m_passes[AA_PASS] = new Core::TAAPass(m_device, TAAPassConfig, DISPLAY_EXTENT, SRGBA_16F, false);
+        m_passes[AA_PASS] = new Core::TAAPass(m_device, TAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, false);
 
-    m_passes[TONEMAPPIN_PASS] = new Core::TonemappingPass(m_device, toneMappingPassConfig, DISPLAY_EXTENT, m_settings.colorFormat, !m_headless ? true : false);
+    m_passes[TONEMAPPIN_PASS] =
+        new Core::TonemappingPass(m_device, toneMappingPassConfig, DISPLAY_EXTENT, m_settings.displayColorFormat, !m_headless ? true : false);
 
     m_passes[GUI_PASS] = new Core::GUIPass(m_device, DISPLAY_EXTENT);
 

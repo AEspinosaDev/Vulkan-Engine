@@ -6,10 +6,10 @@ namespace Tools {
 
 void Panel::render(ImVec2 extent) {
     m_pixelExtent = {m_extent.x * extent.x, m_extent.y * extent.y};
-    ImGui::SetNextWindowPos({m_position.x * extent.x, m_position.y * extent.y},
-                            (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
-    ImGui::SetNextWindowSize({m_extent.x * extent.x, m_extent.y * extent.y},
-                             (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
+    ImGui::SetNextWindowPos(
+        {m_position.x * extent.x, m_position.y * extent.y}, (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
+    ImGui::SetNextWindowSize(
+        {m_extent.x * extent.x, m_extent.y * extent.y}, (ImGuiWindowFlags)m_flags == ImGuiWindowFlags_NoMove ? ImGuiCond_Always : ImGuiCond_Once);
     ImGui::SetNextWindowCollapsed(m_collapsed, ImGuiCond_Once);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, m_padding);
@@ -22,9 +22,8 @@ void Panel::render(ImVec2 extent) {
     {
         if (ImGui::Begin(m_title,
                          m_closable ? &m_open : NULL,
-                         m_collapsable
-                             ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar
-                             : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+                         m_collapsable ? (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar
+                                       : (ImGuiWindowFlags)m_flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
         {
             //     ImGui::SetWindowPos({m_position.x * m_parentOverlay->get_extent().x, m_position.y *
             //     m_parentOverlay->get_extent().y});
@@ -108,7 +107,7 @@ void ExplorerWidget::render() {
             }
             if (ImGui::MenuItem("Cylinder"))
             {
-               
+
                 Mesh* cyl = new Mesh();
                 Loaders::load_3D_file(cyl, ENGINE_RESOURCES_PATH "meshes/cylinder.obj", false);
                 auto mat = new PhysicalMaterial();
@@ -199,7 +198,7 @@ void ExplorerWidget::render() {
         if (ImGuiFileDialog::Instance()->IsOk())
         {
             SceneLoader sceneLoader;
-            std::string          filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
             sceneLoader.save_scene(m_scene, filePath);
         }
 
@@ -210,7 +209,7 @@ void ExplorerWidget::render() {
         if (ImGuiFileDialog::Instance()->IsOk())
         {
             SceneLoader sceneLoader;
-            std::string          filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
             sceneLoader.load_scene(m_scene, filePath);
         }
 
@@ -220,11 +219,10 @@ void ExplorerWidget::render() {
 
     ImGui::SeparatorText("SCENE EXPLORER");
 
-    static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-                                   ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;
+    static ImGuiTableFlags flags =
+        ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersH*/;
 
-    if (ImGui::BeginTable(
-            "2ways", 2, flags, ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
+    if (ImGui::BeginTable("2ways", 2, flags, ImVec2(m_parent->get_pixel_extent().x * 0.95f, m_parent->get_pixel_extent().y * 0.3f)))
     {
         ImGui::TableSetupColumn(" Name", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, 3 * 18.0f);
@@ -347,9 +345,8 @@ void ExplorerWidget::displayObject(Object3D* const obj, int& counter) {
     ImGui::TableNextColumn();
     std::string name = obj->get_name();
 
-    if (ImGui::TreeNodeEx(name.c_str(),
-                          ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                              ImGuiTreeNodeFlags_SpanFullWidth))
+    if (ImGui::TreeNodeEx(
+            name.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth))
     {
         // node->selected = ImGui::IsItemClicked();
         if (ImGui::IsItemClicked())
@@ -411,25 +408,29 @@ void ExplorerWidget::displayRendererSettings() {
     static int  sync_current = static_cast<int>(renderer->get_settings().screenSync);
     if (ImGui::Combo("Sync Type", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
     {
+        Systems::RendererSettings settings = renderer->get_settings();
         switch (sync_current)
         {
         case 0:
-            renderer->set_sync_type(SyncType::NONE);
+            settings.screenSync = SyncType::NONE;
             break;
         case 1:
-            renderer->set_sync_type(SyncType::MAILBOX);
+            settings.screenSync = SyncType::MAILBOX;
             break;
         case 2:
-            renderer->set_sync_type(SyncType::VERTICAL);
+            settings.screenSync = SyncType::VERTICAL;
             break;
         }
+        renderer->set_settings(settings);
     }
     ImGui::SeparatorText("CLEARING");
 
     glm::vec3 clearColor = renderer->get_settings().clearColor;
     if (ImGui::ColorEdit3("Clear Color", (float*)&clearColor))
     {
-        renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
+        Systems::RendererSettings settings = renderer->get_settings();
+        settings.clearColor                = glm::vec4(clearColor, 1.0f);
+        renderer->set_settings(settings);
     }
 
     ImGui::SeparatorText("GI");
@@ -507,24 +508,26 @@ void ExplorerWidget::displayRendererSettings() {
 
     if (ImGui::Combo("Shadow Quality", &res_current, res, IM_ARRAYSIZE(res)))
     {
+        auto settings = renderer->get_settings();
         switch (res_current)
         {
         case 0:
-            renderer->set_shadow_quality(ShadowResolution::VERY_LOW);
+            settings.shadowQuality = ShadowResolution::VERY_LOW;
             break;
         case 1:
-            renderer->set_shadow_quality(ShadowResolution::LOW);
+            settings.shadowQuality = ShadowResolution::LOW;
             break;
         case 2:
-            renderer->set_shadow_quality(ShadowResolution::MEDIUM);
+            settings.shadowQuality = ShadowResolution::MEDIUM;
             break;
         case 3:
-            renderer->set_shadow_quality(ShadowResolution::HIGH);
+            settings.shadowQuality = ShadowResolution::HIGH;
             break;
         case 4:
-            renderer->set_shadow_quality(ShadowResolution::ULTRA);
+            settings.shadowQuality = ShadowResolution::ULTRA;
             break;
         }
+        renderer->set_settings(settings);
     }
     ImGui::SeparatorText("BLOOM");
 
@@ -674,16 +677,9 @@ void ExplorerWidget::displaySkySettings() {
     }
 
     // Aerosol Type
-    const char* aerosolTypes[]  = {"BACKGROUND",
-                                   "DESERT DUST",
-                                   "MARITIME CLEAN",
-                                   "MARITIME MINERAL",
-                                   "POLAR ANTARCTIC",
-                                   "POLAR ARCTIC",
-                                   "REMOTE CONTINENTAL",
-                                   "RURAL",
-                                   "URBAN"};
-    static int  aerosol_current = static_cast<int>(skySettings.aerosol);
+    const char* aerosolTypes[] = {
+        "BACKGROUND", "DESERT DUST", "MARITIME CLEAN", "MARITIME MINERAL", "POLAR ANTARCTIC", "POLAR ARCTIC", "REMOTE CONTINENTAL", "RURAL", "URBAN"};
+    static int aerosol_current = static_cast<int>(skySettings.aerosol);
     if (ImGui::Combo("Aerosol Type", &aerosol_current, aerosolTypes, IM_ARRAYSIZE(aerosolTypes)))
     {
         skySettings.aerosol = static_cast<SkyAerosolType>(aerosol_current);
@@ -701,13 +697,11 @@ void ExplorerWidget::displaySkySettings() {
     }
 
     // Resolution (Combo)
-    const char* resolutions[] = {"512", "1024", "2048", "4096"};
-    static int  resolution_current =
-        static_cast<int>(log2(skySettings.resolution) - 8); // Assuming 1024 is the default base
+    const char* resolutions[]      = {"512", "1024", "2048", "4096"};
+    static int  resolution_current = static_cast<int>(log2(skySettings.resolution) - 8); // Assuming 1024 is the default base
     if (ImGui::Combo("Resolution", &resolution_current, resolutions, IM_ARRAYSIZE(resolutions)))
     {
-        skySettings.resolution =
-            static_cast<uint32_t>(pow(2, resolution_current + 8)); // Convert to actual resolution value
+        skySettings.resolution = static_cast<uint32_t>(pow(2, resolution_current + 8)); // Convert to actual resolution value
         sky->set_sky_settings(skySettings);
     }
     if (ImGui::Checkbox("Use for IBL", &skySettings.useForIBL))
@@ -776,8 +770,7 @@ void ObjectExplorerWidget::render() {
             faceCount += (int)get_VAO(model->get_geometry(i))->indexCount / 3;
         }
 
-        ImGui::BeginTable(
-            "Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable("Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
 
         ImGui::TableSetupColumn("Mesh", ImGuiTableColumnFlags_NoHide);
         ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed, m_parent->get_pixel_extent().x * 0.5f);
@@ -838,16 +831,14 @@ void ObjectExplorerWidget::render() {
         ImGui::EndTable();
 
         ImGui::SeparatorText("Material");
-        ImGui::BeginTable(
-            "Mesh Details", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable("Mesh Details", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
         ImGui::TableSetupColumn("Material", ImGuiTableColumnFlags_NoHide);
 
         for (size_t i = 0; i < model->get_num_materials(); i++)
         {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            std::string str =
-                "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_ID() + " material";
+            std::string str = "ID " + std::to_string(i) + " - " + model->get_material(i)->get_shaderpass_ID() + " material";
             ImGui::Text(str.c_str());
             ImGui::Separator();
 
@@ -1088,8 +1079,7 @@ void ObjectExplorerWidget::render() {
 
                 ImGui::Separator();
             }
-            if (model->get_material(i)->get_shaderpass_ID() == "hairstr" ||
-                model->get_material(i)->get_shaderpass_ID() == "hairstr2")
+            if (model->get_material(i)->get_shaderpass_ID() == "hairstr" || model->get_material(i)->get_shaderpass_ID() == "hairstr2")
             {
                 HairStrandMaterial* mat = static_cast<HairStrandMaterial*>(model->get_material(i));
                 // ImGui UI code
@@ -1294,8 +1284,7 @@ void ObjectExplorerWidget::render() {
                 float shadowFov = light->get_shadow_fov();
                 if (ImGui::DragFloat("FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
                     light->set_shadow_fov(shadowFov);
-                float position[3] = {
-                    light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
+                float position[3] = {light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
                 if (ImGui::DragFloat3("Target", position, 0.1f))
                 {
                     light->set_shadow_target(Vec3(position[0], position[1], position[2]));
@@ -1322,8 +1311,7 @@ void ObjectExplorerWidget::render() {
                 float shadowFov = light->get_shadow_fov();
                 if (ImGui::DragFloat("FOV", &shadowFov, 1.0f, 0.0f, 160.0f))
                     light->set_shadow_fov(shadowFov);
-                float position[3] = {
-                    light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
+                float position[3] = {light->get_shadow_target().x, light->get_shadow_target().y, light->get_shadow_target().z};
                 if (ImGui::DragFloat3("Target", position, 0.1f))
                 {
                     light->set_shadow_target(Vec3(position[0], position[1], position[2]));
@@ -1413,26 +1401,30 @@ void RendererSettingsWidget::render() {
 
     const char* syncs[]      = {"NONE", "MAILBOX", "VSYNC"};
     static int  sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
-    if (ImGui::Combo("Screen Sync", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
+    if (ImGui::Combo("Sync Type", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
     {
+        Systems::RendererSettings settings = m_renderer->get_settings();
         switch (sync_current)
         {
         case 0:
-            m_renderer->set_sync_type(SyncType::NONE);
+            settings.screenSync = SyncType::NONE;
             break;
         case 1:
-            m_renderer->set_sync_type(SyncType::MAILBOX);
+            settings.screenSync = SyncType::MAILBOX;
             break;
         case 2:
-            m_renderer->set_sync_type(SyncType::VERTICAL);
+            settings.screenSync = SyncType::VERTICAL;
             break;
         }
+        m_renderer->set_settings(settings);
     }
 
     glm::vec3 clearColor = m_renderer->get_settings().clearColor;
     if (ImGui::ColorEdit3("Clear Color", (float*)&clearColor))
     {
-        m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
+        Systems::RendererSettings settings = m_renderer->get_settings();
+        settings.clearColor                = glm::vec4(clearColor, 1.0f);
+        m_renderer->set_settings(settings);
     }
 }
 } // namespace Tools
@@ -1442,26 +1434,30 @@ void Tools::ForwardRendererWidget::render() {
 
     const char* syncs[]      = {"NONE", "MAILBOX", "VSYNC"};
     static int  sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
-    if (ImGui::Combo("Screen Sync", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
+    if (ImGui::Combo("Sync Type", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
     {
+        Systems::RendererSettings settings = m_renderer->get_settings();
         switch (sync_current)
         {
         case 0:
-            m_renderer->set_sync_type(SyncType::NONE);
+            settings.screenSync = SyncType::NONE;
             break;
         case 1:
-            m_renderer->set_sync_type(SyncType::MAILBOX);
+            settings.screenSync = SyncType::MAILBOX;
             break;
         case 2:
-            m_renderer->set_sync_type(SyncType::VERTICAL);
+            settings.screenSync = SyncType::VERTICAL;
             break;
         }
+        m_renderer->set_settings(settings);
     }
 
     glm::vec3 clearColor = m_renderer->get_settings().clearColor;
     if (ImGui::ColorEdit3("Clear Color", (float*)&clearColor))
     {
-        m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
+        Systems::RendererSettings settings = m_renderer->get_settings();
+        settings.clearColor                = glm::vec4(clearColor, 1.0f);
+        m_renderer->set_settings(settings);
     }
 
 #pragma region SHADOWS
@@ -1471,24 +1467,26 @@ void Tools::ForwardRendererWidget::render() {
 
     if (ImGui::Combo("Shadow Quality", &res_current, res, IM_ARRAYSIZE(res)))
     {
+        auto settings = m_renderer->get_settings();
         switch (res_current)
         {
         case 0:
-            m_renderer->set_shadow_quality(ShadowResolution::VERY_LOW);
+            settings.shadowQuality = ShadowResolution::VERY_LOW;
             break;
         case 1:
-            m_renderer->set_shadow_quality(ShadowResolution::LOW);
+            settings.shadowQuality = ShadowResolution::LOW;
             break;
         case 2:
-            m_renderer->set_shadow_quality(ShadowResolution::MEDIUM);
+            settings.shadowQuality = ShadowResolution::MEDIUM;
             break;
         case 3:
-            m_renderer->set_shadow_quality(ShadowResolution::HIGH);
+            settings.shadowQuality = ShadowResolution::HIGH;
             break;
         case 4:
-            m_renderer->set_shadow_quality(ShadowResolution::ULTRA);
+            settings.shadowQuality = ShadowResolution::ULTRA;
             break;
         }
+        m_renderer->set_settings(settings);
     }
     ImGui::Separator();
 
@@ -1533,26 +1531,30 @@ void Tools::DeferredRendererWidget::render() {
 
     const char* syncs[]      = {"NONE", "MAILBOX", "VSYNC"};
     static int  sync_current = static_cast<int>(m_renderer->get_settings().screenSync);
-    if (ImGui::Combo("Screen Sync", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
+    if (ImGui::Combo("Sync Type", &sync_current, syncs, IM_ARRAYSIZE(syncs)))
     {
+        Systems::RendererSettings settings = m_renderer->get_settings();
         switch (sync_current)
         {
         case 0:
-            m_renderer->set_sync_type(SyncType::NONE);
+            settings.screenSync = SyncType::NONE;
             break;
         case 1:
-            m_renderer->set_sync_type(SyncType::MAILBOX);
+            settings.screenSync = SyncType::MAILBOX;
             break;
         case 2:
-            m_renderer->set_sync_type(SyncType::VERTICAL);
+            settings.screenSync = SyncType::VERTICAL;
             break;
         }
+        m_renderer->set_settings(settings);
     }
 
     glm::vec3 clearColor = m_renderer->get_settings().clearColor;
     if (ImGui::ColorEdit3("Clear Color", (float*)&clearColor))
     {
-        m_renderer->set_clearcolor(glm::vec4(clearColor, 1.0f));
+        Systems::RendererSettings settings = m_renderer->get_settings();
+        settings.clearColor                = glm::vec4(clearColor, 1.0f);
+        m_renderer->set_settings(settings);
     }
 
     ImGui::Separator();
@@ -1628,24 +1630,26 @@ void Tools::DeferredRendererWidget::render() {
 
     if (ImGui::Combo("Shadow Quality", &res_current, res, IM_ARRAYSIZE(res)))
     {
+        auto settings = m_renderer->get_settings();
         switch (res_current)
         {
         case 0:
-            m_renderer->set_shadow_quality(ShadowResolution::VERY_LOW);
+            settings.shadowQuality = ShadowResolution::VERY_LOW;
             break;
         case 1:
-            m_renderer->set_shadow_quality(ShadowResolution::LOW);
+            settings.shadowQuality = ShadowResolution::LOW;
             break;
         case 2:
-            m_renderer->set_shadow_quality(ShadowResolution::MEDIUM);
+            settings.shadowQuality = ShadowResolution::MEDIUM;
             break;
         case 3:
-            m_renderer->set_shadow_quality(ShadowResolution::HIGH);
+            settings.shadowQuality = ShadowResolution::HIGH;
             break;
         case 4:
-            m_renderer->set_shadow_quality(ShadowResolution::ULTRA);
+            settings.shadowQuality = ShadowResolution::ULTRA;
             break;
         }
+        m_renderer->set_settings(settings);
     }
     ImGui::Separator();
 

@@ -12,7 +12,7 @@ void Application::init(Systems::RendererSettings settings) {
     m_window->set_key_callback(
         std::bind(&Application::keyboard_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, settings);
     m_renderer                      = rndr;
 
     setup();

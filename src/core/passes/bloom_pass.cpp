@@ -63,7 +63,7 @@ void BloomPass::setup_shader_passes() {
     const uint32_t MIPMAP_UNIFORM_SIZE   = sizeof(uint32_t) * 2.0f;
     const uint32_t SETTINGS_UNIFORM_SIZE = sizeof(float);
 
-    ComputeShaderPass* downsamplePass               = new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/downsample.glsl");
+    ComputeShaderPass* downsamplePass               = new ComputeShaderPass(m_device->get_handle(), GET_RESOURCE_PATH("shaders/bloom/downsample.glsl"));
     downsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     downsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
@@ -72,7 +72,7 @@ void BloomPass::setup_shader_passes() {
 
     m_shaderPasses["downsample"] = downsamplePass;
 
-    ComputeShaderPass* upsamplePass               = new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/bloom/upsample.glsl");
+    ComputeShaderPass* upsamplePass               = new ComputeShaderPass(m_device->get_handle(), GET_RESOURCE_PATH("shaders/bloom/upsample.glsl"));
     upsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     upsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
@@ -82,7 +82,7 @@ void BloomPass::setup_shader_passes() {
     m_shaderPasses["upsample"] = upsamplePass;
 
     GraphicShaderPass* bloomPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/bloom/compose.glsl");
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/bloom/compose.glsl"));
     bloomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     bloomPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -222,7 +222,6 @@ void BloomPass::link_input_attachments() {
     config.mipLevels    = MIPMAP_LEVELS;
     config.baseMipLevel = 0;
     config.format       = m_colorFormat;
-    config.useMipmaps   = true;
     m_bloomImage        = m_device->create_image(m_inAttachments[1]->extent, config);
     m_bloomImage.create_view(config);
     SamplerConfig samplerConfig      = {};
@@ -236,8 +235,8 @@ void BloomPass::link_input_attachments() {
     for (size_t i = 0; i < MIPMAP_LEVELS; i++)
     {
         m_bloomMipmaps[i]              = m_bloomImage.clone();
-        m_bloomMipmaps[i].baseMipLevel = i;
-        m_bloomMipmaps[i].mipLevels    = 1;
+        m_bloomMipmaps[i].config.baseMipLevel = i;
+        m_bloomMipmaps[i].config.mipLevels    = 1;
         m_bloomMipmaps[i].create_view(config);
     }
 

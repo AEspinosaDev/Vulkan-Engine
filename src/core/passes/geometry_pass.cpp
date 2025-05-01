@@ -11,7 +11,7 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
     attachments.resize(5);
 
     // Normals + Depth
-    attachments[0] = Graphics::AttachmentConfig(SRGBA_16F,
+    attachments[0] = Graphics::AttachmentConfig(m_floatFormat,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -29,7 +29,7 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                                 IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
     // Velocity + Emissive strength
-    attachments[3] = Graphics::AttachmentConfig(SRGBA_16F,
+    attachments[3] = Graphics::AttachmentConfig(m_floatFormat,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -40,7 +40,7 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
                                                 1,
                                                 LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                                 LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC,
                                                 DEPTH_ATTACHMENT,
                                                 ASPECT_DEPTH);
     attachments[4].imageConfig.clearValue.depthStencil.depth = 0.0f; // Inverse Z
@@ -123,8 +123,7 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 void GeometryPass::setup_shader_passes() {
 
     // Geometry
-    GraphicShaderPass* geomPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/geometry.glsl");
+    GraphicShaderPass* geomPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/geometry.glsl"));
     geomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     geomPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
@@ -145,7 +144,7 @@ void GeometryPass::setup_shader_passes() {
     m_shaderPasses["geometryTri"] = geomPass;
 
     GraphicShaderPass* geomLinePass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/line_to_tri_geometry.glsl");
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/line_to_tri_geometry.glsl"));
     geomLinePass->settings.descriptorSetLayoutIDs = geomPass->settings.descriptorSetLayoutIDs;
     geomLinePass->graphicSettings                 = geomPass->graphicSettings;
     geomLinePass->graphicSettings.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -158,7 +157,7 @@ void GeometryPass::setup_shader_passes() {
     m_shaderPasses["geometryLineTri"] = geomLinePass;
 
     GraphicShaderPass* linePass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/line_geometry.glsl");
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/line_geometry.glsl"));
     linePass->settings.descriptorSetLayoutIDs = geomPass->settings.descriptorSetLayoutIDs;
     linePass->graphicSettings                 = geomPass->graphicSettings;
     linePass->graphicSettings.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -171,7 +170,7 @@ void GeometryPass::setup_shader_passes() {
     m_shaderPasses["geometryLine"] = linePass;
 
     GraphicShaderPass* skyboxPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/skybox.glsl");
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent,  GET_RESOURCE_PATH( "shaders/deferred/skybox.glsl"));
     skyboxPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};

@@ -82,7 +82,24 @@
                 "CMAKE_CXX_EXTENSIONS": "OFF",
                 "CMAKE_BUILD_TYPE": "Release"
             }
-        }
+        },
+        {
+            "name": "distribution",
+            "displayName": "For Distribution (Ninja)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+              "CMAKE_CXX_COMPILER": "clang++",
+              "CMAKE_C_COMPILER": "clang",
+              "CMAKE_CXX_STANDARD": "17",
+              "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+              "CMAKE_CXX_EXTENSIONS": "OFF",
+              "CMAKE_BUILD_TYPE": "Release",
+              "DISTRIBUTION_MODE": "ON",
+              "BUILD_TESTS": "OFF",
+              "BUILD_EXAMPLES": "ON"
+            }
+          }
         
     ],
     
@@ -113,6 +130,12 @@
         {
             "name": "GCC-x86_64-release",
             "configurePreset": "GCC-x86_64-release",
+            "configuration": "Release"
+        }
+        ,
+        {
+            "name": "distribution",
+            "configurePreset": "distribution",
             "configuration": "Release"
         }
     ]

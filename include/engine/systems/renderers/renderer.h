@@ -25,18 +25,20 @@ Renderer Global Settings Data
 */
 struct RendererSettings {
 
-    MSAASamples     samplesMSAA      = MSAASamples::x4;
-    BufferingType   bufferingType    = BufferingType::DOUBLE;
-    SyncType        screenSync       = SyncType::MAILBOX;
-    ColorFormatType colorFormat      = SRGBA_8;
-    ColorFormatType depthFormat      = DEPTH_32F;
-    Vec4            clearColor       = Vec4{0.0, 0.0, 0.0, 1.0};
-    SoftwareAA      softwareAA       = SoftwareAA::NONE;
-    bool            autoClearColor   = true;
-    bool            autoClearDepth   = true;
-    bool            autoClearStencil = true;
-    bool            enableUI         = false;
-    bool            enableRaytracing = true;
+    MSAASamples      samplesMSAA           = MSAASamples::x4;          // Multisampled AA (when possible)
+    BufferingType    bufferingType         = BufferingType::DOUBLE;    // Buffering type (Usual: double buffering)
+    SyncType         screenSync            = SyncType::MAILBOX;        // Type of display synchronization
+    ColorFormatType  displayColorFormat    = SRGBA_8;                  // Color format used for presentation
+    FloatPrecission  highDynamicPrecission = FloatPrecission::F16;     // HDR operations floating point precission
+    FloatPrecission  depthPrecission       = FloatPrecission::F32;     // Depth operations floating point precission
+    Vec4             clearColor            = Vec4{0.0, 0.0, 0.0, 1.0}; // Clear color of visible color buffer
+    SoftwareAA       softwareAA            = SoftwareAA::NONE;
+    ShadowResolution shadowQuality         = ShadowResolution::MEDIUM;
+    bool             autoClearColor        = true;
+    bool             autoClearDepth        = true;
+    bool             autoClearStencil      = true;
+    bool             enableUI              = false;
+    bool             enableRaytracing      = true;
 };
 /**
  * Basic class. Renders a given scene data to a given window. Fully
@@ -71,12 +73,6 @@ class BaseRenderer
 
 #pragma endregion
   public:
-    BaseRenderer(Extent2D displayExtent)
-        : m_window(nullptr)
-        , m_device(nullptr)
-        , m_headlessExtent{displayExtent} {
-        m_headless = true;
-    }
     BaseRenderer(Core::IWindow* window)
         : m_window(window)
         , m_device(nullptr) {
@@ -90,6 +86,13 @@ class BaseRenderer
         if (!window)
             m_headless = true;
     }
+    // Headless rendering
+    BaseRenderer(Extent2D displayExtent)
+        : m_window(nullptr)
+        , m_device(nullptr)
+        , m_headlessExtent{displayExtent} {
+        m_headless = true;
+    }
 
 #pragma region Getters & Setters
 
@@ -100,34 +103,14 @@ class BaseRenderer
         return m_headless;
     }
 
-    inline RendererSettings get_settings() {
+    inline RendererSettings get_settings() const {
         return m_settings;
     }
-    inline void set_settings(RendererSettings settings) {
-        m_settings = settings;
-    }
-    inline void set_antialiasing(MSAASamples msaa) {
-        m_settings.samplesMSAA = msaa;
-    }
-    inline void set_color_format(ColorFormatType color) {
-        m_settings.colorFormat = color;
-    }
-    inline void set_depth_format(ColorFormatType d) {
-        m_settings.depthFormat = d;
-    }
-    inline std::vector<Core::BasePass*> get_render_passes() const {
-        return m_passes;
-    }
-    inline void enable_gui_overlay(bool op) {
-        m_settings.enableUI = op;
-    }
-    inline void set_sync_type(SyncType sync) {
-        m_settings.screenSync = sync;
-        if (m_initialized)
+    virtual inline void set_settings(RendererSettings settings) {
+        if (m_settings.screenSync != settings.screenSync)
             m_updateFramebuffers = true;
-    }
-    virtual inline void set_clearcolor(Vec4 c) {
-        m_settings.clearColor = c;
+
+        m_settings = settings;
     }
 
 #pragma endregion
@@ -150,9 +133,9 @@ class BaseRenderer
      */
     void shutdown(Core::Scene* const scene);
     /*
-    * Capture one of the attachment images in a given frame as a CPU texture.
-    */
-    Core::Texture* capture_texture(uint32_t attachmentId);
+     * Capture one of the attachment images in a given frame as a CPU texture.
+     */
+    Core::ITexture* capture_texture(uint32_t attachmentId);
 
 #pragma endregion
 #pragma region Core Functions
@@ -204,7 +187,7 @@ class BaseRenderer
         ASSERT_PTR(pass);
         return pass;
     }
-   
+
 #pragma endregion
 };
 } // namespace Systems

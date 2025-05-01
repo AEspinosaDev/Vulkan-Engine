@@ -25,7 +25,6 @@ struct ImageConfig {
     uint16_t        samples      = 1U;
     uint32_t        mipLevels    = 1U;
     uint32_t        baseMipLevel = 0;
-    bool            useMipmaps   = false;
     uint32_t        layers       = 1U;
     ImageLayout     layout       = LAYOUT_UNDEFINED;
     ClearValue      clearValue   = {{{0.0, 0.0, 0.0, 1.0}}};
@@ -46,26 +45,24 @@ struct Image {
 
     VkImage         handle        = VK_NULL_HANDLE;
     VkDevice        device        = VK_NULL_HANDLE;
-    VmaAllocator    memory        = VK_NULL_HANDLE; /*Memory allocation controlled by VMA*/
+    VmaAllocator    memory        = VK_NULL_HANDLE; /*Memory allocation managed by VMA*/
     VmaAllocation   allocation    = VK_NULL_HANDLE;
     VkImageView     view          = VK_NULL_HANDLE;
     VkSampler       sampler       = VK_NULL_HANDLE;
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
     /*Config parameters*/
-    Extent3D    extent        = {0, 0, 1}; // Depth for 3D Textures
-    ImageLayout currentLayout = LAYOUT_UNDEFINED;
-    uint32_t    layers        = 1; // Layers for Cubemaps and Arrays
-    uint32_t    mipLevels     = 1;
-    uint32_t    baseMipLevel  = 0;
-    ClearValue  clearValue    = {{{0.0, 0.0, 0.0, 1.0}}};
+    Extent3D      extent        = {0, 0, 1}; // Depth for 3D Textures
+    ImageLayout   currentLayout = LAYOUT_UNDEFINED;
+    ImageConfig   config;
+    SamplerConfig samplerConfig;
 
     bool loadedOnCPU{false};
     bool loadedOnGPU{false};
 
-    void create_view(ImageConfig config);
+    void create_view(ImageConfig _config);
 
-    void create_sampler(SamplerConfig config);
+    void create_sampler(SamplerConfig _samplerConfig);
 
     void create_GUI_handle();
 

@@ -18,7 +18,7 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window,  settings);
     m_renderer                      = rndr;
 
     setup();

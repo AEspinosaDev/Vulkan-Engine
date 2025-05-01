@@ -67,7 +67,6 @@ void TAAPass::create_framebuffer() {
     ImageConfig prevImgConfig = {};
     prevImgConfig.format      = m_colorFormat;
     prevImgConfig.usageFlags  = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC;
-    prevImgConfig.useMipmaps = true;
     m_interAttachments[0] = m_device->create_image({m_imageExtent.width, m_imageExtent.height, 1}, prevImgConfig);
     m_interAttachments[0].create_view(prevImgConfig);
 

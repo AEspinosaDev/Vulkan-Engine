@@ -52,7 +52,7 @@ Use on .hair files.
 */
 void load_hair(Core::Mesh* const mesh, const char* fileName);
 /*
-Load image texture
+Load image texture (HDR, PNG, JPG SUPPORTED)
 */
 void load_texture(Core::ITexture* texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB, bool asyncCall = true);
 /*
@@ -70,7 +70,7 @@ will be used for computing the depth if no depthy input is given. PNG or JPEG av
 void load_3D_texture(Core::ITexture* const texture, const std::string fileName, uint16_t depth = 0, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
 
 /*
-Save texture image
+Save texture image  (HDR, PNG, JPG, BMP SUPPORTED)
 */
 void save_texture(Core::ITexture* const texture, const std::string fileName);
 

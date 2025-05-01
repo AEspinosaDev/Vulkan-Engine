@@ -7,18 +7,12 @@ void Application::init(Systems::RendererSettings settings) {
     m_window->init();
     m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
 
-    m_window->set_window_size_callback(
-        std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
-    m_window->set_mouse_callback(
-        std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
-    m_window->set_key_callback(std::bind(&Application::keyboard_callback,
-                                         this,
-                                         std::placeholders::_1,
-                                         std::placeholders::_2,
-                                         std::placeholders::_3,
-                                         std::placeholders::_4));
+    m_window->set_window_size_callback(std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_mouse_callback(std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_key_callback(
+        std::bind(&Application::keyboard_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, settings);
     m_renderer                      = rndr;
 
     setup();
@@ -64,8 +58,7 @@ void Application::setup() {
 }
 
 void Application::setup_gui() {
-    m_interface.overlay = new Tools::GUIOverlay(
-        (float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
+    m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
     m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
@@ -80,9 +73,8 @@ void Application::setup_gui() {
     m_interface.overlay->add_panel(explorerPanel);
     m_interface.explorer = explorerPanel;
 
-    Tools::Panel* propertiesPanel =
-        new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
-    m_interface.object = new Tools::ObjectExplorerWidget();
+    Tools::Panel* propertiesPanel = new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
+    m_interface.object            = new Tools::ObjectExplorerWidget();
     propertiesPanel->add_child(m_interface.object);
 
     m_interface.overlay->add_panel(propertiesPanel);

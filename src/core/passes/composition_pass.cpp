@@ -128,7 +128,7 @@ void CompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 void CompositionPass::setup_shader_passes() {
 
     GraphicShaderPass* compPass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/composition.glsl");
+        m_device->get_handle(), m_renderpass, m_imageExtent,  GET_RESOURCE_PATH("shaders/deferred/composition.glsl"));
     compPass->settings.descriptorSetLayoutIDs  = {{GLOBAL_LAYOUT, true}, {1, true}};
     compPass->graphicSettings.attributes       = {{POSITION_ATTRIBUTE, true},
                                                   {NORMAL_ATTRIBUTE, false},

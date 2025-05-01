@@ -60,7 +60,7 @@ void main() {
     }
 
     //Computing velocity buffer
-    v_currClip = gl_Position; 
+    v_currClip = gl_Position;
     v_prevClip = camera.prevViewProj * object.model * vec4(pos, 1.0);
 }
 
@@ -196,16 +196,16 @@ void main() {
 
     //Compute velocity
     vec3 currNDC = v_currClip.xyz / v_currClip.w;
-    currNDC.xy = (currNDC.xy+1)/2.0f;
+    currNDC.xy = (currNDC.xy + 1) / 2.0;
 
     vec3 prevNDC = v_prevClip.xyz / v_prevClip.w;
-    prevNDC.xy = (prevNDC.xy+1)/2.0f;
+    prevNDC.xy = (prevNDC.xy + 1) / 2.0;
 
     vec2 velocity = currNDC.xy - prevNDC.xy;
 
     // ----- OUTS --------
     outAlbedo = vec4(mixedColor, g_opacity);
-    outNormal = vec4(g_normal, v_currClip.z);
+    outNormal = vec4(g_normal, 1.0);
     outMaterial = g_material; //w material ID
     outVelocityEmissive = vec4(velocity, emissiveStrength, 0.0); //w Fresnel Threshold 
 

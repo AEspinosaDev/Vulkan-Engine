@@ -65,6 +65,10 @@ class ITexture
 
     virtual inline size_t get_bytes_per_pixel() const = 0;
 
+    virtual inline size_t get_channels() const {
+        return m_channels;
+    };
+
     // GETTERS & SETTERS
 
     inline bool loaded_on_CPU() const {

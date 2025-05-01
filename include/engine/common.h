@@ -10,6 +10,7 @@
 #define COMMON_H
 
 #ifdef _WIN32
+#include <windows.h>
 // Windows-specific includes and definitions
 #define VK_USE_PLATFORM_WIN32_KHR
 // #include <Volk/volk.h>
@@ -20,6 +21,7 @@
 #include <GLFW/glfw3native.h>
 #elif __linux__
 // Linux-specific includes and definitions
+#include <unistd.h>
 #include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_VULKAN
 #define VK_USE_PLATFORM_XCB_KHR
@@ -33,6 +35,7 @@
 #include <cstdlib>
 #include <fstream>
 #define GLM_ENABLE_EXPERIMENTAL
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
@@ -62,27 +65,27 @@
 #define PROFILING_FRAME()
 #endif
 
-#define _LOG(msg)                                                                                                      \
-    {                                                                                                                  \
-        std::cout << "[VKEngine Log] " << msg << std::endl;                                                            \
+#define _LOG(msg)                                                                                                                                              \
+    {                                                                                                                                                          \
+        std::cout << "[VKEngine Log] " << msg << std::endl;                                                                                                    \
     }
-#define DEBUG_LOG(msg)                                                                                                 \
-    {                                                                                                                  \
-        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                          \
+#define DEBUG_LOG(msg)                                                                                                                                         \
+    {                                                                                                                                                          \
+        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                                                                  \
     }
-#define ERR_LOG(msg)                                                                                                   \
-    {                                                                                                                  \
-        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                          \
+#define ERR_LOG(msg)                                                                                                                                           \
+    {                                                                                                                                                          \
+        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                                                                  \
     }
-#define VK_CHECK(x)                                                                                                    \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        VkResult err = x;                                                                                              \
-        if (err)                                                                                                       \
-        {                                                                                                              \
-            std::cout << "VKEngine detected a Vulkan error: " << err << std::endl;                                     \
-            abort();                                                                                                   \
-        }                                                                                                              \
+#define VK_CHECK(x)                                                                                                                                            \
+    do                                                                                                                                                         \
+    {                                                                                                                                                          \
+        VkResult err = x;                                                                                                                                      \
+        if (err)                                                                                                                                               \
+        {                                                                                                                                                      \
+            std::cout << "VKEngine detected a Vulkan error: " << err << std::endl;                                                                             \
+            abort();                                                                                                                                           \
+        }                                                                                                                                                      \
     } while (0)
 
 // Namespace define
@@ -101,10 +104,13 @@
 #define PNG "png"
 #define HDR "hdr"
 #define JPG "jpg"
+#define BMP "bmp"
 #define TIF "tif"
 #define HAIR "hair"
 
 #define CUBEMAP_FACES 6
+
+static std::filesystem::path get_executable_dir();
 
 /// Simple exception class, which stores a human-readable error description
 class VKFW_Exception : public std::runtime_error
@@ -117,6 +123,12 @@ class VKFW_Exception : public std::runtime_error
 };
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
+
+namespace Paths {
+extern const std::filesystem::path RESOURCES_PATH;
+}
+
+#define GET_RESOURCE_PATH(relative_path) ((Paths::RESOURCES_PATH / relative_path).string())
 
 // Mathematics library glm
 namespace math = glm;
@@ -189,6 +201,11 @@ enum class SoftwareAA
     FXAA = 1,
     TAA  = 2
 };
+typedef enum class FloatPrecission
+{
+    F16 = 16,
+    F32 = 32,
+} FPrecission;
 enum class SyncType
 {
     NONE             = 0, // No framerate cap (POTENTIAL TEARING)
@@ -310,8 +327,7 @@ typedef enum ColorFormatTypeFlagBits
     DEPTH_16F = VK_FORMAT_D16_UNORM,
     DEPTH_32F = VK_FORMAT_D32_SFLOAT,
     RGB10A2   = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-}
-ColorFormatType;
+} ColorFormatType;
 typedef enum MipmapModeFlagsBits
 {
     MIPMAP_NEAREST = 0x00000001,

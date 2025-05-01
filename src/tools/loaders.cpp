@@ -2,7 +2,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-
 void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh, const std::string fileName, bool importMaterials, bool calculateTangents) {
     // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
 
@@ -915,6 +914,33 @@ void VKFW::Tools::Loaders::save_texture(Core::ITexture* const texture, const std
     Extent3D size  = texture->get_size();
     void*    cache = nullptr;
     texture->get_image_cache(cache);
-    stbi_write_png(fileName.c_str(), size.width, size.height, 4, cache, size.width * 4);
-    // stbi_write_hdr("M.hdr", SIZE, SIZE, CHANNELS, imageDataF.data());
+    size_t channels = texture->get_channels();
+
+    size_t dotPosition = fileName.find_last_of(".");
+
+    if (dotPosition != std::string::npos)
+    {
+
+        std::string fileExtension = fileName.substr(dotPosition + 1);
+
+        if (fileExtension == PNG)
+        {
+            assert(channels == 4);
+            stbi_write_png(fileName.c_str(), size.width, size.height, channels, cache, size.width * channels);
+        }
+        if (fileExtension == HDR)
+        {
+            // /* ONLY SUPPORTS 32 F */ WIP
+            stbi_write_hdr(fileName.c_str(), size.width, size.height, channels, reinterpret_cast<float*>(cache));
+        }
+        if (fileExtension == JPG)
+        {
+            assert(channels == 3);
+            stbi_write_jpg(fileName.c_str(), size.width, size.height, channels, cache, 5000);
+        }
+        if (fileExtension == BMP)
+        {
+            stbi_write_bmp(fileName.c_str(), size.width, size.height, channels, cache);
+        }
+    }
 }

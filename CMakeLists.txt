@@ -55,7 +55,7 @@ target_link_libraries(ImGuiFileDialog PUBLIC imgui )
 
 # Setup sources
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/add_module_files.cmake)
-set(ENGINE_SOURCES "src/utils.cpp")
+set(ENGINE_SOURCES "src/utils.cpp" "src/common.cpp")
 set(ENGINE_HEADERS "")
 add_module_files(core ENGINE_SOURCES ENGINE_HEADERS)
 add_module_files(graphics ENGINE_SOURCES ENGINE_HEADERS)
@@ -117,6 +117,24 @@ if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
-
+# Choose if building the project for distribution
+option(DISTRIBUTION_MODE "Enable distribution mode (copy resources and set macro to build directory)" OFF)
+if(DISTRIBUTION_MODE)
+    message(STATUS "Distribution mode: copying resources to build directory")
+    
+    # Copy resources for distribution mode
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    
+    # Define the macro for code (to be used in the engine)
+    target_compile_definitions(VulkanEngine PUBLIC DISTRIBUTION_MODE=TRUE)
+  
+else()
+    message(STATUS "Development mode: using resources in-place")
+    
+    # Define the macro for development mode
+    target_compile_definitions(VulkanEngine PUBLIC DISTRIBUTION_MODE=FALSE)
+    
+endif()
+# Set the resource path to the local source directory
 target_compile_definitions(VulkanEngine PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 

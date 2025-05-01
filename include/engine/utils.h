@@ -132,6 +132,11 @@ inline Vec2 get_halton_jitter(int frameIndex, int screenWidth, int screenHeight)
     return Vec2(jitterX * pixelWidth, jitterY * pixelHeight);
 }
 
+size_t get_channel_count(ColorFormatType colorFormatType);
+bool   is_hdr_format(ColorFormatType colorFormatType);
+size_t get_pixel_size_in_bytes(ColorFormatType format);
+
+
 }; // namespace Utils
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -32,7 +32,7 @@ A (first downsampled image).
 class BloomPass final : public BaseGraphicPass
 {
   protected:
-    ColorFormatType m_colorFormat = SRGBA_16F;
+    ColorFormatType m_colorFormat;
 
     Graphics::DescriptorSet m_imageDescriptorSet;
 
@@ -60,8 +60,9 @@ class BloomPass final : public BaseGraphicPass
           - Bloom + Lighting
 
       */
-    BloomPass(Graphics::Device* device, const PassLinkage<2, 1>& config, Extent2D extent, bool isDefault = false)
-        : BaseGraphicPass(device, extent, 1, 1, true, isDefault, "BLOOM") {
+    BloomPass(Graphics::Device* device, const PassLinkage<2, 1>& config, Extent2D extent, ColorFormatType colorFormat = SRGBA_16F, bool isDefault = false)
+        : BaseGraphicPass(device, extent, 1, 1, true, isDefault, "BLOOM")
+        , m_colorFormat(colorFormat) {
         BasePass::store_attachments<2, 1>(config);
     }
 
@@ -72,8 +73,7 @@ class BloomPass final : public BaseGraphicPass
         m_bloomStrength = st;
     }
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 

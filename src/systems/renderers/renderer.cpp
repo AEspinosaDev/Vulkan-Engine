@@ -27,7 +27,7 @@ void BaseRenderer::init() {
                        m_window->get_windowing_system(),
                        m_window->get_extent(),
                        static_cast<uint32_t>(m_settings.bufferingType),
-                       m_settings.colorFormat,
+                       m_settings.displayColorFormat,
                        m_settings.screenSync);
     } else
     {
@@ -186,7 +186,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
 void BaseRenderer::update_framebuffers(Extent2D extent) {
 
     m_device->wait_idle();
-    m_device->update_swapchain(extent, static_cast<uint32_t>(m_settings.bufferingType), m_settings.colorFormat, m_settings.screenSync);
+    m_device->update_swapchain(extent, static_cast<uint32_t>(m_settings.bufferingType), m_settings.displayColorFormat, m_settings.screenSync);
 
     // Renderpass framebuffer updating
     for (Core::BasePass* pass : m_passes)
@@ -258,13 +258,13 @@ void BaseRenderer::init_resources() {
     Core::ResourceManager::textureResources.resize(2, nullptr);
 
     Core::Texture* samplerText = new Core::Texture();
-    Tools::Loaders::load_PNG(samplerText, ENGINE_RESOURCES_PATH "textures/blueNoise.png", TEXTURE_FORMAT_UNORM);
+    Tools::Loaders::load_PNG(samplerText, GET_RESOURCE_PATH("textures/blueNoise.png"), TEXTURE_FORMAT_UNORM);
     samplerText->set_use_mipmaps(false);
     Core::ResourceManager::upload_texture_data(m_device, samplerText);
     Core::ResourceManager::textureResources[0] = samplerText;
 
     Core::TextureHDR* brdfText = new Core::TextureHDR();
-    Tools::Loaders::load_HDRi(brdfText, ENGINE_RESOURCES_PATH "textures/cookTorranceBRDF.png");
+    Tools::Loaders::load_HDRi(brdfText, GET_RESOURCE_PATH("textures/cookTorranceBRDF.png"));
     brdfText->set_adress_mode(ADDRESS_MODE_CLAMP_TO_BORDER);
     brdfText->set_use_mipmaps(false);
     Core::ResourceManager::upload_texture_data(m_device, brdfText);
@@ -279,12 +279,22 @@ void BaseRenderer::clean_resources() {
     Core::ResourceManager::clean_basic_resources();
 }
 
-Core::Texture* BaseRenderer::capture_texture(uint32_t attachmentId)  {
-    void*  imageData = nullptr;
-    size_t imageSize = 0;
-    m_device->download_texture_image(m_attachments[attachmentId], imageData, imageSize);
+Core::ITexture* BaseRenderer::capture_texture(uint32_t attachmentId) {
+    void*  imageData     = nullptr;
+    size_t imageSize     = 0;
+    size_t imageChannels = 0;
+    m_device->download_texture_image(m_attachments[attachmentId], imageData, imageSize, imageChannels);
 
-    auto tex = new Core::Texture(reinterpret_cast<unsigned char*>(imageData), m_attachments[attachmentId].extent, 4);
+    Core::TextureSettings settings = {};
+    settings.format                = m_attachments[attachmentId].config.format;
+    settings.type                  = m_attachments[attachmentId].config.viewType;
+    settings.useMipmaps            = false;
+
+    Core::ITexture* tex = nullptr;
+    if (Utils::is_hdr_format(settings.format))
+        tex = new Core::TextureHDR(reinterpret_cast<float*>(imageData), m_attachments[attachmentId].extent, imageChannels, settings);
+    else
+        tex = new Core::TextureLDR(reinterpret_cast<unsigned char*>(imageData), m_attachments[attachmentId].extent, imageChannels, settings);
     return tex;
 }
 

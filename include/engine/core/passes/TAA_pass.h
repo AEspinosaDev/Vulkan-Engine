@@ -33,23 +33,12 @@ class TAAPass final : public PostProcessPass<2, 1>
                - Prev Filtered Color
 
            */
-    TAAPass(Graphics::Device*        device,
-            const PassLinkage<2, 1>& linkage,
-            Extent2D                 extent,
-            ColorFormatType          colorFormat,
-            bool                     isDefault = true)
-        : PostProcessPass(device,
-                          linkage,
-                          extent,
-                          colorFormat,
-                          ENGINE_RESOURCES_PATH "shaders/aa/taa.glsl",
-                          "TAA",
-                          isDefault) {
-        m_interAttachments.resize(1); //Prev Frame
+    TAAPass(Graphics::Device* device, const PassLinkage<2, 1>& linkage, Extent2D extent, ColorFormatType colorFormat, bool isDefault = true)
+        : PostProcessPass(device, linkage, extent, colorFormat, GET_RESOURCE_PATH("shaders/aa/taa.glsl"), "TAA", isDefault) {
+        m_interAttachments.resize(1); // Prev Frame
     }
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-        std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 

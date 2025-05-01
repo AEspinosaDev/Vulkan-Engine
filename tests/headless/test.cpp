@@ -15,25 +15,26 @@ void Application::init(Systems::RendererSettings settings) {
 void Application::run(int argc, char* argv[]) {
 
     Systems::RendererSettings settings{};
-    settings.bufferingType    = BufferingType::DOUBLE;
-    settings.samplesMSAA      = MSAASamples::x1;
-    settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
-    settings.enableUI         = true;
-    settings.enableRaytracing = true;
-    settings.softwareAA       = SoftwareAA::FXAA;
+    settings.bufferingType         = BufferingType::DOUBLE;
+    settings.samplesMSAA           = MSAASamples::x1;
+    settings.clearColor            = Vec4(0.02, 0.02, 0.02, 1.0);
+    settings.enableUI              = true;
+    settings.enableRaytracing      = true;
+    settings.softwareAA            = SoftwareAA::FXAA;
+    settings.highDynamicPrecission = FloatPrecission::F32;
 
     init(settings);
 
     m_renderer->render(m_scene);
 
-    Core::Texture* texture1 = m_renderer->capture_texture(7);
-    Tools::Loaders::save_texture(texture1, "output1.png");
-
-    m_scene->get_active_camera()->set_position(Vec3(0.0f, 0.5f, -0.5f));
-    m_renderer->render(m_scene);
-
-    Core::Texture* texture2 = m_renderer->capture_texture(7);
-    Tools::Loaders::save_texture(texture2, "output2.png");
+    Core::ITexture* texture1 = m_renderer->capture_texture(7);
+    Core::ITexture* texture2 = m_renderer->capture_texture(8);
+    Core::ITexture* texture3 = m_renderer->capture_texture(6);
+    Core::ITexture* texture4 = m_renderer->capture_texture(10);
+    Tools::Loaders::save_texture(texture1, "output_albedo.png");
+    Tools::Loaders::save_texture(texture2, "output_material.png");
+    Tools::Loaders::save_texture(texture3, "output_normals.hdr");
+    Tools::Loaders::save_texture(texture4, "output_depth.hdr");
 
     m_renderer->shutdown(m_scene);
 }

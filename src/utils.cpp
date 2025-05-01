@@ -20,13 +20,7 @@ std::string Utils::read_file(const std::string& filePath) {
     return buffer.str();
 }
 
-Vec3 Utils::get_tangent_gram_smidt(Vec3&      p1,
-                                   Vec3&      p2,
-                                   Vec3&      p3,
-                                   Vec2& uv1,
-                                   Vec2& uv2,
-                                   Vec2& uv3,
-                                   Vec3       normal) {
+Vec3 Utils::get_tangent_gram_smidt(Vec3& p1, Vec3& p2, Vec3& p3, Vec2& uv1, Vec2& uv2, Vec2& uv3, Vec3 normal) {
 
     Vec3      edge1    = p2 - p1;
     Vec3      edge2    = p3 - p1;
@@ -45,5 +39,116 @@ Vec3 Utils::get_tangent_gram_smidt(Vec3&      p1,
     // return glm::normalize(tangent);
 }
 
+size_t Utils::get_channel_count(ColorFormatType colorFormatType) {
+    switch (colorFormatType)
+    {
+    case ColorFormatType::SR_8:
+    case ColorFormatType::SR_16F:
+    case ColorFormatType::SR_32F:
+    case ColorFormatType::R_32_UINT:
+    case ColorFormatType::R_8U:
+        return 1;
 
+    case ColorFormatType::SRG_8:
+    case ColorFormatType::SRG_16F:
+    case ColorFormatType::SRG_32F:
+    case ColorFormatType::RG_8U:
+        return 2;
+
+    case ColorFormatType::SRGB_8:
+    case ColorFormatType::SRGB_32F:
+    case ColorFormatType::RGB_8U:
+        return 3;
+
+    case ColorFormatType::SRGBA_8:
+    case ColorFormatType::SBGRA_8:
+    case ColorFormatType::SRGBA_16F:
+    case ColorFormatType::SRGBA_32F:
+    case ColorFormatType::RGBA_8U:
+    case ColorFormatType::RGB10A2:
+        return 4;
+
+    case ColorFormatType::DEPTH_16F:
+    case ColorFormatType::DEPTH_32F:
+        return 1; // Depth formats are single-channel
+
+    default:
+        throw std::invalid_argument("VKEngine error: Unknown ColorFormatType in get_channel_count");
+    }
+}
+
+bool Utils::is_hdr_format(ColorFormatType colorFormatType) {
+    switch (colorFormatType)
+    {
+    // 16-bit float formats
+    case ColorFormatType::SR_16F:
+    case ColorFormatType::SRG_16F:
+    case ColorFormatType::SRGBA_16F:
+
+    // 32-bit float formats
+    case ColorFormatType::SR_32F:
+    case ColorFormatType::SRG_32F:
+    case ColorFormatType::SRGB_32F:
+    case ColorFormatType::SRGBA_32F:
+
+    // Depth 32F could be considered HDR in context of linear depth buffers
+    case ColorFormatType::DEPTH_32F:
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+size_t Utils::get_pixel_size_in_bytes(ColorFormatType format) {
+    switch (format)
+    {
+    case ColorFormatType::SR_8:
+    case ColorFormatType::R_8U:
+        return 1;
+
+    case ColorFormatType::SRG_8:
+    case ColorFormatType::RG_8U:
+        return 2;
+
+    case ColorFormatType::SRGB_8:
+    case ColorFormatType::RGB_8U:
+        return 3;
+
+    case ColorFormatType::SRGBA_8:
+    case ColorFormatType::SBGRA_8:
+    case ColorFormatType::RGBA_8U:
+        return 4;
+
+    case ColorFormatType::SR_16F:
+        return 2;
+    case ColorFormatType::SR_32F:
+    case ColorFormatType::R_32_UINT:
+        return 4;
+
+    case ColorFormatType::SRG_16F:
+        return 4;
+    case ColorFormatType::SRG_32F:
+        return 8;
+
+    case ColorFormatType::SRGBA_16F:
+        return 8;
+    case ColorFormatType::SRGBA_32F:
+        return 16;
+
+    case ColorFormatType::SRGB_32F:
+        return 12;
+
+    case ColorFormatType::DEPTH_16F:
+        return 2;
+    case ColorFormatType::DEPTH_32F:
+        return 4;
+
+    case ColorFormatType::RGB10A2:
+        return 4;
+
+    default:
+        throw std::invalid_argument("Unknown format in get_pixel_size");
+    }
+}
 VULKAN_ENGINE_NAMESPACE_END

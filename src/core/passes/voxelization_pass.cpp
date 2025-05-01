@@ -14,7 +14,6 @@ void VoxelizationPass::create_voxelization_image() {
     config.format        = SRGBA_32F;
     config.usageFlags    = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_STORAGE;
     config.mipLevels     = 9;
-    config.useMipmaps    = true;
     *m_outAttachments[0] = m_device->create_image({m_imageExtent.width, m_imageExtent.width, m_imageExtent.width}, config);
     m_outAttachments[0]->create_view(config);
 
@@ -27,7 +26,6 @@ void VoxelizationPass::create_voxelization_image() {
     // Auxiliar One Channel Images
     config.format            = R_32_UINT;
     config.mipLevels         = 1;
-    config.useMipmaps        = false;
     samplerConfig.filters    = FilterType::FILTER_NEAREST;
     samplerConfig.mipmapMode = MipmapMode::MIPMAP_NEAREST;
     m_interAttachments.resize(4);
@@ -144,7 +142,7 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 void VoxelizationPass::setup_shader_passes() {
 
     GraphicShaderPass* voxelPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/VXGI/voxelization.glsl");
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent,  GET_RESOURCE_PATH( "shaders/VXGI/voxelization.glsl"));
     voxelPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     voxelPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -160,7 +158,7 @@ void VoxelizationPass::setup_shader_passes() {
 
 #ifdef USE_IMG_ATOMIC_OPERATION
 
-    ComputeShaderPass* mergePass               = new ComputeShaderPass(m_device->get_handle(), ENGINE_RESOURCES_PATH "shaders/VXGI/merge_intermediates.glsl");
+    ComputeShaderPass* mergePass               = new ComputeShaderPass(m_device->get_handle(),  GET_RESOURCE_PATH( "shaders/VXGI/merge_intermediates.glsl"));
     mergePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
 
     mergePass->build_shader_stages();

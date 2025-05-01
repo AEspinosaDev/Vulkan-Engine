@@ -18,7 +18,7 @@ void Application::init(Systems::RendererSettings settings) {
                                          std::placeholders::_3,
                                          std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, ShadowResolution::MEDIUM, settings);
+    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, settings);
     // SSAOSettings               ao   = {};
     // ao.type                         = AOType::RTAO;
     // ao.samples                      = 4;
@@ -52,9 +52,9 @@ void Application::run(int argc, char* argv[]) {
 }
 
 void Application::setup() {
-    const std::string MESH_PATH(EXAMPLES_RESOURCES_PATH "meshes/");
-    const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH "textures/");
-    const std::string ENGINE_MESH_PATH(ENGINE_RESOURCES_PATH "meshes/");
+    const std::string MESH_PATH(GET_RESOURCE_PATH("meshes/"));
+    const std::string TEXTURE_PATH(GET_RESOURCE_PATH("textures/"));
+    const std::string ENGINE_MESH_PATH(GET_RESOURCE_PATH("meshes/"));
 
     camera = new Camera();
     camera->set_position(Vec3(0.0f, 0.0f, -8.2f));

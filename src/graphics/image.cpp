@@ -4,34 +4,35 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-void Image::create_view(ImageConfig config) {
-    VkImageViewCreateInfo dview_info = Init::imageview_create_info(Translator::get(config.format),
+void Image::create_view(ImageConfig _config) {
+    VkImageViewCreateInfo dview_info = Init::imageview_create_info(Translator::get(_config.format),
                                                                    handle,
-                                                                   Translator::get(config.viewType),
-                                                                   Translator::get(config.aspectFlags),
-                                                                   mipLevels,
-                                                                   layers,
-                                                                   baseMipLevel);
+                                                                   Translator::get(_config.viewType),
+                                                                   Translator::get(_config.aspectFlags),
+                                                                   config.mipLevels,
+                                                                   config.layers,
+                                                                   config.baseMipLevel);
     VK_CHECK(vkCreateImageView(device, &dview_info, nullptr, &view));
 }
-void Image::create_sampler(SamplerConfig config) {
+void Image::create_sampler(SamplerConfig _samplerConfig) {
     VkSamplerCreateInfo samplerInfo =
-        Init::sampler_create_info(Translator::get(config.filters),
-                                  Translator::get(config.mipmapMode),
-                                  config.minLod,
-                                  config.maxLod <= mipLevels ? config.maxLod : mipLevels + baseMipLevel,
-                                  config.anysotropicFilter,
-                                  config.maxAnysotropy,
-                                  Translator::get(config.samplerAddressMode));
-    samplerInfo.borderColor = Translator::get(config.border);
+        Init::sampler_create_info(Translator::get(_samplerConfig.filters),
+                                  Translator::get(_samplerConfig.mipmapMode),
+                                  _samplerConfig.minLod,
+                                  _samplerConfig.maxLod <= config.mipLevels ? _samplerConfig.maxLod : config.mipLevels + config.baseMipLevel,
+                                  _samplerConfig.anysotropicFilter,
+                                  _samplerConfig.maxAnysotropy,
+                                  Translator::get(_samplerConfig.samplerAddressMode));
+    samplerInfo.borderColor = Translator::get(_samplerConfig.border);
+
+    samplerConfig = _samplerConfig;
 
     VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));
 }
 
 void Image::create_GUI_handle() {
     if (GUIReadHandle == VK_NULL_HANDLE)
-        GUIReadHandle =
-            ImGui_ImplVulkan_AddTexture(sampler, view, VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        GUIReadHandle = ImGui_ImplVulkan_AddTexture(sampler, view, VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 void Image::cleanup(bool destroySampler) {
     if (view)
@@ -65,10 +66,9 @@ Image Image::clone() const {
     img.sampler       = sampler;
     img.GUIReadHandle = GUIReadHandle;
 
-    img.extent       = extent;
-    img.layers       = layers;
-    img.mipLevels    = mipLevels;
-    img.baseMipLevel = baseMipLevel;
+    img.extent        = extent;
+    img.config        = config;
+    img.samplerConfig = samplerConfig;
 
     return img;
 }

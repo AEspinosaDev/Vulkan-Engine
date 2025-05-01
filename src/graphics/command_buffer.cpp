@@ -120,7 +120,7 @@ void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, V
     for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
     {
         fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].initialLayout;
-        clearValues.push_back(fbo.attachmentImagesPtrs[i]->clearValue);
+        clearValues.push_back(fbo.attachmentImagesPtrs[i]->config.clearValue);
         // clearValues.push_back( renderpass.attachmentsConfig[i].imageConfig.clearValue);
     }
 
@@ -221,10 +221,10 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
     barrier.dstAccessMask                   = Translator::get(dstMask);
     barrier.image                           = img.handle;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel   = img.baseMipLevel;
-    barrier.subresourceRange.levelCount     = img.mipLevels;
+    barrier.subresourceRange.baseMipLevel   = img.config.baseMipLevel;
+    barrier.subresourceRange.levelCount     = img.config.mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = img.layers;
+    barrier.subresourceRange.layerCount     = img.config.layers;
 
     vkCmdPipelineBarrier(handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
@@ -251,7 +251,7 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
     barrier.subresourceRange.baseMipLevel   = baseMipLevel;
     barrier.subresourceRange.levelCount     = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = img.layers;
+    barrier.subresourceRange.layerCount     = img.config.layers;
 
     vkCmdPipelineBarrier(handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
@@ -267,10 +267,10 @@ void Graphics::CommandBuffer::clear_image(Image& img, ImageLayout layout, ImageA
 
     VkImageSubresourceRange subresourceRange = {};
     subresourceRange.aspectMask              = Translator::get(aspect);
-    subresourceRange.baseMipLevel            = img.baseMipLevel;
-    subresourceRange.levelCount              = img.mipLevels;
+    subresourceRange.baseMipLevel            = img.config.baseMipLevel;
+    subresourceRange.levelCount              = img.config.mipLevels;
     subresourceRange.baseArrayLayer          = 0;
-    subresourceRange.layerCount              = img.layers;
+    subresourceRange.layerCount              = img.config.layers;
 
     vkCmdClearColorImage(handle, img.handle, Translator::get(layout), &vclearColor, 1, &subresourceRange);
 }
@@ -353,11 +353,11 @@ void Graphics::CommandBuffer::copy_buffer(Buffer& srcBuffer, Buffer& dstBuffer, 
 void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
 
     VkImageSubresourceRange range;
-    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    range.baseMipLevel   = 0;
-    range.levelCount     = img.mipLevels;
+    range.aspectMask     = Translator::get(img.config.aspectFlags);
+    range.baseMipLevel   = img.config.baseMipLevel;
+    range.levelCount     = img.config.mipLevels;
     range.baseArrayLayer = 0;
-    range.layerCount     = img.layers;
+    range.layerCount     = img.config.layers;
 
     VkImageMemoryBarrier imageBarrier_toTransfer = {};
     imageBarrier_toTransfer.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -374,14 +374,14 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
     vkCmdPipelineBarrier(handle, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
 
     // For each layer
-    for (uint32_t layer = 0; layer < img.layers; ++layer)
+    for (uint32_t layer = 0; layer < img.config.layers; ++layer)
     {
         VkBufferImageCopy copyRegion = {};
-        copyRegion.bufferOffset      = layer * ((img.extent.width * img.extent.height * buffer.size) / img.layers); // Offset per face
+        copyRegion.bufferOffset      = layer * ((img.extent.width * img.extent.height * buffer.size) / img.config.layers); // Offset per face
         copyRegion.bufferRowLength   = 0;
         copyRegion.bufferImageHeight = 0;
 
-        copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.aspectMask     = range.aspectMask;
         copyRegion.imageSubresource.mipLevel       = 0;
         copyRegion.imageSubresource.baseArrayLayer = layer;
         copyRegion.imageSubresource.layerCount     = 1;
@@ -390,7 +390,7 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
         vkCmdCopyBufferToImage(handle, buffer.handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
     }
 
-    if (img.mipLevels == 1)
+    if (img.config.mipLevels == 1)
     {
         VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
@@ -408,11 +408,11 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
 
 void Graphics::CommandBuffer::copy_image_to_buffer(Image& img, Buffer& buffer) {
     VkImageSubresourceRange range;
-    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.aspectMask     = Translator::get(img.config.aspectFlags);
     range.baseMipLevel   = 0;
-    range.levelCount     = img.mipLevels;
+    range.levelCount     = img.config.mipLevels;
     range.baseArrayLayer = 0;
-    range.layerCount     = img.layers;
+    range.layerCount     = img.config.layers;
 
     VkImageMemoryBarrier imageBarrier_toTransfer = {};
     imageBarrier_toTransfer.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -429,14 +429,14 @@ void Graphics::CommandBuffer::copy_image_to_buffer(Image& img, Buffer& buffer) {
     vkCmdPipelineBarrier(handle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
 
     // For each layer
-    for (uint32_t layer = 0; layer < img.layers; ++layer)
+    for (uint32_t layer = 0; layer < img.config.layers; ++layer)
     {
         VkBufferImageCopy copyRegion = {};
-        copyRegion.bufferOffset      = layer * ((img.extent.width * img.extent.height * buffer.size) / img.layers); // Offset per face
+        copyRegion.bufferOffset      = layer * ((img.extent.width * img.extent.height * buffer.size) / img.config.layers); // Offset per face
         copyRegion.bufferRowLength   = 0;
         copyRegion.bufferImageHeight = 0;
 
-        copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.aspectMask     = range.aspectMask;
         copyRegion.imageSubresource.mipLevel       = 0;
         copyRegion.imageSubresource.baseArrayLayer = layer;
         copyRegion.imageSubresource.layerCount     = 1;
@@ -444,7 +444,6 @@ void Graphics::CommandBuffer::copy_image_to_buffer(Image& img, Buffer& buffer) {
 
         vkCmdCopyImageToBuffer(handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.handle, 1, &copyRegion);
     }
-
 }
 void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLayout, ImageLayout finalLayout) {
 
@@ -453,10 +452,10 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     int32_t mipDepth  = img.extent.depth;
 
     VkImageSubresourceRange range;
-    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.aspectMask     = Translator::get(img.config.aspectFlags);
     range.levelCount     = 1;
     range.baseArrayLayer = 0;
-    range.layerCount     = img.layers;
+    range.layerCount     = img.config.layers;
 
     VkImageMemoryBarrier imageBarrier_toTransfer = {};
     imageBarrier_toTransfer.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -465,9 +464,9 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     imageBarrier_toTransfer.image                = img.handle;
     imageBarrier_toTransfer.subresourceRange     = range;
 
-    for (uint32_t i = 1; i < img.mipLevels; i++)
+    for (uint32_t i = 1; i < img.config.mipLevels; i++)
     {
-        for (uint32_t layer = 0; layer < img.layers; ++layer)
+        for (uint32_t layer = 0; layer < img.config.layers; ++layer)
         {
             // Set barriers for the current face
             imageBarrier_toTransfer.subresourceRange.baseMipLevel   = i - 1;
@@ -483,14 +482,14 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
             VkImageBlit blit{};
             blit.srcOffsets[0]                 = {0, 0, 0};
             blit.srcOffsets[1]                 = {mipWidth, mipHeight, mipDepth};
-            blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.aspectMask     = range.aspectMask;
             blit.srcSubresource.mipLevel       = i - 1;
             blit.srcSubresource.baseArrayLayer = layer; // Specify the current face
             blit.srcSubresource.layerCount     = 1;
 
             blit.dstOffsets[0]                 = {0, 0, 0};
             blit.dstOffsets[1]                 = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, mipDepth > 1 ? mipDepth / 2 : 1};
-            blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.aspectMask     = range.aspectMask;
             blit.dstSubresource.mipLevel       = i;
             blit.dstSubresource.baseArrayLayer = layer; // Specify the current face
             blit.dstSubresource.layerCount     = 1;
@@ -516,7 +515,7 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     }
 
     VkImageMemoryBarrier imageBarrier_toReadable          = imageBarrier_toTransfer;
-    imageBarrier_toReadable.subresourceRange.baseMipLevel = img.mipLevels - 1;
+    imageBarrier_toReadable.subresourceRange.baseMipLevel = img.config.mipLevels - 1;
     imageBarrier_toReadable.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     imageBarrier_toReadable.newLayout                     = Translator::get(finalLayout);
     imageBarrier_toReadable.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;

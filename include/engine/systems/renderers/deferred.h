@@ -26,7 +26,20 @@ Renders a given scene data to a given window using deferred rendering. Fully par
 class DeferredRenderer : public BaseRenderer
 {
   protected:
-    enum RendererPasses
+    // Query
+    bool m_updateShadows = false;
+    bool m_updateGI      = false;
+
+    virtual void on_before_render(Core::Scene* const scene) override;
+
+    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene) override;
+
+    virtual void create_passes() override;
+
+    virtual void update_enviroment(Core::Skybox* const skybox);
+
+  public:
+    enum Passes
     {
         SKY_PASS            = 0,
         ENVIROMENT_PASS     = 1,
@@ -38,44 +51,25 @@ class DeferredRenderer : public BaseRenderer
         BLOOM_PASS          = 7,
         AA_PASS             = 8,
         TONEMAPPIN_PASS     = 9,
-        GUI_PASS            = 10,
+        GUI_PASS            = 10, /* UNUSED IF HEADLESS */
     };
 
-    // Graphic Settings
-    ShadowResolution m_shadowQuality = ShadowResolution::MEDIUM;
-
-    // Query
-    bool m_updateShadows = false;
-    bool m_updateGI      = false;
-
-    virtual void on_before_render(Core::Scene* const scene);
-
-    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
-
-    virtual void create_passes();
-
-    virtual void update_enviroment(Core::Skybox* const skybox);
-
-  public:
+    DeferredRenderer(Core::IWindow* window)
+        : BaseRenderer(window) {
+    }
+    DeferredRenderer(Core::IWindow* window, RendererSettings settings = {})
+        : BaseRenderer(window, settings) {
+    }
     // Headless instantiation
     DeferredRenderer(Extent2D displayExtent = {800, 800})
         : BaseRenderer(displayExtent) {
     }
-    DeferredRenderer(Core::IWindow* window)
-        : BaseRenderer(window) {
-    }
-    DeferredRenderer(Core::IWindow* window, ShadowResolution shadowQuality = ShadowResolution::MEDIUM, RendererSettings settings = {})
-        : BaseRenderer(window, settings)
-        , m_shadowQuality(shadowQuality) {
-    }
 
-    inline ShadowResolution get_shadow_quality() {
-        return m_shadowQuality;
-    }
-    inline void set_shadow_quality(ShadowResolution quality) {
-        m_shadowQuality = quality;
-        if (m_initialized)
+    virtual inline void set_settings(RendererSettings settings) override {
+        if (m_settings.shadowQuality != settings.shadowQuality)
             m_updateShadows = true;
+
+        BaseRenderer::set_settings(settings);
     }
     inline float get_bloom_strength() {
         return get_pass<Core::BloomPass*>(BLOOM_PASS)->get_bloom_strength();

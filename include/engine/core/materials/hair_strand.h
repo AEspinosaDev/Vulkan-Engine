@@ -250,42 +250,42 @@ class HairStrandMaterial2 : public HairStrandMaterial
   public:
     HairStrandMaterial2(HairPigmentType pigment = BLONDE)
         : HairStrandMaterial(Vec4(0.0), {}, "hairstr2") {
-        m_coloredScatter = true;
-        TextureSettings settings{};
-        settings.useMipmaps         = false;
-        settings.adressMode         = ADDRESS_MODE_CLAMP_TO_EDGE;
-        m_textures[N1]              = new Texture(settings);
-        m_textures[N2]              = new Texture(settings);
-        m_textures[GI]              = new Texture(settings);
-        m_textures[MGI]             = new Texture(settings);
-        m_textures[NGI]             = new Texture(settings);
-        m_textures[NGI_TRT]         = new Texture(settings);
-        std::string pigmentTypePath = pigment == BLONDE ? "textures/LUTs/blonde/" : "textures/LUTs/brown/";
-        Tools::Loaders::load_texture(
-            m_textures[N1], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R.png", TEXTURE_FORMAT_UNORM, false);
-        Tools::Loaders::load_texture(
-            m_textures[N2], ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT.png", TEXTURE_FORMAT_UNORM, false);
-        Tools::Loaders::load_3D_texture(m_textures[GI], ENGINE_RESOURCES_PATH + pigmentTypePath + "GI.png");
-        m_textures[GI]->set_format(RGBA_8U);
-        m_textures[GI]->set_type(TEXTURE_3D);
-        Tools::Loaders::load_texture(
-            m_textures[MGI], ENGINE_RESOURCES_PATH + pigmentTypePath + "M_GI.png", TEXTURE_FORMAT_UNORM, false);
-        Tools::Loaders::load_texture(m_textures[NGI],
-                                     ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TT_R_GI.png",
-                                     TEXTURE_FORMAT_UNORM,
-                                     false);
-        Tools::Loaders::load_texture(m_textures[NGI_TRT],
-                                     ENGINE_RESOURCES_PATH + pigmentTypePath + "N_TRT_GI.png",
-                                     TEXTURE_FORMAT_UNORM,
-                                     false);
-        m_textureBindingState[N1]      = false;
-        m_textureBindingState[N2]      = false;
-        m_textureBindingState[GI]      = false;
-        m_textureBindingState[MGI]     = false;
-        m_textureBindingState[NGI]     = false;
-        m_textureBindingState[NGI_TRT] = false;
-        m_isDirty                      = true;
-        m_useScatter                   = true;
+        // m_coloredScatter = true;
+        // TextureSettings settings{};
+        // settings.useMipmaps         = false;
+        // settings.adressMode         = ADDRESS_MODE_CLAMP_TO_EDGE;
+        // m_textures[N1]              = new Texture(settings);
+        // m_textures[N2]              = new Texture(settings);
+        // m_textures[GI]              = new Texture(settings);
+        // m_textures[MGI]             = new Texture(settings);
+        // m_textures[NGI]             = new Texture(settings);
+        // m_textures[NGI_TRT]         = new Texture(settings);
+        // std::string pigmentTypePath = pigment == BLONDE ? "textures/LUTs/blonde/" : "textures/LUTs/brown/";
+        // Tools::Loaders::load_texture(
+        //     m_textures[N1],  RESOURCE_PATH(  pigmentTypePath + "N_TT_R.png"), TEXTURE_FORMAT_UNORM, false);
+        // Tools::Loaders::load_texture(
+        //     m_textures[N2],  RESOURCE_PATH( pigmentTypePath + "N_TRT.png"), TEXTURE_FORMAT_UNORM, false);
+        // Tools::Loaders::load_3D_texture(m_textures[GI],  RESOURCE_PATH(  pigmentTypePath + "GI.png"));
+        // m_textures[GI]->set_format(RGBA_8U);
+        // m_textures[GI]->set_type(TEXTURE_3D);
+        // Tools::Loaders::load_texture(
+        //     m_textures[MGI],  RESOURCE_PATH(  pigmentTypePath + "M_GI.png"), TEXTURE_FORMAT_UNORM, false);
+        // Tools::Loaders::load_texture(m_textures[NGI],
+        //     RESOURCE_PATH(  pigmentTypePath + "N_TT_R_GI.png",
+        //                              TEXTURE_FORMAT_UNORM,
+        //                              false);
+        // Tools::Loaders::load_texture(m_textures[NGI_TRT],
+        //     RESOURCE_PATH(  pigmentTypePath + "N_TRT_GI.png",
+        //                              TEXTURE_FORMAT_UNORM,
+        //                              false);
+        // m_textureBindingState[N1]      = false;
+        // m_textureBindingState[N2]      = false;
+        // m_textureBindingState[GI]      = false;
+        // m_textureBindingState[MGI]     = false;
+        // m_textureBindingState[NGI]     = false;
+        // m_textureBindingState[NGI_TRT] = false;
+        // m_isDirty                      = true;
+        // m_useScatter                   = true;
     }
 };
 } // namespace Core
