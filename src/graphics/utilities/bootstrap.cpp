@@ -5,10 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 #pragma region INSTANCE
-VkInstance Booter::create_instance(const char*              appName,
-                                   const char*              engineName,
-                                   bool                     validation,
-                                   std::vector<const char*> validationLayers) {
+VkInstance Booter::create_instance(const char* appName, const char* engineName, bool validation, std::vector<const char*> validationLayers) {
     if (validation && !Booter::check_validation_layer_suport(validationLayers))
     {
         throw VKFW_Exception(" validation layers requested, but not available!");
@@ -105,8 +102,7 @@ bool Booter::check_validation_layer_suport(std::vector<const char*> validationLa
 }
 #pragma region GPU
 
-VkPhysicalDevice
-Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std::vector<const char*> extensions) {
+VkPhysicalDevice Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std::vector<const char*> extensions) {
     VkPhysicalDevice gpu = VK_NULL_HANDLE;
 
     uint32_t deviceCount = 0;
@@ -142,9 +138,7 @@ Booter::pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std
     return gpu;
 }
 
-int Booter::rate_device_suitability(VkPhysicalDevice         device,
-                                    VkSurfaceKHR             surface,
-                                    std::vector<const char*> extensions) {
+int Booter::rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface, std::vector<const char*> extensions) {
     VkPhysicalDeviceProperties deviceProperties;
 
     // VR, 64B floats and multi-viewport
@@ -166,17 +160,20 @@ int Booter::rate_device_suitability(VkPhysicalDevice         device,
     Booter::QueueFamilyIndices indices = Booter::find_queue_families(device, surface);
 
     // Application can't function without geometry shaders
-    if (!deviceFeatures.geometryShader || !indices.isComplete())
+    if (!deviceFeatures.geometryShader || !indices.isComplete(surface == VK_NULL_HANDLE))
     {
         return 0;
     }
     bool swapChainAdequate = false;
     if (check_device_extension_support(device, extensions))
     {
-        SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, surface);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        if (!swapChainAdequate)
-            return 0;
+        if (surface != VK_NULL_HANDLE)
+        {
+            SwapChainSupportDetails swapChainSupport = query_swapchain_support(device, surface);
+            swapChainAdequate                        = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+            if (!swapChainAdequate)
+                return 0;
+        }
     } else
     {
         return 0;
@@ -243,11 +240,14 @@ Booter::QueueFamilyIndices Booter::find_queue_families(VkPhysicalDevice device, 
             indices.graphicsFamily = i;
         }
         // PRESENT SUPPORT
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        if (presentSupport)
+        if (surface != VK_NULL_HANDLE)
         {
-            indices.presentFamily = i;
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            if (presentSupport)
+            {
+                indices.presentFamily = i;
+            }
         }
         // COMPUTE SUPPORT
         if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
@@ -255,7 +255,7 @@ Booter::QueueFamilyIndices Booter::find_queue_families(VkPhysicalDevice device, 
             indices.computeFamily = i;
         }
 
-        if (indices.isComplete())
+        if (indices.isComplete(surface == VK_NULL_HANDLE))
         {
             break;
         }
@@ -276,8 +276,11 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
 
     Booter::QueueFamilyIndices           queueFamilies = Booter::find_queue_families(gpu, surface);
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t>                   uniqueQueueFamilies = {
-        queueFamilies.graphicsFamily.value(), queueFamilies.presentFamily.value(), queueFamilies.computeFamily.value()};
+    std::set<uint32_t>                   uniqueQueueFamilies;
+    if (surface != VK_NULL_HANDLE)
+        uniqueQueueFamilies = {queueFamilies.graphicsFamily.value(), queueFamilies.presentFamily.value(), queueFamilies.computeFamily.value()};
+    else // If headless
+        uniqueQueueFamilies = {queueFamilies.graphicsFamily.value(), queueFamilies.computeFamily.value()};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -296,7 +299,8 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
     physicalDeviceFeatures2.sType                     = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     physicalDeviceFeatures2.pNext                     = nullptr;
 
-    enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    if (surface != VK_NULL_HANDLE)
+        enabledExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
     if (Booter::is_device_extension_supported(gpu, "VK_NV_geometry_shader_passthrough"))
         enabledExtensions.push_back("VK_NV_geometry_shader_passthrough");
@@ -331,8 +335,8 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
     {
         enabledExtensions.push_back("VK_EXT_extended_dynamic_state3");
 
-        extendedDynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-        extendedDynamicState3Features.pNext = physicalDeviceFeatures2.pNext;
+        extendedDynamicState3Features.sType                            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+        extendedDynamicState3Features.pNext                            = physicalDeviceFeatures2.pNext;
         extendedDynamicState3Features.extendedDynamicState3PolygonMode = VK_TRUE;
 
         physicalDeviceFeatures2.pNext = &extendedDynamicState3Features;
@@ -363,16 +367,16 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         rayTracingPipelineFeatures.pNext = physicalDeviceFeatures2.pNext;
 
-        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-        accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
+        accelerationStructureFeatures.sType                 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        accelerationStructureFeatures.pNext                 = &rayTracingPipelineFeatures;
         accelerationStructureFeatures.accelerationStructure = true;
 
         rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
         rayQueryFeatures.pNext    = &accelerationStructureFeatures;
         rayQueryFeatures.rayQuery = true;
 
-        bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
-        bufferDeviceAddressFeatures.pNext = &rayQueryFeatures;
+        bufferDeviceAddressFeatures.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+        bufferDeviceAddressFeatures.pNext               = &rayQueryFeatures;
         bufferDeviceAddressFeatures.bufferDeviceAddress = true;
 
         descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
@@ -410,8 +414,9 @@ VkDevice Booter::create_logical_device(std::unordered_map<QueueType, VkQueue>& q
     }
 
     vkGetDeviceQueue(device, queueFamilies.graphicsFamily.value(), 0, &queues[QueueType::GRAPHIC_QUEUE]);
-    vkGetDeviceQueue(device, queueFamilies.presentFamily.value(), 0, &queues[QueueType::PRESENT_QUEUE]);
     vkGetDeviceQueue(device, queueFamilies.computeFamily.value(), 0, &queues[QueueType::COMPUTE_QUEUE]);
+    if (surface != VK_NULL_HANDLE)
+        vkGetDeviceQueue(device, queueFamilies.presentFamily.value(), 0, &queues[QueueType::PRESENT_QUEUE]);
 
     return device;
 }
@@ -430,19 +435,15 @@ VkDebugUtilsMessengerEXT Booter::create_debug_messenger(VkInstance instance) {
     return debugMessenger;
 }
 void Booter::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-    createInfo                 = {};
-    createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo       = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
 }
-void Booter::destroy_debug_utils_messenger_EXT(VkInstance                   instance,
-                                               VkDebugUtilsMessengerEXT     debugMessenger,
-                                               const VkAllocationCallbacks* pAllocator) {
+void Booter::destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr)
     {

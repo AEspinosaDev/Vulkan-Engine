@@ -43,7 +43,7 @@ void ResourceManager::clean_basic_resources() {
 void ResourceManager::update_global_data(Graphics::Device* const device,
                                          Graphics::Frame* const  currentFrame,
                                          Core::Scene* const      scene,
-                                         Core::IWindow* const    window,
+                                         Extent2D                displayExtent,
                                          bool                    jitterCamera) {
     PROFILING_EVENT()
     /*
@@ -51,7 +51,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     */
     Core::Camera* camera = scene->get_active_camera();
     if (camera->is_dirty())
-        camera->set_projection(window->get_extent().width, window->get_extent().height);
+        camera->set_projection(displayExtent.width, displayExtent.height);
     Graphics::CameraUniforms camData;
     camData.view     = camera->get_view();
     camData.proj     = camera->get_projection();
@@ -62,20 +62,20 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     camData.invViewProj = math::inverse(camData.viewProj);
     /*Windowed*/
     const glm::mat4 W{
-        window->get_extent().width / 2.0f,
+        displayExtent.width / 2.0f,
         0.0f,
         0.0f,
         0.0f,
         0.0f,
-        window->get_extent().height / 2.0f,
+        displayExtent.height / 2.0f,
         0.0f,
         0.0f,
         0.0f,
         0.0f,
         1.0f,
         0.0f,
-        window->get_extent().width / 2.0f,
-        window->get_extent().height / 2.0f,
+        displayExtent.width / 2.0f,
+        displayExtent.height / 2.0f,
         0.0f,
         1.0f,
     };
@@ -83,11 +83,11 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     camData.prevViewProj  = prevViewProj;
     static int frameIndex = 0;
     frameIndex            = (frameIndex + 1) % 16;
-    camData.jitter        = jitterCamera ? Utils::get_halton_jitter(frameIndex, window->get_extent().width, window->get_extent().height) : Vec2{0.0, 0.0};
+    camData.jitter        = jitterCamera ? Utils::get_halton_jitter(frameIndex, displayExtent.width, displayExtent.height) : Vec2{0.0, 0.0};
 
     /*Other intersting Camera Data*/
     camData.position     = Vec4(camera->get_position(), 0.0f);
-    camData.screenExtent = {window->get_extent().width, window->get_extent().height};
+    camData.screenExtent = {displayExtent.width, displayExtent.height};
     camData.nearPlane    = camera->get_near();
     camData.farPlane     = camera->get_far();
 
@@ -109,7 +109,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
         sceneParams.envRotation        = scene->get_skybox()->get_rotation();
         sceneParams.envColorMultiplier = scene->get_skybox()->get_intensity();
     }
-    sceneParams.time = window->get_time_elapsed();
+    sceneParams.time = 0.0;
 
     /*Limits*/
     // UPDATE AABB OF SCENE FOR VOXELIZATION PURPOSES
@@ -157,7 +157,7 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
 void ResourceManager::update_object_data(Graphics::Device* const device,
                                          Graphics::Frame* const  currentFrame,
                                          Core::Scene* const      scene,
-                                         Core::IWindow* const    window,
+                                         Extent2D                displayExtent,
                                          bool                    enableRT) {
 
     PROFILING_EVENT()
@@ -258,7 +258,7 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
             // Update Acceleration Structure if change in objects
             if (accel->instances < BLASInstances.size() || scene->update_AS())
             {
-                device->wait();
+                device->wait_idle();
                 device->upload_TLAS(*accel, BLASInstances);
                 scene->update_AS(false);
             }

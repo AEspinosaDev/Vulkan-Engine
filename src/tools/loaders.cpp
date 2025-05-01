@@ -1,4 +1,7 @@
 #include <engine/tools/loaders.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 
 void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh, const std::string fileName, bool importMaterials, bool calculateTangents) {
     // std::this_thread::sleep_for(std::chrono::seconds(4)); //Debuging
@@ -134,7 +137,11 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh, const std::string fi
     return;
 }
 
-void VKFW::Tools::Loaders::load_OBJ_topology(Core::Mesh* const mesh, Core::Topology topology, const std::string fileName, bool importMaterials, bool calculateTangents) {
+void VKFW::Tools::Loaders::load_OBJ_topology(Core::Mesh* const mesh,
+                                             Core::Topology    topology,
+                                             const std::string fileName,
+                                             bool              importMaterials,
+                                             bool              calculateTangents) {
 
     // Preparing output
     tinyobj::attrib_t                attrib;
@@ -904,3 +911,10 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture, const 
 #endif // DEBUG
 }
 
+void VKFW::Tools::Loaders::save_texture(Core::ITexture* const texture, const std::string fileName) {
+    Extent3D size  = texture->get_size();
+    void*    cache = nullptr;
+    texture->get_image_cache(cache);
+    stbi_write_png(fileName.c_str(), size.width, size.height, 4, cache, size.width * 4);
+    // stbi_write_hdr("M.hdr", SIZE, SIZE, CHANNELS, imageDataF.data());
+}

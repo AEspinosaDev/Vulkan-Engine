@@ -34,7 +34,7 @@ void Application::run(int argc, char* argv[]) {
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);
     settings.enableUI         = true;
     settings.enableRaytracing = true;
-    settings.softwareAA       = true;
+    settings.softwareAA       = SoftwareAA::FXAA;
 
     init(settings);
     while (!m_window->get_window_should_close())
@@ -52,7 +52,7 @@ void Application::setup() {
     const std::string SCENE_PATH(TESTS_RESOURCES_PATH "scenes/");
 
     m_scene = new Scene();
-    Tools::Loaders::SceneLoader loader(true);
+    Tools::SceneLoader loader(true);
     loader.load_scene(m_scene, SCENE_PATH + "sky.xml");
 
     m_scene->set_ambient_intensity(0.1f);

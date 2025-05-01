@@ -34,23 +34,16 @@ struct CommandBuffer {
     void begin(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     void end();
     void reset();
-    void
-    submit(Fence fence = {}, std::vector<Semaphore> waitSemaphores = {}, std::vector<Semaphore> signalSemaphores = {});
+    void submit(Fence fence = {}, std::vector<Semaphore> waitSemaphores = {}, std::vector<Semaphore> signalSemaphores = {});
     void cleanup();
 
     /****************************************** */
     /* COMMANDS */
     /****************************************** */
 
-    void begin_renderpass(RenderPass&       renderpass,
-                          Framebuffer&      fbo,
-                          VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+    void begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
     void end_renderpass(RenderPass& renderpass, Framebuffer& fbo);
-    void draw_geometry(VertexArrays& vao,
-                       uint32_t      instanceCount  = 1,
-                       uint32_t      firstOcurrence = 0,
-                       int32_t       offset         = 0,
-                       uint32_t      firstInstance  = 0);
+    void draw_geometry(VertexArrays& vao, uint32_t instanceCount = 1, uint32_t firstOcurrence = 0, int32_t offset = 0, uint32_t firstInstance = 0);
     void draw_gui_data();
     void bind_shaderpass(ShaderPass& pass);
     void bind_descriptor_set(DescriptorSet         descriptor,
@@ -82,10 +75,7 @@ struct CommandBuffer {
                           PipelineStage srcStage  = STAGE_COLOR_ATTACHMENT_OUTPUT,
                           PipelineStage dstStage  = STAGE_FRAGMENT_SHADER);
 
-    void clear_image(Image&      img,
-                     ImageLayout layout,
-                     ImageAspect aspect     = ASPECT_COLOR,
-                     Vec4        clearColor = Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    void clear_image(Image& img, ImageLayout layout, ImageAspect aspect = ASPECT_COLOR, Vec4 clearColor = Vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
     /*Copy the entire extent of the image*/
     void blit_image(Image&      srcImage,
@@ -117,13 +107,13 @@ struct CommandBuffer {
     Expected layout is LAYOUT_UNDEFINED
     */
     void copy_buffer_to_image(Image& img, Buffer& buffer);
+    
+    void copy_image_to_buffer(Image& img, Buffer& buffer);
 
     /*
     Generates mipmaps for a given image following a downsampling by 2 strategy
     */
-    void generate_mipmaps(Image&      img,
-                          ImageLayout initialLayout = LAYOUT_TRANSFER_DST_OPTIMAL,
-                          ImageLayout finalLayout   = LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    void generate_mipmaps(Image& img, ImageLayout initialLayout = LAYOUT_TRANSFER_DST_OPTIMAL, ImageLayout finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 };
 struct CommandPool {
     VkCommandPool handle = VK_NULL_HANDLE;

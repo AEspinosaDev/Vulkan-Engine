@@ -4,11 +4,11 @@
 #include <engine/core/passes/bloom_pass.h>
 #include <engine/core/passes/enviroment_pass.h>
 #include <engine/core/passes/forward_pass.h>
+#include <engine/core/passes/gui_pass.h>
 #include <engine/core/passes/postprocess_pass.h>
 #include <engine/core/passes/sky_pass.h>
 #include <engine/core/passes/tonemapping_pass.h>
 #include <engine/core/passes/variance_shadow_pass.h>
-#include <engine/core/passes/gui_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -38,12 +38,14 @@ class ForwardRenderer : public BaseRenderer
     bool             m_updateShadows = false;
 
   public:
+    // Headless instantiation
+    ForwardRenderer(Extent2D displayExtent = {800, 800})
+        : BaseRenderer(displayExtent) {
+    }
     ForwardRenderer(Core::IWindow* window)
         : BaseRenderer(window) {
     }
-    ForwardRenderer(Core::IWindow*   window,
-                    ShadowResolution shadowQuality = ShadowResolution::MEDIUM,
-                    RendererSettings settings      = {})
+    ForwardRenderer(Core::IWindow* window, ShadowResolution shadowQuality = ShadowResolution::MEDIUM, RendererSettings settings = {})
         : BaseRenderer(window, settings)
         , m_shadowQuality(shadowQuality) {
     }

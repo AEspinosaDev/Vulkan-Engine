@@ -72,9 +72,7 @@ void CommandBuffer::reset() {
     isRecording = false;
 }
 
-void CommandBuffer::submit(Fence                  fence,
-                           std::vector<Semaphore> waitSemaphores,
-                           std::vector<Semaphore> signalSemaphores) {
+void CommandBuffer::submit(Fence fence, std::vector<Semaphore> waitSemaphores, std::vector<Semaphore> signalSemaphores) {
 
     std::vector<VkSemaphore> signalSemaphoreHandles;
     signalSemaphoreHandles.resize(signalSemaphores.size());
@@ -138,11 +136,7 @@ void CommandBuffer::end_renderpass(RenderPass& renderpass, Framebuffer& fbo) {
     }
     vkCmdEndRenderPass(handle);
 }
-void CommandBuffer::draw_geometry(VertexArrays& vao,
-                                  uint32_t      instanceCount,
-                                  uint32_t      firstOcurrence,
-                                  int32_t       offset,
-                                  uint32_t      firstInstance) {
+void CommandBuffer::draw_geometry(VertexArrays& vao, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance) {
     if (!vao.loadedOnGPU)
         return;
     PROFILING_EVENT()
@@ -180,19 +174,9 @@ void CommandBuffer::bind_shaderpass(ShaderPass& pass) {
         break;
     }
 }
-void CommandBuffer::bind_descriptor_set(DescriptorSet         descriptor,
-                                        uint32_t              ocurrence,
-                                        ShaderPass&           pass,
-                                        std::vector<uint32_t> offsets,
-                                        BindingType           binding) {
-    vkCmdBindDescriptorSets(handle,
-                            static_cast<VkPipelineBindPoint>(binding),
-                            pass.pipelineLayout,
-                            ocurrence,
-                            1,
-                            &descriptor.handle,
-                            offsets.size(),
-                            offsets.data());
+void CommandBuffer::bind_descriptor_set(DescriptorSet descriptor, uint32_t ocurrence, ShaderPass& pass, std::vector<uint32_t> offsets, BindingType binding) {
+    vkCmdBindDescriptorSets(
+        handle, static_cast<VkPipelineBindPoint>(binding), pass.pipelineLayout, ocurrence, 1, &descriptor.handle, offsets.size(), offsets.data());
 }
 void CommandBuffer::set_viewport(Extent2D extent, Offset2D scissorOffset) {
     VkViewport viewport = Init::viewport(extent);
@@ -242,8 +226,7 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = img.layers;
 
-    vkCmdPipelineBarrier(
-        handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
     img.currentLayout = newLayout;
 }
@@ -270,8 +253,7 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = img.layers;
 
-    vkCmdPipelineBarrier(
-        handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(handle, Translator::get(srcStage), Translator::get(dstStage), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
     img.currentLayout = newLayout;
 }
@@ -292,24 +274,17 @@ void Graphics::CommandBuffer::clear_image(Image& img, ImageLayout layout, ImageA
 
     vkCmdClearColorImage(handle, img.handle, Translator::get(layout), &vclearColor, 1, &subresourceRange);
 }
-void Graphics::CommandBuffer::blit_image(Image&      srcImage,
-                                         Image&      dstImage,
-                                         FilterType  filter,
-                                         uint32_t    mipLevel,
-                                         ImageAspect srcAspect,
-                                         ImageAspect dstAspect) {
-    VkImageBlit blitRegion   = {};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {
-        static_cast<int32_t>(srcImage.extent.width), static_cast<int32_t>(srcImage.extent.height), 1};
+void Graphics::CommandBuffer::blit_image(Image& srcImage, Image& dstImage, FilterType filter, uint32_t mipLevel, ImageAspect srcAspect, ImageAspect dstAspect) {
+    VkImageBlit blitRegion                   = {};
+    blitRegion.srcOffsets[0]                 = {0, 0, 0};
+    blitRegion.srcOffsets[1]                 = {static_cast<int32_t>(srcImage.extent.width), static_cast<int32_t>(srcImage.extent.height), 1};
     blitRegion.srcSubresource.aspectMask     = Translator::get(srcAspect);
     blitRegion.srcSubresource.mipLevel       = mipLevel;
     blitRegion.srcSubresource.baseArrayLayer = 0;
     blitRegion.srcSubresource.layerCount     = 1;
 
-    blitRegion.dstOffsets[0] = {0, 0, 0};
-    blitRegion.dstOffsets[1] = {
-        static_cast<int32_t>(dstImage.extent.width), static_cast<int32_t>(dstImage.extent.height), 1};
+    blitRegion.dstOffsets[0]                 = {0, 0, 0};
+    blitRegion.dstOffsets[1]                 = {static_cast<int32_t>(dstImage.extent.width), static_cast<int32_t>(dstImage.extent.height), 1};
     blitRegion.dstSubresource.aspectMask     = Translator::get(dstAspect);
     blitRegion.dstSubresource.mipLevel       = mipLevel;
     blitRegion.dstSubresource.baseArrayLayer = 0;
@@ -335,16 +310,16 @@ void Graphics::CommandBuffer::blit_image(Image&      srcImage,
                                          ImageAspect srcAspect,
                                          ImageAspect dstAspect) {
 
-    VkImageBlit blitRegion   = {};
-    blitRegion.srcOffsets[0] = {static_cast<int32_t>(srcOrigin.width), static_cast<int32_t>(srcOrigin.height), 0};
-    blitRegion.srcOffsets[1] = {static_cast<int32_t>(srcExtent.width), static_cast<int32_t>(srcExtent.height), 1};
+    VkImageBlit blitRegion                   = {};
+    blitRegion.srcOffsets[0]                 = {static_cast<int32_t>(srcOrigin.width), static_cast<int32_t>(srcOrigin.height), 0};
+    blitRegion.srcOffsets[1]                 = {static_cast<int32_t>(srcExtent.width), static_cast<int32_t>(srcExtent.height), 1};
     blitRegion.srcSubresource.aspectMask     = Translator::get(srcAspect);
     blitRegion.srcSubresource.mipLevel       = mipLevel;
     blitRegion.srcSubresource.baseArrayLayer = 0;
     blitRegion.srcSubresource.layerCount     = 1;
 
-    blitRegion.dstOffsets[0] = {static_cast<int32_t>(dstOrigin.width), static_cast<int32_t>(dstOrigin.height), 0};
-    blitRegion.dstOffsets[1] = {static_cast<int32_t>(dstExtent.width), static_cast<int32_t>(dstExtent.height), 1};
+    blitRegion.dstOffsets[0]                 = {static_cast<int32_t>(dstOrigin.width), static_cast<int32_t>(dstOrigin.height), 0};
+    blitRegion.dstOffsets[1]                 = {static_cast<int32_t>(dstExtent.width), static_cast<int32_t>(dstExtent.height), 1};
     blitRegion.dstSubresource.aspectMask     = Translator::get(dstAspect);
     blitRegion.dstSubresource.mipLevel       = mipLevel;
     blitRegion.dstSubresource.baseArrayLayer = 0;
@@ -359,11 +334,7 @@ void Graphics::CommandBuffer::blit_image(Image&      srcImage,
                    &blitRegion,
                    Translator::get(filter));
 }
-void Graphics::CommandBuffer::push_constants(ShaderPass&      pass,
-                                             ShaderStageFlags stage,
-                                             const void*      data,
-                                             uint32_t         size,
-                                             uint32_t         offset) {
+void Graphics::CommandBuffer::push_constants(ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset) {
     vkCmdPushConstants(handle, pass.pipelineLayout, Translator::get(stage), offset, size, data);
 }
 
@@ -400,23 +371,13 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
     imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
     // barrier the image into the transfer-receive layout
-    vkCmdPipelineBarrier(handle,
-                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         0,
-                         0,
-                         nullptr,
-                         0,
-                         nullptr,
-                         1,
-                         &imageBarrier_toTransfer);
+    vkCmdPipelineBarrier(handle, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
 
     // For each layer
     for (uint32_t layer = 0; layer < img.layers; ++layer)
     {
         VkBufferImageCopy copyRegion = {};
-        copyRegion.bufferOffset =
-            layer * ((img.extent.width * img.extent.height * buffer.size) / img.layers); // Offset per face
+        copyRegion.bufferOffset      = layer * ((img.extent.width * img.extent.height * buffer.size) / img.layers); // Offset per face
         copyRegion.bufferRowLength   = 0;
         copyRegion.bufferImageHeight = 0;
 
@@ -440,19 +401,51 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
         imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         // barrier the image into the shader readable layout
-        vkCmdPipelineBarrier(handle,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                             0,
-                             0,
-                             nullptr,
-                             0,
-                             nullptr,
-                             1,
-                             &imageBarrier_toReadable);
+        vkCmdPipelineBarrier(
+            handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
     }
 }
 
+void Graphics::CommandBuffer::copy_image_to_buffer(Image& img, Buffer& buffer) {
+    VkImageSubresourceRange range;
+    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel   = 0;
+    range.levelCount     = img.mipLevels;
+    range.baseArrayLayer = 0;
+    range.layerCount     = img.layers;
+
+    VkImageMemoryBarrier imageBarrier_toTransfer = {};
+    imageBarrier_toTransfer.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+
+    imageBarrier_toTransfer.oldLayout        = Translator::get(img.currentLayout);
+    imageBarrier_toTransfer.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    imageBarrier_toTransfer.image            = img.handle;
+    imageBarrier_toTransfer.subresourceRange = range;
+
+    imageBarrier_toTransfer.srcAccessMask = 0;
+    imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    // barrier the image into the transfer-receive layout
+    vkCmdPipelineBarrier(handle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+
+    // For each layer
+    for (uint32_t layer = 0; layer < img.layers; ++layer)
+    {
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset      = layer * ((img.extent.width * img.extent.height * buffer.size) / img.layers); // Offset per face
+        copyRegion.bufferRowLength   = 0;
+        copyRegion.bufferImageHeight = 0;
+
+        copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel       = 0;
+        copyRegion.imageSubresource.baseArrayLayer = layer;
+        copyRegion.imageSubresource.layerCount     = 1;
+        copyRegion.imageExtent                     = img.extent;
+
+        vkCmdCopyImageToBuffer(handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.handle, 1, &copyRegion);
+    }
+
+}
 void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLayout, ImageLayout finalLayout) {
 
     int32_t mipWidth  = img.extent.width;
@@ -484,16 +477,8 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
             imageBarrier_toTransfer.srcAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
             imageBarrier_toTransfer.dstAccessMask                   = VK_ACCESS_TRANSFER_READ_BIT;
 
-            vkCmdPipelineBarrier(handle,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 0,
-                                 0,
-                                 nullptr,
-                                 0,
-                                 nullptr,
-                                 1,
-                                 &imageBarrier_toTransfer);
+            vkCmdPipelineBarrier(
+                handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
 
             VkImageBlit blit{};
             blit.srcOffsets[0]                 = {0, 0, 0};
@@ -503,22 +488,15 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
             blit.srcSubresource.baseArrayLayer = layer; // Specify the current face
             blit.srcSubresource.layerCount     = 1;
 
-            blit.dstOffsets[0] = {0, 0, 0};
-            blit.dstOffsets[1] = {
-                mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, mipDepth > 1 ? mipDepth / 2 : 1};
+            blit.dstOffsets[0]                 = {0, 0, 0};
+            blit.dstOffsets[1]                 = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, mipDepth > 1 ? mipDepth / 2 : 1};
             blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.dstSubresource.mipLevel       = i;
             blit.dstSubresource.baseArrayLayer = layer; // Specify the current face
             blit.dstSubresource.layerCount     = 1;
 
-            vkCmdBlitImage(handle,
-                           img.handle,
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           img.handle,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &blit,
-                           VK_FILTER_LINEAR);
+            vkCmdBlitImage(
+                handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
         }
 
         imageBarrier_toTransfer.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -526,16 +504,8 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
         imageBarrier_toTransfer.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        vkCmdPipelineBarrier(handle,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                             0,
-                             0,
-                             nullptr,
-                             0,
-                             nullptr,
-                             1,
-                             &imageBarrier_toTransfer);
+        vkCmdPipelineBarrier(
+            handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
 
         if (mipWidth > 1)
             mipWidth /= 2;
@@ -552,16 +522,7 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     imageBarrier_toReadable.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
     imageBarrier_toReadable.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
 
-    vkCmdPipelineBarrier(handle,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         0,
-                         0,
-                         nullptr,
-                         0,
-                         nullptr,
-                         1,
-                         &imageBarrier_toReadable);
+    vkCmdPipelineBarrier(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
 
     img.currentLayout = finalLayout;
 }

@@ -51,7 +51,10 @@ class BaseRenderer
     Graphics::Device*            m_device;
     std::vector<Graphics::Frame> m_frames;
     Core::IWindow*               m_window;
-    RendererSettings             m_settings{};
+    Extent2D                     m_headlessExtent{};
+
+    /*Settings*/
+    RendererSettings m_settings{};
 
     /*Passes & Attachments*/
     std::vector<Core::BasePass*> m_passes;
@@ -63,24 +66,38 @@ class BaseRenderer
     /*Query*/
     uint32_t m_currentFrame       = 0;
     bool     m_initialized        = false;
+    bool     m_headless           = false;
     bool     m_updateFramebuffers = false;
 
 #pragma endregion
   public:
+    BaseRenderer(Extent2D displayExtent)
+        : m_window(nullptr)
+        , m_device(nullptr)
+        , m_headlessExtent{displayExtent} {
+        m_headless = true;
+    }
     BaseRenderer(Core::IWindow* window)
         : m_window(window)
         , m_device(nullptr) {
+        if (!window)
+            m_headless = true;
     }
     BaseRenderer(Core::IWindow* window, RendererSettings settings)
         : m_window(window)
         , m_settings(settings)
         , m_device(nullptr) {
+        if (!window)
+            m_headless = true;
     }
 
 #pragma region Getters & Setters
 
     inline Core::IWindow* const get_window() const {
         return m_window;
+    }
+    inline bool headless() const {
+        return m_headless;
     }
 
     inline RendererSettings get_settings() {
@@ -132,12 +149,16 @@ class BaseRenderer
      * Shut the renderer down.
      */
     void shutdown(Core::Scene* const scene);
+    /*
+    * Capture one of the attachment images in a given frame as a CPU texture.
+    */
+    Core::Texture* capture_texture(uint32_t attachmentId);
 
 #pragma endregion
 #pragma region Core Functions
   protected:
     /*
-     Init renderpasses and
+     Init passes
      */
     virtual void create_passes();
     /*
@@ -170,7 +191,7 @@ class BaseRenderer
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context
     */
-    void update_framebuffers();
+    void update_framebuffers(Extent2D extent);
     /*
     Initialize gui layout in case ther's one enabled
     */
@@ -183,6 +204,7 @@ class BaseRenderer
         ASSERT_PTR(pass);
         return pass;
     }
+   
 #pragma endregion
 };
 } // namespace Systems

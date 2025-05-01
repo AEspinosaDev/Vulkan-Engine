@@ -19,19 +19,17 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 class Swapchain
 {
-    VkSwapchainKHR             m_handle;
-    VkDevice                   m_device;
-    VkSurfaceKHR               m_surface;
-    VkFormat                   m_presentFormat;
-    VkPresentModeKHR           m_presentMode;
-    std::vector<Image>         m_presentImages;
+    VkSwapchainKHR     m_handle  = VK_NULL_HANDLE;
+    VkDevice           m_device  = VK_NULL_HANDLE;
+    VkSurfaceKHR       m_surface = VK_NULL_HANDLE;
+    VkFormat           m_presentFormat;
+    VkPresentModeKHR   m_presentMode;
+    std::vector<Image> m_presentImages;
 
     bool m_initialized{false};
 
-    VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats,
-                                                  VkFormat                               desiredFormat);
-    VkPresentModeKHR   choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes,
-                                                VkPresentModeKHR                     desiredMode);
+    VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats, VkFormat desiredFormat);
+    VkPresentModeKHR   choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredMode);
     VkExtent2D         choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, VkExtent2D actualExtent);
 
     void create_image_views(VkDevice& device);

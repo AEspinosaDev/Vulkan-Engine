@@ -18,15 +18,12 @@ namespace Graphics {
 namespace Booter {
 #pragma region Instance
 // Instance
-VkInstance create_instance(const char*              appName,
-                           const char*              engineName,
-                           bool                     validation,
-                           std::vector<const char*> validationLayers);
+VkInstance create_instance(const char* appName, const char* engineName, bool validation, std::vector<const char*> validationLayers);
 
 #pragma region Validation
 // Validation Logger
-VkDebugUtilsMessengerEXT create_debug_messenger(VkInstance instance);
-void                     populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+VkDebugUtilsMessengerEXT                     create_debug_messenger(VkInstance instance);
+void                                         populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 inline static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
                                                            VkDebugUtilsMessageTypeFlagsEXT             messageType,
                                                            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -40,15 +37,12 @@ VkResult create_debug_utils_messenger_EXT(VkInstance                            
                                           const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                           const VkAllocationCallbacks*              pAllocator,
                                           VkDebugUtilsMessengerEXT*                 pDebugMessenger);
-void     destroy_debug_utils_messenger_EXT(VkInstance                   instance,
-                                           VkDebugUtilsMessengerEXT     debugMessenger,
-                                           const VkAllocationCallbacks* pAllocator);
+void     destroy_debug_utils_messenger_EXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 #pragma region GPU
 // GPU
-VkPhysicalDevice
-     pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std::vector<const char*> extensions);
-int  rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface, std::vector<const char*> extensions);
-bool check_device_extension_support(VkPhysicalDevice device, std::vector<const char*> extensions);
+VkPhysicalDevice pick_graphics_card_device(VkInstance instance, VkSurfaceKHR surface, std::vector<const char*> extensions);
+int              rate_device_suitability(VkPhysicalDevice device, VkSurfaceKHR surface, std::vector<const char*> extensions);
+bool             check_device_extension_support(VkPhysicalDevice device, std::vector<const char*> extensions);
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR        capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
@@ -62,8 +56,10 @@ struct QueueFamilyIndices {
     std::optional<uint32_t> transferFamily;
     std::optional<uint32_t> sparseBindingFamily;
 
-    inline bool isComplete() const {
-        return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value();
+    inline bool isComplete(bool headless = false) const {
+
+        return !headless ? graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value()
+                         : graphicsFamily.has_value() && computeFamily.has_value();
     }
 };
 QueueFamilyIndices find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);

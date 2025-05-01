@@ -14,22 +14,28 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Systems {
 void BaseRenderer::init() {
 
-    if (!m_window->initialized())
-        m_window->init();
-
     // Init Vulkan Device
-    void* windowHandle{nullptr};
-    m_window->get_handle(windowHandle);
     m_device = new Graphics::Device();
-    m_device->init(windowHandle,
-                   m_window->get_windowing_system(),
-                   m_window->get_extent(),
-                   static_cast<uint32_t>(m_settings.bufferingType),
-                   m_settings.colorFormat,
-                   m_settings.screenSync);
+
+    if (!m_headless)
+    {
+        if (!m_window->initialized())
+            m_window->init();
+        void* windowHandle{nullptr};
+        m_window->get_handle(windowHandle);
+        m_device->init(windowHandle,
+                       m_window->get_windowing_system(),
+                       m_window->get_extent(),
+                       static_cast<uint32_t>(m_settings.bufferingType),
+                       m_settings.colorFormat,
+                       m_settings.screenSync);
+    } else
+    {
+        m_device->init_headless();
+    }
+
     // Init resources
     init_resources();
-
     // User defined renderpasses
     create_passes();
     // Init renderpasses
@@ -41,7 +47,7 @@ void BaseRenderer::init() {
         if (pass->is_active())
             pass->link_input_attachments();
 
-    if (m_settings.enableUI)
+    if (m_settings.enableUI && !m_headless)
         init_gui();
 
     Graphics::Frame::guiEnabled = m_settings.enableUI;
@@ -61,7 +67,7 @@ void BaseRenderer::run(Core::Scene* const scene) {
 }
 
 void BaseRenderer::shutdown(Core::Scene* const scene) {
-    m_device->wait();
+    m_device->wait_idle();
 
     on_shutdown(scene);
 
@@ -76,13 +82,14 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
         clean_resources();
         Core::ResourceManager::clean_scene(scene);
 
-        if (m_settings.enableUI)
+        if (m_settings.enableUI && !m_headless)
             m_device->destroy_imgui();
 
         m_device->cleanup();
     }
 
-    m_window->destroy();
+    if (!m_headless)
+        m_window->destroy();
 
     glfwTerminate();
 }
@@ -93,8 +100,9 @@ void BaseRenderer::create_passes() {
 void BaseRenderer::on_before_render(Core::Scene* const scene) {
     PROFILING_EVENT()
 
-    Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.softwareAA == SoftwareAA::TAA);
-    Core::ResourceManager::update_object_data(m_device, &m_frames[m_currentFrame], scene, m_window, m_settings.enableRaytracing);
+    const Extent2D DISPLAY_EXTENT = !m_headless ? m_window->get_extent() : m_headlessExtent;
+    Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings.softwareAA == SoftwareAA::TAA);
+    Core::ResourceManager::update_object_data(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings.enableRaytracing);
 
     for (Core::BasePass* pass : m_passes)
     {
@@ -110,14 +118,18 @@ void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* cons
     auto camera                         = scene->get_active_camera();
     Core::ResourceManager::prevViewProj = camera->get_projection() * camera->get_view();
 
-    if (renderResult == RenderResult::ERROR_OUT_OF_DATE_KHR || renderResult == RenderResult::SUBOPTIMAL_KHR || m_window->is_resized() || m_updateFramebuffers)
+    if (!m_headless)
     {
-        m_window->set_resized(false);
-        update_framebuffers();
-        scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
-    } else if (renderResult != RenderResult::SUCCESS)
-    { throw VKFW_Exception("failed to present swap chain image!"); }
-
+        if (renderResult == RenderResult::ERROR_OUT_OF_DATE_KHR || renderResult == RenderResult::SUBOPTIMAL_KHR || m_window->is_resized() ||
+            m_updateFramebuffers)
+        {
+            m_window->set_resized(false);
+            m_window->update_framebuffer();
+            update_framebuffers(m_window->get_extent());
+            scene->get_active_camera()->set_projection(m_window->get_extent().width, m_window->get_extent().height);
+        } else if (renderResult != RenderResult::SUCCESS)
+        { throw VKFW_Exception("failed to present swap chain image!"); }
+    }
     m_currentFrame = (m_currentFrame + 1) % m_frames.size();
 }
 
@@ -131,15 +143,23 @@ void BaseRenderer::render(Core::Scene* const scene) {
     if (!scene->get_active_camera())
         return;
 
-    uint32_t     imageIndex;
-    RenderResult result = m_device->wait_frame(m_frames[m_currentFrame], imageIndex);
-
-    if (result == RenderResult::ERROR_OUT_OF_DATE_KHR)
+    uint32_t imageIndex = 0;
+    if (!m_headless)
     {
-        update_framebuffers();
-        return;
-    } else if (result != RenderResult::SUCCESS && result != RenderResult::SUBOPTIMAL_KHR)
-    { throw VKFW_Exception("failed to acquire swap chain image!"); }
+        RenderResult result = m_device->wait_frame(m_frames[m_currentFrame], imageIndex);
+
+        if (result == RenderResult::ERROR_OUT_OF_DATE_KHR)
+        {
+            m_window->update_framebuffer();
+            update_framebuffers(m_window->get_extent());
+            return;
+        } else if (result != RenderResult::SUCCESS && result != RenderResult::SUBOPTIMAL_KHR)
+        { throw VKFW_Exception("failed to acquire swap chain image!"); }
+
+    } else
+    {
+        m_frames[m_currentFrame].renderFence.wait();
+    }
 
     on_before_render(scene);
 
@@ -151,17 +171,22 @@ void BaseRenderer::render(Core::Scene* const scene) {
             pass->execute(m_frames[m_currentFrame], scene, imageIndex);
     }
 
-    RenderResult renderResult = m_device->submit_frame(m_frames[m_currentFrame], imageIndex);
+    RenderResult renderResult = RenderResult::SUCCESS;
+    if (!m_headless)
+        renderResult = m_device->submit_frame(m_frames[m_currentFrame], imageIndex);
+    else
+    {
+        m_frames[m_currentFrame].commandBuffer.end();
+        m_frames[m_currentFrame].commandBuffer.submit(m_frames[m_currentFrame].renderFence);
+    }
 
     on_after_render(renderResult, scene);
 }
 
-void BaseRenderer::update_framebuffers() {
+void BaseRenderer::update_framebuffers(Extent2D extent) {
 
-    m_window->update_framebuffer();
-
-    m_device->wait();
-    m_device->update_swapchain(m_window->get_extent(), static_cast<uint32_t>(m_settings.bufferingType), m_settings.colorFormat, m_settings.screenSync);
+    m_device->wait_idle();
+    m_device->update_swapchain(extent, static_cast<uint32_t>(m_settings.bufferingType), m_settings.colorFormat, m_settings.screenSync);
 
     // Renderpass framebuffer updating
     for (Core::BasePass* pass : m_passes)
@@ -169,7 +194,7 @@ void BaseRenderer::update_framebuffers() {
         if (pass->is_active())
             if (pass->resizeable())
             {
-                pass->set_extent(m_window->get_extent());
+                pass->set_extent(extent);
                 pass->resize_attachments();
             }
     };
@@ -203,6 +228,7 @@ void BaseRenderer::init_gui() {
                              static_cast<Core::BaseGraphicPass*>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
     }
 }
+
 void BaseRenderer::init_resources() {
 
     // Setup frames
@@ -252,6 +278,16 @@ void BaseRenderer::clean_resources() {
         m_attachments[i].cleanup();
     Core::ResourceManager::clean_basic_resources();
 }
+
+Core::Texture* BaseRenderer::capture_texture(uint32_t attachmentId)  {
+    void*  imageData = nullptr;
+    size_t imageSize = 0;
+    m_device->download_texture_image(m_attachments[attachmentId], imageData, imageSize);
+
+    auto tex = new Core::Texture(reinterpret_cast<unsigned char*>(imageData), m_attachments[attachmentId].extent, 4);
+    return tex;
+}
+
 } // namespace Systems
 
 VULKAN_ENGINE_NAMESPACE_END

@@ -31,6 +31,7 @@ struct Buffer {
 
     void     upload_data(const void* bufferData, size_t size);
     void     upload_data(const void* bufferData, size_t size, size_t offset);
+    void     copy_to(void* data);
     uint64_t get_device_address();
     void     cleanup();
 };

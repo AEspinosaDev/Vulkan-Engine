@@ -52,7 +52,7 @@ struct Image {
     VkSampler       sampler       = VK_NULL_HANDLE;
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
-    /*State parameters*/
+    /*Config parameters*/
     Extent3D    extent        = {0, 0, 1}; // Depth for 3D Textures
     ImageLayout currentLayout = LAYOUT_UNDEFINED;
     uint32_t    layers        = 1; // Layers for Cubemaps and Arrays

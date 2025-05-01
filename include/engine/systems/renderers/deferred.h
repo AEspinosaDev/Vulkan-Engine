@@ -57,12 +57,14 @@ class DeferredRenderer : public BaseRenderer
     virtual void update_enviroment(Core::Skybox* const skybox);
 
   public:
+    // Headless instantiation
+    DeferredRenderer(Extent2D displayExtent = {800, 800})
+        : BaseRenderer(displayExtent) {
+    }
     DeferredRenderer(Core::IWindow* window)
         : BaseRenderer(window) {
     }
-    DeferredRenderer(Core::IWindow*   window,
-                     ShadowResolution shadowQuality = ShadowResolution::MEDIUM,
-                     RendererSettings settings      = {})
+    DeferredRenderer(Core::IWindow* window, ShadowResolution shadowQuality = ShadowResolution::MEDIUM, RendererSettings settings = {})
         : BaseRenderer(window, settings)
         , m_shadowQuality(shadowQuality) {
     }

@@ -43,6 +43,32 @@ void Device::init(void*           windowHandle,
     //------<<<
 }
 
+void Device::init_headless() {
+
+    // BOOT Vulkan (HEADLESS MODE) ------>>>
+
+    // Instance
+    m_instance = Booter::create_instance("xxx", "VulkanDevice", m_enableValidationLayers, m_validationLayers);
+    if (m_enableValidationLayers)
+        m_debugMessenger = Booter::create_debug_messenger(m_instance);
+
+    // Get gpu
+    m_gpu = Booter::pick_graphics_card_device(m_instance, VK_NULL_HANDLE, m_extensions);
+    vkGetPhysicalDeviceProperties(m_gpu, &m_properties);
+    vkGetPhysicalDeviceFeatures(m_gpu, &m_features);
+    vkGetPhysicalDeviceMemoryProperties(m_gpu, &m_memoryProperties);
+
+    // Create logical device
+    m_handle = Booter::create_logical_device(m_queues, m_gpu, m_features, VK_NULL_HANDLE, m_enableValidationLayers, m_validationLayers);
+
+    // Setup VMA
+    m_allocator = Booter::setup_memory(m_instance, m_handle, m_gpu);
+
+    create_upload_context();
+    load_extensions(m_handle, m_instance);
+
+    //------<<<
+}
 void Device::update_swapchain(Extent2D surfaceExtent, uint32_t framesPerFlight, ColorFormatType presentFormat, SyncType presentMode) {
     m_swapchain.create(m_gpu, m_handle, surfaceExtent, surfaceExtent, framesPerFlight, Translator::get(presentFormat), Translator::get(presentMode));
 }
@@ -418,6 +444,7 @@ RenderResult Device::wait_frame(Frame& frame, uint32_t& imageIndex) {
 
     return imageResult;
 }
+
 void Device::start_frame(Frame& frame) {
     frame.renderFence.reset();
     frame.commandBuffer.reset();
@@ -783,11 +810,23 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
 
     accel.device = m_handle;
 }
-void Device::wait() {
+void Device::download_texture_image(Image& img, void*& imgCache, size_t& outSize) {
+    const uint32_t SIZE = img.extent.width * img.extent.height * img.extent.depth * 4;
+    outSize             = SIZE;
+    imgCache            = malloc(SIZE);
+    Buffer cpuBuffer    = create_buffer(SIZE, BUFFER_USAGE_TRANSFER_DST, MEMORY_PROPERTY_HOST_VISIBLE, MEMORY_PROPERTY_HOST_COHERENT);
+
+    m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_image_to_buffer(img, cpuBuffer); });
+
+    cpuBuffer.copy_to(imgCache);
+
+    cpuBuffer.cleanup();
+}
+void Device::wait_idle() {
     VK_CHECK(vkDeviceWaitIdle(m_handle));
 }
 
-void Device::wait_queue(QueueType queueType) {
+void Device::wait_queue_idle(QueueType queueType) {
     VK_CHECK(vkQueueWaitIdle(m_queues[queueType]));
 }
 void Device::init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples) {

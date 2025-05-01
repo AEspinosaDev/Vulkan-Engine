@@ -36,6 +36,9 @@ class TextureLDR : public ITexture
         , m_tmpCache(data) {
         m_image.loadedOnCPU = true;
     }
+    ~TextureLDR(){
+        free(m_tmpCache);
+    }
 
     inline void set_image_cache(void* cache, Extent3D extent, uint16_t channels) {
         m_tmpCache          = static_cast<unsigned char*>(cache);

@@ -11,17 +11,29 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
     attachments.resize(5);
 
     // Normals + Depth
-    attachments[0] = Graphics::AttachmentConfig(
-        SRGBA_16F, 1, LAYOUT_SHADER_READ_ONLY_OPTIMAL, LAYOUT_COLOR_ATTACHMENT_OPTIMAL, IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    attachments[0] = Graphics::AttachmentConfig(SRGBA_16F,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
     // Albedo + Opacity
-    attachments[1] = Graphics::AttachmentConfig(
-        RGBA_8U, 1, LAYOUT_SHADER_READ_ONLY_OPTIMAL, LAYOUT_COLOR_ATTACHMENT_OPTIMAL, IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    attachments[1] = Graphics::AttachmentConfig(RGBA_8U,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
     // Material + ID
-    attachments[2] = Graphics::AttachmentConfig(
-        RGBA_8U, 1, LAYOUT_SHADER_READ_ONLY_OPTIMAL, LAYOUT_COLOR_ATTACHMENT_OPTIMAL, IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    attachments[2] = Graphics::AttachmentConfig(RGBA_8U,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
     // Velocity + Emissive strength
-    attachments[3] = Graphics::AttachmentConfig(
-        SRGBA_16F, 1, LAYOUT_SHADER_READ_ONLY_OPTIMAL, LAYOUT_COLOR_ATTACHMENT_OPTIMAL, IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED);
+    attachments[3] = Graphics::AttachmentConfig(SRGBA_16F,
+                                                1,
+                                                LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
 
     // Depth
     attachments[4]                                           = Graphics::AttachmentConfig(m_depthFormat,
@@ -145,8 +157,8 @@ void GeometryPass::setup_shader_passes() {
 
     m_shaderPasses["geometryLineTri"] = geomLinePass;
 
-    GraphicShaderPass* linePass = new GraphicShaderPass(
-        m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/line_geometry.glsl");
+    GraphicShaderPass* linePass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, ENGINE_RESOURCES_PATH "shaders/deferred/line_geometry.glsl");
     linePass->settings.descriptorSetLayoutIDs = geomPass->settings.descriptorSetLayoutIDs;
     linePass->graphicSettings                 = geomPass->graphicSettings;
     linePass->graphicSettings.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;

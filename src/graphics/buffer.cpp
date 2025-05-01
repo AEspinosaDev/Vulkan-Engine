@@ -64,8 +64,23 @@ void Buffer::upload_data(const void* bufferData, size_t size, size_t offset) {
         vkUnmapMemory(device, memory);
     }
 }
+void Buffer::copy_to(void* data) {
+    void* passthroughData;
+    if (allocation)
+        VK_CHECK(vmaMapMemory(allocator, allocation, &passthroughData));
+    if (memory)
+        VK_CHECK(vkMapMemory(device, memory, 0, size, 0, &passthroughData));
+
+    memcpy(data, passthroughData, size);
+
+    if (allocation)
+        vmaUnmapMemory(allocator, allocation);
+    else if (memory)
+        vkUnmapMemory(device, memory);
+}
 
 uint64_t Buffer::get_device_address() {
+
     VkBufferDeviceAddressInfoKHR bufferDeviceAI{};
     bufferDeviceAI.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     bufferDeviceAI.buffer = handle;

@@ -54,16 +54,13 @@ class ResourceManager
     static void update_global_data(Graphics::Device* const device,
                                    Graphics::Frame* const  currentFrame,
                                    Core::Scene* const      scene,
-                                   Core::IWindow* const    window,
+                                   Extent2D                displayExtent,
                                    bool                    jitterCamera);
     /*
     Object descriptor layouts uniforms buffer upload to GPU
     */
-    static void update_object_data(Graphics::Device* const device,
-                                   Graphics::Frame* const  currentFrame,
-                                   Core::Scene* const      scene,
-                                   Core::IWindow* const    window,
-                                   bool                    enableRT);
+    static void
+    update_object_data(Graphics::Device* const device, Graphics::Frame* const currentFrame, Core::Scene* const scene, Extent2D displayExtent, bool enableRT);
     /*
     Initialize and setup texture IMAGE
     */
@@ -72,8 +69,7 @@ class ResourceManager
     /*
     Upload geometry vertex buffers to the GPU
     */
-    static void
-    upload_geometry_data(Graphics::Device* const device, Core::Geometry* const g, bool createAccelStructure = true);
+    static void upload_geometry_data(Graphics::Device* const device, Core::Geometry* const g, bool createAccelStructure = true);
     static void destroy_geometry_data(Core::Geometry* const g);
     /*
     Uploads scene's skybox resources (cube mesh and panorama texture)

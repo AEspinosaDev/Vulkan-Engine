@@ -95,6 +95,9 @@ class Device
               uint32_t        framesPerFlight,
               ColorFormatType presentFormat,
               SyncType        presentMode);
+
+    void init_headless();
+
     void update_swapchain(Extent2D surfaceExtent, uint32_t framesPerFlight, ColorFormatType presentFormat, SyncType presentMode);
     void cleanup();
 
@@ -167,12 +170,13 @@ class Device
     void upload_texture_image(Image& img, ImageConfig config, SamplerConfig samplerConfig, const void* imgCache, size_t bytesPerPixel);
     void upload_BLAS(BLAS& accel, VAO& vao);
     void upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
+    void download_texture_image(Image& img, void*& imgCache, size_t& outSize);
     /*
     MISC
     -----------------------------------------------
     */
-    void     wait();
-    void     wait_queue(QueueType queueType);
+    void     wait_idle();
+    void     wait_queue_idle(QueueType queueType);
     void     init_imgui(void* windowHandle, WindowingSystem windowingSystem, RenderPass renderPass, uint16_t samples);
     void     destroy_imgui();
     uint32_t get_memory_type(uint32_t typeBits, MemoryPropertyFlags properties, uint32_t* memTypeFound = nullptr);

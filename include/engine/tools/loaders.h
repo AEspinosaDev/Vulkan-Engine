@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <stb_image.h>
+
 #include <thread>
 #include <tiny_obj_loader.h>
 #include <tinyply.h>
@@ -68,6 +69,10 @@ will be used for computing the depth if no depthy input is given. PNG or JPEG av
 */
 void load_3D_texture(Core::ITexture* const texture, const std::string fileName, uint16_t depth = 0, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
 
+/*
+Save texture image
+*/
+void save_texture(Core::ITexture* const texture, const std::string fileName);
 
 }; // namespace Tools::Loaders
 
