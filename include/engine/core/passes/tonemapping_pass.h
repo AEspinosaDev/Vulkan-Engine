@@ -45,7 +45,7 @@ class TonemappingPass final : public PostProcessPass<1, 1>
                - Tonemapped Color
 
            */
-    TonemappingPass(Graphics::Device* device, const PassLinkage<1, 1>& config, Extent2D extent, ColorFormatType colorFormat, bool isDefault = true)
+    TonemappingPass(const ptr<Graphics::Device>& device, const PassLinkage<1, 1>& config, Extent2D extent, ColorFormatType colorFormat, bool isDefault = true)
         : PostProcessPass(device, config, extent, colorFormat, GET_RESOURCE_PATH("shaders/misc/tonemapping.glsl"), "TONEMAPPING", isDefault) {
         m_interAttachments.resize(1);
     }

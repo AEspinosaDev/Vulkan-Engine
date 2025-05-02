@@ -31,8 +31,8 @@ class Application
     };
     UserInterface m_interface{};
 
-    IWindow *m_window;
-    Systems::BaseRenderer *m_renderer;
+    ptr<IWindow> m_window;
+    ptr<Systems::BaseRenderer> m_renderer;
     Scene *m_scene;
     Camera *camera;
     Tools::Controller *m_controller;

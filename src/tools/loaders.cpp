@@ -784,10 +784,10 @@ void VKFW::Tools::Loaders::load_texture(Core::ITexture* const texture, const std
         {
             if (asyncCall)
             {
-                std::thread loadThread(Loaders::load_PNG, static_cast<Core::Texture*>(texture), fileName, textureFormat);
+                std::thread loadThread(Loaders::load_PNG, static_cast<Core::TextureLDR*>(texture), fileName, textureFormat);
                 loadThread.detach();
             } else
-                Loaders::load_PNG(static_cast<Core::Texture*>(texture), fileName, textureFormat);
+                Loaders::load_PNG(static_cast<Core::TextureLDR*>(texture), fileName, textureFormat);
 
             return;
         }
@@ -810,7 +810,7 @@ void VKFW::Tools::Loaders::load_texture(Core::ITexture* const texture, const std
     }
 }
 
-void VKFW::Tools::Loaders::load_PNG(Core::Texture* const texture, const std::string fileName, TextureFormatType textureFormat) {
+void VKFW::Tools::Loaders::load_PNG(Core::TextureLDR* const texture, const std::string fileName, TextureFormatType textureFormat) {
     int            w, h, ch;
     unsigned char* imgCache = nullptr;
     imgCache                = stbi_load(fileName.c_str(), &w, &h, &ch, STBI_rgb_alpha);

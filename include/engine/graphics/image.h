@@ -18,16 +18,17 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 
 struct ImageConfig {
-    ColorFormatType format       = ColorFormatType::SRGBA_8;
-    ImageUsageFlags usageFlags   = IMAGE_USAGE_SAMPLED;
-    ImageAspect     aspectFlags  = ASPECT_COLOR;
-    TextureType     viewType     = TEXTURE_2D;
-    uint16_t        samples      = 1U;
-    uint32_t        mipLevels    = 1U;
-    uint32_t        baseMipLevel = 0;
-    uint32_t        layers       = 1U;
-    ImageLayout     layout       = LAYOUT_UNDEFINED;
-    ClearValue      clearValue   = {{{0.0, 0.0, 0.0, 1.0}}};
+    ColorFormatType format     = ColorFormatType::SRGBA_8;
+    ImageUsageFlags usageFlags = IMAGE_USAGE_SAMPLED;
+    uint16_t        samples    = 1U;
+    uint32_t        mipLevels  = 1U;
+    uint32_t        layers     = 1U;
+    ImageLayout     layout     = LAYOUT_UNDEFINED;
+    ClearValue      clearValue = {{{0.0, 0.0, 0.0, 1.0}}};
+    /*View*/
+    ImageAspect aspectFlags  = ASPECT_COLOR;
+    TextureType viewType     = TEXTURE_2D;
+    uint32_t    baseMipLevel = 0;
 };
 
 struct SamplerConfig {
@@ -69,6 +70,10 @@ struct Image {
     void cleanup(bool destroySampler = true);
 
     Image clone() const;
+
+    // ~Image() {
+    //     cleanup(); 
+    // }
 };
 
 } // namespace Graphics

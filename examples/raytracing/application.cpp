@@ -2,28 +2,17 @@
 #include <filesystem>
 
 void Application::init(Systems::RendererSettings settings) {
-    m_window = new WindowGLFW("Raytracing Example", 1280, 1024);
+    m_window = std::make_shared<WindowGLFW>("Raytracing", 1280, 1024);
 
     m_window->init();
     m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
 
-    m_window->set_window_size_callback(
-        std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
-    m_window->set_mouse_callback(
-        std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
-    m_window->set_key_callback(std::bind(&Application::keyboard_callback,
-                                         this,
-                                         std::placeholders::_1,
-                                         std::placeholders::_2,
-                                         std::placeholders::_3,
-                                         std::placeholders::_4));
+    m_window->set_window_size_callback(std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_mouse_callback(std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_window->set_key_callback(
+        std::bind(&Application::keyboard_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, settings);
-    // SSAOSettings               ao   = {};
-    // ao.type                         = AOType::RTAO;
-    // ao.samples                      = 4;
-    // rndr->set_SSAO_settings(ao);
-    m_renderer = rndr;
+    m_renderer = std::make_shared<Systems::DeferredRenderer>(m_window, settings);
 
     setup();
     setup_gui();
@@ -87,15 +76,15 @@ void Application::setup() {
     Mesh* toriiMesh = new Mesh();
     auto  toriiMat  = new PhysicalMaterial();
 
-    Texture* toriiT = new Texture();
+    TextureLDR* toriiT = new TextureLDR();
     Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
     toriiMat->set_albedo_texture(toriiT);
 
-    Texture* toriiN = new Texture();
+    TextureLDR* toriiN = new TextureLDR();
     Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_UNORM);
     toriiMat->set_normal_texture(toriiN);
 
-    Texture* toriiM = new Texture();
+    TextureLDR* toriiM = new TextureLDR();
     // Tools::Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMat->set_metalness(0.05);
@@ -113,11 +102,11 @@ void Application::setup() {
     // Tools::Loaders::load_3D_file(plane, MESH_PATH + "torii.obj", false);
     plane->push_geometry(Geometry::create_quad());
     auto     terrainMat = new PhysicalMaterial();
-    Texture* floorText  = new Texture();
+    TextureLDR* floorText  = new TextureLDR();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
-    Texture* floorNormalText = new Texture();
+    TextureLDR* floorNormalText = new TextureLDR();
     Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_UNORM);
-    Texture* floorRoughText = new Texture();
+    TextureLDR* floorRoughText = new TextureLDR();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
     terrainMat->set_albedo_texture(floorText);
@@ -135,10 +124,10 @@ void Application::setup() {
     Mesh* stoneMesh = new Mesh();
     Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "moisturizer.obj");
     auto     stoneMat      = new PhysicalMaterial();
-    Texture* stonelanternT = new Texture();
+    TextureLDR* stonelanternT = new TextureLDR();
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "moisturizer_color.png");
     stoneMat->set_albedo_texture(stonelanternT);
-    Texture* stonelanternN = new Texture();
+    TextureLDR* stonelanternN = new TextureLDR();
     Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "moisturizer_normal.png", TEXTURE_FORMAT_UNORM);
     stoneMat->set_normal_texture(stonelanternN);
     stoneMesh->push_material(stoneMat);
@@ -153,13 +142,13 @@ void Application::setup() {
     Mesh* droidMesh = new Mesh();
     Tools::Loaders::load_3D_file(droidMesh, MESH_PATH + "droid.obj");
     auto     droidMat   = new PhysicalMaterial();
-    Texture* droidText0 = new Texture();
+    TextureLDR* droidText0 = new TextureLDR();
     Tools::Loaders::load_texture(droidText0, TEXTURE_PATH + "DROID_Body_BaseColor.jpg");
     droidMat->set_albedo_texture(droidText0);
-    Texture* droidText1 = new Texture();
+    TextureLDR* droidText1 = new TextureLDR();
     Tools::Loaders::load_texture(droidText1, TEXTURE_PATH + "DROID_Body_Emissive.jpg");
     droidMat->set_emissive_texture(droidText1);
-    Texture* droidText2 = new Texture();
+    TextureLDR* droidText2 = new TextureLDR();
     Tools::Loaders::load_texture(droidText2, TEXTURE_PATH + "DROID_Body_Normal.jpg", TEXTURE_FORMAT_UNORM);
     droidMat->set_normal_texture(droidText2);
     droidMesh->push_material(droidMat);
@@ -180,13 +169,13 @@ void Application::setup() {
     Mesh* stormtrooper = new Mesh();
     Tools::Loaders::load_3D_file(stormtrooper, MESH_PATH + "stormtrooper.obj");
     auto     stormtrooperMat  = new PhysicalMaterial();
-    Texture* stormtrooperText = new Texture();
+    TextureLDR* stormtrooperText = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText, TEXTURE_PATH + "stormtrooper_color.png");
     stormtrooperMat->set_albedo_texture(stormtrooperText);
-    Texture* stormtrooperText1 = new Texture();
+    TextureLDR* stormtrooperText1 = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText1, TEXTURE_PATH + "stormtrooper_normal.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat->set_normal_texture(stormtrooperText1);
-    Texture* stormtrooperText2 = new Texture();
+    TextureLDR* stormtrooperText2 = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText2, TEXTURE_PATH + "stormtrooper_mask.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat->set_mask_texture(stormtrooperText2, MaskType::UNREAL_ENGINE);
     stormtrooper->push_material(stormtrooperMat);
@@ -197,14 +186,13 @@ void Application::setup() {
     Mesh* stormtrooperHead = new Mesh();
     Tools::Loaders::load_3D_file(stormtrooperHead, MESH_PATH + "stormtrooper_helm.obj", false);
     auto     stormtrooperMat1   = new PhysicalMaterial();
-    Texture* stormtrooperText11 = new Texture();
+    TextureLDR* stormtrooperText11 = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText11, TEXTURE_PATH + "stormtrooper_head_color.png");
     stormtrooperMat1->set_albedo_texture(stormtrooperText11);
-    Texture* stormtrooperText12 = new Texture();
-    Tools::Loaders::load_texture(
-        stormtrooperText12, TEXTURE_PATH + "stormtrooper_head_normal.png", TEXTURE_FORMAT_UNORM);
+    TextureLDR* stormtrooperText12 = new TextureLDR();
+    Tools::Loaders::load_texture(stormtrooperText12, TEXTURE_PATH + "stormtrooper_head_normal.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat1->set_normal_texture(stormtrooperText12);
-    Texture* stormtrooperText13 = new Texture();
+    TextureLDR* stormtrooperText13 = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat1->set_mask_texture(stormtrooperText13, MaskType::UNREAL_ENGINE);
     stormtrooperHead->push_material(stormtrooperMat1);
@@ -261,15 +249,13 @@ void Application::setup() {
     sky->set_color_intensity(0.25f);
     m_scene->set_skybox(sky);
 
-    m_controller = new Tools::Controller(camera, m_window, ControllerMovementType::ORBITAL);
+    m_controller = new Tools::Controller(camera, m_window.get(), ControllerMovementType::ORBITAL);
 }
 
 void Application::setup_gui() {
-    m_interface.overlay = new Tools::GUIOverlay(
-        (float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
+    m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
-    Tools::Panel* tutorialPanel =
-        new Tools::Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
+    Tools::Panel* tutorialPanel = new Tools::Panel("TUTORIAL", 0, 0.8f, 0.2f, 0.2f, PanelWidgetFlags::NoMove, false, true);
 
     tutorialPanel->add_child(new Tools::Space());
     tutorialPanel->add_child(new Tools::Separator("CONTROLS"));
@@ -288,10 +274,10 @@ void Application::setup_gui() {
     m_interface.tutorial = tutorialPanel;
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
+    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer.get());
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
-    explorerPanel->add_child(new Tools::DeferredRendererWidget(static_cast<Systems::DeferredRenderer*>(m_renderer)));
+    explorerPanel->add_child(new Tools::DeferredRendererWidget(static_cast<Systems::DeferredRenderer*>(m_renderer.get())));
     explorerPanel->add_child(new Tools::ControllerWidget(m_controller));
     explorerPanel->add_child(new Tools::Separator());
     explorerPanel->add_child(new Tools::TextLine(" Application average"));
@@ -301,9 +287,8 @@ void Application::setup_gui() {
     m_interface.overlay->add_panel(explorerPanel);
     m_interface.explorer = explorerPanel;
 
-    Tools::Panel* propertiesPanel =
-        new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
-    m_interface.object = new Tools::ObjectExplorerWidget();
+    Tools::Panel* propertiesPanel = new Tools::Panel("OBJECT PROPERTIES", 0.75f, 0, 0.25f, 0.8f, PanelWidgetFlags::NoMove, true);
+    m_interface.object            = new Tools::ObjectExplorerWidget();
     propertiesPanel->add_child(m_interface.object);
 
     m_interface.overlay->add_panel(propertiesPanel);
@@ -321,8 +306,8 @@ void Application::update() {
     if (animateLight)
     {
         float rotationAngle = glm::radians(10.0f * m_time.delta);
-        float _x = light->get_position().x * cos(rotationAngle) - light->get_position().z * sin(rotationAngle);
-        float _z = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
+        float _x            = light->get_position().x * cos(rotationAngle) - light->get_position().z * sin(rotationAngle);
+        float _z            = light->get_position().x * sin(rotationAngle) + light->get_position().z * cos(rotationAngle);
 
         light->set_position({_x, light->get_position().y, _z});
     }

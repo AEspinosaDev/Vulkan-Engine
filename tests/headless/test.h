@@ -17,7 +17,7 @@ using namespace Core;
 class Application
 {
 
-    Systems::BaseRenderer* m_renderer;
+    ptr<Systems::BaseRenderer> m_renderer;
     Scene*                 m_scene;
     Camera*                m_camera;
 

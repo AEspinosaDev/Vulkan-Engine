@@ -44,7 +44,7 @@ class BaseGraphicPass : public BasePass
                                        std::vector<Graphics::SubPassDependency>& dependencies) = 0;
 
   public:
-    BaseGraphicPass(Graphics::Device* device,
+    BaseGraphicPass(const ptr<Graphics::Device>&  device,
                     Extent2D          extent,
                     uint32_t          framebufferCount = 1,
                     uint32_t          framebufferDepth = 1,

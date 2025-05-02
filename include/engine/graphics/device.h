@@ -19,6 +19,7 @@
 #include <engine/graphics/framebuffer.h>
 #include <engine/graphics/renderpass.h>
 #include <engine/graphics/swapchain.h>
+#include <engine/graphics/texture.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 
@@ -112,6 +113,8 @@ class Device
     Buffer create_buffer(size_t allocSize, BufferUsageFlags usage, MemoryPropertyFlags memoryProperties, uint32_t strideSize = 0);
     /*Create Image*/
     Image create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
+    /*Create Texture*/
+    Texture create_texture(const ptr<Image>& img, TextureConfig config);
     /*Create Framebuffer Object*/
     Framebuffer create_framebuffer(RenderPass& renderpass, std::vector<Image*>& attachments, Extent2D extent, uint32_t layers = 1, uint32_t id = 0);
     Framebuffer create_framebuffer(RenderPass& renderpass, Image& attachment);

@@ -15,7 +15,7 @@ namespace Systems {
 void BaseRenderer::init() {
 
     // Init Vulkan Device
-    m_device = new Graphics::Device();
+    m_device = std::make_shared<Graphics::Device>();
 
     if (!m_headless)
     {
@@ -39,11 +39,11 @@ void BaseRenderer::init() {
     // User defined renderpasses
     create_passes();
     // Init renderpasses
-    for (Core::BasePass* pass : m_passes)
+    for (auto& pass : m_passes)
         if (pass->is_active())
             pass->setup(m_frames);
     // Connect renderpasses
-    for (Core::BasePass* pass : m_passes)
+    for (auto& pass : m_passes)
         if (pass->is_active())
             pass->link_input_attachments();
 
@@ -74,7 +74,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
     if (m_initialized)
     {
         m_deletionQueue.flush();
-        for (Core::BasePass* pass : m_passes)
+        for (auto& pass : m_passes)
         {
             pass->cleanup();
         }
@@ -104,7 +104,7 @@ void BaseRenderer::on_before_render(Core::Scene* const scene) {
     Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings.softwareAA == SoftwareAA::TAA);
     Core::ResourceManager::update_object_data(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings.enableRaytracing);
 
-    for (Core::BasePass* pass : m_passes)
+    for (auto& pass : m_passes)
     {
         if (pass->is_active())
             pass->update_uniforms(m_currentFrame, scene);
@@ -165,7 +165,7 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     m_device->start_frame(m_frames[m_currentFrame]);
 
-    for (Core::BasePass* pass : m_passes)
+    for (auto& pass : m_passes)
     {
         if (pass->is_active())
             pass->execute(m_frames[m_currentFrame], scene, imageIndex);
@@ -189,7 +189,7 @@ void BaseRenderer::update_framebuffers(Extent2D extent) {
     m_device->update_swapchain(extent, static_cast<uint32_t>(m_settings.bufferingType), m_settings.displayColorFormat, m_settings.screenSync);
 
     // Renderpass framebuffer updating
-    for (Core::BasePass* pass : m_passes)
+    for (auto& pass : m_passes)
     {
         if (pass->is_active())
             if (pass->resizeable())
@@ -199,7 +199,7 @@ void BaseRenderer::update_framebuffers(Extent2D extent) {
             }
     };
     // Connect renderpasses
-    for (Core::BasePass* pass : m_passes)
+    for (auto& pass : m_passes)
         if (pass->is_active())
             pass->link_input_attachments();
 
@@ -211,8 +211,8 @@ void BaseRenderer::init_gui() {
     if (m_settings.enableUI)
     {
         // Look for default pass
-        Core::BasePass* defaultPass = nullptr;
-        for (Core::BasePass* pass : m_passes)
+        ptr<Core::BasePass> defaultPass = nullptr;
+        for (auto& pass : m_passes)
         {
             if (pass->is_active() && pass->default_pass())
             {
@@ -224,8 +224,8 @@ void BaseRenderer::init_gui() {
         m_window->get_handle(windowHandle);
         m_device->init_imgui(windowHandle,
                              m_window->get_windowing_system(),
-                             static_cast<Core::BaseGraphicPass*>(defaultPass)->get_renderpass(),
-                             static_cast<Core::BaseGraphicPass*>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
+                             std::static_pointer_cast<Core::BaseGraphicPass>(defaultPass)->get_renderpass(),
+                             std::static_pointer_cast<Core::BaseGraphicPass>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
     }
 }
 
@@ -257,7 +257,7 @@ void BaseRenderer::init_resources() {
     // Create basic texture resources
     Core::ResourceManager::textureResources.resize(2, nullptr);
 
-    Core::Texture* samplerText = new Core::Texture();
+    Core::TextureLDR* samplerText = new Core::TextureLDR();
     Tools::Loaders::load_PNG(samplerText, GET_RESOURCE_PATH("textures/blueNoise.png"), TEXTURE_FORMAT_UNORM);
     samplerText->set_use_mipmaps(false);
     Core::ResourceManager::upload_texture_data(m_device, samplerText);

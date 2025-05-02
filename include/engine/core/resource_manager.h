@@ -14,7 +14,7 @@
 #include <engine/core/materials/material.h>
 #include <engine/core/passes/graphic_pass.h>
 #include <engine/core/textures/texture.h>
-#include <engine/core/textures/textureLDR.h>
+#include <engine/core/textures/texture_template.h>
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>
 
@@ -38,43 +38,46 @@ class ResourceManager
     Texture Resources
     */
     static std::vector<Core::ITexture*> textureResources;
-    static Core::Texture*               FALLBACK_TEXTURE;
-    static Core::Texture*               FALLBACK_CUBEMAP;
+    static Core::ITexture*              FALLBACK_TEXTURE;
+    static Core::ITexture*              FALLBACK_CUBEMAP;
     static Mat4                         prevViewProj;
 
     /*
     Creates and initiates basic rendering resources such as fallback textures and a vignette
     */
-    static void init_basic_resources(Graphics::Device* const device);
+    static void init_basic_resources(const ptr<Graphics::Device>&  device);
     static void clean_basic_resources();
 
     /*
     Global descriptor layouts uniforms buffer upload to GPU
     */
-    static void update_global_data(Graphics::Device* const device,
-                                   Graphics::Frame* const  currentFrame,
-                                   Core::Scene* const      scene,
-                                   Extent2D                displayExtent,
-                                   bool                    jitterCamera);
+    static void update_global_data(const ptr<Graphics::Device>& device,
+                                   Graphics::Frame* const       currentFrame,
+                                   Core::Scene* const           scene,
+                                   Extent2D                     displayExtent,
+                                   bool                         jitterCamera);
     /*
     Object descriptor layouts uniforms buffer upload to GPU
     */
-    static void
-    update_object_data(Graphics::Device* const device, Graphics::Frame* const currentFrame, Core::Scene* const scene, Extent2D displayExtent, bool enableRT);
+    static void update_object_data(const ptr<Graphics::Device>& device,
+                                   Graphics::Frame* const       currentFrame,
+                                   Core::Scene* const           scene,
+                                   Extent2D                     displayExtent,
+                                   bool                         enableRT);
     /*
     Initialize and setup texture IMAGE
     */
-    static void upload_texture_data(Graphics::Device* const device, Core::ITexture* const t);
+    static void upload_texture_data(const ptr<Graphics::Device>& device, Core::ITexture* const t);
     static void destroy_texture_data(Core::ITexture* const t);
     /*
     Upload geometry vertex buffers to the GPU
     */
-    static void upload_geometry_data(Graphics::Device* const device, Core::Geometry* const g, bool createAccelStructure = true);
+    static void upload_geometry_data(const ptr<Graphics::Device>& device, Core::Geometry* const g, bool createAccelStructure = true);
     static void destroy_geometry_data(Core::Geometry* const g);
     /*
     Uploads scene's skybox resources (cube mesh and panorama texture)
     */
-    static void upload_skybox_data(Graphics::Device* const device, Core::Skybox* const sky);
+    static void upload_skybox_data(const ptr<Graphics::Device>& device, Core::Skybox* const sky);
     /*
     Scene cleanup
     */

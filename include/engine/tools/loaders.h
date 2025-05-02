@@ -23,8 +23,7 @@
 #include <engine/core/materials/unlit.h>
 #include <engine/core/scene/mesh.h>
 #include <engine/core/scene/scene.h>
-#include <engine/core/textures/textureHDR.h>
-#include <engine/core/textures/textureLDR.h>
+#include <engine/core/textures/texture_template.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -58,7 +57,7 @@ void load_texture(Core::ITexture* texture, const std::string fileName, TextureFo
 /*
 Load .png file.
  */
-void load_PNG(Core::Texture* const texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
+void load_PNG(Core::TextureLDR* const texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
 /*
 Load .hrd
 */

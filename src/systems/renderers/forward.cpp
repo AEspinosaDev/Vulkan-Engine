@@ -55,19 +55,21 @@ void ForwardRenderer::create_passes() {
     // Create passes
     //--------------------------------
 
-    m_passes[SKY_PASS]        = new Core::SkyPass(m_device, skyPassConfig, {1024, 512});
-    m_passes[ENVIROMENT_PASS] = new Core::EnviromentPass(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]     = new Core::VarianceShadowPass(m_device, shadowPassConfig, SHADOW_RES, ENGINE_MAX_LIGHTS, DEPTH_FORMAT);
-    m_passes[FORWARD_PASS]    = new Core::ForwardPass(m_device, forwardPassConfig, DISPLAY_EXTENT, HDR_FORMAT, DEPTH_FORMAT, m_settings.samplesMSAA);
-    m_passes[BLOOM_PASS]      = new Core::BloomPass(m_device, bloomPassConfig, DISPLAY_EXTENT);
+    m_passes[SKY_PASS]        = std::make_shared<Core::SkyPass>(m_device, skyPassConfig, Extent2D{1024, 512});
+    m_passes[ENVIROMENT_PASS] = std::make_shared<Core::EnviromentPass>(m_device, enviromentPassConfig);
+    m_passes[SHADOW_PASS]     = std::make_shared<Core::VarianceShadowPass>(m_device, shadowPassConfig, SHADOW_RES, ENGINE_MAX_LIGHTS, DEPTH_FORMAT);
+    m_passes[FORWARD_PASS] = std::make_shared<Core::ForwardPass>(m_device, forwardPassConfig, DISPLAY_EXTENT, HDR_FORMAT, DEPTH_FORMAT, m_settings.samplesMSAA);
+    m_passes[BLOOM_PASS]   = std::make_shared<Core::BloomPass>(m_device, bloomPassConfig, DISPLAY_EXTENT);
 
-    m_passes[FXAA_PASS] =
-        new Core::PostProcessPass<1, 1>(m_device, FXAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, GET_RESOURCE_PATH("shaders/aa/fxaa.glsl"), "FXAA", false);
+    m_passes[FXAA_PASS] = std::make_shared<Core::PostProcessPass<1, 1>>(
+        m_device, FXAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, GET_RESOURCE_PATH("shaders/aa/fxaa.glsl"), "FXAA", false);
 
     m_passes[TONEMAPPIN_PASS] =
-        new Core::TonemappingPass(m_device, toneMappingPassConfig, DISPLAY_EXTENT, m_settings.displayColorFormat, !m_headless ? true : false);
-    m_passes[GUI_PASS] = new Core::GUIPass(m_device, DISPLAY_EXTENT);
+        std::make_shared<Core::TonemappingPass>(m_device, toneMappingPassConfig, DISPLAY_EXTENT, m_settings.displayColorFormat, !m_headless);
 
+    m_passes[GUI_PASS] = std::make_shared<Core::GUIPass>(m_device, DISPLAY_EXTENT);
+
+    // Optional logic (unchanged):
     if (m_settings.softwareAA != SoftwareAA::FXAA)
         m_passes[FXAA_PASS]->set_active(false);
     if (m_headless)
@@ -85,7 +87,7 @@ void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
                                                                                                          : skybox->get_sky_settings().resolution;
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
-            get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
+            get_pass<Core::EnviromentPass>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
             m_passes[ENVIROMENT_PASS]->set_active(true);
             if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
                 m_passes[SKY_PASS]->set_active(true);
@@ -93,7 +95,7 @@ void ForwardRenderer::update_enviroment(Core::Skybox* const skybox) {
             // ONLY IF: framebuffers needs to be resized
             // -------------------------------------------------------------------
             if (m_passes[ENVIROMENT_PASS]->get_extent().height != HDRi_EXTENT ||
-                get_pass<Core::EnviromentPass*>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
+                get_pass<Core::EnviromentPass>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
             {
                 m_device->wait_idle();
                 if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)

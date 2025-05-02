@@ -157,49 +157,49 @@ void VKFW::Tools::SceneLoader::load_children(tinyxml2::XMLElement* element, Core
                     tinyxml2::XMLElement* albedoTexture = texturesElement->FirstChildElement("albedo");
                     if (albedoTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(albedoTexture->Attribute("path")), TEXTURE_FORMAT_SRGB, m_asyncLoad);
                         material->set_albedo_texture(texture);
                     }
                     tinyxml2::XMLElement* normalTexture = texturesElement->FirstChildElement("normals");
                     if (normalTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(normalTexture->Attribute("path")), TEXTURE_FORMAT_UNORM, m_asyncLoad);
                         material->set_normal_texture(texture);
                     }
                     tinyxml2::XMLElement* roughTexture = texturesElement->FirstChildElement("roughness");
                     if (roughTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(roughTexture->Attribute("path")), TEXTURE_FORMAT_UNORM, m_asyncLoad);
                         material->set_roughness_texture(texture);
                     }
                     tinyxml2::XMLElement* metalTexture = texturesElement->FirstChildElement("metalness");
                     if (metalTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(metalTexture->Attribute("path")), TEXTURE_FORMAT_UNORM, m_asyncLoad);
                         material->set_metallic_texture(texture);
                     }
                     tinyxml2::XMLElement* aoTexture = texturesElement->FirstChildElement("ao");
                     if (aoTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(aoTexture->Attribute("path")), TEXTURE_FORMAT_UNORM, m_asyncLoad);
                         material->set_occlusion_texture(texture);
                     }
                     tinyxml2::XMLElement* emissiveTexture = texturesElement->FirstChildElement("emission");
                     if (emissiveTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(emissiveTexture->Attribute("path")), TEXTURE_FORMAT_SRGB, m_asyncLoad);
                         material->set_emissive_texture(texture);
                     }
                     tinyxml2::XMLElement* maskTexture = texturesElement->FirstChildElement("mask");
                     if (maskTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(maskTexture->Attribute("path")), TEXTURE_FORMAT_UNORM, m_asyncLoad);
                         if (std::string(maskTexture->Attribute("type")) == "UnityHDRP")
                             material->set_mask_texture(texture, MaskType::UNITY_HDRP);
@@ -241,7 +241,7 @@ void VKFW::Tools::SceneLoader::load_children(tinyxml2::XMLElement* element, Core
                     tinyxml2::XMLElement* albedoTexture = texturesElement->FirstChildElement("color");
                     if (albedoTexture)
                     {
-                        Core::ITexture* texture = new Core::Texture();
+                        Core::ITexture* texture = new Core::TextureLDR();
                         Loaders::load_texture(texture, resourcesPath + std::string(albedoTexture->Attribute("path")), TEXTURE_FORMAT_SRGB, m_asyncLoad);
                         material->set_color_texture(texture);
                     }

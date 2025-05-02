@@ -60,7 +60,7 @@ class BloomPass final : public BaseGraphicPass
           - Bloom + Lighting
 
       */
-    BloomPass(Graphics::Device* device, const PassLinkage<2, 1>& config, Extent2D extent, ColorFormatType colorFormat = SRGBA_16F, bool isDefault = false)
+    BloomPass(const ptr<Graphics::Device>& device, const PassLinkage<2, 1>& config, Extent2D extent, ColorFormatType colorFormat = SRGBA_16F, bool isDefault = false)
         : BaseGraphicPass(device, extent, 1, 1, true, isDefault, "BLOOM")
         , m_colorFormat(colorFormat) {
         BasePass::store_attachments<2, 1>(config);

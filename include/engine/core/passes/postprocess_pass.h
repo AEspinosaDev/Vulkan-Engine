@@ -25,7 +25,7 @@ template <std::size_t numberIN, std::size_t numberOUT> class PostProcessPass : p
     std::string             m_shaderPath;
 
   public:
-    PostProcessPass(Graphics::Device*                       device,
+    PostProcessPass(const ptr<Graphics::Device>&            device,
                     const PassLinkage<numberIN, numberOUT>& config,
                     Extent2D                                extent,
                     ColorFormatType                         colorFormat,
@@ -57,22 +57,21 @@ void PostProcessPass<numberIN, numberOUT>::setup_out_attachments(std::vector<Gra
 
     attachments.resize(1);
 
-    attachments[0] =
-        Graphics::AttachmentConfig(m_colorFormat,
-                                   1,
-                                   this->m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
-                                                     : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
-                                   COLOR_ATTACHMENT,
-                                   ASPECT_COLOR,
-                                   TEXTURE_2D,
-                                   FILTER_LINEAR,
-                                   ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] = Graphics::AttachmentConfig(
+        m_colorFormat,
+        1,
+        this->m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+        COLOR_ATTACHMENT,
+        ASPECT_COLOR,
+        TEXTURE_2D,
+        FILTER_LINEAR,
+        ADDRESS_MODE_CLAMP_TO_EDGE);
 
-    attachments[0].isDefault              = this->m_isDefault ? true : false;
-    // attachments[0].imageConfig.mipLevels  = static_cast<uint32_t>(std::floor(std::log2(std::max(this->m_imageExtent.width, this->m_imageExtent.height)))) + 1;
-    // attachments[0].imageConfig.useMipmaps = true;
+    attachments[0].isDefault = this->m_isDefault ? true : false;
+    // attachments[0].imageConfig.mipLevels  = static_cast<uint32_t>(std::floor(std::log2(std::max(this->m_imageExtent.width, this->m_imageExtent.height)))) +
+    // 1; attachments[0].imageConfig.useMipmaps = true;
 
     // Depdencies
     if (!this->m_isDefault)

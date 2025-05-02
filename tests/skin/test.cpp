@@ -2,7 +2,7 @@
 #include <filesystem>
 
 void Application::init(Systems::RendererSettings settings) {
-    m_window = new WindowGLFW("Skin Test", 1280, 1024);
+    m_window = std::make_shared<WindowGLFW>("Skin Test", 1280, 1024);
 
     m_window->init();
     m_window->set_window_icon(TESTS_RESOURCES_PATH "textures/test.png");
@@ -12,8 +12,7 @@ void Application::init(Systems::RendererSettings settings) {
     m_window->set_key_callback(
         std::bind(&Application::keyboard_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, settings);
-    m_renderer                      = rndr;
+    m_renderer = std::make_shared<Systems::DeferredRenderer>(m_window, settings);
 
     setup();
     m_renderer->init();
@@ -63,12 +62,12 @@ void Application::setup() {
     m_scene->get_lights()[0]->set_shadow_bias(0.001f);
     m_scene->get_lights()[0]->set_shadow_softness(5);
 
-    Mesh*    headMesh     = new Mesh();
-    auto     skinMaterial = new PhysicalMaterial();
-    Texture* skinAlbedo   = new Texture();
+    Mesh*       headMesh     = new Mesh();
+    auto        skinMaterial = new PhysicalMaterial();
+    TextureLDR* skinAlbedo   = new TextureLDR();
     Tools::Loaders::load_texture(skinAlbedo, TEXTURE_PATH + "perry_albedo.png");
     skinMaterial->set_albedo_texture(skinAlbedo);
-    Texture* skinNormal = new Texture();
+    TextureLDR* skinNormal = new TextureLDR();
     Tools::Loaders::load_texture(skinNormal, TEXTURE_PATH + "perry_normal.png", TEXTURE_FORMAT_UNORM);
     skinMaterial->set_normal_texture(skinNormal);
     skinMaterial->set_roughness(0.5);
@@ -77,9 +76,9 @@ void Application::setup() {
     headMesh->set_name("Head");
     headMesh->set_scale(2.0f);
     headMesh->set_rotation({0.0, 180.0f, 0.0f});
-    
+
     Mesh* hairMesh = new Mesh();
-    Tools::Loaders::load_3D_file(hairMesh, MESH_PATH + "straight.hair",false);
+    Tools::Loaders::load_3D_file(hairMesh, MESH_PATH + "straight.hair", false);
     hairMesh->push_material(new HairStrandMaterial());
     hairMesh->set_scale(0.02f);
     hairMesh->set_rotation({90.0, 9.0f, 0.0f});
@@ -87,12 +86,11 @@ void Application::setup() {
     //  m_scene->add(hairMesh);
     m_scene->add(headMesh);
 
-
     m_scene->set_ambient_intensity(0.1f);
     m_scene->use_IBL(false);
 
     m_camera     = m_scene->get_active_camera();
-    m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::ORBITAL);
+    m_controller = new Tools::Controller(m_camera, m_window.get(), ControllerMovementType::ORBITAL);
     m_controller->set_orbital_center({0.0, 0.5, 0.0});
 }
 
@@ -100,7 +98,7 @@ void Application::setup_gui() {
     m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
+    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer.get());
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
     explorerPanel->add_child(new Tools::ControllerWidget(m_controller));

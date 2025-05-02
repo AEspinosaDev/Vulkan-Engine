@@ -65,7 +65,7 @@ class PreCompositionPass final : public BaseGraphicPass
             - SSAO + RT
 
         */
-    PreCompositionPass(Graphics::Device* device, const PassLinkage<2, 1>& config, VkExtent2D extent)
+    PreCompositionPass(const ptr<Graphics::Device>& device, const PassLinkage<2, 1>& config, VkExtent2D extent)
         : BaseGraphicPass(device, extent, 2, 1, true, false, "PRE-COMPOSITION") {
         BasePass::store_attachments<2, 1>(config);
     }

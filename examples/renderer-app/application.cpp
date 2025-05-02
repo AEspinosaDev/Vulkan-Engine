@@ -2,7 +2,7 @@
 #include <filesystem>
 
 void Application::init(Systems::RendererSettings settings) {
-    m_window = new WindowGLFW("VK Engine", 1280, 1024);
+    m_window = std::make_shared<WindowGLFW>("VK Engine", 1280, 1024);
 
     m_window->init();
     m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
@@ -12,7 +12,8 @@ void Application::init(Systems::RendererSettings settings) {
     m_window->set_key_callback(
         std::bind(&Application::keyboard_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    m_renderer = new Systems::ForwardRenderer(m_window, settings);
+    // m_renderer = new Systems::ForwardRenderer(m_window, settings);
+    m_renderer = std::make_shared<Systems::ForwardRenderer>(m_window, settings);
 
     setup();
 
@@ -159,11 +160,11 @@ void Application::setup() {
 
     Mesh*    toriiMesh = new Mesh();
     auto     toriiMat  = new PhysicalMaterial();
-    Texture* toriiT    = new Texture();
+    TextureLDR* toriiT    = new TextureLDR();
     Tools::Loaders::load_texture(toriiT, TEXTURE_PATH + "torii_color.png");
-    Texture* toriiN = new Texture();
+    TextureLDR* toriiN = new TextureLDR();
     Tools::Loaders::load_texture(toriiN, TEXTURE_PATH + "torii_normal.png", TEXTURE_FORMAT_UNORM);
-    Texture* toriiM = new Texture();
+    TextureLDR* toriiM = new TextureLDR();
     Tools::Loaders::load_texture(toriiM, TEXTURE_PATH + "torii_mask.png");
     toriiMat->set_albedo_texture(toriiT);
     toriiMat->set_normal_texture(toriiN);
@@ -182,12 +183,12 @@ void Application::setup() {
     terrainMesh->set_scale(10.0);
     terrainMesh->set_position({0.0, -4.0, 0.0});
     Tools::Loaders::load_3D_file(terrainMesh, MESH_PATH + "terrain.obj");
-    Texture* floorText = new Texture();
+    TextureLDR* floorText = new TextureLDR();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
 
-    Texture* floorNormalText = new Texture();
+    TextureLDR* floorNormalText = new TextureLDR();
     Tools::Loaders::load_texture(floorNormalText, TEXTURE_PATH + "floor_normal.jpg", TEXTURE_FORMAT_UNORM);
-    Texture* floorRoughText = new Texture();
+    TextureLDR* floorRoughText = new TextureLDR();
     Tools::Loaders::load_texture(floorRoughText, TEXTURE_PATH + "floor_roughness.jpg");
     auto terrainMat = new PhysicalMaterial();
     terrainMat->set_albedo({0.43f, 0.28f, 0.23f});
@@ -212,7 +213,7 @@ void Application::setup() {
     Tools::Loaders::load_3D_file(kabutoMesh, MESH_PATH + "kabuto.obj");
     kabutoMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto     kabutoMat  = new PhysicalMaterial();
-    Texture* kabutoText = new Texture();
+    TextureLDR* kabutoText = new TextureLDR();
     Tools::Loaders::load_texture(kabutoText, TEXTURE_PATH + "kabuto_color.png");
     kabutoMat->set_albedo_texture(kabutoText);
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
@@ -227,11 +228,11 @@ void Application::setup() {
     Tools::Loaders::load_3D_file(templeMesh, MESH_PATH + "temple.obj");
     templeMesh->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto     templeMat  = new PhysicalMaterial();
-    Texture* templeText = new Texture();
+    TextureLDR* templeText = new TextureLDR();
     Tools::Loaders::load_texture(templeText, TEXTURE_PATH + "temple_diffuse.png");
-    Texture* templeRText = new Texture();
+    TextureLDR* templeRText = new TextureLDR();
     Tools::Loaders::load_texture(templeRText, TEXTURE_PATH + "temple_rough.png");
-    Texture* templeMText = new Texture();
+    TextureLDR* templeMText = new TextureLDR();
     Tools::Loaders::load_texture(templeMText, TEXTURE_PATH + "temple_metal.png");
     templeMat->set_albedo_texture(templeText);
     templeMat->set_metallic_texture(templeMText);
@@ -250,11 +251,11 @@ void Application::setup() {
     Tools::Loaders::load_3D_file(templeMesh2, MESH_PATH + "shrine.obj");
     templeMesh2->set_rotation(glm::vec3(0.0, 180, 0.0));
     auto     templeMat2  = new PhysicalMaterial();
-    Texture* templeText2 = new Texture();
+    TextureLDR* templeText2 = new TextureLDR();
     Tools::Loaders::load_texture(templeText2, TEXTURE_PATH + "shrine_diffuse.png");
-    Texture* templeRText2 = new Texture();
+    TextureLDR* templeRText2 = new TextureLDR();
     Tools::Loaders::load_texture(templeRText2, TEXTURE_PATH + "shrine_rough.png");
-    Texture* templeMText2 = new Texture();
+    TextureLDR* templeMText2 = new TextureLDR();
     Tools::Loaders::load_texture(templeMText2, TEXTURE_PATH + "shrine_metal.png");
     templeMat2->set_albedo_texture(templeText2);
     templeMat2->set_metallic_texture(templeMText2);
@@ -269,7 +270,7 @@ void Application::setup() {
     Mesh* lanternMesh = new Mesh();
     Tools::Loaders::load_3D_file(lanternMesh, MESH_PATH + "lantern.obj", false);
     auto     lanternMat = new PhysicalMaterial();
-    Texture* lanternT   = new Texture();
+    TextureLDR* lanternT   = new TextureLDR();
     Tools::Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
     lanternMat->set_albedo_texture(lanternT);
     lanternMesh->push_material(lanternMat);
@@ -298,7 +299,7 @@ void Application::setup() {
     Mesh* stoneMesh = new Mesh();
     Tools::Loaders::load_3D_file(stoneMesh, MESH_PATH + "stone_lantern.obj", false);
     auto     stoneMat      = new PhysicalMaterial();
-    Texture* stonelanternT = new Texture();
+    TextureLDR* stonelanternT = new TextureLDR();
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
     stoneMat->set_albedo_texture(stonelanternT);
     stoneMesh->push_material(stoneMat);
@@ -317,7 +318,7 @@ void Application::setup() {
     sky->set_color_intensity(0.25f);
     m_scene->set_skybox(sky);
 
-    m_controller = new Tools::Controller(camera, m_window);
+    m_controller = new Tools::Controller(camera, m_window.get());
 }
 
 void Application::setup_gui() {
@@ -342,10 +343,10 @@ void Application::setup_gui() {
     m_interface.tutorial = tutorialPanel;
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
+    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer.get());
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
-    explorerPanel->add_child(new Tools::ForwardRendererWidget(static_cast<Systems::ForwardRenderer*>(m_renderer)));
+    explorerPanel->add_child(new Tools::ForwardRendererWidget(static_cast<Systems::ForwardRenderer*>(m_renderer.get())));
     explorerPanel->add_child(new Tools::Separator());
     explorerPanel->add_child(new Tools::TextLine(" Application average"));
     explorerPanel->add_child(new Tools::Profiler());

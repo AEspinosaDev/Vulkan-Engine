@@ -46,10 +46,10 @@ class ForwardRenderer : public BaseRenderer
         GUI_PASS        = 7
     };
 
-    ForwardRenderer(Core::IWindow* window)
+    ForwardRenderer(const ptr<Core::IWindow>& window)
         : BaseRenderer(window) {
     }
-    ForwardRenderer(Core::IWindow* window, RendererSettings settings = {})
+    ForwardRenderer(const ptr<Core::IWindow>& window, RendererSettings settings = {})
         : BaseRenderer(window, settings) {
     }
     // Headless instantiation
@@ -64,17 +64,17 @@ class ForwardRenderer : public BaseRenderer
         BaseRenderer::set_settings(settings);
     }
 
-    inline float get_bloom_strength() const {
+    inline float get_bloom_strength() {
         if (m_passes[BLOOM_PASS])
         {
-            return static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->get_bloom_strength();
+            return get_pass<Core::BloomPass>(BLOOM_PASS)->get_bloom_strength();
         }
         return 0.0f;
     }
     inline void set_bloom_strength(float st) {
         if (m_passes[BLOOM_PASS])
         {
-            static_cast<Core::BloomPass*>(m_passes[BLOOM_PASS])->set_bloom_strength(st);
+            return get_pass<Core::BloomPass>(BLOOM_PASS)->set_bloom_strength(st);
         }
     }
 };

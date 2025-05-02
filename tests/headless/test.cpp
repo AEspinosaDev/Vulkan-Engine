@@ -3,8 +3,7 @@
 
 void Application::init(Systems::RendererSettings settings) {
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer();
-    m_renderer                      = rndr;
+    m_renderer                      = std::make_shared<Systems::DeferredRenderer>();
 
     m_renderer->set_settings(settings);
 
@@ -62,10 +61,10 @@ void Application::setup() {
 
     Mesh*    headMesh     = new Mesh();
     auto     skinMaterial = new PhysicalMaterial();
-    Texture* skinAlbedo   = new Texture();
+    TextureLDR* skinAlbedo   = new TextureLDR();
     Tools::Loaders::load_texture(skinAlbedo, TEXTURE_PATH + "perry_albedo.png", TEXTURE_FORMAT_SRGB, false);
     skinMaterial->set_albedo_texture(skinAlbedo);
-    Texture* skinNormal = new Texture();
+    TextureLDR* skinNormal = new TextureLDR();
     Tools::Loaders::load_texture(skinNormal, TEXTURE_PATH + "perry_normal.png", TEXTURE_FORMAT_UNORM, false);
     skinMaterial->set_normal_texture(skinNormal);
     skinMaterial->set_roughness(0.5);

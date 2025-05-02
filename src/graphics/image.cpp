@@ -72,5 +72,7 @@ Image Image::clone() const {
 
     return img;
 }
+
+
 } // namespace Graphics
 VULKAN_ENGINE_NAMESPACE_END

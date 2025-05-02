@@ -27,15 +27,16 @@ int main() {
         float delta;
         float last{0};
 
-        Core::IWindow* window = new Core::WindowGLFW("Kabuto", 800, 600);
+        ptr<Core::IWindow> window = std::make_shared<Core::WindowGLFW>("Kabuto", 800, 600);
 
         window->init();
 
         Systems::RendererSettings settings{};
-        settings.samplesMSAA = MSAASamples::x4;
+        settings.samplesMSAA = MSAASamples::x1;
+        settings.softwareAA = SoftwareAA::FXAA;
         settings.clearColor  = Vec4(0.0, 0.0, 0.0, 1.0);
 
-        Systems::BaseRenderer* renderer = new Systems::ForwardRenderer(window, settings);
+        ptr<Systems::BaseRenderer> renderer = std::make_shared<Systems::ForwardRenderer>(window, settings);
 
         Core::Camera* camera = new Core::Camera();
         camera->set_position(Vec3(0.0f, 0.15f, -1.0f));

@@ -51,15 +51,14 @@ class VoxelizationPass final : public BaseGraphicPass
                  - VoxeiLzed Irradiance (Texture 3D)
 
              */
-    VoxelizationPass(Graphics::Device* device, const PassLinkage<1, 1>& config, uint32_t resolution)
+    VoxelizationPass(const ptr<Graphics::Device>& device, const PassLinkage<1, 1>& config, uint32_t resolution)
         : BaseGraphicPass(device, {resolution, resolution}, 1, 1, false, false, "VOXELIZATION") {
         BasePass::store_attachments<1, 1>(config);
     }
 
     void create_framebuffer() override;
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 

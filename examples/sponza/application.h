@@ -4,8 +4,8 @@
 #include <chrono>
 
 #include <engine/core.h>
-#include <engine/systems/renderers/forward.h>
 #include <engine/systems/renderers/deferred.h>
+#include <engine/systems/renderers/forward.h>
 
 #include <engine/tools/controller.h>
 #include <engine/tools/gui.h>
@@ -20,28 +20,26 @@ using namespace Core;
 
 class Application
 {
-    struct UserInterface
-    {
-        Tools::GUIOverlay *overlay{nullptr};
-        
-        Tools::Panel *explorer{nullptr};
-        Tools::Panel *tutorial{nullptr};
-        Tools::Panel *properties{nullptr};
-        Tools::ExplorerWidget *scene{nullptr};
-        Tools::ObjectExplorerWidget *object{nullptr};
+    struct UserInterface {
+        Tools::GUIOverlay* overlay{nullptr};
+
+        Tools::Panel*                explorer{nullptr};
+        Tools::Panel*                tutorial{nullptr};
+        Tools::Panel*                properties{nullptr};
+        Tools::ExplorerWidget*       scene{nullptr};
+        Tools::ObjectExplorerWidget* object{nullptr};
     };
     UserInterface m_interface{};
 
-    IWindow *m_window;
-    Systems::BaseRenderer *m_renderer;
-    Scene *m_scene;
-    Camera *m_camera;
-    Tools::Controller *m_controller;
+    ptr<IWindow>               m_window;
+    ptr<Systems::BaseRenderer> m_renderer;
+    Scene*                     m_scene;
+    Camera*                    m_camera;
+    Tools::Controller*         m_controller;
 
     bool animateLight{true};
 
-    struct Time
-    {
+    struct Time {
         float delta{0.0f};
         float last{0.0f};
         float framesPerSecond{0.0f};
@@ -51,7 +49,7 @@ class Application
   public:
     void init(Systems::RendererSettings settings);
 
-    void run(int argc, char *argv[]);
+    void run(int argc, char* argv[]);
 
   private:
     void setup();
@@ -64,11 +62,10 @@ class Application
 
 #pragma region Input Management
 
-    void keyboard_callback(int key, int scancode, int action, int mods)
-    {
-        void *windowHandle{nullptr};
+    void keyboard_callback(int key, int scancode, int action, int mods) {
+        void* windowHandle{nullptr};
         m_window->get_handle(windowHandle);
-        GLFWwindow *glfwWindow = static_cast<GLFWwindow *>(windowHandle);
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(windowHandle);
         if (glfwGetKey(glfwWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             m_window->set_window_should_close(true);
@@ -84,16 +81,14 @@ class Application
         }
     }
 
-    void mouse_callback(double xpos, double ypos)
-    {
+    void mouse_callback(double xpos, double ypos) {
         if (m_interface.overlay->wants_to_handle_input())
             return;
 
         m_controller->handle_mouse((float)xpos, (float)ypos);
     }
 
-    void window_resize_callback(int width, int height)
-    {
+    void window_resize_callback(int width, int height) {
         m_window->set_size(width, height);
         m_interface.overlay->set_extent({width, height});
     }

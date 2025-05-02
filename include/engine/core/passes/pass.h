@@ -26,8 +26,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-#define CHECK_INITIALIZATION()                                                                                            \
-    if (!this->m_initiatized)                                                                                                \
+#define CHECK_INITIALIZATION()                                                                                                                                 \
+    if (!this->m_initiatized)                                                                                                                                  \
         return;
 
 #pragma region Config
@@ -51,7 +51,7 @@ class BasePass
 {
   protected:
     // Graphic Objects
-    Graphics::Device*                                          m_device         = nullptr;
+    ptr<Graphics::Device>                                      m_device;
     Graphics::DescriptorPool                                   m_descriptorPool = {};
     std::unordered_map<std::string, Graphics::BaseShaderPass*> m_shaderPasses;
 
@@ -73,8 +73,7 @@ class BasePass
     virtual void setup_uniforms(std::vector<Graphics::Frame>& frames) = 0;
     virtual void setup_shader_passes()                                = 0;
 
-    template <std::size_t numberIN, std::size_t numberOUT>
-    inline void store_attachments(const PassLinkage<numberIN, numberOUT>& linkage) {
+    template <std::size_t numberIN, std::size_t numberOUT> inline void store_attachments(const PassLinkage<numberIN, numberOUT>& linkage) {
 
         // Populate pass attachments vector from the attachment pool given their idx
         m_inAttachments.resize(numberIN, nullptr);
@@ -90,12 +89,7 @@ class BasePass
     }
 
   public:
-    BasePass(Graphics::Device* device,
-             Extent2D          extent,
-             bool              isGraphical,
-             bool              isResizeable,
-             bool              isDefault,
-             std::string       name = "UNNAMED PASS");
+    BasePass(const ptr<Graphics::Device>& device, Extent2D extent, bool isGraphical, bool isResizeable, bool isDefault, std::string name = "UNNAMED PASS");
 
     virtual ~BasePass() {
     }

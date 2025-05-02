@@ -80,7 +80,7 @@ class CompositionPass final : public BaseGraphicPass
             - Bright Lighting (HDR)
 
         */
-    CompositionPass(Graphics::Device*         device,
+    CompositionPass(const ptr<Graphics::Device>& device,
                     const PassLinkage<10, 2>& config,
                     VkExtent2D                extent,
                     ColorFormatType           colorFormat,

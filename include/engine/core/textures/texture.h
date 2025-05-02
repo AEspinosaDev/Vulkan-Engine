@@ -6,8 +6,8 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef TEXTURE_CORE_H
+#define TEXTURE_CORE_H
 
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/image.h>
@@ -59,17 +59,14 @@ class ITexture
         m_image.extent = size;
     }
 
-    virtual inline void set_image_cache(void* cache, Extent3D extent, uint16_t channels) = 0;
-
-    virtual inline void get_image_cache(void*& cache) const = 0;
-
-    virtual inline size_t get_bytes_per_pixel() const = 0;
-
-    virtual inline size_t get_channels() const {
-        return m_channels;
-    };
+    virtual void   set_image_cache(void* cache, Extent3D extent, uint16_t channels) = 0;
+    virtual void   get_image_cache(void*& cache) const                              = 0;
+    virtual size_t get_bytes_per_pixel() const                                      = 0;
 
     // GETTERS & SETTERS
+    inline size_t get_channels() const {
+        return m_channels;
+    };
 
     inline bool loaded_on_CPU() const {
         return m_image.loadedOnCPU;

@@ -7,12 +7,7 @@ namespace Core {
 Core::Geometry*              BasePass::vignette = nullptr;
 std::vector<Graphics::Image> BasePass::attachmentPool;
 
-BasePass::BasePass(Graphics::Device* device,
-                   Extent2D          extent,
-                   bool              isGraphical,
-                   bool              isResizeable,
-                   bool              isDefault,
-                   std::string       name)
+BasePass::BasePass(const ptr<Graphics::Device>& device, Extent2D extent, bool isGraphical, bool isResizeable, bool isDefault, std::string name)
     : m_device(device)
     , m_name(name)
     , m_isDefault(isDefault)

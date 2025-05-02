@@ -11,7 +11,7 @@
 
 #include <engine/core/geometries/geometry.h>
 #include <engine/core/scene/object3D.h>
-#include <engine/core/textures/textureHDR.h>
+#include <engine/core/textures/texture_template.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {

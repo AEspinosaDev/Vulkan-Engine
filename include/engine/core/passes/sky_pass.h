@@ -55,15 +55,14 @@ class SkyPass final : public BaseGraphicPass
           -
           - Sky Cubemap
       */
-    SkyPass(Graphics::Device* device, const PassLinkage<0, 1>& config, Extent2D extent)
+    SkyPass(const ptr<Graphics::Device>& device, const PassLinkage<0, 1>& config, Extent2D extent)
         : BaseGraphicPass(device, extent, 3, 1, false, false, "SKY GENERATION") {
         BasePass::store_attachments<0, 1>(config);
     }
 
     void create_framebuffer() override;
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void setup_uniforms(std::vector<Graphics::Frame>& frames) override;
 

@@ -24,7 +24,7 @@ class GUIPass final : public BaseGraphicPass
 {
 
   public:
-    GUIPass(Graphics::Device* device, VkExtent2D extent)
+    GUIPass(const ptr<Graphics::Device>& device, VkExtent2D extent)
         : BaseGraphicPass(device, extent, 1, 1, true, true, "GUI") {
     }
 

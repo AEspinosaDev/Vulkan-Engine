@@ -5,11 +5,11 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
 std::vector<Core::ITexture*> ResourceManager::textureResources;
-Core::Texture*               ResourceManager::FALLBACK_TEXTURE = nullptr;
-Core::Texture*               ResourceManager::FALLBACK_CUBEMAP = nullptr;
+Core::ITexture*              ResourceManager::FALLBACK_TEXTURE = nullptr;
+Core::ITexture*              ResourceManager::FALLBACK_CUBEMAP = nullptr;
 Mat4                         ResourceManager::prevViewProj;
 
-void ResourceManager::init_basic_resources(Graphics::Device* const device) {
+void ResourceManager::init_basic_resources(const ptr<Graphics::Device>& device) {
 
     // Setup vignette
     Core::BasePass::vignette = Core::Geometry::create_quad();
@@ -19,14 +19,14 @@ void ResourceManager::init_basic_resources(Graphics::Device* const device) {
     if (!FALLBACK_TEXTURE) // If not user set
     {
         unsigned char texture_data[1] = {0};
-        FALLBACK_TEXTURE              = new Core::Texture(texture_data, {1, 1, 1}, 4);
+        FALLBACK_TEXTURE              = new Core::TextureLDR(texture_data, {1, 1, 1}, 4);
         FALLBACK_TEXTURE->set_use_mipmaps(false);
     }
     upload_texture_data(device, FALLBACK_TEXTURE);
     if (!FALLBACK_CUBEMAP) // If not user set
     {
         unsigned char cube_data[6] = {0, 0, 0, 0, 0, 0};
-        FALLBACK_CUBEMAP           = new Core::Texture(cube_data, {1, 1, 1}, 4);
+        FALLBACK_CUBEMAP           = new Core::TextureLDR(cube_data, {1, 1, 1}, 4);
         FALLBACK_CUBEMAP->set_use_mipmaps(false);
         FALLBACK_CUBEMAP->set_type(TextureTypeFlagBits::TEXTURE_CUBE);
     }
@@ -40,11 +40,11 @@ void ResourceManager::clean_basic_resources() {
     for (Core::ITexture* texture : textureResources)
         destroy_texture_data(texture);
 }
-void ResourceManager::update_global_data(Graphics::Device* const device,
-                                         Graphics::Frame* const  currentFrame,
-                                         Core::Scene* const      scene,
-                                         Extent2D                displayExtent,
-                                         bool                    jitterCamera) {
+void ResourceManager::update_global_data(const ptr<Graphics::Device>& device,
+                                         Graphics::Frame* const       currentFrame,
+                                         Core::Scene* const           scene,
+                                         Extent2D                     displayExtent,
+                                         bool                         jitterCamera) {
     PROFILING_EVENT()
     /*
     CAMERA UNIFORMS LOAD
@@ -154,11 +154,11 @@ void ResourceManager::update_global_data(Graphics::Device* const device,
     currentFrame->uniformBuffers[GLOBAL_LAYOUT].upload_data(
         &sceneParams, sizeof(Graphics::SceneUniforms), device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)));
 }
-void ResourceManager::update_object_data(Graphics::Device* const device,
-                                         Graphics::Frame* const  currentFrame,
-                                         Core::Scene* const      scene,
-                                         Extent2D                displayExtent,
-                                         bool                    enableRT) {
+void ResourceManager::update_object_data(const ptr<Graphics::Device>& device,
+                                         Graphics::Frame* const       currentFrame,
+                                         Core::Scene* const           scene,
+                                         Extent2D                     displayExtent,
+                                         bool                         enableRT) {
 
     PROFILING_EVENT()
 
@@ -265,7 +265,7 @@ void ResourceManager::update_object_data(Graphics::Device* const device,
         }
     }
 }
-void ResourceManager::upload_texture_data(Graphics::Device* const device, Core::ITexture* const t) {
+void ResourceManager::upload_texture_data(const ptr<Graphics::Device>& device, Core::ITexture* const t) {
     if (t && t->loaded_on_CPU())
     {
         if (!t->loaded_on_GPU())
@@ -293,7 +293,7 @@ void ResourceManager::destroy_texture_data(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-void ResourceManager::upload_geometry_data(Graphics::Device* const device, Core::Geometry* const g, bool createAccelStructure) {
+void ResourceManager::upload_geometry_data(const ptr<Graphics::Device>&  device, Core::Geometry* const g, bool createAccelStructure) {
     PROFILING_EVENT()
     /*
     VERTEX ARRAYS
@@ -335,7 +335,7 @@ void ResourceManager::destroy_geometry_data(Core::Geometry* const g) {
         get_BLAS(g)->cleanup();
     }
 }
-void ResourceManager::upload_skybox_data(Graphics::Device* const device, Core::Skybox* const sky) {
+void ResourceManager::upload_skybox_data(const ptr<Graphics::Device>&  device, Core::Skybox* const sky) {
     if (sky)
     {
         upload_geometry_data(device, sky->get_box());

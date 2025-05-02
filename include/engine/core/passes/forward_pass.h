@@ -11,7 +11,6 @@
 #include <engine/core/passes/graphic_pass.h>
 #include <engine/core/resource_manager.h>
 #include <engine/core/textures/texture.h>
-#include <engine/core/textures/textureLDR.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -50,7 +49,7 @@ class ForwardPass final : public BaseGraphicPass
          - Bright Lighting (HDR)
          - Depth
      */
-    ForwardPass(Graphics::Device*        device,
+    ForwardPass(const ptr<Graphics::Device>& device,
                 const PassLinkage<3, 3>& config,
                 Extent2D                 extent,
                 ColorFormatType          colorFormat,

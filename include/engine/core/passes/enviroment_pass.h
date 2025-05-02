@@ -9,7 +9,7 @@
 #ifndef ENVIROMENT_PASS_H
 #define ENVIROMENT_PASS_H
 #include <engine/core/passes/graphic_pass.h>
-#include <engine/core/textures/textureHDR.h>
+#include <engine/core/textures/texture_template.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -37,7 +37,7 @@ class EnviromentPass final : public BaseGraphicPass
             - Diffuse Irradiance Cubemap
 
         */
-    EnviromentPass(Graphics::Device* device, const PassLinkage<1, 2>& config)
+    EnviromentPass(const ptr<Graphics::Device>& device, const PassLinkage<1, 2>& config)
         : BaseGraphicPass(device, {1, 1}, 2, CUBEMAP_FACES, false, false, "ENVIROMENT")
         , m_format(SRGBA_32F)
         , m_irradianceResolution({1, 1}) {
@@ -51,8 +51,7 @@ class EnviromentPass final : public BaseGraphicPass
         m_irradianceResolution = {res, res};
     }
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void create_framebuffer() override;
 

@@ -50,17 +50,18 @@ class BaseRenderer
 #pragma region Properties
   protected:
     /*Main properties*/
-    Graphics::Device*            m_device;
+    ptr<Graphics::Device>        m_device;
+    ptr<Core::IWindow>           m_window;
     std::vector<Graphics::Frame> m_frames;
-    Core::IWindow*               m_window;
-    Extent2D                     m_headlessExtent{};
+    Extent2D                     m_headlessExtent{}; // In case is headless
 
     /*Settings*/
     RendererSettings m_settings{};
 
     /*Passes & Attachments*/
-    std::vector<Core::BasePass*> m_passes;
-    std::vector<Graphics::Image> m_attachments;
+    // std::vector<ptr<Core::BasePass>> m_passes;
+    std::vector<ptr<Core::BasePass>> m_passes;
+    std::vector<Graphics::Image>     m_attachments;
 
     /*Automatic deletion queue*/
     Utils::DeletionQueue m_deletionQueue;
@@ -73,13 +74,13 @@ class BaseRenderer
 
 #pragma endregion
   public:
-    BaseRenderer(Core::IWindow* window)
+    BaseRenderer(const ptr<Core::IWindow>& window)
         : m_window(window)
         , m_device(nullptr) {
         if (!window)
             m_headless = true;
     }
-    BaseRenderer(Core::IWindow* window, RendererSettings settings)
+    BaseRenderer(const ptr<Core::IWindow>& window, RendererSettings settings)
         : m_window(window)
         , m_settings(settings)
         , m_device(nullptr) {
@@ -96,13 +97,12 @@ class BaseRenderer
 
 #pragma region Getters & Setters
 
-    inline Core::IWindow* const get_window() const {
+    inline ptr<Core::IWindow> const get_window() const {
         return m_window;
     }
     inline bool headless() const {
         return m_headless;
     }
-
     inline RendererSettings get_settings() const {
         return m_settings;
     }
@@ -182,10 +182,11 @@ class BaseRenderer
 #pragma endregion
 #pragma region Utility
 
-    template <typename T> inline T get_pass(uint32_t id) {
-        T pass = id < m_passes.size() ? static_cast<T>(m_passes[id]) : nullptr;
-        ASSERT_PTR(pass);
-        return pass;
+    template <typename T> inline ptr<T> get_pass(uint32_t id) {
+        if (id >= m_passes.size())
+            return nullptr;
+
+        return std::static_pointer_cast<T>(m_passes[id]);
     }
 
 #pragma endregion

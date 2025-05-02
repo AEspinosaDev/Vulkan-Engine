@@ -51,6 +51,7 @@
 #include <unordered_map>
 #include <vector>
 #include <vma/vk_mem_alloc.h>
+#include <memory>
 
 // ENGINE DEFINITIONS
 
@@ -144,6 +145,9 @@ typedef VkExtent3D   Extent3D;
 typedef VkExtent2D   Extent2D;
 typedef VkOffset2D   Offset2D;
 typedef VkClearValue ClearValue;
+
+template<typename T>
+using ptr = std::shared_ptr<T>;
 
 enum class ObjectType
 {

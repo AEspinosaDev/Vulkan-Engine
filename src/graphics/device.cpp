@@ -183,6 +183,35 @@ Image Device::create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage m
 
     return img;
 }
+Texture Device::create_texture(const ptr<Image>& img, TextureConfig config) {
+    Texture tex = {};
+
+    VkImageViewCreateInfo dview_info = Init::imageview_create_info(Translator::get(img->config.format),
+                                                                   img->handle,
+                                                                   Translator::get(config.viewType),
+                                                                   Translator::get(config.aspectFlags),
+                                                                   config.mipLevels,
+                                                                   config.layers,
+                                                                   config.baseMipLevel);
+
+    VK_CHECK(vkCreateImageView(m_handle, &dview_info, nullptr, &tex.viewHandle));
+
+    VkSamplerCreateInfo samplerInfo = Init::sampler_create_info(Translator::get(config.filters),
+                                                                Translator::get(config.mipmapMode),
+                                                                config.baseMipLevel,
+                                                                config.mipLevels,
+                                                                config.anysotropicFilter,
+                                                                config.maxAnysotropy,
+                                                                Translator::get(config.samplerAddressMode));
+    samplerInfo.borderColor         = Translator::get(config.border);
+
+    VK_CHECK(vkCreateSampler(m_handle, &samplerInfo, nullptr, &tex.samplerHandle));
+
+    tex.config = config;
+    tex.image = img;
+
+    return tex;
+}
 CommandPool Device::create_command_pool(QueueType QueueType, CommandPoolCreateFlags flags) {
     CommandPool pool = {};
     pool.device      = m_handle;
@@ -813,13 +842,13 @@ void Device::upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances) 
     accel.device = m_handle;
 }
 void Device::download_texture_image(Image& img, void*& imgCache, size_t& size, size_t& channels) {
-    channels                        = Utils::get_channel_count(img.config.format);
+    channels                      = Utils::get_channel_count(img.config.format);
     const uint32_t SIZE_PER_PIXEL = Utils::get_pixel_size_in_bytes(img.config.format);
-    const uint32_t SIZE_IN_BYTES    = img.extent.width * img.extent.height * img.extent.depth * SIZE_PER_PIXEL;
-    size                            = SIZE_IN_BYTES;
-    
-    imgCache                        = malloc(SIZE_IN_BYTES);
-    Buffer cpuBuffer                = create_buffer(SIZE_IN_BYTES, BUFFER_USAGE_TRANSFER_DST, MEMORY_PROPERTY_HOST_VISIBLE, MEMORY_PROPERTY_HOST_COHERENT);
+    const uint32_t SIZE_IN_BYTES  = img.extent.width * img.extent.height * img.extent.depth * SIZE_PER_PIXEL;
+    size                          = SIZE_IN_BYTES;
+
+    imgCache         = malloc(SIZE_IN_BYTES);
+    Buffer cpuBuffer = create_buffer(SIZE_IN_BYTES, BUFFER_USAGE_TRANSFER_DST, MEMORY_PROPERTY_HOST_VISIBLE, MEMORY_PROPERTY_HOST_COHERENT);
 
     m_uploadContext.immediate_submit([&](CommandBuffer cmd) { cmd.copy_image_to_buffer(img, cpuBuffer); });
 

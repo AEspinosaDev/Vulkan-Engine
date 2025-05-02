@@ -2,9 +2,9 @@
 #include <filesystem>
 
 void Application::init(Systems::RendererSettings settings) {
-    m_window = new WindowGLFW("Sponza", 1280, 1024);
+    m_window = std::make_shared<WindowGLFW>("Sponza", 1280, 1024);
 
-    m_window->init();
+        m_window->init();
     m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
 
     m_window->set_window_size_callback(std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -12,8 +12,7 @@ void Application::init(Systems::RendererSettings settings) {
     m_window->set_key_callback(
         std::bind(&Application::keyboard_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-    Systems::DeferredRenderer* rndr = new Systems::DeferredRenderer(m_window, settings);
-    m_renderer                      = rndr;
+    m_renderer = std::make_shared<Systems::DeferredRenderer>(m_window, settings);
 
     setup();
     m_renderer->init();
@@ -54,14 +53,14 @@ void Application::setup() {
     m_scene->use_IBL(false);
 
     m_camera     = m_scene->get_active_camera();
-    m_controller = new Tools::Controller(m_camera, m_window, ControllerMovementType::WASD);
+    m_controller = new Tools::Controller(m_camera, m_window.get(), ControllerMovementType::WASD);
 }
 
 void Application::setup_gui() {
     m_interface.overlay = new Tools::GUIOverlay((float)m_window->get_extent().width, (float)m_window->get_extent().height, GuiColorProfileType::DARK);
 
     Tools::Panel* explorerPanel = new Tools::Panel("EXPLORER", 0, 0, 0.2f, 0.7f, PanelWidgetFlags::NoMove, false);
-    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer);
+    m_interface.scene           = new Tools::ExplorerWidget(m_scene, m_renderer.get());
     explorerPanel->add_child(m_interface.scene);
     explorerPanel->add_child(new Tools::Space());
     explorerPanel->add_child(new Tools::ControllerWidget(m_controller));
