@@ -97,9 +97,10 @@ void VarianceShadowPass::setup_shader_passes() {
                                  VK_DYNAMIC_STATE_CULL_MODE};
     // settings.blendAttachments       = {};
 
-    GraphicShaderPass* depthPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_geom.glsl"));
-    depthPass->settings          = settings;
-    depthPass->graphicSettings   = gfxSettings;
+    GraphicShaderPass* depthPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_geom.glsl"));
+    depthPass->settings        = settings;
+    depthPass->graphicSettings = gfxSettings;
     depthPass->build_shader_stages();
     depthPass->build(m_descriptorPool);
     m_shaderPasses["shadowTri"] = depthPass;
@@ -145,46 +146,42 @@ void VarianceShadowPass::execute(Graphics::Frame& currentFrame, Scene* const sce
     {
         if (m)
         {
-            if (m->is_active() && m->cast_shadows() && m->get_num_geometries() > 0)
+            if (m->is_active() && m->cast_shadows() && m->get_geometry())
             {
                 uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                for (size_t i = 0; i < m->get_num_geometries(); i++)
+                // Setup per object render state
+                auto g   = m->get_geometry();
+                auto mat = m->get_material();
+
+                ShaderPass* shaderPass;
+                switch (g->get_properties().topology)
                 {
-
-                    // Setup per object render state
-                    Geometry*  g   = m->get_geometry(i);
-                    IMaterial* mat = m->get_material(g->get_material_ID());
-
-                    ShaderPass* shaderPass;
-                    switch (g->get_properties().topology)
-                    {
-                    case Topology::TRIANGLES:
-                        shaderPass = m_shaderPasses["shadowTri"];
-                        break;
-                    case Topology::LINES_TO_TRIANGLES:
-                        shaderPass = m_shaderPasses["shadowLine"];
-                        break;
-                    case Topology::LINES:
-                        shaderPass = m_shaderPasses["shadowLine"];
-                        break;
-                    default:
-                        break;
-                    }
-
-                    cmd.set_depth_test_enable(mat->get_parameters().depthTest);
-                    cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
-                    cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
-
-                    cmd.bind_shaderpass(*shaderPass);
-                    // GLOBAL LAYOUT BINDING
-                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-                    // PER OBJECT LAYOUT BINDING
-                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
-
-                    // DRAW
-                    cmd.draw_geometry(*get_VAO(g));
+                case Topology::TRIANGLES:
+                    shaderPass = m_shaderPasses["shadowTri"];
+                    break;
+                case Topology::LINES_TO_TRIANGLES:
+                    shaderPass = m_shaderPasses["shadowLine"];
+                    break;
+                case Topology::LINES:
+                    shaderPass = m_shaderPasses["shadowLine"];
+                    break;
+                default:
+                    break;
                 }
+
+                cmd.set_depth_test_enable(mat->get_parameters().depthTest);
+                cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
+                cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
+
+                cmd.bind_shaderpass(*shaderPass);
+                // GLOBAL LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                // PER OBJECT LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
+
+                // DRAW
+                cmd.draw_geometry(*get_VAO(g));
             }
             mesh_idx++;
         }

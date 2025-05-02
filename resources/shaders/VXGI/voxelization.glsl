@@ -29,8 +29,6 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
 } material;
 
 
-
-
 void main() {
 
     v_pos = (object.model * vec4(pos, 1.0)).xyz;
@@ -87,8 +85,9 @@ void main(){
 
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 // #extension GL_EXT_shader_explicit_arithmetic_types : enable
-
+#include object.glsl
 #include light.glsl
 #include scene.glsl
 #include utils.glsl
@@ -123,13 +122,16 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec4 slot8; 
 } material;
 
+layout(set = 2, binding = 0) uniform sampler2D textures[];
 
-layout(set = 2, binding = 0) uniform sampler2D albedoTex;
-layout(set = 2, binding = 1) uniform sampler2D normalTex;
-layout(set = 2, binding = 2) uniform sampler2D materialText1;
-layout(set = 2, binding = 3) uniform sampler2D materialText2;
-layout(set = 2, binding = 4) uniform sampler2D materialText3;
-layout(set = 2, binding = 5) uniform sampler2D materialText4;
+//Settings current object textures
+int objectID = int(object.materialID);
+#define ALBEDO_TEX textures[objectID * 6]
+#define NORMAL_TEX textures[objectID * 6 + 1]
+#define MATERIAL_TEX textures[objectID * 6 + 2]
+#define MATERIAL_TEX2 textures[objectID * 6 + 3]
+#define MATERIAL_TEX3 textures[objectID * 6 + 4]
+#define MATERIAL_TEX4 textures[objectID * 6 + 5]
 
 ///////////////////////////////////////////
 //Surface Global properties
@@ -144,14 +146,14 @@ void setupSurfaceProperties(){
     if(material.slot8.w == PHYSICAL_MATERIAL){
 
         //Setting input surface properties
-        g_albedo = int(material.slot4.w)== 1 ? mix(material.slot1.rgb, texture(albedoTex, _uv).rgb, material.slot3.x) : material.slot1.rgb;
-        g_opacity = int(material.slot4.w)== 1 ?  mix(material.slot1.w, texture(albedoTex, _uv).a, material.slot6.z) : material.slot1.w;
-        g_emisison = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(materialText4, _uv).rgb, material.slot7.w) : material.slot7.rgb;
+        g_albedo = int(material.slot4.w)== 1 ? mix(material.slot1.rgb, texture(ALBEDO_TEX, _uv).rgb, material.slot3.x) : material.slot1.rgb;
+        g_opacity = int(material.slot4.w)== 1 ?  mix(material.slot1.w, texture(ALBEDO_TEX, _uv).a, material.slot6.z) : material.slot1.w;
+        g_emisison = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(MATERIAL_TEX4, _uv).rgb, material.slot7.w) : material.slot7.rgb;
         g_emisison *= material.slot8.x;
 
     }
     if(material.slot8.w == UNLIT_MATERIAL){
-        g_albedo = int(material.slot2.w) == 1 ? texture(albedoTex, _uv).rgb : material.slot1.rgb;
+        g_albedo = int(material.slot2.w) == 1 ? texture(ALBEDO_TEX, _uv).rgb : material.slot1.rgb;
     }
     if(material.slot8.w == HAIR_STRAND_MATERIAL){
         // TBD .........

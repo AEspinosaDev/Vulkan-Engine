@@ -91,13 +91,12 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     // MATERIAL TEXTURE SET
-    LayoutBinding textureBinding1(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
-    LayoutBinding textureBinding2(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
-    LayoutBinding textureBinding3(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
-    LayoutBinding textureBinding4(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
-    LayoutBinding textureBinding5(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
-    LayoutBinding textureBinding6(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
-    m_descriptorPool.set_layout(OBJECT_TEXTURE_LAYOUT, {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5, textureBinding6});
+    // MATERIAL TEXTURE SET
+    LayoutBinding materialTextureBufferBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0, MAX_TEXTURES);
+    m_descriptorPool.set_layout(OBJECT_TEXTURE_LAYOUT,
+                                {materialTextureBufferBinding},
+                                0,
+                                VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT);
 
     for (size_t i = 0; i < frames.size(); i++)
     {
@@ -137,12 +136,15 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
         m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
 #endif
+
+        // Textures
+        m_descriptorPool.allocate_variable_descriptor_set(OBJECT_TEXTURE_LAYOUT, &m_descriptors[i].textureDescritor, MAX_TEXTURES);
     }
 }
 void VoxelizationPass::setup_shader_passes() {
 
     GraphicShaderPass* voxelPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent,  GET_RESOURCE_PATH( "shaders/VXGI/voxelization.glsl"));
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/VXGI/voxelization.glsl"));
     voxelPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     voxelPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -158,7 +160,7 @@ void VoxelizationPass::setup_shader_passes() {
 
 #ifdef USE_IMG_ATOMIC_OPERATION
 
-    ComputeShaderPass* mergePass               = new ComputeShaderPass(m_device->get_handle(),  GET_RESOURCE_PATH( "shaders/VXGI/merge_intermediates.glsl"));
+    ComputeShaderPass* mergePass               = new ComputeShaderPass(m_device->get_handle(), GET_RESOURCE_PATH("shaders/VXGI/merge_intermediates.glsl"));
     mergePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
 
     mergePass->build_shader_stages();
@@ -215,36 +217,33 @@ void VoxelizationPass::execute(Graphics::Frame& currentFrame, Scene* const scene
     {
 
         ShaderPass* shaderPass = m_shaderPasses["voxelization"];
+        // Bind pipeline
+        cmd.bind_shaderpass(*shaderPass);
+        // GLOBAL LAYOUT BINDING
+        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+        // TEXTURE LAYOUT BINDING
+        if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
+            cmd.bind_descriptor_set(m_descriptors[currentFrame.index].textureDescritor, 2, *shaderPass);
 
         unsigned int mesh_idx = 0;
         for (Mesh* m : scene->get_meshes())
         {
             if (m)
             {
-                if (m->is_active() &&            // Check if is active
-                    m->get_num_geometries() > 0) // Check if is inside frustrum
+                if (m->is_active() &&  // Check if is active
+                    m->get_geometry()) // Check if is inside frustrum
                 {
                     // Offset calculation
                     uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                    for (size_t i = 0; i < m->get_num_geometries(); i++)
-                    {
-                        Geometry*  g   = m->get_geometry(i);
-                        IMaterial* mat = m->get_material(g->get_material_ID());
+                    auto g   = m->get_geometry();
+                    auto mat = m->get_material();
 
-                        // Bind pipeline
-                        cmd.bind_shaderpass(*shaderPass);
-                        // GLOBAL LAYOUT BINDING
-                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-                        // PER OBJECT LAYOUT BINDING
-                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
-                        // TEXTURE LAYOUT BINDING
-                        if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
-                            cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
+                    // PER OBJECT LAYOUT BINDING
+                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
 
-                        // DRAW
-                        cmd.draw_geometry(*get_VAO(g));
-                    }
+                    // DRAW
+                    cmd.draw_geometry(*get_VAO(g));
                 }
             }
             mesh_idx++;
@@ -281,17 +280,16 @@ void VoxelizationPass::execute(Graphics::Frame& currentFrame, Scene* const scene
 }
 
 void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
+    uint32_t meshIdx = 0;
     for (Mesh* m : scene->get_meshes())
     {
         if (m)
         {
-            for (size_t i = 0; i < m->get_num_geometries(); i++)
-            {
-                Geometry*  g   = m->get_geometry(i);
-                IMaterial* mat = m->get_material(g->get_material_ID());
-                setup_material_descriptor(mat);
-            }
+            auto g   = m->get_geometry();
+            auto mat = m->get_material();
+            setup_material_descriptor(mat, meshIdx);
         }
+        meshIdx++;
     }
     if (!get_TLAS(scene)->binded)
     {
@@ -323,32 +321,22 @@ void VoxelizationPass::resize_attachments() {
 #endif
     }
 }
-void VoxelizationPass::setup_material_descriptor(IMaterial* mat) {
-
-    if (!mat->get_texture_descriptor().allocated)
-        m_descriptorPool.allocate_descriptor_set(OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
-
+void VoxelizationPass::setup_material_descriptor(IMaterial* mat, uint32_t meshIdx) {
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
         ITexture* texture = pair.second;
         if (texture && texture->loaded_on_GPU())
         {
-
-            // Set texture write
-            if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
+            for (size_t i = 0; i < m_descriptors.size(); i++)
             {
-                m_descriptorPool.update_descriptor(get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
-                mat->set_texture_binding_state(pair.first, true);
-                texture->set_dirty(false);
+                m_descriptorPool.update_descriptor(get_image(texture),
+                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                   &m_descriptors[i].textureDescritor,
+                                                   0,
+                                                   UNIFORM_COMBINED_IMAGE_SAMPLER,
+                                                   pair.first + 6 * meshIdx);
             }
-        } else
-        {
-            // SET DUMMY TEXTURE
-            if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorPool.update_descriptor(
-                    get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
-            mat->set_texture_binding_state(pair.first, true);
         }
     }
 }

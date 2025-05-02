@@ -200,7 +200,7 @@ void ResourceManager::update_object_data(const ptr<Graphics::Device>& device,
             if (m) // If mesh exists
             {
                 if (m->is_active() &&                                                                     // Check if is active
-                    m->get_num_geometries() > 0 &&                                                        // Check if has geometry
+                    m->get_geometry() &&                                                                  // Check if has geometry
                     m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())) // Check if is inside frustrum
                 {
                     // Offset calculation
@@ -208,43 +208,38 @@ void ResourceManager::update_object_data(const ptr<Graphics::Device>& device,
 
                     Graphics::ObjectUniforms objectData;
                     objectData.model        = m->get_model_matrix();
-                    objectData.otherParams1 = {m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(), 0.1f};
-                    objectData.otherParams2 = {m->is_selected(), m->get_bounding_volume()->center};
+                    objectData.otherParams1 = {m->affected_by_fog(), m->receive_shadows(), m->cast_shadows(),mesh_idx};
+                    objectData.otherParams2 = {mesh_idx, m->get_bounding_volume()->center};
                     currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(&objectData, sizeof(Graphics::ObjectUniforms), objectOffset);
 
-                    for (size_t i = 0; i < m->get_num_geometries(); i++)
+                    // Object vertex buffer setup
+                    Core::Geometry* g = m->get_geometry();
+                    upload_geometry_data(device, g, enableRT && m->ray_hittable());
+                    // Add BLASS to instances list
+                    if (enableRT && m->ray_hittable() && get_BLAS(g)->handle)
+                        BLASInstances.push_back({*get_BLAS(g), m->get_model_matrix()});
+
+                    // Object material setup
+                    Core::IMaterial* mat = m->get_material(g->get_material_ID());
+                    if (!mat)
                     {
-                        // Object vertex buffer setup
-                        Core::Geometry* g = m->get_geometry(i);
-                        upload_geometry_data(device, g, enableRT && m->ray_hittable());
-                        // Add BLASS to instances list
-                        if (enableRT && m->ray_hittable() && get_BLAS(g)->handle)
-                            BLASInstances.push_back({*get_BLAS(g), m->get_model_matrix()});
-
-                        // Object material setup
-                        Core::IMaterial* mat = m->get_material(g->get_material_ID());
-                        if (!mat)
-                        {
-                            m->push_material(Core::IMaterial::debugMaterial);
-                        }
-                        mat = m->get_material(g->get_material_ID());
-                        if (mat)
-                        {
-                            auto textures = mat->get_textures();
-                            for (auto pair : textures)
-                            {
-                                Core::ITexture* texture = pair.second;
-                                upload_texture_data(device, texture);
-                            }
-                        }
-
-                        // ObjectUniforms materialData;
-                        Graphics::MaterialUniforms materialData = mat->get_uniforms();
-                        currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(
-                            &materialData,
-                            sizeof(Graphics::MaterialUniforms),
-                            objectOffset + device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+                        m->add_material(Core::IMaterial::debugMaterial);
                     }
+                    mat = m->get_material(g->get_material_ID());
+                    if (mat)
+                    {
+                        auto textures = mat->get_textures();
+                        for (auto pair : textures)
+                        {
+                            Core::ITexture* texture = pair.second;
+                            upload_texture_data(device, texture);
+                        }
+                    }
+
+                    // ObjectUniforms materialData;
+                    Graphics::MaterialUniforms materialData = mat->get_uniforms();
+                    currentFrame->uniformBuffers[OBJECT_LAYOUT].upload_data(
+                        &materialData, sizeof(Graphics::MaterialUniforms), objectOffset + device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
                 }
             }
             mesh_idx++;
@@ -293,7 +288,7 @@ void ResourceManager::destroy_texture_data(Core::ITexture* const t) {
     if (t)
         get_image(t)->cleanup();
 }
-void ResourceManager::upload_geometry_data(const ptr<Graphics::Device>&  device, Core::Geometry* const g, bool createAccelStructure) {
+void ResourceManager::upload_geometry_data(const ptr<Graphics::Device>& device, Core::Geometry* const g, bool createAccelStructure) {
     PROFILING_EVENT()
     /*
     VERTEX ARRAYS
@@ -335,7 +330,7 @@ void ResourceManager::destroy_geometry_data(Core::Geometry* const g) {
         get_BLAS(g)->cleanup();
     }
 }
-void ResourceManager::upload_skybox_data(const ptr<Graphics::Device>&  device, Core::Skybox* const sky) {
+void ResourceManager::upload_skybox_data(const ptr<Graphics::Device>& device, Core::Skybox* const sky) {
     if (sky)
     {
         upload_geometry_data(device, sky->get_box());
@@ -365,20 +360,18 @@ void ResourceManager::clean_scene(Core::Scene* const scene) {
     {
         for (Core::Mesh* m : scene->get_meshes())
         {
-            for (size_t i = 0; i < m->get_num_geometries(); i++)
-            {
-                Core::Geometry* g = m->get_geometry(i);
-                destroy_geometry_data(g);
 
-                Core::IMaterial* mat = m->get_material(g->get_material_ID());
-                if (mat)
+            Core::Geometry* g = m->get_geometry();
+            destroy_geometry_data(g);
+
+            Core::IMaterial* mat = m->get_material(g->get_material_ID());
+            if (mat)
+            {
+                auto textures = mat->get_textures();
+                for (auto pair : textures)
                 {
-                    auto textures = mat->get_textures();
-                    for (auto pair : textures)
-                    {
-                        Core::ITexture* texture = pair.second;
-                        destroy_texture_data(texture);
-                    }
+                    Core::ITexture* texture = pair.second;
+                    destroy_texture_data(texture);
                 }
             }
         }

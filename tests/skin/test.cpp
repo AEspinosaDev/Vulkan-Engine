@@ -71,7 +71,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(skinNormal, TEXTURE_PATH + "perry_normal.png", TEXTURE_FORMAT_UNORM);
     skinMaterial->set_normal_texture(skinNormal);
     skinMaterial->set_roughness(0.5);
-    headMesh->push_material(skinMaterial);
+    headMesh->add_material(skinMaterial);
     Tools::Loaders::load_3D_file(headMesh, MESH_PATH + "lee_perry.obj");
     headMesh->set_name("Head");
     headMesh->set_scale(2.0f);
@@ -79,7 +79,7 @@ void Application::setup() {
 
     Mesh* hairMesh = new Mesh();
     Tools::Loaders::load_3D_file(hairMesh, MESH_PATH + "straight.hair", false);
-    hairMesh->push_material(new HairStrandMaterial());
+    hairMesh->add_material(new HairStrandMaterial());
     hairMesh->set_scale(0.02f);
     hairMesh->set_rotation({90.0, 9.0f, 0.0f});
     // headMesh->add_child(hairMesh);

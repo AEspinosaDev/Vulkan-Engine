@@ -171,7 +171,7 @@ void Application::setup() {
     toriiMat->set_metalness(0.05);
     toriiMat->set_roughness(0.5);
     // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
-    toriiMesh->push_material(toriiMat);
+    toriiMesh->add_material(toriiMat);
     Tools::Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj");
     toriiMesh->set_name("Torii");
     toriiMesh->set_scale(0.2f);
@@ -196,7 +196,7 @@ void Application::setup() {
     terrainMat->set_normal_texture(floorNormalText);
     terrainMat->set_roughness_texture(floorRoughText);
     terrainMat->set_tile({25.0f, 25.0f});
-    terrainMesh->push_material(terrainMat);
+    terrainMesh->add_material(terrainMat);
     terrainMesh->set_name("Terrain");
     m_scene->add(terrainMesh);
 
@@ -204,7 +204,7 @@ void Application::setup() {
     lightMat->set_color(glm::vec4(m_scene->get_lights()[0]->get_color(), 1.0f));
     m_lightDummy = new Mesh();
     Tools::Loaders::load_3D_file(m_lightDummy, ENGINE_MESH_PATH + "sphere.obj");
-    m_lightDummy->push_material(lightMat);
+    m_lightDummy->add_material(lightMat);
     m_lightDummy->set_scale(0.5f);
     m_lightDummy->set_name("Light Gizmo");
     // m_scene->add(m_lightDummy);
@@ -219,7 +219,7 @@ void Application::setup() {
     kabutoMat->set_albedo({0.0, 1.0, 0.0});
     kabutoMat->set_metalness(0.8f);
     kabutoMat->set_roughness(0.4f);
-    kabutoMesh->push_material(kabutoMat);
+    kabutoMesh->add_material(kabutoMat);
     kabutoMesh->set_name("Kabuto");
     m_scene->add(kabutoMesh);
 
@@ -240,7 +240,7 @@ void Application::setup() {
     templeMat->set_albedo({0.0, 1.0, 0.0});
     templeMat->set_metalness(0.8f);
     templeMat->set_roughness(0.4f);
-    templeMesh->push_material(templeMat);
+    templeMesh->add_material(templeMat);
     templeMesh->set_name("Temple");
     templeMesh->set_position({7.2, -2.87, 14.1});
     templeMesh->set_rotation({0.0, 230.0f, 0.0f});
@@ -260,7 +260,7 @@ void Application::setup() {
     templeMat2->set_albedo_texture(templeText2);
     templeMat2->set_metallic_texture(templeMText2);
     templeMat2->set_roughness_texture(templeRText2);
-    templeMesh2->push_material(templeMat2);
+    templeMesh2->add_material(templeMat2);
     templeMesh2->set_name("Shrine");
     templeMesh2->set_position({0, -2.77, 14.1});
     templeMesh2->set_rotation({0.0, 160.0f, 0.0f});
@@ -273,7 +273,7 @@ void Application::setup() {
     TextureLDR* lanternT   = new TextureLDR();
     Tools::Loaders::load_texture(lanternT, TEXTURE_PATH + "lantern_diffuse.png");
     lanternMat->set_albedo_texture(lanternT);
-    lanternMesh->push_material(lanternMat);
+    lanternMesh->add_material(lanternMat);
     lanternMesh->set_name("Lantern");
     lanternMesh->set_position({2.5, -1.67, 2.8});
     lanternMesh->set_rotation({0.0, 23.0f, 0.0f});
@@ -302,7 +302,7 @@ void Application::setup() {
     TextureLDR* stonelanternT = new TextureLDR();
     Tools::Loaders::load_texture(stonelanternT, TEXTURE_PATH + "stone_diffuse.png");
     stoneMat->set_albedo_texture(stonelanternT);
-    stoneMesh->push_material(stoneMat);
+    stoneMesh->add_material(stoneMat);
     stoneMesh->set_name("Stone Lantern");
     stoneMesh->set_position({2.5, -2.67, 9.5});
     stoneMesh->set_rotation({0.0, 107.0f, 0.0f});

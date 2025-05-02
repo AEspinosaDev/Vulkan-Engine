@@ -34,7 +34,7 @@ class IMaterial
     std::string             m_shaderPassID      = {};
     Graphics::DescriptorSet m_textureDescriptor = {};
 
-    bool  m_isDirty  = true;
+    bool m_isDirty = true;
 
     friend class Renderer;
 
@@ -52,13 +52,10 @@ class IMaterial
     ~IMaterial() {
     }
 
-    virtual Graphics::MaterialUniforms get_uniforms() const = 0;
-
-    virtual std::unordered_map<int, ITexture*> get_textures() const = 0;
-
-    virtual std::unordered_map<int, bool> get_texture_binding_state() const = 0;
-
-    virtual void set_texture_binding_state(int id, bool state) = 0;
+    virtual Graphics::MaterialUniforms         get_uniforms() const                          = 0;
+    virtual std::unordered_map<int, ITexture*> get_textures() const                          = 0;
+    virtual std::unordered_map<int, bool>      get_texture_binding_state() const             = 0;
+    virtual void                               set_texture_binding_state(int id, bool state) = 0;
 
     virtual std::string get_shaderpass_ID() const {
         return m_shaderPassID;

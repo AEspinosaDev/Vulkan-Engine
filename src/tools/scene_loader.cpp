@@ -84,7 +84,7 @@ void VKFW::Tools::SceneLoader::load_children(tinyxml2::XMLElement* element, Core
         }
         if (meshType == "plane")
         {
-            mesh->push_geometry(Core::Geometry::create_quad());
+            mesh->set_geometry(Core::Geometry::create_quad());
         }
         if (meshType == "sphere")
         {
@@ -92,7 +92,7 @@ void VKFW::Tools::SceneLoader::load_children(tinyxml2::XMLElement* element, Core
         }
         if (meshType == "cube")
         {
-            mesh->push_geometry(Core::Geometry::create_simple_cube());
+            mesh->set_geometry(Core::Geometry::create_simple_cube());
         }
 
         /*
@@ -253,7 +253,7 @@ void VKFW::Tools::SceneLoader::load_children(tinyxml2::XMLElement* element, Core
         }
         if (mat)
             mat->enable_alpha_test(meshElement->BoolAttribute("alphaTest"));
-        mesh->push_material(mat ? mat : new Core::PhysicalMaterial(Vec4(0.5, 0.5, 0.5, 1.0)));
+        mesh->add_material(mat ? mat : new Core::PhysicalMaterial(Vec4(0.5, 0.5, 0.5, 1.0)));
 
         if (meshElement->FirstChildElement("Children"))
             load_children(meshElement->FirstChildElement("Children"), mesh, resourcesPath);

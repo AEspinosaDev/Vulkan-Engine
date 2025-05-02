@@ -81,27 +81,27 @@ void ExplorerWidget::render() {
             if (ImGui::MenuItem("Plane"))
             {
                 Mesh* plane = new Mesh();
-                plane->push_geometry(Geometry::create_quad());
+                plane->set_geometry(Geometry::create_quad());
                 auto mat = new PhysicalMaterial();
-                plane->push_material(mat);
+                plane->add_material(mat);
                 plane->set_name("Plane");
                 m_scene->add(plane);
             }
             if (ImGui::MenuItem("Cube"))
             {
                 Mesh* cube = new Mesh();
-                Loaders::load_3D_file(cube, ENGINE_RESOURCES_PATH "meshes/cube.obj", false);
+                Loaders::load_3D_file(cube, GET_RESOURCE_PATH("meshes/cube.obj"), false);
                 auto mat = new PhysicalMaterial();
-                cube->push_material(mat);
+                cube->add_material(mat);
                 cube->set_name("Box");
                 m_scene->add(cube);
             }
             if (ImGui::MenuItem("Sphere"))
             {
                 Mesh* sph = new Mesh();
-                Loaders::load_3D_file(sph, ENGINE_RESOURCES_PATH "meshes/sphere.obj", false);
+                Loaders::load_3D_file(sph, GET_RESOURCE_PATH("meshes/sphere.obj"), false);
                 auto mat = new PhysicalMaterial();
-                sph->push_material(mat);
+                sph->add_material(mat);
                 sph->set_name("Sphere");
                 m_scene->add(sph);
             }
@@ -109,9 +109,9 @@ void ExplorerWidget::render() {
             {
 
                 Mesh* cyl = new Mesh();
-                Loaders::load_3D_file(cyl, ENGINE_RESOURCES_PATH "meshes/cylinder.obj", false);
+                Loaders::load_3D_file(cyl, GET_RESOURCE_PATH("meshes/cylinder.obj"), false);
                 auto mat = new PhysicalMaterial();
-                cyl->push_material(mat);
+                cyl->add_material(mat);
                 cyl->set_name("Cylinder");
                 m_scene->add(cyl);
             }
@@ -186,7 +186,7 @@ void ExplorerWidget::render() {
             Mesh* mesh = new Mesh();
             Loaders::load_3D_file(mesh, filePath, true);
             auto mat = new PhysicalMaterial();
-            mesh->push_material(mat);
+            mesh->add_material(mat);
             mesh->set_name(std::filesystem::path(filePath).filename().string());
             m_scene->add(mesh);
         }
@@ -764,11 +764,9 @@ void ObjectExplorerWidget::render() {
 
         int faceCount   = 0;
         int vertexCount = 0;
-        for (size_t i = 0; i < model->get_num_geometries(); i++)
-        {
-            vertexCount += (int)get_VAO(model->get_geometry(i))->vertexCount;
-            faceCount += (int)get_VAO(model->get_geometry(i))->indexCount / 3;
-        }
+
+        vertexCount += (int)get_VAO(model->get_geometry())->vertexCount;
+        faceCount += (int)get_VAO(model->get_geometry())->indexCount / 3;
 
         ImGui::BeginTable("Mesh Details", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody);
 
@@ -783,12 +781,6 @@ void ObjectExplorerWidget::render() {
         ImGui::TextWrapped("File route");
         ImGui::TableNextColumn();
         ImGui::Text(model->get_file_route().c_str());
-
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::Text("Total geometries");
-        ImGui::TableNextColumn();
-        ImGui::Text(std::to_string(model->get_num_geometries()).c_str());
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();

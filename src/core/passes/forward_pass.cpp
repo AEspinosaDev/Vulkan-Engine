@@ -222,7 +222,8 @@ void ForwardPass::setup_shader_passes() {
     hairStrandPass2->graphicSettings.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     m_shaderPasses["hairstr2"]                        = hairStrandPass2;
 
-    GraphicShaderPass* skyboxPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/skybox.glsl"));
+    GraphicShaderPass* skyboxPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/skybox.glsl"));
     skyboxPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -260,8 +261,8 @@ void ForwardPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uin
         {
             if (m)
             {
-                if (m->is_active() &&              // Check if is active
-                    m->get_num_geometries() > 0 && // Check if has geometry
+                if (m->is_active() &&    // Check if is active
+                    m->get_geometry() && // Check if has geometry
                     (scene->get_active_camera()->get_frustrum_culling() && m->get_bounding_volume()
                          ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())
                          : true)) // Check if is inside frustrum
@@ -269,30 +270,27 @@ void ForwardPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uin
                     // Offset calculation
                     uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                    for (size_t i = 0; i < m->get_num_geometries(); i++)
-                    {
-                        Geometry*  g   = m->get_geometry(i);
-                        IMaterial* mat = m->get_material(g->get_material_ID());
+                    auto g   = m->get_geometry();
+                    auto mat = m->get_material();
 
-                        cmd.set_depth_test_enable(mat->get_parameters().depthTest);
-                        cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
-                        cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
+                    cmd.set_depth_test_enable(mat->get_parameters().depthTest);
+                    cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
+                    cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
 
-                        ShaderPass* shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
+                    ShaderPass* shaderPass = m_shaderPasses[mat->get_shaderpass_ID()];
 
-                        // Bind pipeline
-                        cmd.bind_shaderpass(*shaderPass);
-                        // GLOBAL LAYOUT BINDING
-                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-                        // PER OBJECT LAYOUT BINDING
-                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
-                        // TEXTURE LAYOUT BINDING
-                        if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
-                            cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
+                    // Bind pipeline
+                    cmd.bind_shaderpass(*shaderPass);
+                    // GLOBAL LAYOUT BINDING
+                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                    // PER OBJECT LAYOUT BINDING
+                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
+                    // TEXTURE LAYOUT BINDING
+                    if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
+                        cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
 
-                        // DRAW
-                        cmd.draw_geometry(*get_VAO(g));
-                    }
+                    // DRAW
+                    cmd.draw_geometry(*get_VAO(g));
                 }
             }
             mesh_idx++;
@@ -328,12 +326,10 @@ void ForwardPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     {
         if (m)
         {
-            for (size_t i = 0; i < m->get_num_geometries(); i++)
-            {
-                Geometry*  g   = m->get_geometry(i);
-                IMaterial* mat = m->get_material(g->get_material_ID());
-                setup_material_descriptor(mat);
-            }
+
+            auto g   = m->get_geometry();
+            auto mat = m->get_material(g->get_material_ID());
+            setup_material_descriptor(mat);
         }
     }
     if (!get_TLAS(scene)->binded)
@@ -386,5 +382,7 @@ void ForwardPass::setup_material_descriptor(IMaterial* mat) {
         }
     }
 }
+
+
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

@@ -55,7 +55,7 @@ void Application::setup() {
 
     Mesh* lightDummy = new Mesh();
     Tools::Loaders::load_3D_file(lightDummy, ENGINE_MESH_PATH + "sphere.obj");
-    lightDummy->push_material(new UnlitMaterial());
+    lightDummy->add_material(new UnlitMaterial());
     lightDummy->set_scale(0.5f);
     lightDummy->ray_hittable(false);
     lightDummy->cast_shadows(false);
@@ -89,7 +89,7 @@ void Application::setup() {
     // toriiMat->set_mask_texture(toriiM, UNREAL_ENGINE);
     toriiMat->set_metalness(0.05);
     toriiMat->set_roughness(0.5);
-    toriiMesh->push_material(toriiMat);
+    toriiMesh->add_material(toriiMat);
 
     Tools::Loaders::load_3D_file(toriiMesh, MESH_PATH + "torii.obj");
     toriiMesh->set_name("Torii");
@@ -100,7 +100,7 @@ void Application::setup() {
 
     Mesh* plane = new Mesh();
     // Tools::Loaders::load_3D_file(plane, MESH_PATH + "torii.obj", false);
-    plane->push_geometry(Geometry::create_quad());
+    plane->set_geometry(Geometry::create_quad());
     auto     terrainMat = new PhysicalMaterial();
     TextureLDR* floorText  = new TextureLDR();
     Tools::Loaders::load_texture(floorText, TEXTURE_PATH + "floor_diffuse.jpg");
@@ -115,7 +115,7 @@ void Application::setup() {
     terrainMat->set_roughness(0.2f);
     terrainMat->set_tile({10.0f, 10.0f});
     terrainMat->reflective(true);
-    plane->push_material(terrainMat);
+    plane->add_material(terrainMat);
     plane->set_name("Floor");
     plane->set_position({0.0, -2.3, 0.0});
     plane->set_rotation({-90.0f, 0.0f, 0.0f});
@@ -130,7 +130,7 @@ void Application::setup() {
     TextureLDR* stonelanternN = new TextureLDR();
     Tools::Loaders::load_texture(stonelanternN, TEXTURE_PATH + "moisturizer_normal.png", TEXTURE_FORMAT_UNORM);
     stoneMat->set_normal_texture(stonelanternN);
-    stoneMesh->push_material(stoneMat);
+    stoneMesh->add_material(stoneMat);
     stoneMesh->set_name("Tower");
     stoneMesh->set_position({2.0f, -2.3f, -2.3f});
     stoneMesh->set_rotation({0.0, 126.0f, 0.0f});
@@ -151,7 +151,7 @@ void Application::setup() {
     TextureLDR* droidText2 = new TextureLDR();
     Tools::Loaders::load_texture(droidText2, TEXTURE_PATH + "DROID_Body_Normal.jpg", TEXTURE_FORMAT_UNORM);
     droidMat->set_normal_texture(droidText2);
-    droidMesh->push_material(droidMat);
+    droidMesh->add_material(droidMat);
     droidMesh->set_name("Droid");
     droidMesh->set_position({-0.7f, -2.3f, -1.6f});
     droidMesh->set_rotation({0.0, -136.0f, 0.0f});
@@ -161,7 +161,7 @@ void Application::setup() {
     auto droidMat1 = new PhysicalMaterial();
     droidMat1->set_emissive_color(Vec3(1.0));
     droidMat1->set_emission_intensity(10.0);
-    eyesMesh->push_material(droidMat1);
+    eyesMesh->add_material(droidMat1);
     eyesMesh->set_name("Eyes");
     droidMesh->add_child(eyesMesh);
     m_scene->add(droidMesh);
@@ -178,7 +178,7 @@ void Application::setup() {
     TextureLDR* stormtrooperText2 = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText2, TEXTURE_PATH + "stormtrooper_mask.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat->set_mask_texture(stormtrooperText2, MaskType::UNREAL_ENGINE);
-    stormtrooper->push_material(stormtrooperMat);
+    stormtrooper->add_material(stormtrooperMat);
     stormtrooper->set_name("Trooper");
     stormtrooper->set_position({-1.8f, -2.3f, 0.4f});
     stormtrooper->set_rotation({0.0, -136.0f, 0.0f});
@@ -195,7 +195,7 @@ void Application::setup() {
     TextureLDR* stormtrooperText13 = new TextureLDR();
     Tools::Loaders::load_texture(stormtrooperText13, TEXTURE_PATH + "stormtrooper_head_mask.png", TEXTURE_FORMAT_UNORM);
     stormtrooperMat1->set_mask_texture(stormtrooperText13, MaskType::UNREAL_ENGINE);
-    stormtrooperHead->push_material(stormtrooperMat1);
+    stormtrooperHead->add_material(stormtrooperMat1);
     stormtrooperHead->set_name("Head");
     stormtrooper->add_child(stormtrooperHead);
     m_scene->add(stormtrooper);
@@ -203,7 +203,7 @@ void Application::setup() {
     Mesh* roninMesh = new Mesh();
     Tools::Loaders::load_3D_file(roninMesh, MESH_PATH + "ronin.obj");
     auto roninMat = new PhysicalMaterial();
-    roninMesh->push_material(roninMat);
+    roninMesh->add_material(roninMat);
     roninMesh->set_name("Ronin");
     roninMesh->set_position({-2.1f, -2.065f, -3.4f});
     roninMesh->set_rotation({0.0, 14.0f, 0.0f});
@@ -214,7 +214,7 @@ void Application::setup() {
     Mesh* sphereMesh = new Mesh();
     Tools::Loaders::load_3D_file(sphereMesh, ENGINE_MESH_PATH + "sphere.obj");
     auto spheremat = new PhysicalMaterial();
-    sphereMesh->push_material(spheremat);
+    sphereMesh->add_material(spheremat);
     sphereMesh->set_name("Energy ball");
     spheremat->set_albedo(Vec3(0.0));
     spheremat->set_metalness(0.0);

@@ -56,7 +56,7 @@ int main() {
 
         Core::PhysicalMaterial* material = new Core::PhysicalMaterial();
         material->set_albedo(Vec4{1.0});
-        kabuto->push_material(material);
+        kabuto->add_material(material);
 
         scene->add(kabuto);
 

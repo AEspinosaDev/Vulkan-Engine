@@ -30,6 +30,7 @@ class ForwardPass final : public BaseGraphicPass
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
         Graphics::DescriptorSet objectDescritor;
+        Graphics::DescriptorSet textureDescriptor;
     };
     std::vector<FrameDescriptors> m_descriptors;
 
@@ -50,12 +51,12 @@ class ForwardPass final : public BaseGraphicPass
          - Depth
      */
     ForwardPass(const ptr<Graphics::Device>& device,
-                const PassLinkage<3, 3>& config,
-                Extent2D                 extent,
-                ColorFormatType          colorFormat,
-                ColorFormatType          depthFormat,
-                MSAASamples              samples,
-                bool                     isDefault = false)
+                const PassLinkage<3, 3>&     config,
+                Extent2D                     extent,
+                ColorFormatType              colorFormat,
+                ColorFormatType              depthFormat,
+                MSAASamples                  samples,
+                bool                         isDefault = false)
         : BaseGraphicPass(device, extent, 1, 1, true, isDefault, "FORWARD")
         , m_colorFormat(colorFormat)
         , m_depthFormat(depthFormat)
@@ -63,8 +64,7 @@ class ForwardPass final : public BaseGraphicPass
         BasePass::store_attachments<3, 3>(config);
     }
 
-    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                               std::vector<Graphics::SubPassDependency>& dependencies) override;
+    void setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) override;
 
     void create_framebuffer() override;
 

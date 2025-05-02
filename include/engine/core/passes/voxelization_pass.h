@@ -33,11 +33,12 @@ class VoxelizationPass final : public BaseGraphicPass
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
         Graphics::DescriptorSet objectDescritor;
+        Graphics::DescriptorSet textureDescritor;
     };
     std::vector<FrameDescriptors> m_descriptors;
 
     void create_voxelization_image();
-    void setup_material_descriptor(IMaterial* mat);
+    void setup_material_descriptor(IMaterial* mat, uint32_t meshIdx);
 
   public:
     /*

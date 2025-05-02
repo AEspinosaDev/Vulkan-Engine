@@ -36,8 +36,7 @@ struct LayoutBinding {
     VkDescriptorSetLayoutBinding handle{};
 
     LayoutBinding(UniformDataType type, ShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount = 1U) {
-        handle = Init::descriptorset_layout_binding(
-            Translator::get(type), Translator::get(stageFlags), binding, descriptorCount);
+        handle = Init::descriptorset_layout_binding(Translator::get(type), Translator::get(stageFlags), binding, descriptorCount);
     }
 };
 
@@ -48,39 +47,37 @@ struct DescriptorPool {
 
     void set_layout(uint32_t                         layoutSetIndex,
                     std::vector<LayoutBinding>       bindings,
-                    VkDescriptorSetLayoutCreateFlags flags = 0);
+                    VkDescriptorSetLayoutCreateFlags flags    = 0,
+                    VkDescriptorBindingFlagsEXT      extFlags = 0);
 
     inline VkDescriptorSetLayout get_layout(uint32_t layoutSetIndex) {
         return layouts[layoutSetIndex];
     }
 
     void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor);
+    void allocate_variable_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor, uint32_t count);
 
     /*
     Set writes for Uniform Buffers
     */
-    void update_descriptor(Buffer*         buffer,
-                              size_t          dataSize,
-                              size_t          readOffset,
-                              DescriptorSet*  descriptor,
-                              UniformDataType type,
-                              uint32_t        binding);
+    void update_descriptor(Buffer* buffer, size_t dataSize, size_t readOffset, DescriptorSet* descriptor, UniformDataType type, uint32_t binding);
     /*
     Set writes for Images
     */
     void update_descriptor(Image*          image,
-                              ImageLayout     layout,
-                              DescriptorSet*  descriptor,
-                              uint32_t        binding,
-                              UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER);
+                           ImageLayout     layout,
+                           DescriptorSet*  descriptor,
+                           uint32_t        binding,
+                           UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER,
+                           uint32_t        arraySlot = 0);
     /*
     Set writes for Image Array
     */
     void update_descriptor(std::vector<Image>& images,
-                              ImageLayout         layout,
-                              DescriptorSet*      descriptor,
-                              uint32_t            binding,
-                              UniformDataType     type = UNIFORM_COMBINED_IMAGE_SAMPLER);
+                           ImageLayout         layout,
+                           DescriptorSet*      descriptor,
+                           uint32_t            binding,
+                           UniformDataType     type = UNIFORM_COMBINED_IMAGE_SAMPLER);
     /*
     Set writes for Acceleration Structures
     */

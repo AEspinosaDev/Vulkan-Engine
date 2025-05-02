@@ -28,10 +28,11 @@ class GeometryPass final : public BaseGraphicPass
     struct FrameDescriptors {
         Graphics::DescriptorSet globalDescritor;
         Graphics::DescriptorSet objectDescritor;
+        Graphics::DescriptorSet textureDescritor;
     };
     std::vector<FrameDescriptors> m_descriptors;
 
-    void setup_material_descriptor(IMaterial* mat);
+    void setup_material_descriptor(IMaterial* mat, uint32_t meshIdx);
 
   public:
     /*
@@ -49,7 +50,11 @@ class GeometryPass final : public BaseGraphicPass
         - Velocity + Emissive buffer
         - Depth buffer
     */
-    GeometryPass(const ptr<Graphics::Device>& device, const PassLinkage<3, 5>& config, Extent2D extent, ColorFormatType floatingPointFormat, ColorFormatType depthFormat)
+    GeometryPass(const ptr<Graphics::Device>& device,
+                 const PassLinkage<3, 5>&     config,
+                 Extent2D                     extent,
+                 ColorFormatType              floatingPointFormat,
+                 ColorFormatType              depthFormat)
         : BaseGraphicPass(device, extent, 1, 1, true, false, "GEOMETRY")
         , m_depthFormat(depthFormat)
         , m_floatFormat(floatingPointFormat) {

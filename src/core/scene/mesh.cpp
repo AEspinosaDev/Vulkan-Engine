@@ -8,27 +8,24 @@ void BoundingSphere::setup(Mesh* const mesh) {
     maxCoords = {0.0f, 0.0f, 0.0f};
     minCoords = {INFINITY, INFINITY, INFINITY};
 
-    for (Geometry* g : mesh->get_geometries())
-    {
-        const GeometricData& stats = g->get_properties();
+    auto                 g     = mesh->get_geometry();
+    const GeometricData& stats = g->get_properties();
 
-        if (stats.maxCoords.x > maxCoords.x)
-            maxCoords.x = stats.maxCoords.x;
-        if (stats.maxCoords.y > maxCoords.y)
-            maxCoords.y = stats.maxCoords.y;
-        if (stats.maxCoords.z > maxCoords.z)
-            maxCoords.z = stats.maxCoords.z;
-        if (stats.minCoords.x < minCoords.x)
-            minCoords.x = stats.minCoords.x;
-        if (stats.minCoords.y < minCoords.y)
-            minCoords.y = stats.minCoords.y;
-        if (stats.minCoords.z < minCoords.z)
-            minCoords.z = stats.minCoords.z;
-    }
+    if (stats.maxCoords.x > maxCoords.x)
+        maxCoords.x = stats.maxCoords.x;
+    if (stats.maxCoords.y > maxCoords.y)
+        maxCoords.y = stats.maxCoords.y;
+    if (stats.maxCoords.z > maxCoords.z)
+        maxCoords.z = stats.maxCoords.z;
+    if (stats.minCoords.x < minCoords.x)
+        minCoords.x = stats.minCoords.x;
+    if (stats.minCoords.y < minCoords.y)
+        minCoords.y = stats.minCoords.y;
+    if (stats.minCoords.z < minCoords.z)
+        minCoords.z = stats.minCoords.z;
 
     center = (maxCoords + minCoords) * 0.5f;
     radius = math::length((maxCoords - minCoords) * 0.5f);
-
 }
 
 bool BoundingSphere::is_on_frustrum(const Frustum& frustum) const
@@ -41,12 +38,9 @@ bool BoundingSphere::is_on_frustrum(const Frustum& frustum) const
     const float maxScale     = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
     const float globalRadius = radius * maxScale;
 
-    return (frustum.leftFace.get_signed_distance(globalCenter) >= -globalRadius &&
-            frustum.rightFace.get_signed_distance(globalCenter) >= -globalRadius &&
-            frustum.farFace.get_signed_distance(globalCenter) >= -globalRadius &&
-            frustum.nearFace.get_signed_distance(globalCenter) >= -globalRadius &&
-            frustum.topFace.get_signed_distance(globalCenter) >= -globalRadius &&
-            frustum.bottomFace.get_signed_distance(globalCenter) >= -globalRadius);
+    return (frustum.leftFace.get_signed_distance(globalCenter) >= -globalRadius && frustum.rightFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.farFace.get_signed_distance(globalCenter) >= -globalRadius && frustum.nearFace.get_signed_distance(globalCenter) >= -globalRadius &&
+            frustum.topFace.get_signed_distance(globalCenter) >= -globalRadius && frustum.bottomFace.get_signed_distance(globalCenter) >= -globalRadius);
 }
 void AABB::setup(Mesh* const mesh) {
 }
@@ -54,16 +48,6 @@ bool AABB::is_on_frustrum(const Frustum& frustum) const {
     return false;
 }
 
-Geometry* Mesh::change_geometry(Geometry* g, size_t id) {
-    if (m_geometry.size() < id + 1)
-    {
-        ERR_LOG("Not enough geometry slots");
-        return nullptr;
-    }
-    Geometry* old_g = m_geometry[id];
-    m_geometry[id]  = g;
-    return old_g;
-}
 IMaterial* Mesh::change_material(IMaterial* m, size_t id) {
     if (m_material.size() < id + 1)
     {
@@ -75,7 +59,7 @@ IMaterial* Mesh::change_material(IMaterial* m, size_t id) {
     m_material[id]   = m;
     return old_m;
 }
- void Mesh::setup_volume(VolumeType type) {
+void Mesh::setup_volume(VolumeType type) {
     if (m_volume)
         delete m_volume;
 
@@ -87,6 +71,8 @@ IMaterial* Mesh::change_material(IMaterial* m, size_t id) {
 
     case VolumeType::AABB_VOLUME:
         m_volume = new AABB(this);
+        break;
+    default:
         break;
     }
 

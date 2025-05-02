@@ -78,13 +78,11 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_descriptorPool.set_layout(OBJECT_LAYOUT, {objectBufferBinding, materialBufferBinding});
 
     // MATERIAL TEXTURE SET
-    LayoutBinding textureBinding1(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
-    LayoutBinding textureBinding2(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
-    LayoutBinding textureBinding3(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 2);
-    LayoutBinding textureBinding4(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
-    LayoutBinding textureBinding5(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 4);
-    LayoutBinding textureBinding6(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
-    m_descriptorPool.set_layout(OBJECT_TEXTURE_LAYOUT, {textureBinding1, textureBinding2, textureBinding3, textureBinding4, textureBinding5, textureBinding6});
+    LayoutBinding materialTextureBufferBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0, MAX_TEXTURES);
+    m_descriptorPool.set_layout(OBJECT_TEXTURE_LAYOUT,
+                                {materialTextureBufferBinding},
+                                0,
+                                VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT);
 
     for (size_t i = 0; i < frames.size(); i++)
     {
@@ -118,12 +116,16 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         // Set up enviroment fallback texture
         m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
         m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+
+        // Textures
+        m_descriptorPool.allocate_variable_descriptor_set(OBJECT_TEXTURE_LAYOUT, &m_descriptors[i].textureDescritor, MAX_TEXTURES);
     }
 }
 void GeometryPass::setup_shader_passes() {
 
     // Geometry
-    GraphicShaderPass* geomPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/geometry.glsl"));
+    GraphicShaderPass* geomPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/geometry.glsl"));
     geomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
     geomPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
@@ -170,7 +172,7 @@ void GeometryPass::setup_shader_passes() {
     m_shaderPasses["geometryLine"] = linePass;
 
     GraphicShaderPass* skyboxPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent,  GET_RESOURCE_PATH( "shaders/deferred/skybox.glsl"));
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/skybox.glsl"));
     skyboxPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
     skyboxPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -213,13 +215,24 @@ void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, ui
             }
         }
 
+        ShaderPass* shaderPass;
+        shaderPass = m_shaderPasses["geometryTri"];
+        cmd.bind_shaderpass(*shaderPass);
+        // GLOBAL LAYOUT BINDING
+        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+        // TEXTURE LAYOUT BINDING
+        if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
+            cmd.bind_descriptor_set(m_descriptors[currentFrame.index].textureDescritor, 2, *shaderPass);
+
+        Topology prevTopology = Topology::TRIANGLES;
+
         unsigned int mesh_idx = 0;
         for (Mesh* m : scene->get_meshes())
         {
             if (m)
             {
-                if (m->is_active() &&              // Check if is active
-                    m->get_num_geometries() > 0 && // Check if has geometry
+                if (m->is_active() &&    // Check if is active
+                    m->get_geometry() && // Check if has geometry
                     (scene->get_active_camera()->get_frustrum_culling() && m->get_bounding_volume()
                          ? m->get_bounding_volume()->is_on_frustrum(scene->get_active_camera()->get_frustrum())
                          : true)) // Check if is inside frustrum
@@ -227,17 +240,16 @@ void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, ui
                     // Offset calculation
                     uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                    for (size_t i = 0; i < m->get_num_geometries(); i++)
+                    Geometry*  g   = m->get_geometry();
+                    IMaterial* mat = m->get_material();
+
+                    cmd.set_depth_test_enable(mat->get_parameters().depthTest);
+                    cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
+                    cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
+
+                    if (prevTopology != g->get_properties().topology)
                     {
-                        Geometry*  g   = m->get_geometry(i);
-                        IMaterial* mat = m->get_material(g->get_material_ID());
-
-                        cmd.set_depth_test_enable(mat->get_parameters().depthTest);
-                        cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
-                        cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
-
                         // Choose shader pass based on topology
-                        ShaderPass* shaderPass;
                         switch (g->get_properties().topology)
                         {
                         case Topology::TRIANGLES:
@@ -252,19 +264,19 @@ void GeometryPass::execute(Graphics::Frame& currentFrame, Scene* const scene, ui
                         default:
                             break;
                         }
-                        // Bind pipeline
+                        // Rebind global descriptors
                         cmd.bind_shaderpass(*shaderPass);
                         // GLOBAL LAYOUT BINDING
                         cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-                        // PER OBJECT LAYOUT BINDING
-                        cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
                         // TEXTURE LAYOUT BINDING
                         if (shaderPass->settings.descriptorSetLayoutIDs[OBJECT_TEXTURE_LAYOUT])
-                            cmd.bind_descriptor_set(mat->get_texture_descriptor(), 2, *shaderPass);
-
-                        // DRAW
-                        cmd.draw_geometry(*get_VAO(g));
+                            cmd.bind_descriptor_set(m_descriptors[currentFrame.index].textureDescritor, 2, *shaderPass);
                     }
+                    // PER OBJECT LAYOUT BINDING
+                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
+
+                    // DRAW
+                    cmd.draw_geometry(*get_VAO(g));
                 }
             }
             mesh_idx++;
@@ -285,45 +297,35 @@ void GeometryPass::link_input_attachments() {
 }
 
 void GeometryPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
+    uint32_t meshIdx = 0;
     for (Mesh* m : scene->get_meshes())
     {
         if (m)
         {
-            for (size_t i = 0; i < m->get_num_geometries(); i++)
-            {
-                Geometry*  g   = m->get_geometry(i);
-                IMaterial* mat = m->get_material(g->get_material_ID());
-                setup_material_descriptor(mat);
-            }
+            auto g   = m->get_geometry();
+            auto mat = m->get_material();
+            setup_material_descriptor(mat, meshIdx);
         }
+        meshIdx++;
     }
 }
 
-void GeometryPass::setup_material_descriptor(IMaterial* mat) {
-    if (!mat->get_texture_descriptor().allocated)
-        m_descriptorPool.allocate_descriptor_set(OBJECT_TEXTURE_LAYOUT, &mat->get_texture_descriptor());
-
+void GeometryPass::setup_material_descriptor(IMaterial* mat, uint32_t meshIdx) {
     auto textures = mat->get_textures();
     for (auto pair : textures)
     {
         ITexture* texture = pair.second;
         if (texture && texture->loaded_on_GPU())
         {
-
-            // Set texture write
-            if (!mat->get_texture_binding_state()[pair.first] || texture->is_dirty())
+            for (size_t i = 0; i < m_descriptors.size(); i++)
             {
-                m_descriptorPool.update_descriptor(get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
-                mat->set_texture_binding_state(pair.first, true);
-                texture->set_dirty(false);
+                m_descriptorPool.update_descriptor(get_image(texture),
+                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                   &m_descriptors[i].textureDescritor,
+                                                   0,
+                                                   UNIFORM_COMBINED_IMAGE_SAMPLER,
+                                                   pair.first + 6 * meshIdx);
             }
-        } else
-        {
-            // SET DUMMY TEXTURE
-            if (!mat->get_texture_binding_state()[pair.first])
-                m_descriptorPool.update_descriptor(
-                    get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &mat->get_texture_descriptor(), pair.first);
-            mat->set_texture_binding_state(pair.first, true);
         }
     }
 }

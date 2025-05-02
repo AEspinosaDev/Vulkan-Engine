@@ -66,7 +66,9 @@ void main() {
 
 #shader fragment
 #version 460
+#include object.glsl
 #include material_defines.glsl
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(location = 0) in vec3 v_pos;
 layout(location = 1) in vec3 v_normal;
@@ -86,12 +88,16 @@ layout(set = 1, binding = 1) uniform MaterialUniforms {
     vec4 slot8;
 } material;
 
-layout(set = 2, binding = 0) uniform sampler2D albedoTex;
-layout(set = 2, binding = 1) uniform sampler2D normalTex;
-layout(set = 2, binding = 2) uniform sampler2D materialText1;
-layout(set = 2, binding = 3) uniform sampler2D materialText2;
-layout(set = 2, binding = 4) uniform sampler2D materialText3;
-layout(set = 2, binding = 5) uniform sampler2D materialText4;
+layout(set = 2, binding = 0) uniform sampler2D textures[];
+
+//Settings current object textures
+int objectID = int(object.materialID);
+#define ALBEDO_TEX textures[objectID * 6]
+#define NORMAL_TEX textures[objectID * 6 + 1]
+#define MATERIAL_TEX textures[objectID * 6 + 2]
+#define MATERIAL_TEX2 textures[objectID * 6 + 3]
+#define MATERIAL_TEX3 textures[objectID * 6 + 4]
+#define MATERIAL_TEX4 textures[objectID * 6 + 5]
 
 //Output
 layout(location = 0) out vec4 outNormal; //16F
@@ -117,12 +123,12 @@ void setupSurfaceProperties() {
     if(material.slot8.w == PHYSICAL_MATERIAL) {
 
         //Setting input surface properties
-        g_albedo = int(material.slot4.w) == 1 ? mix(material.slot1.rgb, texture(albedoTex, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
-        g_opacity = int(material.slot4.w) == 1 ? mix(material.slot1.w, texture(albedoTex, v_uv).a, material.slot6.z) : material.slot1.w;
-        g_normal = int(material.slot5.x) == 1 ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize(v_normal);
+        g_albedo = int(material.slot4.w) == 1 ? mix(material.slot1.rgb, texture(ALBEDO_TEX, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
+        g_opacity = int(material.slot4.w) == 1 ? mix(material.slot1.w, texture(ALBEDO_TEX, v_uv).a, material.slot6.z) : material.slot1.w;
+        g_normal = int(material.slot5.x) == 1 ? normalize((v_TBN * (texture(NORMAL_TEX, v_uv).rgb * 2.0 - 1.0))) : normalize(v_normal);
 
         if(int(material.slot6.x) == 1) {
-            vec4 mask = texture(materialText1, v_uv).rgba; //Correction linearize color
+            vec4 mask = texture(MATERIAL_TEX, v_uv).rgba; //Correction linearize color
             if(int(material.slot6.y) == 0) { //HDRP UNITY
 	    	    //Unity HDRP uses glossiness not roughness pipeline, so it has to be inversed
                 g_material.r = 1.0 - mix(material.slot3.w, mask.a, material.slot4.x);
@@ -136,12 +142,12 @@ void setupSurfaceProperties() {
                 // TO DO ...
             }
         } else {
-            g_material.r = material.slot5.y == 1 ? mix(material.slot3.w, texture(materialText1, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
-            g_material.g = material.slot5.z == 1 ? mix(material.slot3.y, texture(materialText2, v_uv).r, material.slot3.z) : material.slot3.y; //Metalness
-            g_material.b = material.slot5.w == 1 ? mix(material.slot4.y, texture(materialText3, v_uv).r, material.slot4.z) : material.slot4.y; //AO
+            g_material.r = material.slot5.y == 1 ? mix(material.slot3.w, texture(MATERIAL_TEX, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
+            g_material.g = material.slot5.z == 1 ? mix(material.slot3.y, texture(MATERIAL_TEX2, v_uv).r, material.slot3.z) : material.slot3.y; //Metalness
+            g_material.b = material.slot5.w == 1 ? mix(material.slot4.y, texture(MATERIAL_TEX3, v_uv).r, material.slot4.z) : material.slot4.y; //AO
         }
 
-        g_emissive = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(materialText4, v_uv).rgb, material.slot7.w) : material.slot7.rgb;
+        g_emissive = material.slot6.w == 1 ? mix(material.slot7.rgb, texture(MATERIAL_TEX4, v_uv).rgb, material.slot7.w) : material.slot7.rgb;
         g_emissive *= material.slot8.x;
 
         g_fresnelThreshold = material.slot8.y;
@@ -150,7 +156,7 @@ void setupSurfaceProperties() {
 
     }
     if(material.slot8.w == UNLIT_MATERIAL) {
-        g_albedo = int(material.slot2.w) == 1 ? texture(albedoTex, v_uv).rgb : material.slot1.rgb;
+        g_albedo = int(material.slot2.w) == 1 ? texture(ALBEDO_TEX, v_uv).rgb : material.slot1.rgb;
         g_material.w = UNLIT_MATERIAL;
     }
     if(material.slot8.w == HAIR_STRAND_MATERIAL) {
@@ -166,12 +172,12 @@ void setupSurfaceProperties() {
     if(material.slot8.w == SKIN_MATERIAL) {
 
         //Setting skin surface properties
-        g_albedo = int(material.slot4.w) == 1 ? mix(material.slot1.rgb, texture(albedoTex, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
-        g_normal = int(material.slot5.x) == 1 ? normalize((v_TBN * (texture(normalTex, v_uv).rgb * 2.0 - 1.0))) : normalize(v_normal);
+        g_albedo = int(material.slot4.w) == 1 ? mix(material.slot1.rgb, texture(ALBEDO_TEX, v_uv).rgb, material.slot3.x) : material.slot1.rgb;
+        g_normal = int(material.slot5.x) == 1 ? normalize((v_TBN * (texture(NORMAL_TEX, v_uv).rgb * 2.0 - 1.0))) : normalize(v_normal);
 
-        g_material.r = material.slot5.y == 1 ? mix(material.slot3.w, texture(materialText1, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
-        g_material.g = material.slot6.x == 1 ? texture(materialText3, v_uv).r : 0.0;
-        g_material.b = material.slot5.w == 1 ? mix(material.slot4.y, texture(materialText2, v_uv).r, material.slot4.z) : material.slot4.y; //AO
+        g_material.r = material.slot5.y == 1 ? mix(material.slot3.w, texture(MATERIAL_TEX, v_uv).r, material.slot4.x) : material.slot3.w; //Roughness
+        g_material.g = material.slot6.x == 1 ? texture(MATERIAL_TEX3, v_uv).r : 0.0;
+        g_material.b = material.slot5.w == 1 ? mix(material.slot4.y, texture(MATERIAL_TEX2, v_uv).r, material.slot4.z) : material.slot4.y; //AO
 
         g_fresnelThreshold = material.slot8.y;
 

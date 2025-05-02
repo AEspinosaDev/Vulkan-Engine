@@ -132,33 +132,29 @@ void ShadowPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint
     {
         if (m)
         {
-            if (m->is_active() && m->cast_shadows() && m->get_num_geometries() > 0)
+            if (m->is_active() && m->cast_shadows() && m->get_geometry())
             {
                 uint32_t objectOffset = currentFrame.uniformBuffers[1].strideSize * mesh_idx;
 
-                for (size_t i = 0; i < m->get_num_geometries(); i++)
-                {
+                // Setup per object render state
+                auto g   = m->get_geometry();
+                auto mat = m->get_material();
 
-                    // Setup per object render state
-                    Geometry*  g   = m->get_geometry(i);
-                    IMaterial* mat = m->get_material(g->get_material_ID());
+                ShaderPass* shaderPass =
+                    mat->get_shaderpass_ID() != "hairstr" && mat->get_shaderpass_ID() != "hairstr2" ? m_shaderPasses["shadow"] : m_shaderPasses["shadowLine"];
 
-                    ShaderPass* shaderPass = mat->get_shaderpass_ID() != "hairstr" && mat->get_shaderpass_ID() != "hairstr2" ? m_shaderPasses["shadow"]
-                                                                                                                             : m_shaderPasses["shadowLine"];
+                cmd.set_depth_test_enable(mat->get_parameters().depthTest);
+                cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
+                cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
 
-                    cmd.set_depth_test_enable(mat->get_parameters().depthTest);
-                    cmd.set_depth_write_enable(mat->get_parameters().depthWrite);
-                    cmd.set_cull_mode(mat->get_parameters().faceCulling ? mat->get_parameters().culling : CullingMode::NO_CULLING);
+                cmd.bind_shaderpass(*shaderPass);
+                // GLOBAL LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
+                // PER OBJECT LAYOUT BINDING
+                cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
 
-                    cmd.bind_shaderpass(*shaderPass);
-                    // GLOBAL LAYOUT BINDING
-                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].globalDescritor, 0, *shaderPass, {0, 0});
-                    // PER OBJECT LAYOUT BINDING
-                    cmd.bind_descriptor_set(m_descriptors[currentFrame.index].objectDescritor, 1, *shaderPass, {objectOffset, objectOffset});
-
-                    // DRAW
-                    cmd.draw_geometry(*get_VAO(g));
-                }
+                // DRAW
+                cmd.draw_geometry(*get_VAO(g));
             }
             mesh_idx++;
         }

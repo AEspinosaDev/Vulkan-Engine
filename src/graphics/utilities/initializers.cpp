@@ -4,8 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-VkCommandPoolCreateInfo Init::command_pool_create_info(uint32_t                 queueFamilyIndex,
-                                                       VkCommandPoolCreateFlags flags /*= 0*/) {
+VkCommandPoolCreateInfo Init::command_pool_create_info(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags /*= 0*/) {
     VkCommandPoolCreateInfo info = {};
     info.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.pNext                   = nullptr;
@@ -14,9 +13,7 @@ VkCommandPoolCreateInfo Init::command_pool_create_info(uint32_t                 
 }
 
 VkCommandBufferAllocateInfo
-Init::command_buffer_allocate_info(VkCommandPool        pool,
-                                   uint32_t             count /*= 1*/,
-                                   VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/) {
+Init::command_buffer_allocate_info(VkCommandPool pool, uint32_t count /*= 1*/, VkCommandBufferLevel level /*= VK_COMMAND_BUFFER_LEVEL_PRIMARY*/) {
     VkCommandBufferAllocateInfo info = {};
     info.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     info.pNext                       = nullptr;
@@ -98,8 +95,7 @@ VkPresentInfoKHR Init::present_info() {
     return info;
 }
 
-VkRenderPassBeginInfo
-Init::renderpass_begin_info(VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer) {
+VkRenderPassBeginInfo Init::renderpass_begin_info(VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer) {
     VkRenderPassBeginInfo info = {};
     info.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     info.pNext                 = nullptr;
@@ -115,8 +111,7 @@ Init::renderpass_begin_info(VkRenderPass renderPass, VkExtent2D windowExtent, Vk
     return info;
 }
 
-VkPipelineShaderStageCreateInfo Init::pipeline_shader_stage_create_info(VkShaderStageFlagBits stage,
-                                                                        VkShaderModule        shaderModule) {
+VkPipelineShaderStageCreateInfo Init::pipeline_shader_stage_create_info(VkShaderStageFlagBits stage, VkShaderModule shaderModule) {
     VkPipelineShaderStageCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     info.pNext = nullptr;
@@ -150,10 +145,8 @@ VkPipelineInputAssemblyStateCreateInfo Init::input_assembly_create_info(VkPrimit
     info.primitiveRestartEnable = VK_FALSE;
     return info;
 }
-VkPipelineRasterizationStateCreateInfo Init::rasterization_state_create_info(VkPolygonMode   polygonMode,
-                                                                             VkCullModeFlags cullMode,
-                                                                             VkFrontFace     face,
-                                                                             float           lineWidth) {
+VkPipelineRasterizationStateCreateInfo
+Init::rasterization_state_create_info(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace face, float lineWidth) {
     VkPipelineRasterizationStateCreateInfo info = {};
     info.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     info.pNext                                  = nullptr;
@@ -201,8 +194,7 @@ VkPipelineColorBlendStateCreateInfo Init::color_blend_create_info() {
 }
 VkPipelineColorBlendAttachmentState Init::color_blend_attachment_state(bool enabled) {
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable         = enabled ? VK_TRUE : VK_FALSE;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -226,8 +218,7 @@ VkPipelineLayoutCreateInfo Init::pipeline_layout_create_info() {
     return info;
 }
 
-VkPipelineDepthStencilStateCreateInfo
-Init::depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp) {
+VkPipelineDepthStencilStateCreateInfo Init::depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp) {
     VkPipelineDepthStencilStateCreateInfo info = {};
     info.sType                                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     info.pNext                                 = nullptr;
@@ -243,10 +234,8 @@ Init::depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp c
     return info;
 }
 
-VkDescriptorSetLayoutBinding Init::descriptorset_layout_binding(VkDescriptorType   type,
-                                                                VkShaderStageFlags stageFlags,
-                                                                uint32_t           binding,
-                                                                uint32_t           descriptorCount) {
+VkDescriptorSetLayoutBinding
+Init::descriptorset_layout_binding(VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount) {
     VkDescriptorSetLayoutBinding setbind = {};
     setbind.binding                      = binding;
     setbind.descriptorCount              = descriptorCount;
@@ -257,10 +246,7 @@ VkDescriptorSetLayoutBinding Init::descriptorset_layout_binding(VkDescriptorType
     return setbind;
 }
 
-VkWriteDescriptorSet Init::write_descriptor_buffer(VkDescriptorType        type,
-                                                   VkDescriptorSet         dstSet,
-                                                   VkDescriptorBufferInfo* bufferInfo,
-                                                   uint32_t                binding) {
+VkWriteDescriptorSet Init::write_descriptor_buffer(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorBufferInfo* bufferInfo, uint32_t binding) {
     VkWriteDescriptorSet write = {};
     write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.pNext                = nullptr;
@@ -325,14 +311,13 @@ VkImageViewCreateInfo Init::imageview_create_info(VkFormat           format,
     return info;
 }
 
-VkSamplerCreateInfo
-Init::sampler_create_info(VkFilter             filters,
-                          VkSamplerMipmapMode  mipmapMode,
-                          float                minLod,
-                          float                maxLod,
-                          bool                 anysotropicFilter,
-                          float                maxAnysotropy,
-                          VkSamplerAddressMode samplerAddressMode /*= VK_SAMPLER_ADDRESS_MODE_REPEAT*/) {
+VkSamplerCreateInfo Init::sampler_create_info(VkFilter             filters,
+                                              VkSamplerMipmapMode  mipmapMode,
+                                              float                minLod,
+                                              float                maxLod,
+                                              bool                 anysotropicFilter,
+                                              float                maxAnysotropy,
+                                              VkSamplerAddressMode samplerAddressMode /*= VK_SAMPLER_ADDRESS_MODE_REPEAT*/) {
     VkSamplerCreateInfo info = {};
     info.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     info.pNext               = nullptr;
@@ -358,16 +343,18 @@ VkWriteDescriptorSet Init::write_descriptor_image(VkDescriptorType       type,
                                                   VkDescriptorSet        dstSet,
                                                   VkDescriptorImageInfo* imageInfos,
                                                   uint32_t               imageCount,
+                                                  uint32_t               arraySlot,
                                                   uint32_t               binding) {
     VkWriteDescriptorSet write = {};
     write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.pNext                = nullptr;
 
-    write.dstBinding      = binding;
-    write.dstSet          = dstSet;
-    write.descriptorCount = imageCount;
-    write.descriptorType  = type;
-    write.pImageInfo      = imageInfos;
+    write.dstBinding       = binding;
+    write.dstSet           = dstSet;
+    write.descriptorCount  = imageCount;
+    write.descriptorType   = type;
+    write.pImageInfo       = imageInfos;
+    write.dstArrayElement = arraySlot;
 
     return write;
 }
@@ -411,8 +398,7 @@ VkAccelerationStructureBuildSizesInfoKHR Init::acceleration_structure_build_size
 
 VkWriteDescriptorSetAccelerationStructureKHR Init::write_descriptor_set_acceleration_structure() {
     VkWriteDescriptorSetAccelerationStructureKHR writeDescriptorSetAccelerationStructureKHR{};
-    writeDescriptorSetAccelerationStructureKHR.sType =
-        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+    writeDescriptorSetAccelerationStructureKHR.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
     return writeDescriptorSetAccelerationStructureKHR;
 }
 } // namespace Graphics

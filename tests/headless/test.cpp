@@ -68,7 +68,7 @@ void Application::setup() {
     Tools::Loaders::load_texture(skinNormal, TEXTURE_PATH + "perry_normal.png", TEXTURE_FORMAT_UNORM, false);
     skinMaterial->set_normal_texture(skinNormal);
     skinMaterial->set_roughness(0.5);
-    headMesh->push_material(skinMaterial);
+    headMesh->add_material(skinMaterial);
     Tools::Loaders::load_3D_file(headMesh, MESH_PATH + "lee_perry.obj", false);
     headMesh->set_name("Head");
     headMesh->set_scale(2.0f);

@@ -128,7 +128,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh, const std::string fi
 
         Core::Geometry* g = new Core::Geometry();
         g->fill(vertices, indices);
-        mesh->push_geometry(g);
+        mesh->set_geometry(g);
 
         shape_id++;
     }
@@ -265,7 +265,7 @@ void VKFW::Tools::Loaders::load_OBJ_topology(Core::Mesh* const mesh,
 
         Core::Geometry* g = new Core::Geometry();
         g->fill(vertices, indices, topology);
-        mesh->push_geometry(g);
+        mesh->set_geometry(g);
 
         shape_id++;
     }
@@ -454,7 +454,7 @@ void VKFW::Tools::Loaders::load_PLY(Core::Mesh* const mesh, const std::string fi
 
         Core::Geometry* g = new Core::Geometry();
         g->fill(vertices, indices);
-        mesh->push_geometry(g);
+        mesh->set_geometry(g);
         mesh->set_file_route(fileName);
     } catch (const std::exception& e)
     { std::cerr << "Caught tinyply exception: " << e.what() << std::endl; }
@@ -768,7 +768,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh* const mesh, const char* fileNam
 
     Core::Geometry* g = new Core::Geometry();
     g->fill(vertices, indices, Core::Topology::LINES_TO_TRIANGLES);
-    mesh->push_geometry(g);
+    mesh->set_geometry(g);
     mesh->set_file_route(std::string(fileName));
 }
 

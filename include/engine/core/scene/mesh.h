@@ -35,6 +35,8 @@ struct BoundingVolume {
         : TYPE(t)
         , obj(o) {
     }
+    ~BoundingVolume() {
+    }
 
     virtual void setup(Mesh* const mesh) = 0;
 
@@ -84,7 +86,7 @@ Class used to represent a 3D model instance.
 class Mesh : public Object3D
 {
   protected:
-    std::vector<Geometry*>  m_geometry;
+    Geometry*               m_geometry;
     std::vector<IMaterial*> m_material;
 
     BV*         m_volume         = nullptr;
@@ -111,25 +113,26 @@ class Mesh : public Object3D
         : Object3D("Mesh #" + std::to_string(Mesh::m_instanceCount), ObjectType::MESH)
         , m_volume(nullptr) {
         Mesh::m_instanceCount++;
-        m_geometry.push_back(geom);
+        m_geometry = geom;
         m_material.push_back(mat);
     }
     ~Mesh() {
         // delete m_geometry;
     }
-    /**
-     * Returns the geometry in the slot.
-     */
-    inline Geometry* const get_geometry(size_t id = 0) const {
-        return m_geometry.size() >= id + 1 ? m_geometry[id] : nullptr;
-    }
-    inline std::vector<Geometry*> get_geometries() const {
+
+    inline Geometry* const get_geometry() const {
         return m_geometry;
-    };
-    /**
-     * Change the geometry in the given slot and returns the old one ref.
+    }
+    inline void set_geometry(Geometry* g) {
+        m_geometry = g;
+        setup_volume();
+    }
+    /*
+     * Adds this material in the next free slot
      */
-    Geometry* change_geometry(Geometry* g, size_t id = 0);
+    inline void add_material(IMaterial* m) {
+        m_material.push_back(m);
+    }
     /**
      * Returns the material in the slot.
      */
@@ -142,29 +145,10 @@ class Mesh : public Object3D
     /**
      * Change the material in the given slot and returns the old one ref.
      */
-    IMaterial* change_material(IMaterial* m, size_t id = 0);
-    /*
-     * Adds this geometry in the next free slot. It is important to set correctly the id of the material slot this
-     * geometry is pointing.
-     */
-    inline void push_geometry(Geometry* g) {
-        m_geometry.push_back(g);
-        setup_volume();
-    }
-    /*
-     * Adds this material in the next free slot
-     */
-    inline void push_material(IMaterial* m) {
-        m_material.push_back(m);
-    }
-
-    inline size_t get_num_geometries() const {
-        return m_geometry.size();
-    }
+    IMaterial*    change_material(IMaterial* m, size_t id = 0);
     inline size_t get_num_materials() const {
         return m_material.size();
     }
-
     inline void cast_shadows(bool op) {
         m_castShadows = op;
     }
@@ -211,13 +195,6 @@ class Mesh : public Object3D
 
     inline void set_file_route(std::string r) {
         m_fileRoute = r;
-    }
-
-    inline size_t get_material_ID(size_t geometrySlot) const {
-        return m_geometry[geometrySlot]->get_material_ID();
-    }
-    inline void set_material_ID(size_t geometrySlot, size_t materialSlot) {
-        m_geometry[geometrySlot]->set_material_ID(materialSlot);
     }
 
     void  setup_volume(VolumeType type = VolumeType::SPHERE_VOLUME);

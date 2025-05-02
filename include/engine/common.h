@@ -97,6 +97,8 @@
 // Max object ocurrence
 #define ENGINE_MAX_OBJECTS 100
 #define ENGINE_MAX_LIGHTS 50
+#define MAX_TEXTURES_PER_MATERIAL 6
+#define MAX_TEXTURES ENGINE_MAX_OBJECTS * MAX_TEXTURES_PER_MATERIAL
 
 // File terminations
 #define PLY "ply"
