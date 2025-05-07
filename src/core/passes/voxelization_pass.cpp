@@ -102,39 +102,35 @@ void VoxelizationPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.update_descriptor(
-            &frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0, &m_descriptors[i].globalDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                           sizeof(SceneUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
-                                           &m_descriptors[i].globalDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                                sizeof(SceneUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
 
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
 
-        m_descriptorPool.update_descriptor(
-            get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 5);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
+
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 5);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.update_descriptor(
-            &frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0, &m_descriptors[i].objectDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[OBJECT_LAYOUT],
-                                           sizeof(MaterialUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
-                                           &m_descriptors[i].objectDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                                sizeof(MaterialUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
         // Set up enviroment fallback texture
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
         // Voxelization Image
-        m_descriptorPool.update_descriptor(m_outAttachments[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+        m_descriptors[i].globalDescritor.update(m_outAttachments[0], LAYOUT_GENERAL, 6, UNIFORM_STORAGE_IMAGE);
 #ifdef USE_IMG_ATOMIC_OPERATION
         // Voxelization Aux.Images
         std::vector<Graphics::Image> auxImages = {m_interAttachments[0], m_interAttachments[1], m_interAttachments[2]};
-        m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
-        m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
+        m_descriptors[i].globalDescritor.update(auxImages, LAYOUT_GENERAL, 7, UNIFORM_STORAGE_IMAGE);
+        m_descriptors[i].globalDescritor.update(auxImages, LAYOUT_GENERAL, 8);
 #endif
 
         // Textures
@@ -174,7 +170,7 @@ void VoxelizationPass::link_input_attachments() {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // Shadows
-        m_descriptorPool.update_descriptor(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2);
+        m_descriptors[i].globalDescritor.update(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
     }
 }
 void VoxelizationPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
@@ -291,12 +287,11 @@ void VoxelizationPass::update_uniforms(uint32_t frameIndex, Scene* const scene) 
         }
         meshIdx++;
     }
-    if (!get_TLAS(scene)->binded)
+
+    for (size_t i = 0; i < m_descriptors.size(); i++)
     {
-        for (size_t i = 0; i < m_descriptors.size(); i++)
-        {
-            m_descriptorPool.update_descriptor(get_TLAS(scene), &m_descriptors[i].globalDescritor, 4);
-        }
+
+        m_descriptors[i].globalDescritor.update(get_TLAS(scene), 4);
     }
 }
 void VoxelizationPass::resize_attachments() {
@@ -312,12 +307,12 @@ void VoxelizationPass::resize_attachments() {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // Voxelization Image
-        m_descriptorPool.update_descriptor(m_outAttachments[0], LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 6, UNIFORM_STORAGE_IMAGE);
+        m_descriptors[i].globalDescritor.update(m_outAttachments[0], LAYOUT_GENERAL, 6, UNIFORM_STORAGE_IMAGE);
 #ifdef USE_IMG_ATOMIC_OPERATION
         // Voxelization Aux.Images
         std::vector<Graphics::Image> auxImages = {m_interAttachments[0], m_interAttachments[1], m_interAttachments[2]};
-        m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 7, UNIFORM_STORAGE_IMAGE);
-        m_descriptorPool.update_descriptor(auxImages, LAYOUT_GENERAL, &m_descriptors[i].globalDescritor, 8);
+        m_descriptors[i].globalDescritor.update(auxImages, LAYOUT_GENERAL, 7, UNIFORM_STORAGE_IMAGE);
+        m_descriptors[i].globalDescritor.update(auxImages, LAYOUT_GENERAL, 8);
 #endif
     }
 }
@@ -330,12 +325,9 @@ void VoxelizationPass::setup_material_descriptor(IMaterial* mat, uint32_t meshId
         {
             for (size_t i = 0; i < m_descriptors.size(); i++)
             {
-                m_descriptorPool.update_descriptor(get_image(texture),
-                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                   &m_descriptors[i].textureDescritor,
-                                                   0,
-                                                   UNIFORM_COMBINED_IMAGE_SAMPLER,
-                                                   pair.first + 6 * meshIdx);
+                uint32_t bindingPoint = 0;
+                m_descriptors[i].textureDescritor.update(
+                    get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, bindingPoint, UNIFORM_COMBINED_IMAGE_SAMPLER, pair.first + 6 * meshIdx);
             }
         }
     }

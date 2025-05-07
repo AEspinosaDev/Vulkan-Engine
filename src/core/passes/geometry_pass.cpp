@@ -88,34 +88,29 @@ void GeometryPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.update_descriptor(
-            &frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0, &m_descriptors[i].globalDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                           sizeof(SceneUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
-                                           &m_descriptors[i].globalDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                                sizeof(SceneUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
 
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
 
-        m_descriptorPool.update_descriptor(
-            get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 6);
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 7);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 7);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.update_descriptor(
-            &frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0, &m_descriptors[i].objectDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[OBJECT_LAYOUT],
-                                           sizeof(MaterialUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
-                                           &m_descriptors[i].objectDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                                sizeof(MaterialUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
         // Set up enviroment fallback texture
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 4);
 
         // Textures
         m_descriptorPool.allocate_variable_descriptor_set(OBJECT_TEXTURE_LAYOUT, &m_descriptors[i].textureDescritor, MAX_TEXTURES);
@@ -290,9 +285,9 @@ void GeometryPass::link_input_attachments() {
 
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
-        m_descriptorPool.update_descriptor(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3);
-        m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 4);
-        m_descriptorPool.update_descriptor(m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 7);
+        m_descriptors[i].globalDescritor.update(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
+        m_descriptors[i].globalDescritor.update(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 4);
+        m_descriptors[i].globalDescritor.update(m_inAttachments[2], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 7);
     }
 }
 
@@ -317,14 +312,12 @@ void GeometryPass::setup_material_descriptor(IMaterial* mat, uint32_t meshIdx) {
         ITexture* texture = pair.second;
         if (texture && texture->loaded_on_GPU())
         {
+
             for (size_t i = 0; i < m_descriptors.size(); i++)
             {
-                m_descriptorPool.update_descriptor(get_image(texture),
-                                                   LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                   &m_descriptors[i].textureDescritor,
-                                                   0,
-                                                   UNIFORM_COMBINED_IMAGE_SAMPLER,
-                                                   pair.first + 6 * meshIdx);
+                uint32_t bindingPoint = 0;
+                m_descriptors[i].textureDescritor.update(
+                    get_image(texture), LAYOUT_SHADER_READ_ONLY_OPTIMAL, bindingPoint, UNIFORM_COMBINED_IMAGE_SAMPLER, pair.first + 6 * meshIdx);
             }
         }
     }

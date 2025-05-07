@@ -14,8 +14,7 @@ void PreCompositionPass::create_samples_kernel() {
 
     for (unsigned int i = 0; i < m_AO.samples; ++i)
     {
-        Vec4 sample(
-            randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator), 0.0f);
+        Vec4 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator), 0.0f);
         sample = math::normalize(sample);
         sample *= randomFloats(generator);
         float scale = float(i) / float(m_AO.samples);
@@ -32,8 +31,7 @@ void PreCompositionPass::create_samples_kernel() {
     m_updateSamplesKernel = false;
 }
 
-void PreCompositionPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                           std::vector<Graphics::SubPassDependency>& dependencies) {
+void PreCompositionPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) {
 
     attachments.resize(1);
 
@@ -52,11 +50,9 @@ void PreCompositionPass::setup_out_attachments(std::vector<Graphics::AttachmentC
     // Depdencies
     dependencies.resize(2);
 
-    dependencies[0] = Graphics::SubPassDependency(
-        STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+    dependencies[0]               = Graphics::SubPassDependency(STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
     dependencies[0].srcAccessMask = ACCESS_SHADER_READ;
-    dependencies[1] =
-        Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+    dependencies[1]               = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
     dependencies[1].srcAccessMask = ACCESS_COLOR_ATTACHMENT_WRITE;
     dependencies[1].srcSubpass    = 0;
     dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
@@ -66,8 +62,8 @@ void PreCompositionPass::create_framebuffer() {
     m_interAttachments.resize(1);
     std::vector<Graphics::Image*> out1 = {&m_interAttachments[0]};
     std::vector<Graphics::Image*> out2 = {m_outAttachments[0]};
-    m_framebuffers[0] = m_device->create_framebuffer(m_renderpass, out1, m_imageExtent, m_framebufferImageDepth, 0);
-    m_framebuffers[1] = m_device->create_framebuffer(m_renderpass, out2, m_imageExtent, m_framebufferImageDepth, 1);
+    m_framebuffers[0]                  = m_device->create_framebuffer(m_renderpass, out1, m_imageExtent, m_framebufferImageDepth, 0);
+    m_framebuffers[1]                  = m_device->create_framebuffer(m_renderpass, out2, m_imageExtent, m_framebufferImageDepth, 1);
 }
 
 void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
@@ -76,7 +72,7 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // CREATE INTERNAL SSAO UNIFORM DATA
     /////////////////////////////////////////////////
     const size_t BUFFER_SIZE = m_device->pad_uniform_buffer_size(sizeof(Vec4) * MAX_KERNEL_MEMBERS);
-    m_kernelBuffer = m_device->create_buffer_VMA(BUFFER_SIZE, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    m_kernelBuffer           = m_device->create_buffer_VMA(BUFFER_SIZE, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     // AO KERNEL BUFFER -----------
     create_samples_kernel();
@@ -98,14 +94,8 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     LayoutBinding noiseBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 5);
     LayoutBinding accelBinding(UNIFORM_ACCELERATION_STRUCTURE, SHADER_STAGE_FRAGMENT, 6);
 
-    m_descriptorPool.set_layout(GLOBAL_LAYOUT,
-                                {camBufferBinding,
-                                 sceneBufferBinding,
-                                 positionBinding,
-                                 normalBinding,
-                                 AOkernelBinding,
-                                 noiseBinding,
-                                 accelBinding});
+    m_descriptorPool.set_layout(
+        GLOBAL_LAYOUT, {camBufferBinding, sceneBufferBinding, positionBinding, normalBinding, AOkernelBinding, noiseBinding, accelBinding});
 
     // TO BLUR IMAGE LAYOUT
     LayoutBinding toBlurImageBinding(UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
@@ -116,39 +106,25 @@ void PreCompositionPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
         m_descriptorPool.allocate_descriptor_set(1, &m_descriptors[i].blurImageDescritor);
 
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                           sizeof(CameraUniforms),
-                                           0,
-                                           &m_descriptors[i].globalDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
-                                           sizeof(SceneUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
-                                           &m_descriptors[i].globalDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
-        m_descriptorPool.update_descriptor(
-            &m_kernelBuffer, BUFFER_SIZE, 0, &m_descriptors[i].globalDescritor, UNIFORM_BUFFER, 4);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                                sizeof(SceneUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
+        m_descriptors[i].globalDescritor.update(&m_kernelBuffer, BUFFER_SIZE, 0, UNIFORM_BUFFER, 4);
 
-        m_descriptorPool.update_descriptor(get_image(ResourceManager::textureResources[0]),
-                                           LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                           &m_descriptors[i].globalDescritor,
-                                           5);
+        m_descriptors[i].globalDescritor.update(
+            get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL,  5);
     }
 }
 void PreCompositionPass::setup_shader_passes() {
 
-    GraphicShaderPass* compPass               = new GraphicShaderPass(m_device->get_handle(),
-                                                        m_renderpass,
-                                                        m_imageExtent,
-                                                        GET_RESOURCE_PATH( "shaders/deferred/pre_composition.glsl"));
+    GraphicShaderPass* compPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/pre_composition.glsl"));
     compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    compPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
-                                                 {NORMAL_ATTRIBUTE, false},
-                                                 {UV_ATTRIBUTE, true},
-                                                 {TANGENT_ATTRIBUTE, false},
-                                                 {COLOR_ATTRIBUTE, false}};
+    compPass->graphicSettings.attributes      = {
+        {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     compPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(AO))};
 
@@ -156,16 +132,11 @@ void PreCompositionPass::setup_shader_passes() {
     compPass->build(m_descriptorPool);
     m_shaderPasses["pre"] = compPass;
 
-    GraphicShaderPass* blurPass               = new GraphicShaderPass(m_device->get_handle(),
-                                                        m_renderpass,
-                                                        m_imageExtent,
-                                                        GET_RESOURCE_PATH( "shaders/misc/bilateral_filter.glsl"));
+    GraphicShaderPass* blurPass =
+        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/misc/bilateral_filter.glsl"));
     blurPass->settings.descriptorSetLayoutIDs = {{0, true}, {1, true}};
-    blurPass->graphicSettings.attributes      = {{POSITION_ATTRIBUTE, true},
-                                                 {NORMAL_ATTRIBUTE, false},
-                                                 {UV_ATTRIBUTE, true},
-                                                 {TANGENT_ATTRIBUTE, false},
-                                                 {COLOR_ATTRIBUTE, false}};
+    blurPass->graphicSettings.attributes      = {
+        {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     blurPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};
 
@@ -227,13 +198,10 @@ void PreCompositionPass::link_input_attachments() {
     for (size_t i = 0; i < m_descriptors.size(); i++)
     {
         // SET UP G-BUFFER
-        m_descriptorPool.update_descriptor(
-            m_inAttachments[0], LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 2); // POSITION
-        m_descriptorPool.update_descriptor(
-            m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].globalDescritor, 3); // NORMALS
+        m_descriptors[i].globalDescritor.update(m_inAttachments[0], LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, 2); // POSITION
+        m_descriptors[i].globalDescritor.update(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);        // NORMALS
         // RAW SSAO
-        m_descriptorPool.update_descriptor(
-            &m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_descriptors[i].blurImageDescritor, 0);
+        m_descriptors[i].blurImageDescritor.update(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     }
 }
 
@@ -242,13 +210,9 @@ void PreCompositionPass::update_uniforms(uint32_t frameIndex, Scene* const scene
         create_samples_kernel();
 
     // Set STATIC top level accel. structure
-    if (!get_TLAS(scene)->binded)
+    for (size_t i = 0; i < m_descriptors.size(); i++)
     {
-        for (size_t i = 0; i < m_descriptors.size(); i++)
-        {
-            m_descriptorPool.update_descriptor(get_TLAS(scene), &m_descriptors[i].globalDescritor, 6);
-        }
-        // get_TLAS(scene)->binded = true;
+        m_descriptors[i].globalDescritor.update(get_TLAS(scene), 6);
     }
 }
 

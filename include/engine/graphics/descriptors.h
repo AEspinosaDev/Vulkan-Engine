@@ -16,19 +16,40 @@
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/translator.h>
 #include <unordered_map>
+#include <variant>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-struct DescriptorSet {
-    VkDescriptorSet handle{};
+using BoundResource = std::variant<VkImageView, VkBuffer, VkAccelerationStructureKHR>;
 
-    std::vector<Buffer*> binded_buffers;
-    uint32_t             layoutID;
-    uint32_t             bindings;
-    bool                 isDynamic;
-    bool                 allocated{false};
+struct DescriptorSet {
+
+    VkDescriptorSet                             handle = VK_NULL_HANDLE;
+    VkDevice                                    device = VK_NULL_HANDLE;
+    uint32_t                                    layoutID;
+    std::unordered_map<uint32_t, BoundResource> boundSlots;
+
+    bool                                        isArrayed = false;
+    std::unordered_map<uint32_t, BoundResource> boundArraySlots; // Resource per array slot (if arrayed)
+
+    /*
+    Update for Uniform Buffers
+    */
+    void update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformDataType type, uint32_t binding);
+    /*
+    Update for Images
+    */
+    void update(Image* image, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0);
+    /*
+    Update for Image Array
+    */
+    void update(std::vector<Image>& images, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER);
+    /*
+    Update for Acceleration Structures
+    */
+    void update(TLAS* accel, uint32_t binding);
 };
 
 struct LayoutBinding {
@@ -40,48 +61,31 @@ struct LayoutBinding {
     }
 };
 
+struct DescriptorLayout {
+    VkDescriptorSetLayout handle = VK_NULL_HANDLE;
+    VkDevice              device = VK_NULL_HANDLE;
+
+    std::vector<LayoutBinding> bindings;
+
+    void cleanup();
+};
+
 struct DescriptorPool {
-    VkDescriptorPool                                    handle = VK_NULL_HANDLE;
-    VkDevice                                            device = VK_NULL_HANDLE;
-    std::unordered_map<uint32_t, VkDescriptorSetLayout> layouts;
+    VkDescriptorPool                               handle = VK_NULL_HANDLE;
+    VkDevice                                       device = VK_NULL_HANDLE;
+    std::unordered_map<uint32_t, DescriptorLayout> layouts;
 
     void set_layout(uint32_t                         layoutSetIndex,
                     std::vector<LayoutBinding>       bindings,
                     VkDescriptorSetLayoutCreateFlags flags    = 0,
                     VkDescriptorBindingFlagsEXT      extFlags = 0);
 
-    inline VkDescriptorSetLayout get_layout(uint32_t layoutSetIndex) {
+    inline DescriptorLayout get_layout(uint32_t layoutSetIndex) {
         return layouts[layoutSetIndex];
     }
 
     void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor);
     void allocate_variable_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor, uint32_t count);
-
-    /*
-    Set writes for Uniform Buffers
-    */
-    void update_descriptor(Buffer* buffer, size_t dataSize, size_t readOffset, DescriptorSet* descriptor, UniformDataType type, uint32_t binding);
-    /*
-    Set writes for Images
-    */
-    void update_descriptor(Image*          image,
-                           ImageLayout     layout,
-                           DescriptorSet*  descriptor,
-                           uint32_t        binding,
-                           UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER,
-                           uint32_t        arraySlot = 0);
-    /*
-    Set writes for Image Array
-    */
-    void update_descriptor(std::vector<Image>& images,
-                           ImageLayout         layout,
-                           DescriptorSet*      descriptor,
-                           uint32_t            binding,
-                           UniformDataType     type = UNIFORM_COMBINED_IMAGE_SAMPLER);
-    /*
-    Set writes for Acceleration Structures
-    */
-    void update_descriptor(TLAS* accel, DescriptorSet* descriptor, uint32_t binding);
 
     void cleanup();
 };

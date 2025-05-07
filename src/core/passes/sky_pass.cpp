@@ -41,8 +41,8 @@ void SkyPass::resize_attachments() {
     BaseGraphicPass::resize_attachments();
 
     // Update descriptor of previous framebuffer
-    m_descriptorPool.update_descriptor(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
-    m_descriptorPool.update_descriptor(&m_interAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
+    m_imageDescriptor.update(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL,  0);
+    m_imageDescriptor.update(&m_interAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 }
 void SkyPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     // Init and configure local descriptors
@@ -54,8 +54,8 @@ void SkyPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
 
     m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_imageDescriptor);
 
-    m_descriptorPool.update_descriptor(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 0);
-    m_descriptorPool.update_descriptor(&m_interAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptor, 1);
+    m_imageDescriptor.update(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    m_imageDescriptor.update(&m_interAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 }
 void SkyPass::setup_shader_passes() {
 

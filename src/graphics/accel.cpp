@@ -10,7 +10,6 @@ void Accel::cleanup() {
         vkDestroyAccelerationStructure(device, handle, nullptr);
         handle = VK_NULL_HANDLE;
         buffer.cleanup();
-        binded = false;
         instances = 0;
     }
 }

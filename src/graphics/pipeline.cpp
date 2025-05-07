@@ -12,7 +12,7 @@ void PipelineBuilder::build_pipeline_layout(VkPipelineLayout& layout,
     for (auto& layoutID : settings.descriptorSetLayoutIDs)
     {
         if (layoutID.second)
-            descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first));
+            descriptorLayouts.push_back(descriptorManager.get_layout(layoutID.first).handle);
     }
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = Init::pipeline_layout_create_info();

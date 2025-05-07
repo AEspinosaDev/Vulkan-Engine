@@ -146,7 +146,7 @@ void PostProcessPass<numberIN, numberOUT>::execute(Graphics::Frame& currentFrame
 template <std::size_t numberIN, std::size_t numberOUT> void PostProcessPass<numberIN, numberOUT>::link_input_attachments() {
     for (size_t i = 0; i < numberIN; i++)
     {
-        this->m_descriptorPool.update_descriptor(this->m_inAttachments[i], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, i);
+        this->m_imageDescriptorSet.update(this->m_inAttachments[i], LAYOUT_SHADER_READ_ONLY_OPTIMAL,  i);
     }
 }
 

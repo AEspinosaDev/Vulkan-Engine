@@ -81,8 +81,7 @@ void BloomPass::setup_shader_passes() {
 
     m_shaderPasses["upsample"] = upsamplePass;
 
-    GraphicShaderPass* bloomPass =
-        new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/bloom/compose.glsl"));
+    GraphicShaderPass* bloomPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/bloom/compose.glsl"));
     bloomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     bloomPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -234,18 +233,18 @@ void BloomPass::link_input_attachments() {
     // Create auxiliar images for mipmaps
     for (size_t i = 0; i < MIPMAP_LEVELS; i++)
     {
-        m_bloomMipmaps[i]              = m_bloomImage.clone();
+        m_bloomMipmaps[i]                     = m_bloomImage.clone();
         m_bloomMipmaps[i].config.baseMipLevel = i;
         m_bloomMipmaps[i].config.mipLevels    = 1;
         m_bloomMipmaps[i].create_view(config);
     }
 
-    m_descriptorPool.update_descriptor(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 0);
-    m_descriptorPool.update_descriptor(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 1);
+    m_imageDescriptorSet.update(m_inAttachments[1], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    m_imageDescriptorSet.update(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 
-    m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 2, UNIFORM_STORAGE_IMAGE);
-    m_descriptorPool.update_descriptor(m_bloomMipmaps, LAYOUT_GENERAL, &m_imageDescriptorSet, 3);
-    m_descriptorPool.update_descriptor(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 4);
+    m_imageDescriptorSet.update(m_bloomMipmaps, LAYOUT_GENERAL, 2, UNIFORM_STORAGE_IMAGE);
+    m_imageDescriptorSet.update(m_bloomMipmaps, LAYOUT_GENERAL, 3);
+    m_imageDescriptorSet.update(&m_bloomImage, LAYOUT_SHADER_READ_ONLY_OPTIMAL, 4);
 }
 
 void BloomPass::resize_attachments() {

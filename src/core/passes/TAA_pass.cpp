@@ -81,8 +81,8 @@ void TAAPass::create_framebuffer() {
 
 void TAAPass::link_input_attachments() {
     PostProcessPass::link_input_attachments();
-    this->m_descriptorPool.update_descriptor(
-        &m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_imageDescriptorSet, 2);
+    this->m_imageDescriptorSet.update(
+        &m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
 }
 
 void TAAPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {

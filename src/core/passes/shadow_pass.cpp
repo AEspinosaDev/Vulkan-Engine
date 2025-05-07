@@ -57,25 +57,22 @@ void ShadowPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     {
         // Global
         m_descriptorPool.allocate_descriptor_set(GLOBAL_LAYOUT, &m_descriptors[i].globalDescritor);
-        m_descriptorPool.update_descriptor(
-            &frames[i].uniformBuffers[0], sizeof(CameraUniforms), 0, &m_descriptors[i].globalDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[0],
-                                           sizeof(SceneUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
-                                           &m_descriptors[i].globalDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT], sizeof(CameraUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].globalDescritor.update(&frames[i].uniformBuffers[GLOBAL_LAYOUT],
+                                                sizeof(SceneUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(CameraUniforms)),
+
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptorPool.update_descriptor(
-            &frames[i].uniformBuffers[1], sizeof(ObjectUniforms), 0, &m_descriptors[i].objectDescritor, UNIFORM_DYNAMIC_BUFFER, 0);
-        m_descriptorPool.update_descriptor(&frames[i].uniformBuffers[1],
-                                           sizeof(MaterialUniforms),
-                                           m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
-                                           &m_descriptors[i].objectDescritor,
-                                           UNIFORM_DYNAMIC_BUFFER,
-                                           1);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT],
+                                                sizeof(MaterialUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
     }
 }
 void ShadowPass::setup_shader_passes() {

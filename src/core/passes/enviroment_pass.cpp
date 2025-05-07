@@ -63,8 +63,8 @@ void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
     m_captureBuffer.upload_data(&capture, sizeof(CaptureData));
 
     // Set descriptors writes
-    m_descriptorPool.update_descriptor(m_outAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
-    m_descriptorPool.update_descriptor(&m_captureBuffer, BUFFER_SIZE, 0, &m_envDescriptorSet, UNIFORM_BUFFER, 2);
+    m_envDescriptorSet.update(m_outAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    m_envDescriptorSet.update(&m_captureBuffer, BUFFER_SIZE, 0, UNIFORM_BUFFER, 2);
 }
 void EnviromentPass::setup_shader_passes() {
 
@@ -146,7 +146,7 @@ jump:
 }
 
 void EnviromentPass::link_input_attachments() {
-    m_descriptorPool.update_descriptor(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 3);
+    m_envDescriptorSet.update(m_inAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
 }
 void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     if (!scene->get_skybox())
@@ -159,7 +159,7 @@ void EnviromentPass::update_uniforms(uint32_t frameIndex, Scene* const scene) {
     {
         if (envMap->is_dirty())
         {
-            m_descriptorPool.update_descriptor(get_image(envMap), LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 0);
+            m_envDescriptorSet.update(get_image(envMap), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
             envMap->set_dirty(false);
         }
     }
@@ -169,7 +169,7 @@ void EnviromentPass::resize_attachments() {
     BaseGraphicPass::resize_attachments();
 
     // Update descriptor of previous framebuffer
-    m_descriptorPool.update_descriptor(m_outAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, &m_envDescriptorSet, 1);
+    m_envDescriptorSet.update(m_outAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 }
 void EnviromentPass::cleanup() {
     m_captureBuffer.cleanup();
