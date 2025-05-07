@@ -3,22 +3,21 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 using namespace Graphics;
 namespace Core {
-void TAAPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  attachments,
-                                    std::vector<Graphics::SubPassDependency>& dependencies) {
+void TAAPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>& attachments, std::vector<Graphics::SubPassDependency>& dependencies) {
     attachments.resize(1);
 
-    attachments[0] = Graphics::AttachmentConfig(
-        m_colorFormat,
-        1,
-        LAYOUT_TRANSFER_SRC_OPTIMAL,
-        LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_TRANSFER_SRC
-                          : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC,
-        COLOR_ATTACHMENT,
-        ASPECT_COLOR,
-        TEXTURE_2D,
-        FILTER_LINEAR,
-        ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] =
+        Graphics::AttachmentConfig(m_colorFormat,
+                                   1,
+                                   LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   this->m_isDefault ? IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT
+                                                     : IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
+                                   COLOR_ATTACHMENT,
+                                   ASPECT_COLOR,
+                                   TEXTURE_2D,
+                                   FILTER_LINEAR,
+                                   ADDRESS_MODE_CLAMP_TO_EDGE);
 
     attachments[0].isDefault = this->m_isDefault ? true : false;
 
@@ -27,12 +26,10 @@ void TAAPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  at
     {
         dependencies.resize(2);
 
-        dependencies[0] = Graphics::SubPassDependency(
-            STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0]                 = Graphics::SubPassDependency(STAGE_FRAGMENT_SHADER, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
         dependencies[0].srcAccessMask   = ACCESS_SHADER_READ;
         dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
-        dependencies[1] =
-            Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
+        dependencies[1]                 = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_FRAGMENT_SHADER, ACCESS_SHADER_READ);
         dependencies[1].srcAccessMask   = ACCESS_COLOR_ATTACHMENT_WRITE;
         dependencies[1].srcSubpass      = 0;
         dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
@@ -42,8 +39,7 @@ void TAAPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&  at
         dependencies.resize(1);
 
         // dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[0] = Graphics::SubPassDependency(
-            STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
+        dependencies[0] = Graphics::SubPassDependency(STAGE_COLOR_ATTACHMENT_OUTPUT, STAGE_COLOR_ATTACHMENT_OUTPUT, ACCESS_COLOR_ATTACHMENT_WRITE);
         dependencies[0].dependencyFlags = SUBPASS_DEPENDENCY_NONE;
     }
 }
@@ -67,22 +63,19 @@ void TAAPass::create_framebuffer() {
     ImageConfig prevImgConfig = {};
     prevImgConfig.format      = m_colorFormat;
     prevImgConfig.usageFlags  = IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_DST | IMAGE_USAGE_TRANSFER_SRC;
-    m_interAttachments[0] = m_device->create_image({m_imageExtent.width, m_imageExtent.height, 1}, prevImgConfig);
+    m_interAttachments[0]     = m_device->create_image({m_imageExtent.width, m_imageExtent.height, 1}, prevImgConfig);
     m_interAttachments[0].create_view(prevImgConfig);
 
     SamplerConfig samplerConfig      = {};
     samplerConfig.samplerAddressMode = ADDRESS_MODE_CLAMP_TO_EDGE;
     m_interAttachments[0].create_sampler(samplerConfig);
 
-    
-
     PostProcessPass::create_framebuffer();
 }
 
 void TAAPass::link_input_attachments() {
     PostProcessPass::link_input_attachments();
-    this->m_imageDescriptorSet.update(
-        &m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    this->m_imageDescriptorSet.update(&m_interAttachments[0], LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
 }
 
 void TAAPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_t presentImageIndex) {
@@ -130,7 +123,6 @@ void TAAPass::execute(Graphics::Frame& currentFrame, Scene* const scene, uint32_
                          ACCESS_SHADER_READ,
                          STAGE_TRANSFER,
                          STAGE_FRAGMENT_SHADER);
-
 }
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

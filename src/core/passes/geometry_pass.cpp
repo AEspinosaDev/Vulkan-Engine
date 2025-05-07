@@ -15,32 +15,32 @@ void GeometryPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST);
     // Albedo + Opacity
     attachments[1] = Graphics::AttachmentConfig(RGBA_8U,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST);
     // Material + ID
     attachments[2] = Graphics::AttachmentConfig(RGBA_8U,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST);
     // Velocity + Emissive strength
     attachments[3] = Graphics::AttachmentConfig(m_floatFormat,
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC);
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST);
 
     // Depth
     attachments[4]                                           = Graphics::AttachmentConfig(m_depthFormat,
                                                 1,
                                                 LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                                 LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC,
+                                                IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
                                                 DEPTH_ATTACHMENT,
                                                 ASPECT_DEPTH);
     attachments[4].imageConfig.clearValue.depthStencil.depth = 0.0f; // Inverse Z

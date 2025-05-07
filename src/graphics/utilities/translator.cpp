@@ -26,6 +26,8 @@ VkFormat get(ColorFormatType colorFormatType) {
         return VK_FORMAT_R16G16_SFLOAT;
     case ColorFormatType::SRG_32F:
         return VK_FORMAT_R32G32_SFLOAT;
+    case ColorFormatType::SRGB_16F:
+        return VK_FORMAT_R16G16B16_SFLOAT;
     case ColorFormatType::SRGBA_16F:
         return VK_FORMAT_R16G16B16A16_SFLOAT;
     case ColorFormatType::SRGBA_32F:
@@ -48,6 +50,8 @@ VkFormat get(ColorFormatType colorFormatType) {
         return VK_FORMAT_D32_SFLOAT;
     case ColorFormatType::RGB10A2:
         return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    // case ColorFormatType::RG11B10_UFLOAT:
+    //     return VK_FORMAT_R11G11B10_UFLOAT_PACK32;
     default:
         throw std::invalid_argument("VKEngine error: Unknown ColorFormatType");
     }
@@ -356,8 +360,7 @@ VkImageUsageFlags get(ImageUsageFlags usageFlags) {
     {
         vkFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) &
-        static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(ImageUsageFlags::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT))
     {
         vkFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     }
@@ -436,8 +439,7 @@ VkBufferUsageFlags get(BufferUsageFlags usageFlags) {
     {
         vkFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) &
-        static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE))
     {
         vkFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
     }
@@ -445,8 +447,7 @@ VkBufferUsageFlags get(BufferUsageFlags usageFlags) {
     {
         vkFlags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
-    if (static_cast<uint32_t>(usageFlags) &
-        static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY))
+    if (static_cast<uint32_t>(usageFlags) & static_cast<uint32_t>(BufferUsageFlags::BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY))
     {
         vkFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     }
@@ -472,8 +473,7 @@ VkMemoryPropertyFlags get(MemoryPropertyFlags memoryFlags) {
     {
         vkFlags |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     }
-    if (static_cast<uint32_t>(memoryFlags) &
-        static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_LAZILY_ALLOCATED))
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_LAZILY_ALLOCATED))
     {
         vkFlags |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     }
@@ -481,13 +481,11 @@ VkMemoryPropertyFlags get(MemoryPropertyFlags memoryFlags) {
     {
         vkFlags |= VK_MEMORY_PROPERTY_PROTECTED_BIT;
     }
-    if (static_cast<uint32_t>(memoryFlags) &
-        static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_COHERENT))
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_COHERENT))
     {
         vkFlags |= VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD;
     }
-    if (static_cast<uint32_t>(memoryFlags) &
-        static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_UNCACHED))
+    if (static_cast<uint32_t>(memoryFlags) & static_cast<uint32_t>(MemoryPropertyFlags::MEMORY_PROPERTY_DEVICE_UNCACHED))
     {
         vkFlags |= VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
     }
@@ -501,13 +499,11 @@ VkShaderStageFlags get(ShaderStageFlags shaderStages) {
     {
         vkFlags |= VK_SHADER_STAGE_VERTEX_BIT;
     }
-    if (static_cast<uint32_t>(shaderStages) &
-        static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TESSELLATION_CONTROL))
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TESSELLATION_CONTROL))
     {
         vkFlags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     }
-    if (static_cast<uint32_t>(shaderStages) &
-        static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TESSELLATION_EVALUATION))
+    if (static_cast<uint32_t>(shaderStages) & static_cast<uint32_t>(ShaderStageFlags::SHADER_STAGE_TESSELLATION_EVALUATION))
     {
         vkFlags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     }

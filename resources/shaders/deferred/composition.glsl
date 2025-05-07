@@ -112,6 +112,7 @@ void main() {
     g_pos = viewPos.xyz;
 
     g_normal = normalize(texture(normalBuffer, v_uv).rgb);
+    // g_normal = normalize(g_normal);
     vec4 colorData = texture(colorBuffer, v_uv);
     g_albedo = colorData.rgb;
     g_opacity = colorData.w;

@@ -11,17 +11,18 @@ void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&
 
     attachments.resize(multisampled ? 4 : 2);
 
-    attachments[0] = Graphics::AttachmentConfig(
-        m_colorFormat,
-        samples,
-        m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT) : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-        COLOR_ATTACHMENT,
-        ASPECT_COLOR,
-        TEXTURE_2D,
-        FILTER_LINEAR,
-        ADDRESS_MODE_CLAMP_TO_EDGE);
+    attachments[0] =
+        Graphics::AttachmentConfig(m_colorFormat,
+                                   samples,
+                                   m_isDefault ? (multisampled ? LAYOUT_COLOR_ATTACHMENT_OPTIMAL : LAYOUT_PRESENT) : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST
+                                                : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
+                                   COLOR_ATTACHMENT,
+                                   ASPECT_COLOR,
+                                   TEXTURE_2D,
+                                   FILTER_LINEAR,
+                                   ADDRESS_MODE_CLAMP_TO_EDGE);
 
     attachments[0].isDefault = m_isDefault ? (multisampled ? false : true) : false;
 
@@ -41,15 +42,16 @@ void ForwardPass::setup_out_attachments(std::vector<Graphics::AttachmentConfig>&
     if (multisampled)
     {
         m_interAttachments.resize(2);
-        attachments[2] = Graphics::AttachmentConfig(
-            m_colorFormat,
-            1,
-            m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
-            RESOLVE_ATTACHMENT,
-            ASPECT_COLOR,
-            TEXTURE_2D);
+        attachments[2] =
+            Graphics::AttachmentConfig(m_colorFormat,
+                                       1,
+                                       m_isDefault ? LAYOUT_PRESENT : LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                       LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                       !m_isDefault ? IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST
+                                                    : IMAGE_USAGE_TRANSIENT_ATTACHMENT | IMAGE_USAGE_COLOR_ATTACHMENT,
+                                       RESOLVE_ATTACHMENT,
+                                       ASPECT_COLOR,
+                                       TEXTURE_2D);
         attachments[2].isDefault = m_isDefault ? true : false;
 
         attachments[3] = Graphics::AttachmentConfig(m_colorFormat,
@@ -141,24 +143,20 @@ void ForwardPass::setup_uniforms(std::vector<Graphics::Frame>& frames) {
         // m_descriptors[i].globalDescritor.update(
         //     get_image(ResourceManager::FALLBACK_TEXTURE), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
 
-        m_descriptors[i].globalDescritor.update(
-            get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::textureResources[0]), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
 
         // Per-object
         m_descriptorPool.allocate_descriptor_set(OBJECT_LAYOUT, &m_descriptors[i].objectDescritor);
-        m_descriptors[i].objectDescritor.update(
-            &frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0,UNIFORM_DYNAMIC_BUFFER, 0);
+        m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT], sizeof(ObjectUniforms), 0, UNIFORM_DYNAMIC_BUFFER, 0);
         m_descriptors[i].objectDescritor.update(&frames[i].uniformBuffers[OBJECT_LAYOUT],
-                                                           sizeof(MaterialUniforms),
-                                                           m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
-                                                         
-                                                           UNIFORM_DYNAMIC_BUFFER,
-                                                           1);
+                                                sizeof(MaterialUniforms),
+                                                m_device->pad_uniform_buffer_size(sizeof(MaterialUniforms)),
+
+                                                UNIFORM_DYNAMIC_BUFFER,
+                                                1);
         // Set up enviroment fallback texture
-        m_descriptors[i].globalDescritor.update(
-            get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
-        m_descriptors[i].globalDescritor.update(
-            get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 4);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 3);
+        m_descriptors[i].globalDescritor.update(get_image(ResourceManager::FALLBACK_CUBEMAP), LAYOUT_SHADER_READ_ONLY_OPTIMAL, 4);
     }
 }
 void ForwardPass::setup_shader_passes() {

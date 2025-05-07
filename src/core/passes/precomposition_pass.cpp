@@ -40,7 +40,7 @@ void PreCompositionPass::setup_out_attachments(std::vector<Graphics::AttachmentC
                                                 1,
                                                 LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                 LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                                                IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
                                                 COLOR_ATTACHMENT,
                                                 ASPECT_COLOR,
                                                 TEXTURE_2D,
