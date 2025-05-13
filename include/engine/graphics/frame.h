@@ -24,13 +24,14 @@ struct Frame {
     Semaphore renderSemaphore  = {};
     Fence     renderFence      = {};
     // Command
-    CommandPool   commandPool          = {};
-    CommandBuffer commandBuffer        = {};
-    CommandPool   computeCommandPool   = {};
-    CommandBuffer computeCommandBuffer = {};
-    // Uniforms
-    std::vector<Buffer> uniformBuffers;
-    uint32_t            index = 0;
+    CommandPool   commandPool   = {};
+    CommandBuffer commandBuffer = {};
+
+    // GPU Global Buffers
+    Buffer globalBuffer;
+    Buffer objectBuffer;
+
+    uint32_t index = 0;
 
     void cleanup();
 

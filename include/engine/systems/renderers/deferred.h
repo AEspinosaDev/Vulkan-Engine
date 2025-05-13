@@ -3,18 +3,18 @@
 
 #include <engine/systems/renderers/renderer.h>
 
-#include <engine/core/passes/TAA_pass.h>
-#include <engine/core/passes/bloom_pass.h>
-#include <engine/core/passes/composition_pass.h>
-#include <engine/core/passes/enviroment_pass.h>
-#include <engine/core/passes/geometry_pass.h>
-#include <engine/core/passes/gui_pass.h>
-#include <engine/core/passes/postprocess_pass.h>
-#include <engine/core/passes/precomposition_pass.h>
-#include <engine/core/passes/sky_pass.h>
-#include <engine/core/passes/tonemapping_pass.h>
-#include <engine/core/passes/variance_shadow_pass.h>
-#include <engine/core/passes/voxelization_pass.h>
+#include <engine/render/passes/TAA_pass.h>
+#include <engine/render/passes/bloom_pass.h>
+#include <engine/render/passes/composition_pass.h>
+#include <engine/render/passes/enviroment_pass.h>
+#include <engine/render/passes/geometry_pass.h>
+#include <engine/render/passes/gui_pass.h>
+#include <engine/render/passes/postprocess_pass.h>
+#include <engine/render/passes/precomposition_pass.h>
+#include <engine/render/passes/sky_pass.h>
+#include <engine/render/passes/tonemapping_pass.h>
+#include <engine/render/passes/variance_shadow_pass.h>
+#include <engine/render/passes/voxelization_pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -57,7 +57,7 @@ class DeferredRenderer : public BaseRenderer
     DeferredRenderer(const ptr<Core::IWindow>& window)
         : BaseRenderer(window) {
     }
-    DeferredRenderer(const ptr<Core::IWindow>& window, RendererSettings settings = {})
+    DeferredRenderer(const ptr<Core::IWindow>& window, Render::Settings settings = {})
         : BaseRenderer(window, settings) {
     }
     // Headless instantiation
@@ -65,60 +65,60 @@ class DeferredRenderer : public BaseRenderer
         : BaseRenderer(displayExtent) {
     }
 
-    virtual inline void set_settings(RendererSettings settings) override {
+    virtual inline void set_settings(Render::Settings settings) override {
         if (m_settings.shadowQuality != settings.shadowQuality)
             m_updateShadows = true;
 
         BaseRenderer::set_settings(settings);
     }
     inline float get_bloom_strength() {
-        return get_pass<Core::BloomPass>(BLOOM_PASS)->get_bloom_strength();
+        return get_pass<Render::BloomPass>(BLOOM_PASS)->get_bloom_strength();
     }
     inline void set_bloom_strength(float st) {
-        get_pass<Core::BloomPass>(BLOOM_PASS)->set_bloom_strength(st);
+        get_pass<Render::BloomPass>(BLOOM_PASS)->set_bloom_strength(st);
     }
-    inline void set_SSR_settings(Core::SSR settings) {
-        get_pass<Core::CompositionPass>(COMPOSITION_PASS)->set_SSR_settings(settings);
+    inline void set_SSR_settings(Render::SSR settings) {
+        get_pass<Render::CompositionPass>(COMPOSITION_PASS)->set_SSR_settings(settings);
     };
-    inline Core::SSR get_SSR_settings() {
-        return get_pass<Core::CompositionPass>(COMPOSITION_PASS)->get_SSR_settings();
+    inline Render::SSR get_SSR_settings() {
+        return get_pass<Render::CompositionPass>(COMPOSITION_PASS)->get_SSR_settings();
     };
-    inline void set_VXGI_settings(Core::VXGI settings) {
-        if (get_pass<Core::CompositionPass>(COMPOSITION_PASS)->get_VXGI_settings().resolution != settings.resolution)
+    inline void set_VXGI_settings(Render::VXGI settings) {
+        if (get_pass<Render::CompositionPass>(COMPOSITION_PASS)->get_VXGI_settings().resolution != settings.resolution)
             m_updateGI = true;
-        get_pass<Core::CompositionPass>(COMPOSITION_PASS)->set_VXGI_settings(settings);
+        get_pass<Render::CompositionPass>(COMPOSITION_PASS)->set_VXGI_settings(settings);
         m_passes[VOXELIZATION_PASS]->set_active(settings.enabled);
     };
-    inline Core::VXGI get_VXGI_settings() {
-        return get_pass<Core::CompositionPass>(COMPOSITION_PASS)->get_VXGI_settings();
+    inline Render::VXGI get_VXGI_settings() {
+        return get_pass<Render::CompositionPass>(COMPOSITION_PASS)->get_VXGI_settings();
     };
-    inline void set_SSAO_settings(Core::AO settings) {
-        get_pass<Core::PreCompositionPass>(PRECOMPOSITION_PASS)->set_SSAO_settings(settings);
-        get_pass<Core::CompositionPass>(COMPOSITION_PASS)->enable_AO(settings.enabled);
-        get_pass<Core::CompositionPass>(COMPOSITION_PASS)->set_AO_type(static_cast<int>(settings.type));
-        m_passes[PRECOMPOSITION_PASS]->set_active(settings.enabled && settings.type != Core::AOType::VXAO);
+    inline void set_SSAO_settings(Render::AO settings) {
+        get_pass<Render::PreCompositionPass>(PRECOMPOSITION_PASS)->set_SSAO_settings(settings);
+        get_pass<Render::CompositionPass>(COMPOSITION_PASS)->enable_AO(settings.enabled);
+        get_pass<Render::CompositionPass>(COMPOSITION_PASS)->set_AO_type(static_cast<int>(settings.type));
+        m_passes[PRECOMPOSITION_PASS]->set_active(settings.enabled && settings.type != Render::AOType::VXAO);
     };
-    inline Core::AO get_SSAO_settings() {
-        return get_pass<Core::PreCompositionPass>(PRECOMPOSITION_PASS)->get_SSAO_settings();
+    inline Render::AO get_SSAO_settings() {
+        return get_pass<Render::PreCompositionPass>(PRECOMPOSITION_PASS)->get_SSAO_settings();
     };
-    inline void set_shading_output(Core::OutputBuffer output) {
-        get_pass<Core::CompositionPass>(COMPOSITION_PASS)->set_output_buffer(output);
+    inline void set_shading_output(Render::OutputBuffer output) {
+        get_pass<Render::CompositionPass>(COMPOSITION_PASS)->set_output_buffer(output);
     }
-    inline Core::OutputBuffer get_shading_output() {
-        return get_pass<Core::CompositionPass>(COMPOSITION_PASS)->get_output_buffer();
+    inline Render::OutputBuffer get_shading_output() {
+        return get_pass<Render::CompositionPass>(COMPOSITION_PASS)->get_output_buffer();
     }
     inline float get_exposure() {
-        auto pass = get_pass<Core::TonemappingPass>(TONEMAPPIN_PASS);
+        auto pass = get_pass<Render::TonemappingPass>(TONEMAPPIN_PASS);
         return pass->get_exposure();
     }
     inline void set_exposure(float exposure) {
-        get_pass<Core::TonemappingPass>(TONEMAPPIN_PASS)->set_exposure(exposure);
+        get_pass<Render::TonemappingPass>(TONEMAPPIN_PASS)->set_exposure(exposure);
     }
-    inline Core::TonemappingType get_tonemapping_type() {
-        return get_pass<Core::TonemappingPass>(TONEMAPPIN_PASS)->get_tonemapping_type();
+    inline Render::TonemappingType get_tonemapping_type() {
+        return get_pass<Render::TonemappingPass>(TONEMAPPIN_PASS)->get_tonemapping_type();
     }
-    inline void set_tonemapping_type(Core::TonemappingType type) {
-        get_pass<Core::TonemappingPass>(TONEMAPPIN_PASS)->set_tonemapping_type(type);
+    inline void set_tonemapping_type(Render::TonemappingType type) {
+        get_pass<Render::TonemappingPass>(TONEMAPPIN_PASS)->set_tonemapping_type(type);
     }
 };
 } // namespace Systems

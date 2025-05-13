@@ -7,12 +7,11 @@ namespace Graphics {
 bool Frame::guiEnabled = false;
 
 void Frame::cleanup() {
-    for (Buffer& buffer : uniformBuffers)
-    {
-        buffer.cleanup();
-    }
+  
+    globalBuffer.cleanup();
+    objectBuffer.cleanup();
+
     commandPool.cleanup();
-    computeCommandPool.cleanup();
     renderFence.cleanup();
     renderSemaphore.cleanup();
     presentSemaphore.cleanup();

@@ -20,13 +20,7 @@ namespace Core {
 
 class Geometry;
 
-enum class Topology
-{
-    TRIANGLES          = 0,
-    LINES              = 1,
-    LINES_TO_TRIANGLES = 2,
-    OTHER              = 3
-};
+
 
 struct GeometricData {
     std::vector<uint32_t>         vertexIndex;

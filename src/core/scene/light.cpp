@@ -6,8 +6,8 @@ uint16_t Light::m_nonRaytraceCount         = 0;
 int      PointLight::m_instanceCount       = 0;
 int      DirectionalLight::m_instanceCount = 0;
 
-Graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const {
-    Graphics::LightUniforms uniforms{};
+Render::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const {
+    Render::LightUniforms uniforms{};
     // Transform to camera view for shader
     uniforms.position      = cameraView * Vec4(m_transform.position, 1.0f);
     uniforms.position.w    = (float)m_lighType;
@@ -23,9 +23,9 @@ Graphics::LightUniforms PointLight::get_uniforms(Mat4 cameraView) const {
     return uniforms;
 }
 
-Graphics::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const {
+Render::LightUniforms DirectionalLight::get_uniforms(Mat4 cameraView) const {
 
-    Graphics::LightUniforms uniforms{};
+    Render::LightUniforms uniforms{};
     // Transform to camera view for shader
 
     uniforms.position      = cameraView * Vec4(m_direction, 0.0f);

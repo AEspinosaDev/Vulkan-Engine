@@ -460,8 +460,6 @@ Frame Device::create_frame(uint16_t id) {
     frame.index                = id;
     frame.commandPool          = create_command_pool(QueueType::GRAPHIC_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
     frame.commandBuffer        = create_command_buffer(frame.commandPool);
-    frame.computeCommandPool   = create_command_pool(QueueType::COMPUTE_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER);
-    frame.computeCommandBuffer = create_command_buffer(frame.computeCommandPool);
     frame.renderFence          = create_fence();
     frame.renderSemaphore      = create_semaphore();
     frame.presentSemaphore     = create_semaphore();

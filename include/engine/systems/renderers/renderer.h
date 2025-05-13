@@ -13,33 +13,18 @@
 #define RENDERER_H
 
 #include <engine/common.h>
-#include <engine/core/passes/pass.h>
-#include <engine/core/resource_manager.h>
+#include <engine/render/passes/graphic_pass.h>
+#include <engine/render/render_resources.h>
+#include <engine/render/render_view_builder.h>
+
+#include <engine/core/windows/window.h>
+
+#include <engine/tools/loaders.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Systems {
 
-/*
-Renderer Global Settings Data
-*/
-struct RendererSettings {
-
-    MSAASamples      samplesMSAA           = MSAASamples::x4;          // Multisampled AA (when possible)
-    BufferingType    bufferingType         = BufferingType::DOUBLE;    // Buffering type (Usual: double buffering)
-    SyncType         screenSync            = SyncType::MAILBOX;        // Type of display synchronization
-    ColorFormatType  displayColorFormat    = SRGBA_8;                  // Color format used for presentation
-    FloatPrecission  highDynamicPrecission = FloatPrecission::F16;     // HDR operations floating point precission
-    FloatPrecission  depthPrecission       = FloatPrecission::F32;     // Depth operations floating point precission
-    Vec4             clearColor            = Vec4{0.0, 0.0, 0.0, 1.0}; // Clear color of visible color buffer
-    SoftwareAA       softwareAA            = SoftwareAA::NONE;
-    ShadowResolution shadowQuality         = ShadowResolution::MEDIUM;
-    bool             autoClearColor        = true;
-    bool             autoClearDepth        = true;
-    bool             autoClearStencil      = true;
-    bool             enableUI              = false;
-    bool             enableRaytracing      = true;
-};
 /**
  * Basic class. Renders a given scene data to a given window. Fully
  * parametrizable. It has to be inherited for achieving a higher end
@@ -55,13 +40,13 @@ class BaseRenderer
     std::vector<Graphics::Frame> m_frames;
     Extent2D                     m_headlessExtent{}; // In case is headless
 
-    /*Settings*/
-    RendererSettings m_settings{};
-
-    /*Passes & Attachments*/
-    // std::vector<ptr<Core::BasePass>> m_passes;
-    std::vector<ptr<Core::BasePass>> m_passes;
-    std::vector<Graphics::Image>     m_attachments;
+    /*Render Data*/
+    Render::Settings          m_settings{};
+    Render::RenderViewBuilder m_viewBuilder{};
+    Render::Resources         m_renderResources{};
+    // Passes & Attachments
+    std::vector<ptr<Render::BasePass>> m_passes;
+    std::vector<Graphics::Image>       m_attachments;
 
     /*Automatic deletion queue*/
     Utils::DeletionQueue m_deletionQueue;
@@ -80,7 +65,7 @@ class BaseRenderer
         if (!window)
             m_headless = true;
     }
-    BaseRenderer(const ptr<Core::IWindow>& window, RendererSettings settings)
+    BaseRenderer(const ptr<Core::IWindow>& window, Render::Settings settings)
         : m_window(window)
         , m_settings(settings)
         , m_device(nullptr) {
@@ -103,10 +88,10 @@ class BaseRenderer
     inline bool headless() const {
         return m_headless;
     }
-    inline RendererSettings get_settings() const {
+    inline Render::Settings get_settings() const {
         return m_settings;
     }
-    virtual inline void set_settings(RendererSettings settings) {
+    virtual inline void set_settings(Render::Settings settings) {
         if (m_settings.screenSync != settings.screenSync)
             m_updateFramebuffers = true;
 

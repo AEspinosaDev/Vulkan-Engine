@@ -40,7 +40,7 @@ void DeferredRenderer::on_after_render(RenderResult& renderResult, Core::Scene* 
     {
         m_device->wait_idle();
 
-        uint32_t voxelRes = get_pass<Core::CompositionPass>(COMPOSITION_PASS)->get_VXGI_settings().resolution;
+        uint32_t voxelRes = get_pass<Render::CompositionPass>(COMPOSITION_PASS)->get_VXGI_settings().resolution;
         m_passes[VOXELIZATION_PASS]->set_extent({voxelRes, voxelRes});
         m_passes[VOXELIZATION_PASS]->resize_attachments();
 
@@ -65,40 +65,40 @@ void DeferredRenderer::create_passes() {
 
     // Arrange connectivity
     //--------------------------------
-    Core::PassLinkage<0, 1>  skyPassConfig         = {m_attachments, {}, {0}};
-    Core::PassLinkage<1, 2>  enviromentPassConfig  = {m_attachments, {0}, {1, 2}};
-    Core::PassLinkage<0, 2>  shadowPassConfig      = {m_attachments, {}, {3, 4}};
-    Core::PassLinkage<1, 1>  voxelPassConfig       = {m_attachments, {3}, {5}};
-    Core::PassLinkage<3, 5>  geometryPassConfig    = {m_attachments, {1, 2, 0}, {6, 7, 8, 9, 10}};
-    Core::PassLinkage<2, 1>  preCompPassConfig     = {m_attachments, {10, 6}, {12}};
-    Core::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 10, 6, 7, 8, 9, 12, 1, 2}, {13, 14}};
-    Core::PassLinkage<2, 1>  bloomPassConfig       = {m_attachments, {13, 14}, {15}};
-    Core::PassLinkage<2, 1>  TAAPassConfig         = {m_attachments, {15, 9}, {16}};
-    Core::PassLinkage<1, 1>  FXAAPassConfig        = {m_attachments, {15}, {16}};
-    Core::PassLinkage<1, 1>  toneMappingPassConfig = {m_attachments, {16}, {17}};
+    Render::PassLinkage<0, 1>  skyPassConfig         = {m_attachments, {}, {0}};
+    Render::PassLinkage<1, 2>  enviromentPassConfig  = {m_attachments, {0}, {1, 2}};
+    Render::PassLinkage<0, 2>  shadowPassConfig      = {m_attachments, {}, {3, 4}};
+    Render::PassLinkage<1, 1>  voxelPassConfig       = {m_attachments, {3}, {5}};
+    Render::PassLinkage<3, 5>  geometryPassConfig    = {m_attachments, {1, 2, 0}, {6, 7, 8, 9, 10}};
+    Render::PassLinkage<2, 1>  preCompPassConfig     = {m_attachments, {10, 6}, {12}};
+    Render::PassLinkage<10, 2> compPassConfig        = {m_attachments, {3, 5, 10, 6, 7, 8, 9, 12, 1, 2}, {13, 14}};
+    Render::PassLinkage<2, 1>  bloomPassConfig       = {m_attachments, {13, 14}, {15}};
+    Render::PassLinkage<2, 1>  TAAPassConfig         = {m_attachments, {15, 9}, {16}};
+    Render::PassLinkage<1, 1>  FXAAPassConfig        = {m_attachments, {15}, {16}};
+    Render::PassLinkage<1, 1>  toneMappingPassConfig = {m_attachments, {16}, {17}};
 
     // Create passes
     //--------------------------------
 
-    m_passes[SKY_PASS]            = std::make_shared<Core::SkyPass>(m_device, skyPassConfig, SKY_RES);
-    m_passes[ENVIROMENT_PASS]     = std::make_shared<Core::EnviromentPass>(m_device, enviromentPassConfig);
-    m_passes[SHADOW_PASS]         = std::make_shared<Core::VarianceShadowPass>(m_device, shadowPassConfig, SHADOW_RES, ENGINE_MAX_LIGHTS, DEPTH_FORMAT);
-    m_passes[VOXELIZATION_PASS]   = std::make_shared<Core::VoxelizationPass>(m_device, voxelPassConfig, 256);
-    m_passes[GEOMETRY_PASS]       = std::make_shared<Core::GeometryPass>(m_device, geometryPassConfig, DISPLAY_EXTENT, HDR_FORMAT, DEPTH_FORMAT);
-    m_passes[PRECOMPOSITION_PASS] = std::make_shared<Core::PreCompositionPass>(m_device, preCompPassConfig, DISPLAY_EXTENT);
-    m_passes[COMPOSITION_PASS]    = std::make_shared<Core::CompositionPass>(m_device, compPassConfig, DISPLAY_EXTENT, HDR_FORMAT);
-    m_passes[BLOOM_PASS]          = std::make_shared<Core::BloomPass>(m_device, bloomPassConfig, DISPLAY_EXTENT, HDR_FORMAT);
+    m_passes[SKY_PASS]            = std::make_shared<Render::SkyPass>(m_device, skyPassConfig, SKY_RES);
+    m_passes[ENVIROMENT_PASS]     = std::make_shared<Render::EnviromentPass>(m_device, enviromentPassConfig);
+    m_passes[SHADOW_PASS]         = std::make_shared<Render::VarianceShadowPass>(m_device, shadowPassConfig, SHADOW_RES, ENGINE_MAX_LIGHTS, DEPTH_FORMAT);
+    m_passes[VOXELIZATION_PASS]   = std::make_shared<Render::VoxelizationPass>(m_device, voxelPassConfig, 256);
+    m_passes[GEOMETRY_PASS]       = std::make_shared<Render::GeometryPass>(m_device, geometryPassConfig, DISPLAY_EXTENT, HDR_FORMAT, DEPTH_FORMAT);
+    m_passes[PRECOMPOSITION_PASS] = std::make_shared<Render::PreCompositionPass>(m_device, preCompPassConfig, DISPLAY_EXTENT);
+    m_passes[COMPOSITION_PASS]    = std::make_shared<Render::CompositionPass>(m_device, compPassConfig, DISPLAY_EXTENT, HDR_FORMAT);
+    m_passes[BLOOM_PASS]          = std::make_shared<Render::BloomPass>(m_device, bloomPassConfig, DISPLAY_EXTENT, HDR_FORMAT);
 
     if (m_settings.softwareAA == SoftwareAA::FXAA || m_settings.softwareAA == SoftwareAA::NONE)
-        m_passes[AA_PASS] = std::make_shared<Core::PostProcessPass<1, 1>>(
+        m_passes[AA_PASS] = std::make_shared<Render::PostProcessPass<1, 1>>(
             m_device, FXAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, GET_RESOURCE_PATH("shaders/aa/fxaa.glsl"), "FXAA", false);
     if (m_settings.softwareAA == SoftwareAA::TAA)
-        m_passes[AA_PASS] = std::make_shared<Core::TAAPass>(m_device, TAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, false);
+        m_passes[AA_PASS] = std::make_shared<Render::TAAPass>(m_device, TAAPassConfig, DISPLAY_EXTENT, HDR_FORMAT, false);
 
     m_passes[TONEMAPPIN_PASS] =
-        std::make_shared<Core::TonemappingPass>(m_device, toneMappingPassConfig, DISPLAY_EXTENT, m_settings.displayColorFormat, !m_headless ? true : false);
+        std::make_shared<Render::TonemappingPass>(m_device, toneMappingPassConfig, DISPLAY_EXTENT, m_settings.displayColorFormat, !m_headless ? true : false);
 
-    m_passes[GUI_PASS] = std::make_shared<Core::GUIPass>(m_device, DISPLAY_EXTENT);
+    m_passes[GUI_PASS] = std::make_shared<Render::GUIPass>(m_device, DISPLAY_EXTENT);
 
     //--------------------------------
 
@@ -113,12 +113,12 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
         if (skybox->update_enviroment())
         {
 
-            Core::ResourceManager::upload_skybox_data(m_device, skybox);
+            // Render::Resources::upload_skybox_data(m_device, skybox);
             const uint32_t HDRi_EXTENT       = skybox->get_sky_type() == EnviromentType::IMAGE_BASED_ENV ? skybox->get_enviroment_map()->get_size().height
                                                                                                          : skybox->get_sky_settings().resolution;
             const uint32_t IRRADIANCE_EXTENT = skybox->get_irradiance_resolution();
 
-            get_pass<Core::EnviromentPass>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
+            get_pass<Render::EnviromentPass>(ENVIROMENT_PASS)->set_irradiance_resolution(IRRADIANCE_EXTENT);
             m_passes[ENVIROMENT_PASS]->set_active(true);
             if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
                 m_passes[SKY_PASS]->set_active(true);
@@ -126,7 +126,7 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
             // ONLY IF: framebuffers needs to be resized
             // -------------------------------------------------------------------
             if (m_passes[ENVIROMENT_PASS]->get_extent().height != HDRi_EXTENT ||
-                get_pass<Core::EnviromentPass>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
+                get_pass<Render::EnviromentPass>(ENVIROMENT_PASS)->get_irradiance_resolution() != IRRADIANCE_EXTENT)
             {
                 m_device->wait_idle();
                 if (skybox->get_sky_type() == EnviromentType::PROCEDURAL_ENV)
@@ -142,6 +142,7 @@ void DeferredRenderer::update_enviroment(Core::Skybox* const skybox) {
                 m_passes[GEOMETRY_PASS]->link_input_attachments();
                 m_passes[COMPOSITION_PASS]->link_input_attachments();
             }
+          
         }
     }
 }

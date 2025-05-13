@@ -1,7 +1,7 @@
 #include "test.h"
 #include <filesystem>
 
-void Application::init(Systems::RendererSettings settings) {
+void Application::init(Render::Settings settings) {
     m_window = std::make_shared<WindowGLFW>("Skin Test", 1280, 1024);
 
     m_window->init();
@@ -21,7 +21,7 @@ void Application::init(Systems::RendererSettings settings) {
 
 void Application::run(int argc, char* argv[]) {
 
-    Systems::RendererSettings settings{};
+    Render::Settings settings{};
     settings.bufferingType    = BufferingType::DOUBLE;
     settings.samplesMSAA      = MSAASamples::x1;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);

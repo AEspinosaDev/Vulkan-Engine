@@ -10,7 +10,7 @@
 #define LIGHT_H
 
 #include <engine/core/scene/object3D.h>
-#include <engine/graphics/uniforms.h>
+#include <engine/render/uniforms.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -166,7 +166,7 @@ class Light : public Object3D
         m_area = a;
     }
 
-    virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const = 0;
+    virtual Render::LightUniforms get_uniforms(Mat4 cameraView) const = 0;
     static uint16_t                 get_non_raytraced_count() {
         return m_nonRaytraceCount;
     }
@@ -194,7 +194,7 @@ class PointLight : public Light
         m_effectArea = a;
     }
 
-    virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
+    virtual Render::LightUniforms get_uniforms(Mat4 cameraView) const;
 };
 
 // DIRECTIONAL LIGHT
@@ -233,7 +233,7 @@ class DirectionalLight : public Light
 
     static Vec3 get_sun_direction(float elevationDeg, float rotationDeg);
 
-    virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
+    virtual Render::LightUniforms get_uniforms(Mat4 cameraView) const;
 };
 } // namespace Core
 

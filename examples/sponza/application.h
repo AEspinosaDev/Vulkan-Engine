@@ -47,7 +47,7 @@ class Application
     Time m_time{};
 
   public:
-    void init(Systems::RendererSettings settings);
+    void init(Render::Settings settings);
 
     void run(int argc, char* argv[]);
 

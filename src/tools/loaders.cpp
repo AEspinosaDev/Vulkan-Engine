@@ -137,7 +137,7 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh, const std::string fi
 }
 
 void VKFW::Tools::Loaders::load_OBJ_topology(Core::Mesh* const mesh,
-                                             Core::Topology    topology,
+                                             Topology    topology,
                                              const std::string fileName,
                                              bool              importMaterials,
                                              bool              calculateTangents) {
@@ -767,7 +767,7 @@ void VKFW::Tools::Loaders::load_hair(Core::Mesh* const mesh, const char* fileNam
     }
 
     Core::Geometry* g = new Core::Geometry();
-    g->fill(vertices, indices, Core::Topology::LINES_TO_TRIANGLES);
+    g->fill(vertices, indices, Topology::LINES_TO_TRIANGLES);
     mesh->set_geometry(g);
     mesh->set_file_route(std::string(fileName));
 }

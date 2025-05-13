@@ -41,7 +41,7 @@ void BaseRenderer::init() {
     // Init renderpasses
     for (auto& pass : m_passes)
         if (pass->is_active())
-            pass->setup(m_frames);
+            pass->setup(m_frames, m_renderResources);
     // Connect renderpasses
     for (auto& pass : m_passes)
         if (pass->is_active())
@@ -80,7 +80,7 @@ void BaseRenderer::shutdown(Core::Scene* const scene) {
         }
 
         clean_resources();
-        Core::ResourceManager::clean_scene(scene);
+        Render::Resources::clean_scene(scene);
 
         if (m_settings.enableUI && !m_headless)
             m_device->destroy_imgui();
@@ -98,25 +98,14 @@ void BaseRenderer::create_passes() {
     throw VKFW_Exception("Implement setup_renderpasses function ! Hint: Add at least a forward pass ... ");
 }
 void BaseRenderer::on_before_render(Core::Scene* const scene) {
-    PROFILING_EVENT()
-
-    const Extent2D DISPLAY_EXTENT = !m_headless ? m_window->get_extent() : m_headlessExtent;
-    Core::ResourceManager::update_global_data(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings.softwareAA == SoftwareAA::TAA);
-    Core::ResourceManager::update_object_data(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings.enableRaytracing);
-
-    for (auto& pass : m_passes)
-    {
-        if (pass->is_active())
-            pass->update_uniforms(m_currentFrame, scene);
-    }
 }
 
 void BaseRenderer::on_after_render(RenderResult& renderResult, Core::Scene* const scene) {
     PROFILING_EVENT()
 
     // Save old camera state
-    auto camera                         = scene->get_active_camera();
-    Core::ResourceManager::prevViewProj = camera->get_projection() * camera->get_view();
+    auto camera                           = scene->get_active_camera();
+    m_renderResources.prevViewProj = camera->get_projection() * camera->get_view();
 
     if (!m_headless)
     {
@@ -163,12 +152,23 @@ void BaseRenderer::render(Core::Scene* const scene) {
 
     on_before_render(scene);
 
+    const Extent2D     DISPLAY_EXTENT = !m_headless ? m_window->get_extent() : m_headlessExtent;
+    
+    Render::RenderView renderView     = m_viewBuilder.build(m_device, &m_frames[m_currentFrame], scene, DISPLAY_EXTENT, m_settings);
+    renderView.presentImageIndex      = imageIndex;
+
+    for (auto& pass : m_passes)
+    {
+        if (pass->is_active())
+            pass->update_uniforms(renderView, m_renderResources);
+    }
+
     m_device->start_frame(m_frames[m_currentFrame]);
 
     for (auto& pass : m_passes)
     {
         if (pass->is_active())
-            pass->execute(m_frames[m_currentFrame], scene, imageIndex);
+            pass->execute(renderView, m_renderResources);
     }
 
     RenderResult renderResult = RenderResult::SUCCESS;
@@ -211,7 +211,7 @@ void BaseRenderer::init_gui() {
     if (m_settings.enableUI)
     {
         // Look for default pass
-        ptr<Core::BasePass> defaultPass = nullptr;
+        ptr<Render::BasePass> defaultPass = nullptr;
         for (auto& pass : m_passes)
         {
             if (pass->is_active() && pass->default_pass())
@@ -224,8 +224,8 @@ void BaseRenderer::init_gui() {
         m_window->get_handle(windowHandle);
         m_device->init_imgui(windowHandle,
                              m_window->get_windowing_system(),
-                             std::static_pointer_cast<Core::BaseGraphicPass>(defaultPass)->get_renderpass(),
-                             std::static_pointer_cast<Core::BaseGraphicPass>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
+                             std::static_pointer_cast<Render::BaseGraphicPass>(defaultPass)->get_renderpass(),
+                             std::static_pointer_cast<Render::BaseGraphicPass>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
     }
 }
 
@@ -233,42 +233,44 @@ void BaseRenderer::init_resources() {
 
     // Setup frames
     m_frames.resize(static_cast<uint32_t>(m_settings.bufferingType));
-    for (size_t i = 0; i < m_frames.size(); i++)
-        m_frames[i] = m_device->create_frame(i);
+    
     for (size_t i = 0; i < m_frames.size(); i++)
     {
+        //Create Frame
+        m_frames[i] = m_device->create_frame(i);
+
         // Global Buffer
         const size_t globalStrideSize =
-            (m_device->pad_uniform_buffer_size(sizeof(Graphics::CameraUniforms)) + m_device->pad_uniform_buffer_size(sizeof(Graphics::SceneUniforms)));
+            (m_device->pad_uniform_buffer_size(sizeof(Render::CameraUniforms)) + m_device->pad_uniform_buffer_size(sizeof(Render::SceneUniforms)));
         Graphics::Buffer globalBuffer =
             m_device->create_buffer_VMA(globalStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)globalStrideSize);
-        m_frames[i].uniformBuffers.push_back(globalBuffer);
+        m_frames[i].globalBuffer = globalBuffer;
 
         // Object Buffer
         const size_t objectStrideSize =
-            (m_device->pad_uniform_buffer_size(sizeof(Graphics::ObjectUniforms)) + m_device->pad_uniform_buffer_size(sizeof(Graphics::MaterialUniforms)));
+            (m_device->pad_uniform_buffer_size(sizeof(Render::ObjectUniforms)) + m_device->pad_uniform_buffer_size(sizeof(Render::MaterialUniforms)));
         Graphics::Buffer objectBuffer = m_device->create_buffer_VMA(
             ENGINE_MAX_OBJECTS * objectStrideSize, BUFFER_USAGE_UNIFORM_BUFFER, VMA_MEMORY_USAGE_CPU_TO_GPU, (uint32_t)objectStrideSize);
-        m_frames[i].uniformBuffers.push_back(objectBuffer);
+        m_frames[i].objectBuffer = objectBuffer;
     }
 
-    Core::ResourceManager::init_basic_resources(m_device);
+    m_renderResources.init_shared_resources(m_device);
 
     // Create basic texture resources
-    Core::ResourceManager::textureResources.resize(2, nullptr);
+    m_renderResources.sharedTextures.resize(2, nullptr);
 
     Core::TextureLDR* samplerText = new Core::TextureLDR();
     Tools::Loaders::load_PNG(samplerText, GET_RESOURCE_PATH("textures/blueNoise.png"), TEXTURE_FORMAT_UNORM);
     samplerText->set_use_mipmaps(false);
-    Core::ResourceManager::upload_texture_data(m_device, samplerText);
-    Core::ResourceManager::textureResources[0] = samplerText;
-
+    m_renderResources.upload_texture_data(m_device, samplerText);
+    m_renderResources.sharedTextures[0] = samplerText;
+    
     Core::TextureHDR* brdfText = new Core::TextureHDR();
     Tools::Loaders::load_HDRi(brdfText, GET_RESOURCE_PATH("textures/cookTorranceBRDF.png"));
     brdfText->set_adress_mode(ADDRESS_MODE_CLAMP_TO_BORDER);
     brdfText->set_use_mipmaps(false);
-    Core::ResourceManager::upload_texture_data(m_device, brdfText);
-    Core::ResourceManager::textureResources[1] = brdfText;
+    m_renderResources.upload_texture_data(m_device, brdfText);
+    m_renderResources.sharedTextures[1] = brdfText;
 }
 
 void BaseRenderer::clean_resources() {
@@ -276,7 +278,7 @@ void BaseRenderer::clean_resources() {
         m_frames[i].cleanup();
     for (size_t i = 0; i < m_attachments.size(); i++)
         m_attachments[i].cleanup();
-    Core::ResourceManager::clean_basic_resources();
+        m_renderResources.clean_shared_resources();
 }
 
 Core::ITexture* BaseRenderer::capture_texture(uint32_t attachmentId) {

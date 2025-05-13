@@ -30,17 +30,9 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 // Load functions for several mesh and image files
 namespace Tools::Loaders {
 void load_OBJ(Core::Mesh* const mesh, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
-void load_OBJ_topology(Core::Mesh* const mesh,
-              Core::Topology    topology,
-              const std::string fileName,
-              bool              importMaterials   = false,
-              bool              calculateTangents = false);
+void load_OBJ_topology(Core::Mesh* const mesh, Topology topology, const std::string fileName, bool importMaterials = false, bool calculateTangents = false);
 
-void load_PLY(Core::Mesh* const mesh,
-              const std::string fileName,
-              bool              preload           = true,
-              bool              verbose           = false,
-              bool              calculateTangents = false);
+void load_PLY(Core::Mesh* const mesh, const std::string fileName, bool preload = true, bool verbose = false, bool calculateTangents = false);
 /*
 Generic loader. It automatically parses the file and find the needed loader for the file extension. Can be called
 asynchronously

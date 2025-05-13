@@ -2,9 +2,9 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
-Graphics::MaterialUniforms SkinMaterial::get_uniforms() const {
+    Render::MaterialUniforms SkinMaterial::get_uniforms() const {
 
-    Graphics::MaterialUniforms uniforms;
+    Render::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_albedo;
     uniforms.dataSlot2 = {m_tileUV.x, m_tileUV.y, m_settings.alphaTest, m_settings.blending};
     uniforms.dataSlot3 = {m_albedoWeight, 0.0, 0.0, m_roughness};

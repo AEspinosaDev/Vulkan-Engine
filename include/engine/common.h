@@ -42,6 +42,7 @@
 #include <imgui.h>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <optick.h>
 #include <optional>
 #include <set>
@@ -51,7 +52,6 @@
 #include <unordered_map>
 #include <vector>
 #include <vma/vk_mem_alloc.h>
-#include <memory>
 
 // ENGINE DEFINITIONS
 
@@ -98,7 +98,7 @@
 #define ENGINE_MAX_OBJECTS 100
 #define ENGINE_MAX_LIGHTS 50
 #define MAX_TEXTURES_PER_MATERIAL 6
-#define MAX_TEXTURES ENGINE_MAX_OBJECTS * MAX_TEXTURES_PER_MATERIAL
+#define MAX_TEXTURES ENGINE_MAX_OBJECTS* MAX_TEXTURES_PER_MATERIAL
 
 // File terminations
 #define PLY "ply"
@@ -148,8 +148,7 @@ typedef VkExtent2D   Extent2D;
 typedef VkOffset2D   Offset2D;
 typedef VkClearValue ClearValue;
 
-template<typename T>
-using ptr = std::shared_ptr<T>;
+template <typename T> using ptr = std::shared_ptr<T>;
 
 enum class ObjectType
 {
@@ -303,6 +302,13 @@ enum BorderColor
     FLOAT_OPAQUE_WHITE,
     INT_OPAQUE_WHITE
 };
+enum class Topology
+{
+    TRIANGLES          = 0,
+    LINES              = 1,
+    LINES_TO_TRIANGLES = 2,
+    OTHER              = 3
+};
 typedef enum DescriptorLayoutType
 {
     GLOBAL_LAYOUT         = 0,
@@ -312,27 +318,27 @@ typedef enum DescriptorLayoutType
 } DescriptorLayout;
 typedef enum ColorFormatTypeFlagBits
 {
-    SR_8      = VK_FORMAT_R8_SRGB,       // Red
-    SRG_8     = VK_FORMAT_R8G8_SRGB,     // Red Green
-    SRGB_8    = VK_FORMAT_R8G8B8_SRGB,   // RGB
-    SRGBA_8   = VK_FORMAT_R8G8B8A8_SRGB, // RGB with Alpha
-    SBGRA_8   = VK_FORMAT_B8G8R8A8_SRGB, // Other order
-    SR_16F    = VK_FORMAT_R16_SFLOAT,
-    SR_32F    = VK_FORMAT_R32_SFLOAT,
-    SRG_16F   = VK_FORMAT_R16G16_SFLOAT,
-    SRG_32F   = VK_FORMAT_R32G32_SFLOAT,
-    SRGB_16F  = VK_FORMAT_R16G16B16_SFLOAT,
-    SRGB_32F  = VK_FORMAT_R32G32B32_SFLOAT,
-    SRGBA_16F = VK_FORMAT_R16G16B16A16_SFLOAT, // HDR precission 16
-    SRGBA_32F = VK_FORMAT_R32G32B32A32_SFLOAT, // HDR precission 32
-    R_8U      = VK_FORMAT_R8_UNORM,
-    RG_8U     = VK_FORMAT_R8G8_UNORM,
-    RGB_8U    = VK_FORMAT_R8G8B8_UNORM,
-    RGBA_8U   = VK_FORMAT_R8G8B8A8_UNORM,
-    R_32_UINT = VK_FORMAT_R32_UINT,
-    DEPTH_16F = VK_FORMAT_D16_UNORM,
-    DEPTH_32F = VK_FORMAT_D32_SFLOAT,
-    RGB10A2   = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+    SR_8           = VK_FORMAT_R8_SRGB,       // Red
+    SRG_8          = VK_FORMAT_R8G8_SRGB,     // Red Green
+    SRGB_8         = VK_FORMAT_R8G8B8_SRGB,   // RGB
+    SRGBA_8        = VK_FORMAT_R8G8B8A8_SRGB, // RGB with Alpha
+    SBGRA_8        = VK_FORMAT_B8G8R8A8_SRGB, // Other order
+    SR_16F         = VK_FORMAT_R16_SFLOAT,
+    SR_32F         = VK_FORMAT_R32_SFLOAT,
+    SRG_16F        = VK_FORMAT_R16G16_SFLOAT,
+    SRG_32F        = VK_FORMAT_R32G32_SFLOAT,
+    SRGB_16F       = VK_FORMAT_R16G16B16_SFLOAT,
+    SRGB_32F       = VK_FORMAT_R32G32B32_SFLOAT,
+    SRGBA_16F      = VK_FORMAT_R16G16B16A16_SFLOAT, // HDR precission 16
+    SRGBA_32F      = VK_FORMAT_R32G32B32A32_SFLOAT, // HDR precission 32
+    R_8U           = VK_FORMAT_R8_UNORM,
+    RG_8U          = VK_FORMAT_R8G8_UNORM,
+    RGB_8U         = VK_FORMAT_R8G8B8_UNORM,
+    RGBA_8U        = VK_FORMAT_R8G8B8A8_UNORM,
+    R_32_UINT      = VK_FORMAT_R32_UINT,
+    DEPTH_16F      = VK_FORMAT_D16_UNORM,
+    DEPTH_32F      = VK_FORMAT_D32_SFLOAT,
+    RGB10A2        = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
     RG11B10_UFLOAT = 111,
 } ColorFormatType;
 typedef enum MipmapModeFlagsBits

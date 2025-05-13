@@ -44,7 +44,7 @@ void Application::setup() {
     const std::string TEXTURE_PATH(TESTS_RESOURCES_PATH "textures/");
 
     auto camera = new Camera();
-    camera->set_position(Vec3(0.0f, 0.5f, -1.0f));
+    camera->set_position(Vec3(0.0f, 0.0f, -1.0f));
     camera->set_far(100.0f);
     camera->set_near(0.1f);
     camera->set_field_of_view(70.0f);
@@ -73,6 +73,15 @@ void Application::setup() {
     headMesh->set_name("Head");
     headMesh->set_scale(2.0f);
     headMesh->set_rotation({0.0, 180.0f, 0.0f});
+
+    Mesh* hairMesh = new Mesh();
+    Tools::Loaders::load_3D_file(hairMesh, MESH_PATH + "straight.hair", false);
+    hairMesh->add_material(new HairStrandMaterial());
+    hairMesh->set_scale(0.007f);
+    hairMesh->set_rotation({90.0, 180.0f, 90.0f});
+    // headMesh->add_child(hairMesh);
+    m_scene->add(hairMesh);
+    // m_scene->add(headMesh);
 
     m_scene->add(headMesh);
 

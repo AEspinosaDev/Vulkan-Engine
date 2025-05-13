@@ -17,10 +17,10 @@ namespace Core
  *bool hasNormalTexture;
  *bool hasGlossinessTexture;
  */
-Graphics::MaterialUniforms PhongMaterial::get_uniforms() const
+Render::MaterialUniforms PhongMaterial::get_uniforms() const
 {
 
-    Graphics::MaterialUniforms uniforms;
+    Render::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_color;
     uniforms.dataSlot2 = {m_shininess, m_glossiness, m_tileUV.x, m_tileUV.y};
     uniforms.dataSlot3 = {m_hasColorTexture, m_hasNormalTexture, m_hasGlossinessTexture, 0.0f};

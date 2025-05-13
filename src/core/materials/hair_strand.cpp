@@ -5,7 +5,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core
 {
 
-Graphics::MaterialUniforms HairStrandMaterial::get_uniforms() const
+Render::MaterialUniforms HairStrandMaterial::get_uniforms() const
 {
     // Alignment in shader
     //-----------------
@@ -32,7 +32,7 @@ Graphics::MaterialUniforms HairStrandMaterial::get_uniforms() const
 
     //-----------------
 
-    Graphics::MaterialUniforms uniforms;
+    Render::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_baseColor;
     uniforms.dataSlot1.w = m_thickness;
     uniforms.dataSlot2 = {m_Rpower, m_TTpower, m_TRTpower, m_roughness};
@@ -43,7 +43,7 @@ Graphics::MaterialUniforms HairStrandMaterial::get_uniforms() const
 
     return uniforms;
 }
-Graphics::MaterialUniforms HairStrandMaterial2::get_uniforms() const
+Render::MaterialUniforms HairStrandMaterial2::get_uniforms() const
 {
     // Alignment in shader
     //-----------------
@@ -66,7 +66,7 @@ Graphics::MaterialUniforms HairStrandMaterial2::get_uniforms() const
 
     //-----------------
 
-    Graphics::MaterialUniforms uniforms;
+    Render::MaterialUniforms uniforms;
     uniforms.dataSlot1 = m_baseColor;
     uniforms.dataSlot1.w = m_thickness;
     uniforms.dataSlot2 = {m_Rpower, m_TTpower, m_TRTpower, m_scatter};

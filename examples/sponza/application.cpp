@@ -1,10 +1,10 @@
 #include "application.h"
 #include <filesystem>
 
-void Application::init(Systems::RendererSettings settings) {
+void Application::init(Render::Settings settings) {
     m_window = std::make_shared<WindowGLFW>("Sponza", 1280, 1024);
 
-        m_window->init();
+    m_window->init();
     m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
 
     m_window->set_window_size_callback(std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -21,7 +21,7 @@ void Application::init(Systems::RendererSettings settings) {
 
 void Application::run(int argc, char* argv[]) {
 
-    Systems::RendererSettings settings{};
+    Render::Settings settings{};
     settings.bufferingType    = BufferingType::DOUBLE;
     settings.samplesMSAA      = MSAASamples::x1;
     settings.clearColor       = Vec4(0.02, 0.02, 0.02, 1.0);

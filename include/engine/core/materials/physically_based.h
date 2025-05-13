@@ -80,7 +80,7 @@ class PhysicalMaterial : public IMaterial
     }
 
   public:
-    virtual Graphics::MaterialUniforms                get_uniforms() const;
+    virtual Render::MaterialUniforms                get_uniforms() const;
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
     }

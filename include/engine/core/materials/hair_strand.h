@@ -47,7 +47,7 @@ class HairStrandMaterial : public IMaterial
 
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual Graphics::MaterialUniforms                get_uniforms() const;
+    virtual Render::MaterialUniforms                get_uniforms() const;
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
     }
@@ -234,7 +234,7 @@ class HairStrandMaterial2 : public HairStrandMaterial
                                                   {MGI, nullptr},
                                                   {NGI, nullptr},
                                                   {NGI_TRT, nullptr}};
-    virtual Graphics::MaterialUniforms get_uniforms() const;
+    virtual Render::MaterialUniforms get_uniforms() const;
 
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
