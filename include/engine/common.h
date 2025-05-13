@@ -340,7 +340,7 @@ typedef enum ColorFormatTypeFlagBits
     DEPTH_32F      = VK_FORMAT_D32_SFLOAT,
     RGB10A2        = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
     RG11B10_UFLOAT = 111,
-} ColorFormatType;
+} ColorFormatType, FormatType;
 typedef enum MipmapModeFlagsBits
 {
     MIPMAP_NEAREST = 0x00000001,

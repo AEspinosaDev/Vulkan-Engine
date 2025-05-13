@@ -36,6 +36,7 @@ struct DrawCall {
         Graphics::Image* img     = nullptr;
         uint32_t         binding = 0;
     };
+    
     std::vector<BindedTexture> textureBatch;
 };
 

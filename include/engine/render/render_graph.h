@@ -1,12 +1,11 @@
-// // Hybrid Vulkan-like Render Graph with support for lambdas and class-based passes
+// #ifndef RENDER_GRAPH
+// #define RENDER_GRAPH
 
-// #include <vulkan/vulkan.h>
-// #include <string>
-// #include <unordered_map>
-// #include <vector>
-// #include <functional>
-// #include <memory>
-// #include <cassert>
+// #include <engine/common.h>
+// #include <engine/render/passes/pass.h>
+
+// VULKAN_ENGINE_NAMESPACE_BEGIN
+// namespace Render {
 
 // // Forward declarations
 // struct FrameContext;
@@ -17,27 +16,38 @@
 // // Render Targets
 // //----------------------------------------------
 
+// // Defines the attachment (image) for the framebuffer renderpass
 // struct RenderTargetInfo {
-//     VkFormat format;
-//     VkImageUsageFlags usage;
-//     VkImageLayout layout;
-//     VkClearValue clearValue{};
-//     bool load = false;
-//     bool store = true;
-//     bool isDepth = false;
+//     FormatType      format;
+//     ImageUsageFlags usage;
+//     ImageLayout     layout;
+//     bool            load    = false; // If not load is cleaned (stencil + color)
+//     bool            store   = true;
+//     bool            isDepth = false; // This can be inferenced from the color format !!!
+//     ClearValue      clearValue{};
 // };
 
-// class RenderGraphResource {
-// public:
-//     std::string name;
+// // It should be an image
+// struct RuntimeResource {
+//     VkImage        image  = VK_NULL_HANDLE;
+//     VkImageView    view   = VK_NULL_HANDLE;
+//     VkDeviceMemory memory = VK_NULL_HANDLE;
+//     bool           valid  = false;
+// };
+
+// // Resource data
+// class RenderGraphResource
+// {
+//   public:
+//     std::string      name;
 //     RenderTargetInfo info;
-//     bool written = false;
-//     int firstWriter = -1;
+//     bool             written     = false;
+//     int              firstWriter = -1;
 // };
 
 // struct RenderPassOutputs {
 //     std::unordered_map<std::string, VkImageView> views;
-//     VkFramebuffer framebuffer;
+//     VkFramebuffer                                framebuffer = VK_NULL_HANDLE;
 
 //     VkImageView get(const std::string& name) const {
 //         auto it = views.find(name);
@@ -45,202 +55,298 @@
 //     }
 // };
 
-// //----------------------------------------------
-// // Base RenderPass Class
-// //----------------------------------------------
+// class ShaderProgram
+// {
+//   public:
+//     std::string      name;
+//     VkPipeline       pipeline = VK_NULL_HANDLE;
+//     VkPipelineLayout layout   = VK_NULL_HANDLE;
 
-// class IRenderPass {
-// public:
-//     virtual ~IRenderPass() {}
-//     virtual void build(class RenderGraphBuilder&) = 0;
-//     virtual void execute(const RenderView&, const FrameContext&, const RenderResources&, const RenderPassOutputs&) = 0;
+//     ShaderProgram(const std::string& name)
+//         : name(name) {
+//     }
 // };
 
-// //----------------------------------------------
-// // Shader Program abstraction (mocked)
-// //----------------------------------------------
-
-// class ShaderProgram {
-// public:
-//     ShaderProgram(const std::string& name) : id(name) {}
-//     void bind(VkCommandBuffer) {} // mock
-//     void setUniform(const std::string& name, void* data, size_t size) {} // mock
-//     std::string id;
+// class IRenderPass
+// {
+//   public:
+//     virtual ~IRenderPass()                          = default;
+//     virtual void build(RenderGraphBuilder& builder) = 0;
+//     virtual void
+//     execute(const RenderView& view, const FrameContext& frame, const RenderResources& shared, const RenderPassOutputs& outputs, ShaderProgram* program) = 0;
 // };
-
-// //----------------------------------------------
-// // RenderGraph Builder
-// //----------------------------------------------
 
 // class RenderGraph;
 
-// class RenderGraphBuilder {
-// public:
-//     RenderGraphBuilder(RenderGraph& g, int passID) : graph(g), passIndex(passID) {}
+// class RenderGraphBuilder
+// {
+//   public:
+//     RenderGraphBuilder(RenderGraph& g, int passID)
+//         : m_graph(g)
+//         , m_passIndex(passID) {
+//     }
 
-//     std::string createTarget(const std::string& name, const RenderTargetInfo& info);
+//     std::string create_target(const std::string& name, const RenderTargetInfo& info);
 //     std::string read(const std::string& name);
-//     void write(const std::string& name);
+//     void        write(const std::string& name);
 
-// private:
-//     RenderGraph& graph;
-//     int passIndex;
+//   private:
+//     RenderGraph& m_graph;
+//     int          m_passIndex;
 // };
-
-// //----------------------------------------------
-// // RenderGraph
-// //----------------------------------------------
-
-// struct FrameContext {};
-// struct RenderView {};
-// class RenderResources {};
 
 // struct RenderPassInfo {
-//     std::string name;
-//     std::function<void(RenderGraphBuilder&)> setup;
-//     std::function<void(const RenderView&, const FrameContext&, const RenderResources&, const RenderPassOutputs&)> execute;
+//     std::string                                                                              name;
+//     std::function<void(RenderGraphBuilder&)>                                                 setup;
+//     std::function<void(const RenderView&, const RenderResources&, const RenderPassOutputs&)> execute;
+
+//     struct RuntimeData {
+//         VkRenderPass     renderPass     = VK_NULL_HANDLE;
+//         VkFramebuffer    framebuffer    = VK_NULL_HANDLE;
+//         ShaderProgram*   program        = nullptr;
+//         VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+//         VkDescriptorSet  descriptorSet  = VK_NULL_HANDLE;
+//         bool             created        = false;
+//     } runtime;
 // };
 
-// class RenderGraph {
-// public:
-//     void beginFrame(const FrameContext& f) {
+// class RenderGraph
+// {
+//   private:
+//     FrameContext const*         frame = nullptr;
+//     std::vector<RenderPassInfo> passes;
+
+//     std::unordered_map<std::string, RenderGraphResource>         transientResources;
+//     std::unordered_map<std::string, RuntimeResource>             persistentResources;
+//     std::unordered_map<std::string, ShaderProgram>               shaderCache;
+//     std::unordered_map<std::string, RenderPassInfo::RuntimeData> runtimeCache;
+
+//     void create_image_and_view(const RenderTargetInfo& info, RuntimeResource& out) {
+//         out.valid = true;
+//     }
+
+//     void create_renderpass(RenderPassInfo::RuntimeData& rt) {
+//         // TODO
+//     }
+
+//     void create_framebuffer(RenderPassInfo::RuntimeData& rt) {
+//         // TODO
+//     }
+
+//     void create_pipeline(RenderPassInfo::RuntimeData& rt) {
+//         if (rt.program && rt.program->pipeline == VK_NULL_HANDLE)
+//         {
+//             ShaderProgram* program = rt.program;
+//             program->pipeline      = VK_NULL_HANDLE;
+//             program->layout        = VK_NULL_HANDLE;
+//         }
+//     }
+
+//     void create_descriptor_pool_and_set(RenderPassInfo::RuntimeData& rt) {
+//         // ShaderProgram* program = rt.program;
+//         // if (!program || program->layout == VK_NULL_HANDLE) return;
+
+//         // std::vector<VkDescriptorPoolSize> poolSizes = {
+//         //     { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8 },
+//         //     { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4 },
+//         // };
+
+//         // VkDescriptorPoolCreateInfo poolInfo{
+//         //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+//         //     .maxSets = 1,
+//         //     .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+//         //     .pPoolSizes = poolSizes.data(),
+//         // };
+//         // vkCreateDescriptorPool(device, &poolInfo, nullptr, &rt.descriptorPool);
+
+//         // VkDescriptorSetAllocateInfo allocInfo{
+//         //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+//         //     .descriptorPool = rt.descriptorPool,
+//         //     .descriptorSetCount = 1,
+//         //     .pSetLayouts = &program->layout,
+//         // };
+//         // vkAllocateDescriptorSets(device, &allocInfo, &rt.descriptorSet);
+//     }
+
+//     bool resolution_changed(const RenderTargetInfo& info, const RuntimeResource& runtime) {
+//         return false;
+//     }
+
+//     void compile() {
+//         for (auto& [name, res] : transientResources)
+//         {
+//             auto&       runtime = persistentResources[name];
+//             const auto& info    = res.info;
+//             if (!runtime.valid || resolution_changed(info, runtime))
+//             {
+//                 create_image_and_view(info, runtime);
+//             }
+//         }
+
+//         for (auto& pass : passes)
+//         {
+//             auto& rt = runtimeCache[pass.name];
+//             if (!rt.created)
+//             {
+//                 rt.program = pass.program;
+//                 create_renderpass(rt);
+//                 create_framebuffer(rt);
+//                 create_pipeline(rt);
+//                 create_descriptor_pool_and_set(rt);
+//                 rt.created = true;
+//             }
+//         }
+//     }
+
+//     RenderPassOutputs build_outputs(const std::string& passName) {
+//         RenderPassOutputs outputs;
+//         for (auto& [name, res] : transientResources)
+//         {
+//             if (res.firstWriter == -1 || passes[res.firstWriter].name != passName)
+//                 continue;
+//             outputs.views[name] = persistentResources[name].view;
+//         }
+//         return outputs;
+//     }
+
+//   public:
+//     void begin_frame(const FrameContext& f) {
 //         frame = &f;
 //         passes.clear();
-//         resources.clear();
+//         transientResources.clear();
 //     }
 
-//     int addPass(const std::string& name, IRenderPass* pass) {
+//     int add_pass(const std::string&                                                                       name,
+//                  ShaderProgram*                                                                           shader,
+//                  std::function<void(RenderGraphBuilder&)>                                                 setup,
+//                  std::function<void(const RenderView&, const RenderResources&, const RenderPassOutputs&)> exec) {
 //         int id = static_cast<int>(passes.size());
-//         auto builder = RenderGraphBuilder(*this, id);
-//         pass->build(builder);
-
-//         passes.push_back(RenderPassInfo{
-//             .name = name,
-//             .setup = {},
-//             .execute = [pass](const RenderView& view, const FrameContext& f, const RenderResources& shared, const RenderPassOutputs& outputs) {
-//                 pass->execute(view, f, shared, outputs);
-//             }
-//         });
-//         return id;
-//     }
-
-//     int addPass(const std::string& name,
-//                 std::function<void(RenderGraphBuilder&)> setup,
-//                 std::function<void(const RenderView&, const FrameContext&, const RenderResources&, const RenderPassOutputs&)> exec) {
-//         int id = static_cast<int>(passes.size());
-//         passes.push_back({name, setup, exec});
+//         passes.push_back({name, setup, exec, shader});
 //         RenderGraphBuilder builder(*this, id);
 //         setup(builder);
 //         return id;
 //     }
 
-//     void endFrame(const RenderView& view, const RenderResources& shared) {
+//     void end_frame(const RenderView& view, const RenderResources& shared) {
 //         compile();
-//         for (auto& p : passes) {
-//             RenderPassOutputs outputs = buildOutputs(p.name);
-//             p.execute(view, *frame, shared, outputs);
+//         for (auto& p : passes)
+//         {
+//             RenderPassOutputs outputs = build_outputs(p.name);
+//             auto&             rt      = runtimeCache[p.name];
+//             p.execute(view, shared, outputs);
 //         }
 //     }
 
-//     RenderGraphResource& getOrCreateResource(const std::string& name) {
-//         if (!resources.count(name)) {
-//             resources[name] = RenderGraphResource{.name = name};
+//     RenderGraphResource& get_or_create_resource(const std::string& name) {
+//         if (!transientResources.count(name))
+//         {
+//             transientResources[name] = RenderGraphResource{.name = name};
+//             if (!persistentResources.count(name))
+//             {
+//                 persistentResources[name] = {};
+//             }
 //         }
-//         return resources[name];
+//         return transientResources[name];
 //     }
 
-// private:
-//     FrameContext const* frame;
-//     std::vector<RenderPassInfo> passes;
-//     std::unordered_map<std::string, RenderGraphResource> resources;
-
-//     void compile() {
-//         // Allocate Vulkan images, views, renderpasses, barriers, etc.
+//     RuntimeResource& get_runtime_resource(const std::string& name) {
+//         return persistentResources.at(name);
 //     }
 
-//     RenderPassOutputs buildOutputs(const std::string& passName) {
-//         return {}; // mock
+//     ShaderProgram* get_shader_program(const std::string& name) {
+//         return shaderCache.count(name) ? &shaderCache[name] : nullptr;
+//     }
+
+//     void register_shader(ShaderProgram&& shader) {
+//         shaderCache[shader.name] = std::move(shader);
 //     }
 // };
 
-// // Builder method definitions
-// std::string RenderGraphBuilder::createTarget(const std::string& name, const RenderTargetInfo& info) {
-//     auto& r = graph.getOrCreateResource(name);
-//     r.info = info;
-//     r.written = true;
-//     r.firstWriter = passIndex;
+// std::string RenderGraphBuilder::create_target(const std::string& name, const RenderTargetInfo& info) {
+//     auto& r       = m_graph.get_or_create_resource(name);
+//     r.info        = info;
+//     r.written     = true;
+//     r.firstWriter = m_passIndex;
 //     return name;
 // }
 
 // std::string RenderGraphBuilder::read(const std::string& name) {
-//     graph.getOrCreateResource(name);
+//     m_graph.get_or_create_resource(name);
 //     return name;
 // }
 
 // void RenderGraphBuilder::write(const std::string& name) {
-//     auto& r = graph.getOrCreateResource(name);
-//     r.written = true;
-//     r.firstWriter = passIndex;
+//     auto& r       = m_graph.get_or_create_resource(name);
+//     r.written     = true;
+//     r.firstWriter = m_passIndex;
 // }
 
-// //----------------------------------------------
-// // Example GBuffer Pass using Class
-// //----------------------------------------------
+// // class GBufferPass : public IRenderPass {
+// // public:
+// //     ShaderProgram* shader = nullptr;
 
-// class GBufferPass : public IRenderPass {
-// public:
-//     ShaderProgram shader;
+// //     GBufferPass(ShaderProgram* program) : shader(program) {}
 
-//     GBufferPass() : shader("gbuffer") {}
+// //     void build(RenderGraphBuilder& builder) override {
+// //         builder.create_target("depth", RenderTargetInfo{
+// //             .format = VK_FORMAT_D32_SFLOAT,
+// //             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+// //             .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+// //             .clearValue = {.depthStencil = {1.0f, 0}},
+// //             .isDepth = true
+// //         });
 
-//     void build(RenderGraphBuilder& builder) override {
-//         builder.createTarget("depth", RenderTargetInfo{
-//             .format = VK_FORMAT_D32_SFLOAT,
-//             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-//             .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-//             .clearValue = {.depthStencil = {1.0f, 0}},
-//             .isDepth = true
-//         });
+// //         builder.create_target("albedo", RenderTargetInfo{
+// //             .format = VK_FORMAT_R8G8B8A8_UNORM,
+// //             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+// //             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+// //             .clearValue = {.color = {{0, 0, 0, 1}}}
+// //         });
+// //     }
 
-//         builder.createTarget("albedo", RenderTargetInfo{
-//             .format = VK_FORMAT_R8G8B8A8_UNORM,
-//             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//             .clearValue = {.color = {{0, 0, 0, 1}}}
-//         });
-//     }
+// //     void execute(const RenderView& view, const FrameContext& frame, const RenderResources& shared, const RenderPassOutputs& outputs, ShaderProgram* program)
+// //     override {
+// //         // Bind pipeline, descriptor set, draw meshes
+// //     }
+// // };
 
-//     void execute(const RenderView& view, const FrameContext& frame, const RenderResources& resources, const RenderPassOutputs& outputs) override {
-//         shader.bind(VK_NULL_HANDLE); // mock bind
-//         shader.setUniform("GlobalUBO", nullptr, 0); // mock
-//         // Draw meshes...
-//     }
-// };
+// // void exampleUsage(RenderGraph& graph, const RenderView& view, const FrameContext& frame, const RenderResources& shared) {
+// //     ShaderProgram gbufferShader("GBuffer");
+// //     ShaderProgram lightingShader("Lighting");
 
-// //----------------------------------------------
-// // Usage in render loop
-// //----------------------------------------------
+// //     graph.register_shader(std::move(gbufferShader));
+// //     graph.register_shader(std::move(lightingShader));
 
-// void render(RenderGraph& graph, const RenderView& view, const FrameContext& frame, const RenderResources& shared) {
-//     graph.beginFrame(frame);
+// //     graph.begin_frame(frame);
 
-//     static GBufferPass gbuffer;
-//     graph.addPass("GBuffer", &gbuffer);
+// //     GBufferPass gpass(graph.get_shader_program("GBuffer"));
+// //     graph.add_pass("GBuffer", gpass.shader, [&](RenderGraphBuilder& b) { gpass.build(b); },
+// //                    [&](const RenderView& view, const RenderResources& shared, const RenderPassOutputs& outputs) {
+// //                        gpass.execute(view, frame, shared, outputs, gpass.shader);
+// //                    });
 
-//     graph.addPass("Lighting",
-//         [&](RenderGraphBuilder& builder) {
-//             builder.read("depth");
-//             builder.read("albedo");
-//             builder.createTarget("lighting", RenderTargetInfo{
-//                 .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-//                 .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                 .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//                 .clearValue = {.color = {{0, 0, 0, 1}}}
-//             });
-//         },
-//         [&](const RenderView& view, const FrameContext& frame, const RenderResources& shared, const RenderPassOutputs& out) {
-//             // lighting pass execution
-//         });
+// //     graph.add_pass("Lighting", graph.get_shader_program("Lighting"),
+// //         [&](RenderGraphBuilder& builder) {
+// //             builder.read("depth");
+// //             builder.read("albedo");
+// //             builder.create_target("lighting", RenderTargetInfo{
+// //                 .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+// //                 .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+// //                 .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+// //                 .clearValue = {.color = {{0, 0, 0, 1}}},
+// //                 .load = false,
+// //                 .store = true
+// //             });
+// //         },
+// //         [&](const RenderView& view, const RenderResources& shared, const RenderPassOutputs& outputs) {
+// //             auto* program = graph.get_shader_program("Lighting");
+// //             // Bind pipeline and descriptor set, draw fullscreen quad
+// //         });
 
-//     graph.endFrame(view, shared);
-// }
+// //     graph.end_frame(view, shared);
+// // }
+
+// } // namespace Render
+// VULKAN_ENGINE_NAMESPACE_END
+
+// #endif
