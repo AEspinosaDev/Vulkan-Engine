@@ -102,11 +102,11 @@ void Swapchain::destroy_surface(VkInstance instance) {
         vkDestroySurfaceKHR(instance, m_surface, nullptr);
 }
 void Swapchain::cleanup() {
-    for (size_t i = 0; i < m_presentImages.size(); i++)
-    {
-        if (m_presentImages[i].view != VK_NULL_HANDLE)
-            vkDestroyImageView(m_device, m_presentImages[i].view, nullptr);
-    }
+    // for (size_t i = 0; i < m_presentImages.size(); i++)
+    // {
+    //     if (m_presentImages[i].view != VK_NULL_HANDLE)
+    //         vkDestroyImageView(m_device, m_presentImages[i].view, nullptr);
+    // }
 
     if (m_handle != VK_NULL_HANDLE)
         vkDestroySwapchainKHR(m_device, m_handle, nullptr);
@@ -172,7 +172,7 @@ void Swapchain::create_image_views(VkDevice& device) {
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount     = 1;
 
-        VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &m_presentImages[i].view));
+        // VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &m_presentImages[i].view));
     }
 }
 

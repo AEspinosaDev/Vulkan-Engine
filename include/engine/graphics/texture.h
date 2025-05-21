@@ -19,17 +19,16 @@ namespace Graphics {
 
 struct TextureConfig {
 
-    TextureType viewType     = TEXTURE_2D;
-    ImageAspect aspectFlags  = ASPECT_COLOR;
-    uint32_t    mipLevels    = 1U;
+    TextureType type         = TEXTURE_2D;
+    uint32_t    maxMipLevel  = 1U;
     uint32_t    baseMipLevel = 0;
-    uint32_t    layers       = 1U;
-    uint32_t    baseLayer    = 0;
+    uint32_t    maxLayer     = 1U;
+    uint32_t    minLayer     = 0;
 
+    bool        sampled            = true;
     FilterType  filters            = FILTER_LINEAR;
     MipmapMode  mipmapMode         = MIPMAP_LINEAR;
     AddressMode samplerAddressMode = ADDRESS_MODE_REPEAT;
-    bool        anysotropicFilter  = false;
     float       maxAnysotropy      = 1.0f;
     BorderColor border             = BorderColor::FLOAT_OPAQUE_WHITE;
 };
@@ -41,10 +40,19 @@ struct Texture {
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
     /* Points to an existing image */
-    ptr<Image> image;
+    Image* image{nullptr};
 
     /* Config */
     TextureConfig config{};
+
+    const Extent3D& get_extent() const {
+        return image->extent;
+    }
+    ColorFormatType get_format() const {
+        return image->config.format;
+    }
+
+    void create_GUI_handle();
 
     void cleanup();
 };

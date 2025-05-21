@@ -112,19 +112,20 @@ class Device
     /*Create Buffer*/
     Buffer create_buffer(size_t allocSize, BufferUsageFlags usage, MemoryPropertyFlags memoryProperties, uint32_t strideSize = 0);
     /*Create Image*/
-    Image create_image(Extent3D extent, ImageConfig config, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
+    Image create_image(const Extent3D& extent,const ImageConfig& config, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY);
     /*Create Texture*/
-    Texture create_texture(const ptr<Image>& img, TextureConfig config);
+    Texture create_texture(const Extent3D& extent, ColorFormatType format, const TextureConfig& config);
+    Texture create_texture(Image* img, TextureConfig config);
     /*Create Framebuffer Object*/
-    Framebuffer create_framebuffer(RenderPass& renderpass, std::vector<Image*>& attachments, Extent2D extent, uint32_t layers = 1, uint32_t id = 0);
-    Framebuffer create_framebuffer(RenderPass& renderpass, Image& attachment);
-    Semaphore   create_semaphore();
-    Fence       create_fence(bool signaled = true);
+    Framebuffer create_framebuffer(const RenderPass& renderpass, const std::vector<Image*>& attachments);
+    /*Sync*/
+    Semaphore create_semaphore();
+    Fence     create_fence(bool signaled = true);
     /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
      * buffers to contain data needed for the GPU to render*/
     Frame create_frame(uint16_t id);
     /*Create RenderPass*/
-    RenderPass create_render_pass(std::vector<AttachmentConfig>& attachments, std::vector<SubPassDependency>& dependencies);
+    RenderPass create_render_pass(const std::vector<RenderTargetInfo>& targets, const std::vector<SubPassDependency>& dependencies);
     /*Create Descriptor Pool*/
     DescriptorPool create_descriptor_pool(uint32_t                       maxSets,
                                           uint32_t                       numUBO,
@@ -170,10 +171,10 @@ class Device
                               const void*   iboData,
                               size_t        voxelSize = 0,
                               const void*   voxelData = nullptr);
-    void upload_texture_image(Image& img, ImageConfig config, SamplerConfig samplerConfig, const void* imgCache, size_t bytesPerPixel);
+    void upload_texture_image(Texture& tex, const void* imgCache, size_t bytesPerPixel);
     void upload_BLAS(BLAS& accel, VAO& vao);
     void upload_TLAS(TLAS& accel, std::vector<BLASInstance>& BLASinstances);
-    void download_texture_image(Image& img, void*& imgCache, size_t& size, size_t& channels);
+    void download_texture_image(Texture& tex, void*& imgCache, size_t& size, size_t& channels);
     /*
     MISC
     -----------------------------------------------

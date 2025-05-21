@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <engine/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -149,6 +150,40 @@ size_t Utils::get_pixel_size_in_bytes(ColorFormatType format) {
 
     default:
         throw std::invalid_argument("Unknown format in get_pixel_size");
+    }
+}
+
+ImageAspect Utils::get_aspect(ColorFormatType format) {
+    switch (format)
+    {
+    // Color formats
+    case ColorFormatType::SR_8:
+    case ColorFormatType::R_8U:
+    case ColorFormatType::SRG_8:
+    case ColorFormatType::RG_8U:
+    case ColorFormatType::SRGB_8:
+    case ColorFormatType::RGB_8U:
+    case ColorFormatType::SRGBA_8:
+    case ColorFormatType::SBGRA_8:
+    case ColorFormatType::RGBA_8U:
+    case ColorFormatType::SR_16F:
+    case ColorFormatType::SR_32F:
+    case ColorFormatType::R_32_UINT:
+    case ColorFormatType::SRG_16F:
+    case ColorFormatType::SRG_32F:
+    case ColorFormatType::SRGBA_16F:
+    case ColorFormatType::SRGBA_32F:
+    case ColorFormatType::SRGB_32F:
+    case ColorFormatType::RGB10A2:
+        return ASPECT_COLOR;
+
+    // Depth-only formats
+    case ColorFormatType::DEPTH_16F:
+    case ColorFormatType::DEPTH_32F:
+        return ASPECT_DEPTH;
+
+    default:
+        throw std::invalid_argument("Unknown format in get_aspect_flags");
     }
 }
 VULKAN_ENGINE_NAMESPACE_END

@@ -45,10 +45,7 @@ struct GraphicPipelineSettings {
 /Pipeline data and creation wrapper
 */
 namespace PipelineBuilder {
-void build_pipeline_layout(VkPipelineLayout& layout,
-                           VkDevice          device,
-                           DescriptorPool    descriptorManager,
-                           PipelineSettings& settings);
+void build_pipeline_layout(VkPipelineLayout& layout, VkDevice device, DescriptorPool descriptorManager, PipelineSettings& settings);
 
 void build_graphic_pipeline(VkPipeline&                                  pipeline,
                             VkPipelineLayout&                            layout,
@@ -58,10 +55,7 @@ void build_graphic_pipeline(VkPipeline&                                  pipelin
                             GraphicPipelineSettings&                     settings,
                             std::vector<VkPipelineShaderStageCreateInfo> shaderStages);
 
-void build_compute_pipeline(VkPipeline&                     pipeline,
-                            VkPipelineLayout&               layout,
-                            VkDevice                        device,
-                            VkPipelineShaderStageCreateInfo computeStage);
+void build_compute_pipeline(VkPipeline& pipeline, VkPipelineLayout& layout, VkDevice device, VkPipelineShaderStageCreateInfo computeStage);
 }; // namespace PipelineBuilder
 
 } // namespace Graphics

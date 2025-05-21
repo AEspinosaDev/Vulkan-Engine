@@ -132,11 +132,17 @@ inline Vec2 get_halton_jitter(int frameIndex, int screenWidth, int screenHeight)
     return Vec2(jitterX * pixelWidth, jitterY * pixelHeight);
 }
 
-size_t get_channel_count(ColorFormatType colorFormatType);
-bool   is_hdr_format(ColorFormatType colorFormatType);
-size_t get_pixel_size_in_bytes(ColorFormatType format);
+size_t      get_channel_count(ColorFormatType colorFormatType);
+bool        is_hdr_format(ColorFormatType colorFormatType);
+size_t      get_pixel_size_in_bytes(ColorFormatType format);
+ImageAspect get_aspect(ColorFormatType format);
 
 
+struct PairHash {
+    template <typename T1, typename T2> std::size_t operator()(const std::pair<T1, T2>& p) const {
+        return std::hash<T1>()(p.first) ^ (std::hash<T2>()(p.second) << 1);
+    }
+};
 }; // namespace Utils
 
 VULKAN_ENGINE_NAMESPACE_END

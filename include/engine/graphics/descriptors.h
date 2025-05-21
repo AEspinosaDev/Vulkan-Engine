@@ -12,7 +12,7 @@
 
 #include <engine/common.h>
 #include <engine/graphics/accel.h>
-#include <engine/graphics/image.h>
+#include <engine/graphics/texture.h>
 #include <engine/graphics/utilities/initializers.h>
 #include <engine/graphics/utilities/translator.h>
 #include <unordered_map>
@@ -39,13 +39,13 @@ struct DescriptorSet {
     */
     void update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformDataType type, uint32_t binding);
     /*
-    Update for Images
+    Update for Textures
     */
-    void update(Image* image, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0);
+    void update(Texture* image, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0);
     /*
-    Update for Image Array
+    Update for Texture Array
     */
-    void update(std::vector<Image>& images, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER);
+    void update(std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER);
     /*
     Update for Acceleration Structures
     */

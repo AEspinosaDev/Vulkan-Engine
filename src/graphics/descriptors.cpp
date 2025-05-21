@@ -4,127 +4,121 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-    void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformDataType type, uint32_t binding) {
-        VkBuffer newBuffer = buffer->handle;
-    
-        auto it = boundSlots.find(binding);
-        if (it != boundSlots.end() && std::holds_alternative<VkBuffer>(it->second) && std::get<VkBuffer>(it->second) == newBuffer)
-        {
-            // Buffer is already bound — skip update
-            return;
-        }
-    
-        VkDescriptorBufferInfo info = {};
-        info.buffer                 = newBuffer;
-        info.offset                 = static_cast<VkDeviceSize>(readOffset);
-        info.range                  = static_cast<VkDeviceSize>(dataSize);
-    
-        VkWriteDescriptorSet writeSetting = Init::write_descriptor_buffer(Translator::get(type), handle, &info, binding);
-    
-        vkUpdateDescriptorSets(device, 1, &writeSetting, 0, nullptr);
-    
-        // Track resource
-        boundSlots[binding] = newBuffer;
+void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformDataType type, uint32_t binding) {
+    VkBuffer newBuffer = buffer->handle;
+
+    auto it = boundSlots.find(binding);
+    if (it != boundSlots.end() && std::holds_alternative<VkBuffer>(it->second) && std::get<VkBuffer>(it->second) == newBuffer)
+    {
+        // Buffer is already bound — skip update
+        return;
     }
-    void DescriptorSet::update(Image*          image,
-                                           ImageLayout     layout,
-                                           uint32_t        binding,
-                                           UniformDataType type,
-                                           uint32_t        arraySlot) {
-        VkImageView newView = image->view;
-    
-        if (!isArrayed) // If standard descriptor set (not variant)
-        {
-            auto it = boundSlots.find(binding);
-            if (it != boundSlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
-            {
-                // Image is already bound — skip update
-                return;
-            } else
-            {
-                // Track resource
-                boundSlots[binding] = image->view;
-            }
-        } else
-        {
-    
-            auto it = boundArraySlots.find(arraySlot);
-            if (it != boundArraySlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
-            {
-                // Image in array is already bound — skip update
-                return;
-            } else
-            {
-                // Track resource
-                boundArraySlots[arraySlot] = image->view;
-            }
-        }
-    
-        VkDescriptorImageInfo imageBufferInfo;
-        imageBufferInfo.sampler     = image->sampler;
-        imageBufferInfo.imageView   = image->view;
-        imageBufferInfo.imageLayout = Translator::get(layout);
-    
-        VkWriteDescriptorSet texture1 = Init::write_descriptor_image(Translator::get(type), handle, &imageBufferInfo, 1, arraySlot, binding);
-    
-        vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
-    }
-    void DescriptorSet::update(std::vector<Image>& images, ImageLayout layout, uint32_t binding, UniformDataType type) {
-    
-        VkImageView newView = images[0].view;
-    
+
+    VkDescriptorBufferInfo info = {};
+    info.buffer                 = newBuffer;
+    info.offset                 = static_cast<VkDeviceSize>(readOffset);
+    info.range                  = static_cast<VkDeviceSize>(dataSize);
+
+    VkWriteDescriptorSet writeSetting = Init::write_descriptor_buffer(Translator::get(type), handle, &info, binding);
+
+    vkUpdateDescriptorSets(device, 1, &writeSetting, 0, nullptr);
+
+    // Track resource
+    boundSlots[binding] = newBuffer;
+}
+void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding, UniformDataType type, uint32_t arraySlot) {
+    VkImageView newView = image->viewHandle;
+
+    if (!isArrayed) // If standard descriptor set (not variant)
+    {
         auto it = boundSlots.find(binding);
         if (it != boundSlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
         {
             // Image is already bound — skip update
             return;
-        }
-    
-        std::vector<VkDescriptorImageInfo> descriptorImageInfos(images.size());
-        for (size_t i = 0; i < images.size(); i++)
+        } else
         {
-            descriptorImageInfos[i].sampler     = images[i].sampler;
-            descriptorImageInfos[i].imageView   = images[i].view;
-            descriptorImageInfos[i].imageLayout = Translator::get(layout);
+            // Track resource
+            boundSlots[binding] = image->viewHandle;
         }
-    
-        VkWriteDescriptorSet imageArray =
-            Init::write_descriptor_image(Translator::get(type), handle, descriptorImageInfos.data(), images.size(), 0, binding);
-    
-        vkUpdateDescriptorSets(device, 1, &imageArray, 0, nullptr);
-    
-        // Track resource
-        boundSlots[binding] = newView;
-    }
-    void DescriptorSet::update(TLAS* accel, uint32_t binding) {
-    
-        VkAccelerationStructureKHR newAS = accel->handle;
-    
-        auto it = boundSlots.find(binding);
-        if (it != boundSlots.end() && std::holds_alternative<VkAccelerationStructureKHR>(it->second) &&
-            std::get<VkAccelerationStructureKHR>(it->second) == newAS)
+    } else
+    {
+
+        auto it = boundArraySlots.find(arraySlot);
+        if (it != boundArraySlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
         {
-            // AS is already bound — skip update
+            // Image in array is already bound — skip update
             return;
+        } else
+        {
+            // Track resource
+            boundArraySlots[arraySlot] = image->viewHandle;
         }
-    
-        VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = Init::write_descriptor_set_acceleration_structure();
-        descriptorAccelerationStructureInfo.accelerationStructureCount                   = 1;
-        descriptorAccelerationStructureInfo.pAccelerationStructures                      = &accel->handle;
-    
-        VkWriteDescriptorSet accelerationStructureWrite{};
-        accelerationStructureWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        accelerationStructureWrite.pNext           = &descriptorAccelerationStructureInfo;
-        accelerationStructureWrite.dstSet          = handle;
-        accelerationStructureWrite.dstBinding      = binding;
-        accelerationStructureWrite.descriptorCount = 1;
-        accelerationStructureWrite.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    
-        vkUpdateDescriptorSets(device, 1, &accelerationStructureWrite, 0, nullptr);
-    
-        // Track resource
-        boundSlots[binding] = accel->handle;
     }
+
+    VkDescriptorImageInfo imageBufferInfo;
+    imageBufferInfo.sampler     = image->samplerHandle;
+    imageBufferInfo.imageView   = image->viewHandle;
+    imageBufferInfo.imageLayout = Translator::get(layout);
+
+    VkWriteDescriptorSet texture1 = Init::write_descriptor_image(Translator::get(type), handle, &imageBufferInfo, 1, arraySlot, binding);
+
+    vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
+}
+void DescriptorSet::update(std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformDataType type) {
+
+    VkImageView newView = images[0].viewHandle;
+
+    auto it = boundSlots.find(binding);
+    if (it != boundSlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
+    {
+        // Image is already bound — skip update
+        return;
+    }
+
+    std::vector<VkDescriptorImageInfo> descriptorImageInfos(images.size());
+    for (size_t i = 0; i < images.size(); i++)
+    {
+        descriptorImageInfos[i].sampler     = images[i].samplerHandle;
+        descriptorImageInfos[i].imageView   = images[i].viewHandle;
+        descriptorImageInfos[i].imageLayout = Translator::get(layout);
+    }
+
+    VkWriteDescriptorSet imageArray = Init::write_descriptor_image(Translator::get(type), handle, descriptorImageInfos.data(), images.size(), 0, binding);
+
+    vkUpdateDescriptorSets(device, 1, &imageArray, 0, nullptr);
+
+    // Track resource
+    boundSlots[binding] = newView;
+}
+void DescriptorSet::update(TLAS* accel, uint32_t binding) {
+
+    VkAccelerationStructureKHR newAS = accel->handle;
+
+    auto it = boundSlots.find(binding);
+    if (it != boundSlots.end() && std::holds_alternative<VkAccelerationStructureKHR>(it->second) && std::get<VkAccelerationStructureKHR>(it->second) == newAS)
+    {
+        // AS is already bound — skip update
+        return;
+    }
+
+    VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = Init::write_descriptor_set_acceleration_structure();
+    descriptorAccelerationStructureInfo.accelerationStructureCount                   = 1;
+    descriptorAccelerationStructureInfo.pAccelerationStructures                      = &accel->handle;
+
+    VkWriteDescriptorSet accelerationStructureWrite{};
+    accelerationStructureWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    accelerationStructureWrite.pNext           = &descriptorAccelerationStructureInfo;
+    accelerationStructureWrite.dstSet          = handle;
+    accelerationStructureWrite.dstBinding      = binding;
+    accelerationStructureWrite.descriptorCount = 1;
+    accelerationStructureWrite.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+
+    vkUpdateDescriptorSets(device, 1, &accelerationStructureWrite, 0, nullptr);
+
+    // Track resource
+    boundSlots[binding] = accel->handle;
+}
 
 void DescriptorPool::set_layout(uint32_t                         layoutSetIndex,
                                 std::vector<LayoutBinding>       bindings,
@@ -167,26 +161,26 @@ void DescriptorPool::allocate_descriptor_set(uint32_t layoutSetIndex, Descriptor
     allocInfo.pSetLayouts                 = &layouts[layoutSetIndex].handle;
 
     descriptor->layoutID = layoutSetIndex;
-    descriptor->device = device;
-    
+    descriptor->device   = device;
+
     VK_CHECK(vkAllocateDescriptorSets(device, &allocInfo, &descriptor->handle));
 }
 void DescriptorPool::allocate_variable_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor, uint32_t count) {
-    
+
     VkDescriptorSetVariableDescriptorCountAllocateInfo countInfo = {};
     countInfo.sType                                              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
     countInfo.descriptorSetCount                                 = 1;
     countInfo.pDescriptorCounts                                  = &count;
-    
+
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.pNext                       = &countInfo;
     allocInfo.sType                       = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool              = handle;
     allocInfo.descriptorSetCount          = 1;
     allocInfo.pSetLayouts                 = &layouts[layoutSetIndex].handle;
-    
+
     descriptor->layoutID = layoutSetIndex;
-    descriptor->device = device;
+    descriptor->device   = device;
 
     VK_CHECK(vkAllocateDescriptorSets(device, &allocInfo, &descriptor->handle));
 

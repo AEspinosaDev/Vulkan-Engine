@@ -3,6 +3,10 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
+void Texture::create_GUI_handle() {
+    if (GUIReadHandle == VK_NULL_HANDLE)
+        GUIReadHandle = ImGui_ImplVulkan_AddTexture(samplerHandle, viewHandle, VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
 
 void Texture::cleanup() {
 

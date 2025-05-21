@@ -22,6 +22,7 @@ VkPresentModeKHR         get(SyncType syncType);
 VkDescriptorType         get(UniformDataType uniformDataType);
 VkImageUsageFlags        get(ImageUsageFlags usageFlags);
 VkImageLayout            get(ImageLayout layoutType);
+VkImageType              get(ImageType imageType);
 VkImageViewType          get(TextureTypeFlagBits viewType);
 VkFilter                 get(FilterType filterType);
 VkSamplerAddressMode     get(AddressMode addressMode);

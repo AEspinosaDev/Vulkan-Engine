@@ -309,13 +309,6 @@ enum class Topology
     LINES_TO_TRIANGLES = 2,
     OTHER              = 3
 };
-typedef enum DescriptorLayoutType
-{
-    GLOBAL_LAYOUT         = 0,
-    OBJECT_LAYOUT         = 1,
-    OBJECT_TEXTURE_LAYOUT = 2,
-    G_BUFFER_LAYOUT       = 3
-} DescriptorLayout;
 typedef enum ColorFormatTypeFlagBits
 {
     SR_8           = VK_FORMAT_R8_SRGB,       // Red
@@ -340,7 +333,8 @@ typedef enum ColorFormatTypeFlagBits
     DEPTH_32F      = VK_FORMAT_D32_SFLOAT,
     RGB10A2        = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
     RG11B10_UFLOAT = 111,
-} ColorFormatType, FormatType;
+} ColorFormatType,
+    FormatType;
 typedef enum MipmapModeFlagsBits
 {
     MIPMAP_NEAREST = 0x00000001,
@@ -366,6 +360,13 @@ typedef enum ImageAspectFlagBits
     ASPECT_STENCIL  = 0x00000003,
     ASPECT_METADATA = 0x00000004,
 } ImageAspect;
+typedef enum ImageTypeFlagBits
+{
+    IMAGE_TYPE_1D   = 0,
+    IMAGE_TYPE_2D   = 1,
+    IMAGE_TYPE_3D   = 2,
+    IMAGE_TYPE_CUBE = 3,
+} ImageType;
 // Texture type, used for image views also
 typedef enum TextureTypeFlagBits
 {

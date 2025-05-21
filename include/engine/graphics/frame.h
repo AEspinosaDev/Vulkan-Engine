@@ -11,6 +11,7 @@
 
 #include <engine/graphics/command_buffer.h>
 #include <engine/graphics/semaphore.h>
+#include <engine/graphics/descriptors.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 
@@ -31,12 +32,21 @@ struct Frame {
     Buffer globalBuffer;
     Buffer objectBuffer;
 
+    //Descriptors
+    DescriptorPool descriptorPool;
+    // Per-frame cache of descriptor sets: [ShaderProgram*, setIndex] -> VkDescriptorSet
+    // std::unordered_map<std::pair<string, uint32_t>, DescriptorSet, PairHash> descriptorSets; //string shaderprogram name + set
+    // std::unordered_map<string, Buffer> ubos; //string resoruce name + actual buffer
+
+
     uint32_t index = 0;
 
     void cleanup();
 
     static bool guiEnabled;
 };
+
+
 
 } // namespace Graphics
 

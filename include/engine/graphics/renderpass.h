@@ -11,56 +11,27 @@
 
 #include <engine/common.h>
 #include <engine/graphics/extensions.h>
+#include <engine/graphics/framebuffer.h>
 #include <engine/graphics/image.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-/*
-Attachment info needed for Renderpasses and Framebuffers
-*/
-struct AttachmentConfig {
-    //Image Info
-    AttachmentType type          = AttachmentType::COLOR_ATTACHMENT;
-    ImageConfig    imageConfig   = {};
-    SamplerConfig  samplerConfig = {};
-    bool           isDefault     = false;
-    
-    //Renderpass Info
-    AttachmentLoadOp  loadOp           = ATTACHMENT_LOAD_OP_CLEAR;
-    AttachmentStoreOp storeOp          = ATTACHMENT_STORE_OP_STORE;
-    AttachmentLoadOp  stencilLoadOp    = ATTACHMENT_LOAD_OP_DONT_CARE;
-    AttachmentStoreOp stencilStoreOp   = ATTACHMENT_STORE_OP_DONT_CARE;
-    ImageLayout       initialLayout    = LAYOUT_UNDEFINED;
-    ImageLayout       finalLayout      = LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    ImageLayout       attachmentLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    AttachmentConfig() {};
-    AttachmentConfig(ColorFormatType     format,
-                   uint16_t            samples,
-                   ImageLayout         final_Layout,
-                   ImageLayout         attach_layout,
-                   ImageUsageFlags     usage,
-                   AttachmentType      attachmentType = AttachmentType::COLOR_ATTACHMENT,
-                   ImageAspect         aspect         = ASPECT_COLOR,
-                   TextureTypeFlagBits viewType       = TEXTURE_2D,
-                   FilterType          filter         = FILTER_LINEAR,
-                   AddressMode         addressMode    = ADDRESS_MODE_CLAMP_TO_EDGE,
-                   ClearValue          clearVal       = {{{0.0, 0.0, 0.0, 1.0}}})
-        : finalLayout(final_Layout)
-        , attachmentLayout(attach_layout)
-        , type(attachmentType) {
-        imageConfig.format               = format;
-        imageConfig.usageFlags           = usage;
-        imageConfig.samples              = samples;
-        imageConfig.aspectFlags          = aspect;
-        imageConfig.viewType             = viewType;
-        samplerConfig.filters            = filter;
-        samplerConfig.samplerAddressMode = addressMode;
-        imageConfig.clearValue = clearVal;
-        imageConfig.clearValue.depthStencil.depth    = 1.0f;
-    };
+// Defines the attachment
+struct RenderTargetInfo {
+    Extent2D        extent;
+    FormatType      format;
+    ImageUsageFlags usage;
+    ImageLayout     initialLayout;
+    ImageLayout     finalLayout;
+    ClearValue      clearValue = {};
+    bool            load       = false; // If not load is cleaned (stencil + color)
+    bool            store      = true;
+    uint32_t        samples    = 1;
+    uint32_t        layers     = 1;
+    uint32_t        mipmaps    = 1;
+    bool            resolve    = false;
 };
 
 struct SubPassDependency {
@@ -73,14 +44,11 @@ struct SubPassDependency {
     SubPassDependencyType dependencyFlags = SUBPASS_DEPENDENCY_NONE;
 
     SubPassDependency() {};
-    SubPassDependency(PipelineStage         srcStage,
-                      PipelineStage         dstStage,
-                      AccessFlags           dstAccess,
-                      SubPassDependencyType deps = SUBPASS_DEPENDENCY_BY_REGION)
-        : srcStageMask(srcStage)
-        , dstStageMask(dstStage)
-        , dstAccessMask(dstAccess)
-        , dependencyFlags(deps) {
+    SubPassDependency( PipelineStage srcStage, PipelineStage dstStage, AccessFlags dstAccess, SubPassDependencyType deps = SUBPASS_DEPENDENCY_BY_REGION )
+        : srcStageMask( srcStage )
+        , dstStageMask( dstStage )
+        , dstAccessMask( dstAccess )
+        , dependencyFlags( deps ) {
     }
 };
 
@@ -88,12 +56,14 @@ struct RenderPass {
     VkRenderPass handle = VK_NULL_HANDLE;
     VkDevice     device = VK_NULL_HANDLE;
 
-    std::vector<Graphics::AttachmentConfig>    attachmentsConfig;
-    std::vector<Graphics::SubPassDependency> dependenciesConfig;
+    std::vector<RenderTargetInfo>  targetInfos;
+    std::vector<SubPassDependency> dependencies;
+
+    std::vector<Framebuffer*> fbos;
 
     const char* debbugName = nullptr;
 
-    void set_debug_name(const char* name);
+    void set_debug_name( const char* name );
     void cleanup();
 };
 

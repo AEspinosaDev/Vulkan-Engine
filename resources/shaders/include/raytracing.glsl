@@ -11,6 +11,8 @@
 #define EPSILON         0.001
 #endif  
 
+
+
 float computeRaytracedShadow(accelerationStructureEXT TLAS, sampler2D randomPool, vec3 O, vec3 L, int numSamples, float area, float tMax, int ditherFactor){
 	if(numSamples == 0) return 1.0;
 

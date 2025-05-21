@@ -225,7 +225,7 @@ void BaseRenderer::init_gui() {
         m_device->init_imgui(windowHandle,
                              m_window->get_windowing_system(),
                              std::static_pointer_cast<Render::BaseGraphicPass>(defaultPass)->get_renderpass(),
-                             std::static_pointer_cast<Render::BaseGraphicPass>(defaultPass)->get_renderpass().attachmentsConfig[0].imageConfig.samples);
+                             std::static_pointer_cast<Render::BaseGraphicPass>(defaultPass)->get_renderpass().targetInfos[0].imageConfig.samples);
     }
 }
 

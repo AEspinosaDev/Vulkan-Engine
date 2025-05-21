@@ -110,30 +110,30 @@ void CommandBuffer::submit(Fence fence, std::vector<Semaphore> waitSemaphores, s
     }
 }
 
-void CommandBuffer::begin_renderpass(RenderPass& renderpass, Framebuffer& fbo, VkSubpassContents subpassContents) {
+// void CommandBuffer::begin_renderpass(RenderPass& renderpass, VkSubpassContents subpassContents) {
 
-    VkRenderPassBeginInfo renderPassInfo = Init::renderpass_begin_info(renderpass.handle, fbo.extent, fbo.handle);
+    // VkRenderPassBeginInfo renderPassInfo = Init::renderpass_begin_info(renderpass.handle, fbo.extent, fbo.handle);
 
-    std::vector<VkClearValue> clearValues;
-    clearValues.reserve(renderpass.attachmentsConfig.size());
+    // std::vector<VkClearValue> clearValues;
+    // clearValues.reserve(renderpass.attachmentsConfig.size());
 
-    for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
-    {
-        fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].initialLayout;
-        clearValues.push_back(fbo.attachmentImagesPtrs[i]->config.clearValue);
-        // clearValues.push_back( renderpass.attachmentsConfig[i].imageConfig.clearValue);
-    }
+    // for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
+    // {
+    //     fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].initialLayout;
+    //     clearValues.push_back(fbo.attachmentImagesPtrs[i]->config.clearValue);
+    //     // clearValues.push_back( renderpass.attachmentsConfig[i].imageConfig.clearValue);
+    // }
 
-    renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
-    renderPassInfo.pClearValues    = clearValues.data();
+    // renderPassInfo.clearValueCount = (uint32_t)clearValues.size();
+    // renderPassInfo.pClearValues    = clearValues.data();
 
-    vkCmdBeginRenderPass(handle, &renderPassInfo, subpassContents);
-}
+    // vkCmdBeginRenderPass(handle, &renderPassInfo, subpassContents);
+// }
 void CommandBuffer::end_renderpass(RenderPass& renderpass, Framebuffer& fbo) {
-    for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
-    {
-        fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].finalLayout;
-    }
+    // for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
+    // {
+    //     fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].finalLayout;
+    // }
     vkCmdEndRenderPass(handle);
 }
 void CommandBuffer::draw_geometry(VertexArrays& vao, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance) {
@@ -220,9 +220,9 @@ void Graphics::CommandBuffer::pipeline_barrier(Image&        img,
     barrier.srcAccessMask                   = Translator::get(srcMask);
     barrier.dstAccessMask                   = Translator::get(dstMask);
     barrier.image                           = img.handle;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel   = img.config.baseMipLevel;
-    barrier.subresourceRange.levelCount     = img.config.mipLevels;
+    barrier.subresourceRange.aspectMask     = Translator::get(Utils::get_aspect(img.config.format));
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.levelCount     = img.config.mipmaps;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = img.config.layers;
 
@@ -267,8 +267,8 @@ void Graphics::CommandBuffer::clear_image(Image& img, ImageLayout layout, ImageA
 
     VkImageSubresourceRange subresourceRange = {};
     subresourceRange.aspectMask              = Translator::get(aspect);
-    subresourceRange.baseMipLevel            = img.config.baseMipLevel;
-    subresourceRange.levelCount              = img.config.mipLevels;
+    subresourceRange.baseMipLevel            = 0;
+    subresourceRange.levelCount              = img.config.mipmaps;
     subresourceRange.baseArrayLayer          = 0;
     subresourceRange.layerCount              = img.config.layers;
 
@@ -353,9 +353,9 @@ void Graphics::CommandBuffer::copy_buffer(Buffer& srcBuffer, Buffer& dstBuffer, 
 void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
 
     VkImageSubresourceRange range;
-    range.aspectMask     = Translator::get(img.config.aspectFlags);
-    range.baseMipLevel   = img.config.baseMipLevel;
-    range.levelCount     = img.config.mipLevels;
+    range.aspectMask     = Translator::get(Utils::get_aspect(img.config.format));
+    range.baseMipLevel   = 0;
+    range.levelCount     = img.config.mipmaps;
     range.baseArrayLayer = 0;
     range.layerCount     = img.config.layers;
 
@@ -390,7 +390,7 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
         vkCmdCopyBufferToImage(handle, buffer.handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
     }
 
-    if (img.config.mipLevels == 1)
+    if (img.config.mipmaps == 1)
     {
         VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 
@@ -408,9 +408,9 @@ void Graphics::CommandBuffer::copy_buffer_to_image(Image& img, Buffer& buffer) {
 
 void Graphics::CommandBuffer::copy_image_to_buffer(Image& img, Buffer& buffer) {
     VkImageSubresourceRange range;
-    range.aspectMask     = Translator::get(img.config.aspectFlags);
+    range.aspectMask     = Translator::get(Utils::get_aspect(img.config.format));
     range.baseMipLevel   = 0;
-    range.levelCount     = img.config.mipLevels;
+    range.levelCount     = img.config.mipmaps;
     range.baseArrayLayer = 0;
     range.layerCount     = img.config.layers;
 
@@ -452,7 +452,7 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     int32_t mipDepth  = img.extent.depth;
 
     VkImageSubresourceRange range;
-    range.aspectMask     = Translator::get(img.config.aspectFlags);
+    range.aspectMask     = Translator::get(Utils::get_aspect(img.config.format));
     range.levelCount     = 1;
     range.baseArrayLayer = 0;
     range.layerCount     = img.config.layers;
@@ -464,7 +464,7 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     imageBarrier_toTransfer.image                = img.handle;
     imageBarrier_toTransfer.subresourceRange     = range;
 
-    for (uint32_t i = 1; i < img.config.mipLevels; i++)
+    for (uint32_t i = 1; i < img.config.mipmaps; i++)
     {
         for (uint32_t layer = 0; layer < img.config.layers; ++layer)
         {
@@ -515,7 +515,7 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
     }
 
     VkImageMemoryBarrier imageBarrier_toReadable          = imageBarrier_toTransfer;
-    imageBarrier_toReadable.subresourceRange.baseMipLevel = img.config.mipLevels - 1;
+    imageBarrier_toReadable.subresourceRange.baseMipLevel = img.config.mipmaps - 1;
     imageBarrier_toReadable.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     imageBarrier_toReadable.newLayout                     = Translator::get(finalLayout);
     imageBarrier_toReadable.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;

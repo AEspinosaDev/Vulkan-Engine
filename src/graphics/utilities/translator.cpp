@@ -120,6 +120,23 @@ VkImageLayout get(ImageLayout layoutType) {
     }
 }
 
+VkImageType get(ImageType imageType) {
+     switch (imageType)
+    {
+    case ImageTypeFlagBits::IMAGE_TYPE_1D:
+        return VK_IMAGE_TYPE_1D;
+    case ImageTypeFlagBits::IMAGE_TYPE_2D:
+        return VK_IMAGE_TYPE_2D;
+    case ImageTypeFlagBits::IMAGE_TYPE_3D:
+        return VK_IMAGE_TYPE_3D;
+    case ImageTypeFlagBits::IMAGE_TYPE_CUBE:
+        return VK_IMAGE_TYPE_2D;
+    default:
+        throw std::invalid_argument("VKEngine error: Unknown ImageType");
+    }
+
+
+}
 VkImageViewType get(TextureTypeFlagBits viewType) {
     switch (viewType)
     {

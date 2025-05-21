@@ -4,7 +4,6 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Render {
 
-
 void Resources::init_shared_resources(const ptr<Graphics::Device>& device) {
 
     // Setup vignette
@@ -15,14 +14,14 @@ void Resources::init_shared_resources(const ptr<Graphics::Device>& device) {
     if (!fallbackTexture2D) // If not user set
     {
         unsigned char texture_data[1] = {0};
-        fallbackTexture2D              = new Core::TextureLDR(texture_data, {1, 1, 1}, 4);
+        fallbackTexture2D             = new Core::TextureLDR(texture_data, {1, 1, 1}, 4);
         fallbackTexture2D->set_use_mipmaps(false);
     }
     upload_texture_data(device, fallbackTexture2D);
     if (!fallbackCubeMap) // If not user set
     {
         unsigned char cube_data[6] = {0, 0, 0, 0, 0, 0};
-        fallbackCubeMap           = new Core::TextureLDR(cube_data, {1, 1, 1}, 4);
+        fallbackCubeMap            = new Core::TextureLDR(cube_data, {1, 1, 1}, 4);
         fallbackCubeMap->set_use_mipmaps(false);
         fallbackCubeMap->set_type(TextureTypeFlagBits::TEXTURE_CUBE);
     }
@@ -42,21 +41,22 @@ void Resources::upload_texture_data(const ptr<Graphics::Device>& device, Core::I
     {
         if (!t->loaded_on_GPU())
         {
-            Graphics::ImageConfig   config        = {};
-            Graphics::SamplerConfig samplerConfig = {};
-            Core::TextureSettings   textSettings  = t->get_settings();
-            config.viewType                       = textSettings.type;
-            config.format                         = textSettings.format;
-            config.mipLevels                      = textSettings.useMipmaps ? textSettings.maxMipLevel : 1;
-            samplerConfig.anysotropicFilter       = textSettings.anisotropicFilter;
-            samplerConfig.filters                 = textSettings.filter;
-            samplerConfig.maxLod                  = textSettings.maxMipLevel;
-            samplerConfig.minLod                  = textSettings.minMipLevel;
-            samplerConfig.samplerAddressMode      = textSettings.adressMode;
+            Graphics::TextureConfig config       = {};
+            Core::TextureSettings   textSettings = t->get_settings();
+            config.type                          = textSettings.type;
+            // config.format                        = textSettings.format;
+            config.maxMipLevel        = textSettings.useMipmaps ? textSettings.maxMipLevel : 1;
+            config.maxAnysotropy      = 16;
+            config.filters            = textSettings.filter;
+            config.baseMipLevel       = textSettings.minMipLevel;
+            config.samplerAddressMode = textSettings.adressMode;
 
             void* imgCache{nullptr};
             t->get_image_cache(imgCache);
-            device->upload_texture_image(*get_image(t), config, samplerConfig, imgCache, t->get_bytes_per_pixel());
+
+            *get_image(t) = device->create_texture( *get_image(t). ,textSettings.format, config);
+
+            device->upload_texture_image(*get_image(t), imgCache, t->get_bytes_per_pixel());
         }
     }
 }

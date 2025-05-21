@@ -14,18 +14,13 @@
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
+namespace Render {
+class RenderViewBuilder;
+}
+
 namespace Core {
 
-struct TextureSettings {
-    TextureType     type              = TEXTURE_2D;
-    ColorFormatType format            = SRGBA_8;
-    FilterType      filter            = FILTER_LINEAR;
-    AddressMode     adressMode        = ADDRESS_MODE_REPEAT;
-    bool            useMipmaps        = true;
-    uint16_t        anisotropicFilter = 16;
-    int             minMipLevel       = 0;
-    int             maxMipLevel       = 12;
-};
+typedef Graphics::TextureConfig TextureSettings ;
 
 /*
 Interface class for all textures
@@ -35,28 +30,29 @@ class ITexture
   protected:
     TextureSettings m_settings = {};
 
-    Graphics::Image m_image     = {};
-    uint16_t        m_channels  = 0;
-    std::string     m_fileRoute = "None";
+    Graphics::Texture m_handle    = {};
+    uint16_t          m_channels  = 0;
+    std::string       m_fileRoute = "";
 
     bool m_isDirty{true};
+    bool m_loadedOnClient{false};
 
-    friend Graphics::Image* const get_image(ITexture* t);
+    friend class Render::RenderViewBuilder;
 
   public:
     ITexture() {
-        m_image.extent = {0, 0, 1};
+        m_handle.image = new Graphics::Image();
     }
 
     ITexture(TextureSettings settings)
         : m_settings(settings) {
-        m_image.extent = {0, 0, 1};
+        m_handle.image = new Graphics::Image();
     }
 
-    ITexture(Extent3D size, uint16_t channels, TextureSettings settings = {})
+    ITexture(uint16_t channels, TextureSettings settings = {})
         : m_settings(settings)
         , m_channels(channels) {
-        m_image.extent = size;
+        m_handle.image = new Graphics::Image();
     }
 
     virtual void   set_image_cache(void* cache, Extent3D extent, uint16_t channels) = 0;
@@ -69,11 +65,11 @@ class ITexture
     };
 
     inline bool loaded_on_CPU() const {
-        return m_image.loadedOnCPU;
+        return m_loadedOnClient;
     }
 
     inline bool loaded_on_GPU() const {
-        return m_image.loadedOnGPU;
+        return !m_handle.image->empty;
     }
 
     inline bool is_dirty() const {
@@ -99,31 +95,6 @@ class ITexture
         m_image.extent = s;
     }
 
-    inline void set_use_mipmaps(bool op) {
-        m_settings.useMipmaps = op;
-    }
-
-    inline void set_anysotropic_filtering(bool op) {
-        m_settings.anisotropicFilter = op;
-    }
-
-    inline void set_format(ColorFormatType f) {
-        m_settings.format = f;
-    }
-
-    inline void set_filter(FilterType f) {
-        m_settings.filter = f;
-    }
-
-    inline void set_adress_mode(AddressMode am) {
-        m_settings.adressMode = am;
-    }
-    inline void set_type(TextureTypeFlagBits t) {
-        m_settings.type = t;
-    }
-    inline TextureTypeFlagBits get_type() const {
-        return m_settings.type;
-    }
     inline std::string get_file_route() const {
         return m_fileRoute;
     }
@@ -131,8 +102,6 @@ class ITexture
         m_fileRoute = r;
     }
 };
-
-Graphics::Image* const get_image(ITexture* t);
 
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END
