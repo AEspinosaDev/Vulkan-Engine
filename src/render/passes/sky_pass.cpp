@@ -66,7 +66,7 @@ void SkyPass::setup_shader_passes() {
     ttPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
-    ttPass->build_shader_stages();
+    ttPass->compile_shader_stages();
     ttPass->build(m_descriptorPool);
 
     m_shaderPasses["tt"] = ttPass;
@@ -77,7 +77,7 @@ void SkyPass::setup_shader_passes() {
     skyPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
     skyPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
 
-    skyPass->build_shader_stages();
+    skyPass->compile_shader_stages();
     skyPass->build(m_descriptorPool);
 
     m_shaderPasses["sky"] = skyPass;
@@ -88,7 +88,7 @@ void SkyPass::setup_shader_passes() {
     projPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
     projPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
 
-    projPass->build_shader_stages();
+    projPass->compile_shader_stages();
     projPass->build(m_descriptorPool);
 
     m_shaderPasses["proj"] = projPass;

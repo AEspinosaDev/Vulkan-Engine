@@ -95,7 +95,7 @@ void VarianceShadowPass::setup_shader_passes() {
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_geom.glsl"));
     depthPass->settings        = settings;
     depthPass->graphicSettings = gfxSettings;
-    depthPass->build_shader_stages();
+    depthPass->compile_shader_stages();
     depthPass->build(m_descriptorPool);
     m_shaderPasses["shadowTri"] = depthPass;
 
@@ -105,7 +105,7 @@ void VarianceShadowPass::setup_shader_passes() {
     depthLinePass->graphicSettings             = gfxSettings;
     depthLinePass->graphicSettings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     depthLinePass->graphicSettings.poligonMode = VK_POLYGON_MODE_LINE;
-    depthLinePass->build_shader_stages();
+    depthLinePass->compile_shader_stages();
     depthLinePass->build(m_descriptorPool);
     m_shaderPasses["shadowLine"] = depthLinePass;
 }

@@ -19,7 +19,7 @@ namespace Translator {
 
 VkFormat                 get(ColorFormatType colorFormatType);
 VkPresentModeKHR         get(SyncType syncType);
-VkDescriptorType         get(UniformDataType uniformDataType);
+VkDescriptorType         get(UniformType uniformDataType);
 VkImageUsageFlags        get(ImageUsageFlags usageFlags);
 VkImageLayout            get(ImageLayout layoutType);
 VkImageType              get(ImageType imageType);

@@ -6,32 +6,21 @@
     Copyright (c) 2023 Antonio Espinosa Garcia
 
 */
-#ifndef RENDER_VIEW
-#define RENDER_VIEW
+#ifndef SHADER_PROGRAM
+#define SHADER_PROGRAM
 
 #include <engine/common.h>
-#include <engine/graphics/descriptors.h>
-#include <engine/graphics/shaderpass.h>
+#include <engine/graphics/device.h>
+#include <engine/graphics/frame.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Render {
 
 class RenderGraph;
 
-enum class UniformType
-{
-    ImageSampler,
-    Buffer,
-    DynamicBuffer,
-    StorageBuffer,
-    StorageImage,
-    Sampler,
-    // Add more as needed
-};
-
 class ShaderProgram
 {
-    Graphics::ShaderPass                    m_shaderpass;
+protected:
     std::vector<Graphics::DescriptorLayout> m_descriptorLayouts; // Uniform layouts
 
     struct UniformBinding {
@@ -39,31 +28,38 @@ class ShaderProgram
         uint32_t         binding;
         UniformType      type;
         ShaderStageFlags stages;
-        std::string      name; // Optional, for debugging
+        std::string      name;
+        bool             bindless = false;
+
+        UniformBinding( uint32_t set, uint32_t binding, UniformType type, ShaderStageFlags stages, std::string name ) {}
     };
 
     std::vector<UniformBinding> m_uniformBindings;
     std::string                 m_name;
-    // bool m_isCompute
+    std::string                 m_shaderPath;
 
     bool m_compiled = false;
 
     friend class RenderGraph;
 
 public:
-    ShaderProgram( std::string name, std::string glslPath, const UniformBinding& uniformBindings, const Graphics::GraphicPipelineSettings& settings = {} )
-        : m_uniformBindings( uniformBindings ) {
+    ShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings )
+        : m_name( name )
+        , m_shaderPath( glslPath )
+        , m_uniformBindings( uniformBindings ) {
     }
+    virtual ~ShaderProgram() = default;
 
-    const std::vector<UniformBinding>&       get_uniform_bindings() const { return m_uniformBindings };
-    const std::string&                       get_glsl_path() const { return m_uniformBindings };
-    const Graphics::GraphicPipelineSettings& get_settings() const { return m_uniformBindings };
+    void attach( const std::string& uName,
+                 Graphics::Frame&   frame );
+    // void attach( const std::string& uName, std::variant<Buffer, > reosurce     );
+    // void attach( const std::string& uName,
+    //             std::variant<Buffer, > reosurce
+    //              uint32_t arraySlot);
 
-    attach( const std::string& uName,
-            const std::string& resName,
-            Graphics::Frame&   frame ); // update descriptors
-                                      // attach(const std::string& uniformName,variantResource)
-                                      // update("uniform",std::variant<resource>, frame) updatedescriptors
+    // update descriptors
+    // attach(const std::string& uniformName,variantResource)
+    // update("uniform",std::variant<resource>, frame) updatedescriptors
     void bind_uniforms( uint32_t                     set,
                         Graphics::Frame&             frame,
                         const std::vector<uint32_t>& offsets = {} ); // if needed
@@ -71,9 +67,51 @@ public:
     void bind();
     bool compiled();
 
-    bool cleanup();
-    // Friend class Graph creates all shaderpasse (descritpor layouts builds modules etc)
+    virtual void compile( const std::shared_ptr<Graphics::Device>& device ) = 0;
+    virtual bool is_graphics() const                                        = 0;
+    virtual bool is_compute() const                                         = 0;
+    virtual void cleanup()                                                  = 0;
+
+    const std::vector<UniformBinding>& get_uniform_bindings() const { return m_uniformBindings; }
+    const std::string&                 get_shader_source_path() const { return m_shaderPath; }
+    const std::string&                 get_name() const { return m_name; }
 };
+
+class GraphicShaderProgram final : public ShaderProgram
+{
+    Graphics::GraphicShaderPass m_shaderpass = {};
+
+public:
+    GraphicShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings, const Graphics::GraphicPipelineSettings& settings = {} )
+        : ShaderProgram( name, glslPath, uniformBindings ) {
+        m_shaderpass.settings = settings
+    }
+
+   void compile( const std::shared_ptr<Graphics::Device>& device ) override;
+   inline bool is_graphics() const   override  { return true;}                                   
+   bool is_compute() const    override { { return false;}   }                                     
+   void cleanup()   override;                                               
+
+    const Graphics::GraphicPipelineSettings& get_settings() const { return m_shaderpass.graphicSettings; }
+};
+
+class ComputeShaderProgram final : public ShaderProgram
+{
+    Graphics::ComputeShaderPass m_shaderpass = {};
+
+public:
+    ComputeShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings )
+        : ShaderProgram( name, glslPath, uniformBindings ) {
+    }
+
+   void compile( const std::shared_ptr<Graphics::Device>& device ) override;
+   inline bool is_graphics() const   override  { return true;}                                   
+   bool is_compute() const    override { { return false;}   }                                     
+   void cleanup()   override;                                               
+
+   
+};
+
 
 // ShaderProgram lightingShader(
 //     "lighting",
@@ -83,8 +121,8 @@ public:
 //         layout(set = 1, binding = 0) uniform CameraUBO { mat4 viewProj; };
 //     )",
 //     {
-//         { 0, 0, DescriptorType::ImageSampler, STAGE_VERTEX | STAGE_FRAGMENT ,"albedo" },
-//         { 1, 0, DescriptorType::UniformBuffer, "camera" }
+//         { 0, 0, ImageSampler, STAGE_VERTEX | STAGE_FRAGMENT ,"albedo" },
+//         { 1, 0, UniformBuffer, "camera" }
 //     },
 //     GraphicsSettings{/* blend, cull, depth, etc. */}
 // );

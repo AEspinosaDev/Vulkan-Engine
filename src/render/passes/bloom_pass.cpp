@@ -68,7 +68,7 @@ void BloomPass::setup_shader_passes() {
     downsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     downsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
-    downsamplePass->build_shader_stages();
+    downsamplePass->compile_shader_stages();
     downsamplePass->build(m_descriptorPool);
 
     m_shaderPasses["downsample"] = downsamplePass;
@@ -77,7 +77,7 @@ void BloomPass::setup_shader_passes() {
     upsamplePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
     upsamplePass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_COMPUTE, MIPMAP_UNIFORM_SIZE));
 
-    upsamplePass->build_shader_stages();
+    upsamplePass->compile_shader_stages();
     upsamplePass->build(m_descriptorPool);
 
     m_shaderPasses["upsample"] = upsamplePass;
@@ -88,7 +88,7 @@ void BloomPass::setup_shader_passes() {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     bloomPass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_FRAGMENT, SETTINGS_UNIFORM_SIZE));
 
-    bloomPass->build_shader_stages();
+    bloomPass->compile_shader_stages();
     bloomPass->build(m_descriptorPool);
 
     m_shaderPasses["bloom"] = bloomPass;

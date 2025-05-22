@@ -117,7 +117,7 @@ template <std::size_t numberIN, std::size_t numberOUT> void PostProcessPass<numb
     ppPass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
-    ppPass->build_shader_stages();
+    ppPass->compile_shader_stages();
     ppPass->build(this->m_descriptorPool);
 
     this->m_shaderPasses["pp"] = ppPass;

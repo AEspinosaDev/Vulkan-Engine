@@ -16,7 +16,7 @@ void TonemappingPass::setup_shader_passes() {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     ppPass->settings.pushConstants = {Graphics::PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float) * 2)};
 
-    ppPass->build_shader_stages();
+    ppPass->compile_shader_stages();
     ppPass->build(m_descriptorPool);
 
     m_shaderPasses["pp"] = ppPass;

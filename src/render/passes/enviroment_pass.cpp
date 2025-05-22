@@ -36,10 +36,10 @@ void EnviromentPass::setup_uniforms(std::vector<Graphics::Frame>& frames, const 
     // Init and configure local descriptors
     m_descriptorPool = m_device->create_descriptor_pool(1, 1, 1, 1, 2);
 
-    LayoutBinding panoramaTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
-    LayoutBinding enviromentTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
-    LayoutBinding auxBufferBinding(UniformDataType::UNIFORM_BUFFER, SHADER_STAGE_FRAGMENT, 2);
-    LayoutBinding proceduralPanoramaTextureBinding(UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
+    LayoutBinding panoramaTextureBinding(UniformType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 0);
+    LayoutBinding enviromentTextureBinding(UniformType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 1);
+    LayoutBinding auxBufferBinding(UniformType::UNIFORM_BUFFER, SHADER_STAGE_FRAGMENT, 2);
+    LayoutBinding proceduralPanoramaTextureBinding(UniformType::UNIFORM_COMBINED_IMAGE_SAMPLER, SHADER_STAGE_FRAGMENT, 3);
     m_descriptorPool.set_layout(0, {panoramaTextureBinding, enviromentTextureBinding, auxBufferBinding, proceduralPanoramaTextureBinding});
 
     m_descriptorPool.allocate_descriptor_set(0, &m_envDescriptorSet);
@@ -77,7 +77,7 @@ void EnviromentPass::setup_shader_passes() {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     converterPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};
 
-    converterPass->build_shader_stages();
+    converterPass->compile_shader_stages();
     converterPass->build(m_descriptorPool);
 
     m_shaderPasses["converter"] = converterPass;
@@ -90,7 +90,7 @@ void EnviromentPass::setup_shader_passes() {
     irradiancePass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
-    irradiancePass->build_shader_stages();
+    irradiancePass->compile_shader_stages();
     irradiancePass->build(m_descriptorPool);
 
     m_shaderPasses["irr"] = irradiancePass;

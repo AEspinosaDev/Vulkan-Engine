@@ -74,18 +74,18 @@ VkPresentModeKHR get(SyncType syncType) {
     }
 }
 // UniformDataType -> VkDescriptorType
-VkDescriptorType get(UniformDataType uniformDataType) {
+VkDescriptorType get(UniformType uniformDataType) {
     switch (uniformDataType)
     {
-    case UniformDataType::UNIFORM_BUFFER:
+    case UniformType::UNIFORM_BUFFER:
         return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    case UniformDataType::UNIFORM_DYNAMIC_BUFFER:
+    case UniformType::UNIFORM_DYNAMIC_BUFFER:
         return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    case UniformDataType::UNIFORM_COMBINED_IMAGE_SAMPLER:
+    case UniformType::UNIFORM_COMBINED_IMAGE_SAMPLER:
         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    case UniformDataType::UNIFORM_ACCELERATION_STRUCTURE:
+    case UniformType::UNIFORM_ACCELERATION_STRUCTURE:
         return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    case UniformDataType::UNIFORM_STORAGE_IMAGE:
+    case UniformType::UNIFORM_STORAGE_IMAGE:
         return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     default:
         throw std::invalid_argument("VKEngine error: Unknown UniformDataType");

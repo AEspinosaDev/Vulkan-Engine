@@ -132,7 +132,7 @@ void GeometryPass::setup_shader_passes() {
                                                   Init::color_blend_attachment_state(false)};
     geomPass->graphicSettings.depthOp          = VK_COMPARE_OP_GREATER_OR_EQUAL;
 
-    geomPass->build_shader_stages();
+    geomPass->compile_shader_stages();
     geomPass->build(m_descriptorPool);
 
     m_shaderPasses["geometryTri"] = geomPass;
@@ -145,7 +145,7 @@ void GeometryPass::setup_shader_passes() {
     geomLinePass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
 
-    geomLinePass->build_shader_stages();
+    geomLinePass->compile_shader_stages();
     geomLinePass->build(m_descriptorPool);
 
     m_shaderPasses["geometryLineTri"] = geomLinePass;
@@ -158,7 +158,7 @@ void GeometryPass::setup_shader_passes() {
     linePass->graphicSettings.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
 
-    linePass->build_shader_stages();
+    linePass->compile_shader_stages();
     linePass->build(m_descriptorPool);
 
     m_shaderPasses["geometryLine"] = linePass;
@@ -171,7 +171,7 @@ void GeometryPass::setup_shader_passes() {
     skyboxPass->graphicSettings.dynamicStates    = geomPass->graphicSettings.dynamicStates;
     skyboxPass->graphicSettings.blendAttachments = geomPass->graphicSettings.blendAttachments;
 
-    skyboxPass->build_shader_stages();
+    skyboxPass->compile_shader_stages();
     skyboxPass->build(m_descriptorPool);
 
     m_shaderPasses["skybox"] = skyboxPass;

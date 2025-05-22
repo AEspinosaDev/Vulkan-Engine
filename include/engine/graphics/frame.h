@@ -10,8 +10,8 @@
 #define FRAME_H
 
 #include <engine/graphics/command_buffer.h>
-#include <engine/graphics/semaphore.h>
 #include <engine/graphics/descriptors.h>
+#include <engine/graphics/semaphore.h>
 #include <engine/graphics/utilities/bootstrap.h>
 #include <engine/graphics/utilities/initializers.h>
 
@@ -32,12 +32,17 @@ struct Frame {
     Buffer globalBuffer;
     Buffer objectBuffer;
 
-    //Descriptors
+    // Descriptors
     DescriptorPool descriptorPool;
     // Per-frame cache of descriptor sets: [ShaderProgram*, setIndex] -> VkDescriptorSet
-    // std::unordered_map<std::pair<string, uint32_t>, DescriptorSet, PairHash> descriptorSets; //string shaderprogram name + set
-    // std::unordered_map<string, Buffer> ubos; //string resoruce name + actual buffer
-
+    struct PairHash {
+        template <typename T1, typename T2>
+        std::size_t operator()( const std::pair<T1, T2>& p ) const {
+            return std::hash<T1>()( p.first ) ^ ( std::hash<T2>()( p.second ) << 1 );
+        }
+    };
+    std::unordered_map<std::pair<std::string, uint32_t>, DescriptorSet, PairHash> descriptorSets; // string shaderprogram name + set
+    std::unordered_map<std::string, Buffer>                                       ubos;           // string resoruce name + actual buffer
 
     uint32_t index = 0;
 
@@ -45,8 +50,6 @@ struct Frame {
 
     static bool guiEnabled;
 };
-
-
 
 } // namespace Graphics
 

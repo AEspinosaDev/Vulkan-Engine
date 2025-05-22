@@ -37,27 +37,29 @@ struct DescriptorSet {
     /*
     Update for Uniform Buffers
     */
-    void update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformDataType type, uint32_t binding);
+    void update( Buffer* buffer, size_t dataSize, size_t readOffset, UniformType type, uint32_t binding );
     /*
     Update for Textures
     */
-    void update(Texture* image, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0);
+    void update( Texture* image, ImageLayout layout, uint32_t binding, UniformType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0 );
     /*
     Update for Texture Array
     */
-    void update(std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformDataType type = UNIFORM_COMBINED_IMAGE_SAMPLER);
+    void update( std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformType type = UNIFORM_COMBINED_IMAGE_SAMPLER );
     /*
     Update for Acceleration Structures
     */
-    void update(TLAS* accel, uint32_t binding);
+    void update( TLAS* accel, uint32_t binding );
 };
 
 struct LayoutBinding {
 
-    VkDescriptorSetLayoutBinding handle{};
+    VkDescriptorSetLayoutBinding handle {};
+    bool                         bindless = false;
 
-    LayoutBinding(UniformDataType type, ShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount = 1U) {
-        handle = Init::descriptorset_layout_binding(Translator::get(type), Translator::get(stageFlags), binding, descriptorCount);
+    LayoutBinding( UniformType type, ShaderStageFlags stageFlags, uint32_t binding, uint32_t descriptorCount = 1U, bool isBindless = false )
+        : bindless( isBindless ) {
+        handle = Init::descriptorset_layout_binding( Translator::get( type ), Translator::get( stageFlags ), binding, descriptorCount );
     }
 };
 
@@ -75,17 +77,17 @@ struct DescriptorPool {
     VkDevice                                       device = VK_NULL_HANDLE;
     std::unordered_map<uint32_t, DescriptorLayout> layouts;
 
-    void set_layout(uint32_t                         layoutSetIndex,
-                    std::vector<LayoutBinding>       bindings,
-                    VkDescriptorSetLayoutCreateFlags flags    = 0,
-                    VkDescriptorBindingFlagsEXT      extFlags = 0);
+    void set_layout( uint32_t                         layoutSetIndex,
+                     std::vector<LayoutBinding>       bindings,
+                     VkDescriptorSetLayoutCreateFlags flags    = 0,
+                     VkDescriptorBindingFlagsEXT      extFlags = 0 );
 
-    inline DescriptorLayout get_layout(uint32_t layoutSetIndex) {
+    inline DescriptorLayout get_layout( uint32_t layoutSetIndex ) {
         return layouts[layoutSetIndex];
     }
 
-    void allocate_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor);
-    void allocate_variable_descriptor_set(uint32_t layoutSetIndex, DescriptorSet* descriptor, uint32_t count);
+    void allocate_descriptor_set( uint32_t layoutSetIndex, DescriptorSet* descriptor );
+    void allocate_variable_descriptor_set( uint32_t layoutSetIndex, DescriptorSet* descriptor, uint32_t count );
 
     void cleanup();
 };
@@ -93,10 +95,10 @@ struct DescriptorPool {
 PUSH CONSTANTS
 */
 struct PushConstant {
-    VkPushConstantRange handle{};
+    VkPushConstantRange handle {};
 
-    PushConstant(ShaderStageFlags stage, uint32_t size, uint32_t offset = 0) {
-        handle.stageFlags = Translator::get(stage);
+    PushConstant( ShaderStageFlags stage, uint32_t size, uint32_t offset = 0 ) {
+        handle.stageFlags = Translator::get( stage );
         handle.offset     = offset;
         handle.size       = size;
     }

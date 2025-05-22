@@ -144,7 +144,7 @@ void VoxelizationPass::setup_shader_passes() {
     state.colorWriteMask                        = 0;
     voxelPass->graphicSettings.blendAttachments = {state};
 
-    voxelPass->build_shader_stages();
+    voxelPass->compile_shader_stages();
     voxelPass->build(m_descriptorPool);
 
     m_shaderPasses["voxelization"] = voxelPass;
@@ -154,7 +154,7 @@ void VoxelizationPass::setup_shader_passes() {
     ComputeShaderPass* mergePass               = new ComputeShaderPass(m_device->get_handle(), GET_RESOURCE_PATH("shaders/VXGI/merge_intermediates.glsl"));
     mergePass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
 
-    mergePass->build_shader_stages();
+    mergePass->compile_shader_stages();
     mergePass->build(m_descriptorPool);
 
     m_shaderPasses["merge"] = mergePass;

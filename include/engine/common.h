@@ -285,7 +285,7 @@ enum AttachmentType
     RESOLVE_ATTACHMENT = 2,
 };
 
-enum UniformDataType
+enum UniformType
 {
     UNIFORM_BUFFER                 = 0,
     UNIFORM_DYNAMIC_BUFFER         = 1,

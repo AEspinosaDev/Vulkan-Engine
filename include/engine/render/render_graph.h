@@ -2,23 +2,37 @@
 #define RENDER_GRAPH
 
 #include <engine/common.h>
+#include <engine/graphics/device.h>
 #include <engine/graphics/frame.h>
 #include <engine/graphics/renderpass.h>
 #include <engine/graphics/texture.h>
 #include <engine/render/program/shader_program.h>
-#include <engine/render/render_view.h>
+#include <engine/render/render_view_builder.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Render {
 
 // Resource data
+using TargetInfo = Graphics::RenderTargetInfo;
+using ReadInfo   = Graphics::TextureConfig;
+
 class RenderGraphResource
 {
 public:
-    std::string                name;
-    Graphics::RenderTargetInfo info;
-    bool                       written     = false;
-    int                        firstWriter = -1;
+    std::string name;
+    TargetInfo  info;
+    bool        written     = false;
+    int         firstWriter = -1;
+    // std::unordered_map<std::string, ReadInfo> readInfos; // pass name
+    // std::vector<int> readers;
+};
+
+class RenderGraphAttachment
+{
+public:
+    Graphics::Image image = {};
+    // std::unordered_map<std::string, Graphics::Texture> textures; // pass name
+    bool used = false;
 };
 
 class RenderGraph;
@@ -31,7 +45,7 @@ public:
         , m_passIndex( passID ) {
     }
 
-    std::string create_target( const std::string& name, const RenderTargetInfo& info );
+    std::string create_target( const std::string& name, const Graphics::RenderTargetInfo& info );
     std::string read( const std::string& name );
     void        write( const std::string& name );
 
@@ -45,13 +59,15 @@ struct RenderPassInfo {
     std::function<void( RenderGraphBuilder& )>                                                 setupCallback;
     std::function<void( const RenderView&, const RenderResources&, const RenderPassOutputs& )> executeCallback;
     std::vector<std::string>                                                                   shaderProgramKeys;
-    std::vector<std::string>                                                                   writeAttachmentsKeys;
-    std::vector<std::string>                                                                   readAttachmentKeys;
+
+    std::vector<std::string> writeAttachmentsKeys;
+    std::vector<std::string> readAttachmentKeys;
 
     struct RuntimeData {
         Graphics::RenderPass               renderPass;
         std::vector<Graphics::Framebuffer> fbos;
-        bool                               valid = false;
+        bool                               validFBO        = false;
+        bool                               validRenderPass = false;
     } runtime;
 };
 
@@ -64,17 +80,21 @@ private:
     std::vector<RenderPassInfo>                          m_passes;
     std::unordered_map<std::string, RenderGraphResource> m_transientResources; // Graph Resource (image ID)
 
-    std::unordered_map<std::string, Graphics::Image>             m_attachmentCache; // Image attachments (image ID)
-    std::unordered_map<std::string, Graphics::Texture>           m_textureCache;    //
+    std::unordered_map<std::string, RenderGraphAttachment>       m_attachmentCache; // Image attachments (image ID)
     std::unordered_map<std::string, RenderPassInfo::RuntimeData> m_renderCache;     // Render runtime data (pass ID)
-    std::unordered_map<std::string, ShaderProgram>               m_shaderCache;     // Pre-registered shaders (shader ID)
+
+    // std::unordered_map<std::string, ShaderProgram> m_shaderCache; // Pre-registered shaders (shader ID)
+    std::unordered_map<std::string, std::unique_ptr<ShaderProgram>> m_shaderCache;
+
+    friend class RenderGraphBuilder;
 
     void create_shader_program( const std::string& name );
     void create_render_pass( Graphics::RenderPass& renderpass );
 
-    bool reconcile( const RenderTargetInfo& info, const Graphics::Image& imageAttachment ) {
-        auto& config = imageAttachment.config;
-        return imageAttachment.extent != info.extent &&
+    bool reconcile( const Graphics::RenderTargetInfo& info, const Graphics::Image& image ) {
+        auto& config = image.config;
+        return image.extent.width != info.extent.width &&
+               image.extent.height != info.extent.height &&
                config.usageFlags != info.usage &&
                config.format != info.format &&
                config.layers != info.layers &&
@@ -89,20 +109,27 @@ private:
         {
             auto&       attachment = m_attachmentCache[name];
             const auto& info       = res.info;
-            if ( !attachment.handle || reconcile( info, attachment ) )
+            if ( !attachment.image.handle || reconcile( info, attachment.image ) )
             {
                 // Clean
-                attachment.cleanup();
+                attachment.image.cleanup();
                 // Create
-                attachment = m_device->create_image( info.extent,
-                                                     { .format     = info.format,
-                                                       .usageFlags = info.usage,
-                                                       .samples    = info.samples,
-                                                       .mipmaps    = info.mipmaps,
-                                                       .layers     = info.layers,
-                                                       .clearValue = info.clearValue } );
+                attachment.image = m_device->create_image( { info.extent.width, info.extent.height, 1 },
+                                                           { .format     = info.format,
+                                                             .usageFlags = info.usage,
+                                                             .samples    = info.samples,
+                                                             .mipmaps    = info.mipmaps,
+                                                             .layers     = info.layers,
+                                                             .clearValue = info.clearValue } );
+                // // Check texture reads
+                // for ( auto& [name, read] : res.readInfos )
+                // {
+                //     attachment.textures[name].cleanup();
+                //     attachment.textures[name] = m_device->create_texture( &attachment.image, read );
+                // }
+
                 // Make Renderpass resource bound to image invalid
-                m_renderCache[m_passes[res.firstWriter].name].valid = false;
+                m_renderCache[m_passes[res.firstWriter].name].validFBO = false;
             }
         }
 
@@ -110,7 +137,6 @@ private:
         //  and compile shader programs and update uniforms
         for ( auto& pass : m_passes )
         {
-
             auto& rt = m_renderCache[pass.name];
             if ( !rt.valid )
             {
@@ -131,32 +157,57 @@ private:
                 for ( size_t i = 0; i < NUM_TARGETS; i++ )
                 {
                     targets[i]        = m_transientResources[pass.writeAttachmentsKeys[i]].info;
-                    fboAttachments[i] = m_attachmentCache[pass.writeAttachmentsKeys[i]];
+                    fboAttachments[i] = &m_attachmentCache[pass.writeAttachmentsKeys[i]].image;
                 }
                 // With pass and attachment info
-                rt.renderPass = m_device->create_renderpass(targets,);
-
+                rt.renderPass = m_device->create_render_pass( targets, {} );
                 rt.fbos.push_back( m_device->create_framebuffer( rt.renderPass, fboAttachments ) );
-
-                rt.valid = true;
             }
 
             for ( const auto& shaderKey : pass.shaderProgramKeys )
             {
                 auto& shader = m_shaderCache[shaderKey];
-                if ( !shader.compiled() )
+                if ( !shader.compiled() || !rt.valid )
                 {
+                    shader.cleanup();
 
-                    // Setup shader program
+                    // Create layouts
+                    std::unordered_map<uint32_t, std::vector<Graphics::LayoutBinding>> sets;
+                    for ( auto& bindingSet : shader.m_uniformBindings )
+                    {
+                        sets[bindingSet.set].push_back( { bindingSet.type, bindingSet.stages, bindingSet.binding, 1, bindingSet.bindless } );
+                    }
+                    shader.m_descriptorLayouts.resize( sets.size() );
+
+                    uint16_t i = 0;
+                    for ( auto& [set, bindings] : sets )
+                    {
+                        shader.m_descriptorLayouts[i] =
+                            m_device->create_descriptor_layout( bindings,
+                                                                0,
+                                                                bindings.size() == 1 && bindings.back().bindless ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT : 0 );
+                        i++;
+                    }
+
+                    // shader.m_shaderpass = m_device->create_shader_pass();
+
+                    shader.m_compiled = true;
                 }
 
-                // Update uniforms ALWAYS !!
+                // Update uniforms and allocate ALWAYS !!
+                // Allocate
+                for ( auto& bindingSet : shader.m_uniformBindings )
+                {
+                    // m_frame
+                }
+                // Update
             }
+            rt.valid = true;
         }
     }
 
 public:
-    void begin_frame( const Graphics::Frame& f ) {
+    void begin_frame( Graphics::Frame& f ) {
         m_frame = &f;
         m_passes.clear();
         m_transientResources.clear();
@@ -164,12 +215,12 @@ public:
 
     int add_pass( const std::string&                                                                         name,
                   const std::vector<std::string>&                                                            shaderPrograms,
-                  std::function<void( RenderGraphBuilder& )>                                                 setupCallback,
-                  std::function<void( const RenderView&, const RenderResources&, const RenderPassOutputs& )> execCallback ) {
-        int id = static_cast<int>( passes.size() );
-        passes.push_back( { name, setupCallback, execCallback, shaderPrograms } );
+                  std::function<void( RenderGraphBuilder& )>                                                 onSetup,
+                  std::function<void( const RenderView&, const RenderResources&, const RenderPassOutputs& )> onExecute ) {
+        int id = static_cast<int>( m_passes.size() );
+        m_passes.push_back( { name, onSetup, onExecute, shaderPrograms } );
         RenderGraphBuilder builder( *this, id );
-        setup( builder );
+        onSetup( builder );
         return id;
     }
 
@@ -200,7 +251,7 @@ public:
                 m_attachmentCache[name] = {};
             }
         }
-        return transientResources[name];
+        return m_transientResources[name];
     }
 
     // RuntimeResource& get_runtime_resource(const std::string& name) {
@@ -211,23 +262,32 @@ public:
     //     return shaderCache.count(name) ? &shaderCache[name] : nullptr;
     // }
 
-    void register_shader( ShaderProgram&& shader ) {
-        shaderCache[shader.name] = std::move( shader );
+    // void register_shader( ShaderProgram&& shader ) {
+    //     m_shaderCache[shader.m_name] = std::move( shader );
+    // }
+    template <typename T, typename... Args>
+    void register_shader( const std::string& name, Args&&... args ) {
+        m_shaderPrograms[name] = std::make_unique<T>( name, std::forward<Args>( args )... );
     }
+    // register_shader<GraphicShaderProgram>( "lighting", "shaders/lighting.glsl", uniformBindings, settings );
 };
 
-std::string RenderGraphBuilder::create_target( const std::string& name, const RenderTargetInfo& info ) {
+std::string RenderGraphBuilder::create_target( const std::string& name, const TargetInfo& info ) {
     auto& r       = m_graph.get_or_create_resource( name );
     r.info        = info;
     r.written     = true;
     r.firstWriter = m_passIndex;
+
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
+
     return name;
 }
 
 std::string RenderGraphBuilder::read( const std::string& name ) {
     m_graph.get_or_create_resource( name );
+
     m_graph.m_passes[m_passIndex].readAttachmentKeys.push_back( name );
+
     return name;
 }
 
@@ -235,6 +295,7 @@ void RenderGraphBuilder::write( const std::string& name ) {
     auto& r       = m_graph.get_or_create_resource( name );
     r.written     = true;
     r.firstWriter = m_passIndex;
+
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
 }
 

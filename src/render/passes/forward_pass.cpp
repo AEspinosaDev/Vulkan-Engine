@@ -230,7 +230,7 @@ void ForwardPass::setup_shader_passes() {
     {
         ShaderPass* pass = pair.second;
 
-        pass->build_shader_stages();
+        pass->compile_shader_stages();
         pass->build(m_descriptorPool);
     }
 }

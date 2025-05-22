@@ -122,7 +122,7 @@ void PreCompositionPass::setup_shader_passes() {
 
     compPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(AO))};
 
-    compPass->build_shader_stages();
+    compPass->compile_shader_stages();
     compPass->build(m_descriptorPool);
     m_shaderPasses["pre"] = compPass;
 
@@ -134,7 +134,7 @@ void PreCompositionPass::setup_shader_passes() {
 
     blurPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};
 
-    blurPass->build_shader_stages();
+    blurPass->compile_shader_stages();
     blurPass->build(m_descriptorPool);
     m_shaderPasses["blur"] = blurPass;
 }

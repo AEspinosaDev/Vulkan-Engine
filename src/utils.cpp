@@ -1,4 +1,3 @@
-#include "utils.h"
 #include <engine/utils.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN

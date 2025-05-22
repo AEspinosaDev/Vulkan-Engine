@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformDataType type, uint32_t binding) {
+void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformType type, uint32_t binding) {
     VkBuffer newBuffer = buffer->handle;
 
     auto it = boundSlots.find(binding);
@@ -26,7 +26,7 @@ void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, U
     // Track resource
     boundSlots[binding] = newBuffer;
 }
-void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding, UniformDataType type, uint32_t arraySlot) {
+void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding, UniformType type, uint32_t arraySlot) {
     VkImageView newView = image->viewHandle;
 
     if (!isArrayed) // If standard descriptor set (not variant)
@@ -65,7 +65,7 @@ void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding,
 
     vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
 }
-void DescriptorSet::update(std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformDataType type) {
+void DescriptorSet::update(std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformType type) {
 
     VkImageView newView = images[0].viewHandle;
 

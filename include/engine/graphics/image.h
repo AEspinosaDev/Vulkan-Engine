@@ -21,7 +21,7 @@ struct ImageConfig {
     ColorFormatType format        = ColorFormatType::SRGBA_8;
     ImageType       type          = IMAGE_TYPE_2D;
     ImageUsageFlags usageFlags    = IMAGE_USAGE_SAMPLED;
-    uint16_t        samples       = 1U;
+    uint32_t        samples       = 1U;
     uint32_t        mipmaps       = 1U;
     uint32_t        layers        = 1U;
     ClearValue      clearValue    = {{{0.0, 0.0, 0.0, 1.0}}};

@@ -36,15 +36,15 @@ struct ShaderSource {
     std::string tessEvalSource;
     std::string computeSource;
 
-    static ShaderSource read_file(const std::string& filePath);
+    static ShaderSource read_file( const std::string& filePath );
 
-    static std::vector<uint32_t> compile_shader(const std::string          src,
-                                                const std::string          shaderName,
-                                                shaderc_shader_kind        kind,
-                                                shaderc_optimization_level optimization);
+    static std::vector<uint32_t> compile_shader( const std::string          src,
+                                                 const std::string          shaderName,
+                                                 shaderc_shader_kind        kind,
+                                                 shaderc_optimization_level optimization );
 
     static ShaderStage
-    create_shader_stage(VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code);
+    create_shader_stage( VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code );
 };
 /*
 Base shader pass data structure
@@ -52,23 +52,16 @@ Base shader pass data structure
 struct BaseShaderPass {
 
     const QueueType QUEUE_TYPE;
-    std::string     filePath;
 
     VkDevice         device         = VK_NULL_HANDLE;
     VkPipeline       pipeline       = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
-    PipelineSettings settings = {};
-
-    BaseShaderPass(VkDevice _device, const std::string shaderFile, QueueType type)
-        : filePath(shaderFile)
-        , device(_device)
-        , QUEUE_TYPE(type) {
-    }
+    std::vector<PushConstant>         pushConstants; 
 
     virtual void
-    build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance) = 0;
-    virtual void build(DescriptorPool& descriptorManager)                                                 = 0;
+                 compile_shader_stages( std::string src, shaderc_optimization_level optimization = shaderc_optimization_level_performance ) = 0;
+    virtual void build( DescriptorPool& descriptorManager )                                                                                 = 0;
     virtual void cleanup();
 };
 /*
@@ -78,40 +71,27 @@ typedef BaseShaderPass ShaderPass;
 /*
 Standard ShaderPass for drawing purposes
 */
-struct GraphicShaderPass : public ShaderPass {
+struct GraphicShaderPass final : public ShaderPass {
 
     std::vector<ShaderStage> shaderStages;
     GraphicPipelineSettings  graphicSettings = {};
     RenderPass*              renderpass      = nullptr;
-    Extent2D                 extent          = {0, 0};
+    Extent2D                 extent          = { 0, 0 };
 
-    GraphicShaderPass(VkDevice _device, RenderPass& renderPass, Extent2D _extent, const std::string shaderFile)
-        : ShaderPass(_device, shaderFile, GRAPHIC_QUEUE)
-        , renderpass(&renderPass)
-        , extent(_extent) {
-    }
-
-    void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
-
-    void build(DescriptorPool& descriptorManager);
-
+    void compile_shader_stages( std::string src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
+    void build( DescriptorPool& descriptorManager );
     void cleanup();
 };
 
 /*
 ShaderPass for GPGPU
 */
-struct ComputeShaderPass : public ShaderPass {
+struct ComputeShaderPass final : public ShaderPass {
+
     ShaderStage computeStage = {};
 
-    ComputeShaderPass(VkDevice _device, const std::string shaderFile)
-        : ShaderPass(_device, shaderFile, COMPUTE_QUEUE) {
-    }
-
-    void build_shader_stages(shaderc_optimization_level optimization = shaderc_optimization_level_performance);
-
-    void build(DescriptorPool& descriptorManager);
-
+    void compile_shader_stages( std::string src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
+    void build( DescriptorPool& descriptorManager );
     void cleanup();
 };
 

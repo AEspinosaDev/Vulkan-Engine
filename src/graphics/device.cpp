@@ -438,6 +438,34 @@ RenderPass Device::create_render_pass( const std::vector<RenderTargetInfo>& targ
     rp.dependencies = dependencies;
     return rp;
 }
+
+DescriptorLayout Device::create_descriptor_layout( const std::vector<LayoutBinding>& bindings, VkDescriptorSetLayoutCreateFlags flags, VkDescriptorBindingFlagsEXT extFlags ) {
+    std::vector<VkDescriptorSetLayoutBinding> bindingHandles;
+    bindingHandles.resize( bindings.size() );
+    for ( size_t i = 0; i < bindings.size(); i++ )
+    {
+        bindingHandles[i] = bindings[i].handle;
+    }
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsInfo = {};
+    bindingFlagsInfo.sType                                          = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+    bindingFlagsInfo.bindingCount                                   = static_cast<uint32_t>( bindingHandles.size() );
+    bindingFlagsInfo.pBindingFlags                                  = &extFlags;
+
+    VkDescriptorSetLayoutCreateInfo setinfo = {};
+    setinfo.bindingCount                    = static_cast<uint32_t>( bindingHandles.size() );
+    setinfo.flags                           = flags;
+    setinfo.pNext                           = extFlags != 0 ? &bindingFlagsInfo : nullptr;
+    setinfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    setinfo.pBindings                       = bindingHandles.data();
+
+    DescriptorLayout layout {};
+    VK_CHECK( vkCreateDescriptorSetLayout( m_handle, &setinfo, nullptr, &layout.handle ) );
+    layout.device   = m_handle;
+    layout.bindings = bindings;
+
+    return layout;
+}
 Framebuffer Device::create_framebuffer( const RenderPass& renderpass, const std::vector<Image*>& attachments ) {
     assert( !attachments.empty() );
 

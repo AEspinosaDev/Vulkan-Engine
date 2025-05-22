@@ -105,7 +105,7 @@ void CompositionPass::setup_shader_passes() {
     compPass->graphicSettings.blendAttachments = {Init::color_blend_attachment_state(false), Init::color_blend_attachment_state(false)};
     compPass->settings.pushConstants           = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Settings))};
 
-    compPass->build_shader_stages();
+    compPass->compile_shader_stages();
     compPass->build(m_descriptorPool);
 
     m_shaderPasses["composition"] = compPass;

@@ -57,11 +57,8 @@ struct RenderView {
     Graphics::TLAS* dynamicTLAS = nullptr;
     /*Number of shadow casting lights*/
     uint32_t numLights = 0;
-    /*UBOs*/
-    Graphics::Buffer globalBuffer;
-    Graphics::Buffer objectBuffer;
-    /*CMD*/
-    Graphics::CommandBuffer commandBuffer;
+   
+   
 };
 } // namespace Render
 VULKAN_ENGINE_NAMESPACE_END
