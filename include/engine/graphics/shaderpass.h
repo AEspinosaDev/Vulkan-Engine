@@ -46,6 +46,7 @@ struct ShaderSource {
     static ShaderStage
     create_shader_stage( VkDevice device, VkShaderStageFlagBits stageType, const std::vector<uint32_t> code );
 };
+
 /*
 Base shader pass data structure
 */
@@ -57,11 +58,11 @@ struct BaseShaderPass {
     VkPipeline       pipeline       = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
-    std::vector<PushConstant>         pushConstants; 
+    std::vector<PushConstant> pushConstants;
 
     virtual void
-                 compile_shader_stages( std::string src, shaderc_optimization_level optimization = shaderc_optimization_level_performance ) = 0;
-    virtual void build( DescriptorPool& descriptorManager )                                                                                 = 0;
+                 compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance ) = 0;
+    virtual void build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants = {} )    = 0;
     virtual void cleanup();
 };
 /*
@@ -78,8 +79,8 @@ struct GraphicShaderPass final : public ShaderPass {
     RenderPass*              renderpass      = nullptr;
     Extent2D                 extent          = { 0, 0 };
 
-    void compile_shader_stages( std::string src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
-    void build( DescriptorPool& descriptorManager );
+    void compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
+    void build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants = {} );
     void cleanup();
 };
 
@@ -90,8 +91,8 @@ struct ComputeShaderPass final : public ShaderPass {
 
     ShaderStage computeStage = {};
 
-    void compile_shader_stages( std::string src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
-    void build( DescriptorPool& descriptorManager );
+    void compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
+    void build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants = {} );
     void cleanup();
 };
 

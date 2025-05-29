@@ -3,9 +3,9 @@
 
 #include <engine/common.h>
 #include <engine/graphics/device.h>
-#include <engine/graphics/frame.h>
 #include <engine/graphics/renderpass.h>
 #include <engine/graphics/texture.h>
+#include <engine/render/frame.h>
 #include <engine/render/program/shader_program.h>
 #include <engine/render/render_view_builder.h>
 
@@ -75,7 +75,7 @@ class RenderGraph
 {
 private:
     ptr<Graphics::Device> m_device;
-    Graphics::Frame*      m_frame = nullptr;
+    Render::Frame*      m_frame = nullptr;
 
     std::vector<RenderPassInfo>                          m_passes;
     std::unordered_map<std::string, RenderGraphResource> m_transientResources; // Graph Resource (image ID)
@@ -191,7 +191,7 @@ private:
 
                     // shader.m_shaderpass = m_device->create_shader_pass();
 
-                    shader.m_compiled = true;
+                    shader->m_compiled = true;
                 }
 
                 // Update uniforms and allocate ALWAYS !!

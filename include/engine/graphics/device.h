@@ -16,7 +16,6 @@
 #include <engine/graphics/command_buffer.h>
 #include <engine/graphics/descriptors.h>
 #include <engine/graphics/extensions.h>
-#include <engine/graphics/frame.h>
 #include <engine/graphics/framebuffer.h>
 #include <engine/graphics/renderpass.h>
 #include <engine/graphics/swapchain.h>
@@ -135,24 +134,12 @@ public:
     /*Create command buffer*/
     CommandBuffer create_command_buffer( CommandPool commandPool, CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY );
     /*Create shader pass*/
-    GraphicShaderPass create_graphic_shader_pass(const std::string shaderFile, PipelineSettings sett = {});
-    ComputeShaderPass create_graphic_shader_pass(const std::string shaderFile, PipelineSettings sett = {});
-
-    /*Create Frame. A frame is a data structure that contains the objects needed for synchronize each frame rendered and
-     * buffers to contain data needed for the GPU to render*/
-    Frame create_frame( uint16_t id );
-
+    GraphicShaderPass create_graphic_shader_pass( const std::string shaderFile, PipelineSettings sett = {} );
+    ComputeShaderPass create_compute_shader_pass( const std::string shaderFile, PipelineSettings sett = {} );
     /*
-    DRAWING
+    PRESENTING
     -----------------------------------------------
     */
-    /*Waits for the frame to finish rendering*/
-    RenderResult wait_frame( Frame& frame, uint32_t& imageIndex );
-    /*Resets conmmand and control objects and starts command buffer for new render cicle*/
-    void start_frame( Frame& frame );
-    /*Submits the frame to the graphic queue for presenting into the swapchain*/
-    RenderResult submit_frame( Frame& frame, uint32_t imageIndex );
-
     RenderResult aquire_present_image( Semaphore& waitSemahpore, uint32_t& imageIndex );
     RenderResult present_image( Semaphore& signalSemaphore, uint32_t imageIndex );
     /*

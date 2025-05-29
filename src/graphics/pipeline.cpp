@@ -7,7 +7,7 @@ namespace Graphics {
 void PipelineBuilder::build_pipeline_layout( VkPipelineLayout&                         layout,
                                              VkDevice                                  device,
                                              const std::vector<VkDescriptorSetLayout>& descriptorLayouts,
-                                             const std::vector<PushConstant>&          pushConstants = {} ) {
+                                             const std::vector<PushConstant>&          pushConstants ) {
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = Init::pipeline_layout_create_info();
     pipelineLayoutInfo.setLayoutCount             = (uint32_t)descriptorLayouts.size();

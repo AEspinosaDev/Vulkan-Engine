@@ -10,8 +10,7 @@
 #define SHADER_PROGRAM
 
 #include <engine/common.h>
-#include <engine/graphics/device.h>
-#include <engine/graphics/frame.h>
+#include <engine/render/frame.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Render {
@@ -31,7 +30,8 @@ protected:
         std::string      name;
         bool             bindless = false;
 
-        UniformBinding( uint32_t set, uint32_t binding, UniformType type, ShaderStageFlags stages, std::string name ) {}
+        // UniformBinding( uint32_t set, uint32_t binding, UniformType type, ShaderStageFlags stages, std::string name ) {}
+        // UniformBinding( UniformType type, ShaderStageFlags stages, std::string name ) {}
     };
 
     std::vector<UniformBinding> m_uniformBindings;
@@ -51,7 +51,7 @@ public:
     virtual ~ShaderProgram() = default;
 
     void attach( const std::string& uName,
-                 Graphics::Frame&   frame );
+                 Frame&             frame );
     // void attach( const std::string& uName, std::variant<Buffer, > reosurce     );
     // void attach( const std::string& uName,
     //             std::variant<Buffer, > reosurce
@@ -61,7 +61,7 @@ public:
     // attach(const std::string& uniformName,variantResource)
     // update("uniform",std::variant<resource>, frame) updatedescriptors
     void bind_uniforms( uint32_t                     set,
-                        Graphics::Frame&             frame,
+                        Frame&                       frame,
                         const std::vector<uint32_t>& offsets = {} ); // if needed
                                                                      //  void bind_uniform(std::name, uintOffser if needede, Frame)
     void bind();
@@ -87,10 +87,12 @@ public:
         m_shaderpass.settings = settings
     }
 
-   void compile( const std::shared_ptr<Graphics::Device>& device ) override;
-   inline bool is_graphics() const   override  { return true;}                                   
-   bool is_compute() const    override { { return false;}   }                                     
-   void cleanup()   override;                                               
+    void        compile( const std::shared_ptr<Graphics::Device>& device ) override;
+    inline bool is_graphics() const override { return true; }
+    bool        is_compute() const override {
+        { return false; }
+    }
+    void cleanup() override;
 
     const Graphics::GraphicPipelineSettings& get_settings() const { return m_shaderpass.graphicSettings; }
 };
@@ -104,14 +106,13 @@ public:
         : ShaderProgram( name, glslPath, uniformBindings ) {
     }
 
-   void compile( const std::shared_ptr<Graphics::Device>& device ) override;
-   inline bool is_graphics() const   override  { return true;}                                   
-   bool is_compute() const    override { { return false;}   }                                     
-   void cleanup()   override;                                               
-
-   
+    void        compile( const std::shared_ptr<Graphics::Device>& device ) override;
+    inline bool is_graphics() const override { return true; }
+    bool        is_compute() const override {
+        { return false; }
+    }
+    void cleanup() override;
 };
-
 
 // ShaderProgram lightingShader(
 //     "lighting",

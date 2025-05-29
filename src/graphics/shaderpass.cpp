@@ -101,7 +101,7 @@ ShaderSource::compile_shader( const std::string src, const std::string shaderNam
     return spirv;
 }
 
-void GraphicShaderPass::compile_shader_stages( std::string src, shaderc_optimization_level optimization ) {
+void GraphicShaderPass::compile_shader_stages( const std::string& src, shaderc_optimization_level optimization ) {
     if ( src == "" )
         return;
     auto shader = ShaderSource::read_file( src );
@@ -141,7 +141,7 @@ void GraphicShaderPass::compile_shader_stages( std::string src, shaderc_optimiza
         shaderStages.push_back( tessEvalShaderStage );
     }
 }
-void ComputeShaderPass::compile_shader_stages( std::string src, shaderc_optimization_level optimization ) {
+void ComputeShaderPass::compile_shader_stages( const std::string& src, shaderc_optimization_level optimization ) {
     if ( src == "" )
         return;
     auto shader = ShaderSource::read_file( src );
@@ -155,8 +155,15 @@ void ComputeShaderPass::compile_shader_stages( std::string src, shaderc_optimiza
     }
 }
 
-void GraphicShaderPass::build( DescriptorPool& descriptorManager ) {
-    PipelineBuilder::build_pipeline_layout( pipelineLayout, device, descriptorManager, settings );
+void GraphicShaderPass::build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants ) {
+    std::vector<VkDescriptorSetLayout> vkLayouts;
+    vkLayouts.resize( descriptorLayouts.size() );
+    for ( size_t i = 0; i < descriptorLayouts.size(); i++ )
+    {
+        vkLayouts[i] = descriptorLayouts[i].handle;
+    }
+
+    PipelineBuilder::build_pipeline_layout( pipelineLayout, device, vkLayouts, pushConstants );
 
     std::vector<VkPipelineShaderStageCreateInfo> stages;
     for ( auto& stage : shaderStages )
@@ -165,9 +172,17 @@ void GraphicShaderPass::build( DescriptorPool& descriptorManager ) {
     }
     PipelineBuilder::build_graphic_pipeline( pipeline, pipelineLayout, device, renderpass->handle, extent, graphicSettings, stages );
 }
-void ComputeShaderPass::build( DescriptorPool& descriptorManager ) {
 
-    PipelineBuilder::build_pipeline_layout( pipelineLayout, device, descriptorManager, settings );
+void ComputeShaderPass::build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants ) {
+
+    std::vector<VkDescriptorSetLayout> vkLayouts;
+    vkLayouts.resize( descriptorLayouts.size() );
+    for ( size_t i = 0; i < descriptorLayouts.size(); i++ )
+    {
+        vkLayouts[i] = descriptorLayouts[i].handle;
+    }
+
+    PipelineBuilder::build_pipeline_layout( pipelineLayout, device, vkLayouts, pushConstants );
 
     PipelineBuilder::build_compute_pipeline(
         pipeline, pipelineLayout, device, Init::pipeline_shader_stage_create_info( computeStage.stage, computeStage.shaderModule ) );

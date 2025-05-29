@@ -55,39 +55,39 @@
 
 // ENGINE DEFINITIONS
 
-#define ASSERT_PTR(ptr) assert((ptr) && "Pointer is null")
+#define ASSERT_PTR( ptr ) assert( ( ptr ) && "Pointer is null" )
 
 #define ENABLE_OPTICK_PROFILING
 #ifdef ENABLE_OPTICK_PROFILING
 #define PROFILING_EVENT() OPTICK_EVENT()
-#define PROFILING_FRAME() OPTICK_FRAME("MainThread");
+#define PROFILING_FRAME() OPTICK_FRAME( "MainThread" );
 #else
 #define PROFILING_EVENT()
 #define PROFILING_FRAME()
 #endif
 
-#define _LOG(msg)                                                                                                                                              \
-    {                                                                                                                                                          \
-        std::cout << "[VKEngine Log] " << msg << std::endl;                                                                                                    \
+#define _LOG( msg )                                         \
+    {                                                       \
+        std::cout << "[VKEngine Log] " << msg << std::endl; \
     }
-#define DEBUG_LOG(msg)                                                                                                                                         \
-    {                                                                                                                                                          \
-        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                                                                  \
+#define DEBUG_LOG( msg )                                      \
+    {                                                         \
+        std::cout << "[VKEngine Debug] " << msg << std::endl; \
     }
-#define ERR_LOG(msg)                                                                                                                                           \
-    {                                                                                                                                                          \
-        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                                                                  \
+#define ERR_LOG( msg )                                        \
+    {                                                         \
+        std::cerr << "[VKEngine Error] " << msg << std::endl; \
     }
-#define VK_CHECK(x)                                                                                                                                            \
-    do                                                                                                                                                         \
-    {                                                                                                                                                          \
-        VkResult err = x;                                                                                                                                      \
-        if (err)                                                                                                                                               \
-        {                                                                                                                                                      \
-            std::cout << "VKEngine detected a Vulkan error: " << err << std::endl;                                                                             \
-            abort();                                                                                                                                           \
-        }                                                                                                                                                      \
-    } while (0)
+#define VK_CHECK( x )                                                              \
+    do                                                                             \
+    {                                                                              \
+        VkResult err = x;                                                          \
+        if ( err )                                                                 \
+        {                                                                          \
+            std::cout << "VKEngine detected a Vulkan error: " << err << std::endl; \
+            abort();                                                               \
+        }                                                                          \
+    } while ( 0 )
 
 // Namespace define
 #define VULKAN_ENGINE_NAMESPACE_BEGIN namespace VKFW {
@@ -118,10 +118,10 @@ static std::filesystem::path get_executable_dir();
 /// Simple exception class, which stores a human-readable error description
 class VKFW_Exception : public std::runtime_error
 {
-  public:
+public:
     template <typename... Args>
-    VKFW_Exception(const char* fmt, const Args&... args)
-        : std::runtime_error(fmt) {
+    VKFW_Exception( const char* fmt, const Args&... args )
+        : std::runtime_error( fmt ) {
     }
 };
 
@@ -131,7 +131,7 @@ namespace Paths {
 extern const std::filesystem::path RESOURCES_PATH;
 }
 
-#define GET_RESOURCE_PATH(relative_path) ((Paths::RESOURCES_PATH / relative_path).string())
+#define GET_RESOURCE_PATH( relative_path ) ( ( Paths::RESOURCES_PATH / relative_path ).string() )
 
 // Mathematics library glm
 namespace math = glm;
@@ -148,7 +148,8 @@ typedef VkExtent2D   Extent2D;
 typedef VkOffset2D   Offset2D;
 typedef VkClearValue ClearValue;
 
-template <typename T> using ptr = std::shared_ptr<T>;
+template <typename T>
+using ptr = std::shared_ptr<T>;
 
 enum class ObjectType
 {
@@ -292,6 +293,7 @@ enum UniformType
     UNIFORM_COMBINED_IMAGE_SAMPLER = 2,
     UNIFORM_ACCELERATION_STRUCTURE = 3,
     UNIFORM_STORAGE_IMAGE          = 4,
+    PUSH_CONSTANT                  = 5,
 };
 enum BorderColor
 {
@@ -469,22 +471,22 @@ typedef enum ImageUsageFlagsBits
     IMAGE_USAGE_INPUT_ATTACHMENT         = 0x80,
 } ImageUsageFlags;
 
-inline ImageUsageFlags operator|(ImageUsageFlags a, ImageUsageFlags b) {
-    return static_cast<ImageUsageFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+inline ImageUsageFlags operator|( ImageUsageFlags a, ImageUsageFlags b ) {
+    return static_cast<ImageUsageFlags>( static_cast<uint32_t>( a ) | static_cast<uint32_t>( b ) );
 }
-inline ImageUsageFlags operator&(ImageUsageFlags a, ImageUsageFlags b) {
-    return static_cast<ImageUsageFlags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+inline ImageUsageFlags operator&( ImageUsageFlags a, ImageUsageFlags b ) {
+    return static_cast<ImageUsageFlags>( static_cast<uint32_t>( a ) & static_cast<uint32_t>( b ) );
 }
-inline ImageUsageFlags& operator|=(ImageUsageFlags& a, ImageUsageFlags b) {
+inline ImageUsageFlags& operator|=( ImageUsageFlags& a, ImageUsageFlags b ) {
     a = a | b;
     return a;
 }
-inline ImageUsageFlags& operator&=(ImageUsageFlags& a, ImageUsageFlags b) {
+inline ImageUsageFlags& operator&=( ImageUsageFlags& a, ImageUsageFlags b ) {
     a = a & b;
     return a;
 }
-inline ImageUsageFlags operator~(ImageUsageFlags a) {
-    return static_cast<ImageUsageFlags>(~static_cast<uint32_t>(a));
+inline ImageUsageFlags operator~( ImageUsageFlags a ) {
+    return static_cast<ImageUsageFlags>( ~static_cast<uint32_t>( a ) );
 }
 typedef enum CommandPoolCreateFlagsBits
 {
@@ -513,18 +515,18 @@ typedef enum BufferUsageFlagsBits
     BUFFER_USAGE_SHADER_DEVICE_ADDRESS                        = 0x400,
     BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY = 0x800
 } BufferUsageFlags;
-inline BufferUsageFlags operator|(BufferUsageFlags lhs, BufferUsageFlags rhs) {
-    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+inline BufferUsageFlags operator|( BufferUsageFlags lhs, BufferUsageFlags rhs ) {
+    return static_cast<BufferUsageFlags>( static_cast<uint32_t>( lhs ) | static_cast<uint32_t>( rhs ) );
 }
-inline BufferUsageFlags& operator|=(BufferUsageFlags& lhs, BufferUsageFlags rhs) {
+inline BufferUsageFlags& operator|=( BufferUsageFlags& lhs, BufferUsageFlags rhs ) {
     lhs = lhs | rhs;
     return lhs;
 }
-inline BufferUsageFlags operator&(BufferUsageFlags lhs, BufferUsageFlags rhs) {
-    return static_cast<BufferUsageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+inline BufferUsageFlags operator&( BufferUsageFlags lhs, BufferUsageFlags rhs ) {
+    return static_cast<BufferUsageFlags>( static_cast<uint32_t>( lhs ) & static_cast<uint32_t>( rhs ) );
 }
-inline bool operator&(BufferUsageFlags lhs, uint32_t rhs) {
-    return (static_cast<uint32_t>(lhs) & rhs) != 0;
+inline bool operator&( BufferUsageFlags lhs, uint32_t rhs ) {
+    return ( static_cast<uint32_t>( lhs ) & rhs ) != 0;
 }
 typedef enum MemoryPropertyFlagsBits
 {
@@ -538,18 +540,18 @@ typedef enum MemoryPropertyFlagsBits
     MEMORY_PROPERTY_DEVICE_COHERENT  = 0x40,
     MEMORY_PROPERTY_DEVICE_UNCACHED  = 0x80
 } MemoryPropertyFlags;
-inline MemoryPropertyFlags operator|(MemoryPropertyFlags lhs, MemoryPropertyFlags rhs) {
-    return static_cast<MemoryPropertyFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+inline MemoryPropertyFlags operator|( MemoryPropertyFlags lhs, MemoryPropertyFlags rhs ) {
+    return static_cast<MemoryPropertyFlags>( static_cast<uint32_t>( lhs ) | static_cast<uint32_t>( rhs ) );
 }
-inline MemoryPropertyFlags& operator|=(MemoryPropertyFlags& lhs, MemoryPropertyFlags rhs) {
+inline MemoryPropertyFlags& operator|=( MemoryPropertyFlags& lhs, MemoryPropertyFlags rhs ) {
     lhs = lhs | rhs;
     return lhs;
 }
-inline MemoryPropertyFlags operator&(MemoryPropertyFlags lhs, MemoryPropertyFlags rhs) {
-    return static_cast<MemoryPropertyFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+inline MemoryPropertyFlags operator&( MemoryPropertyFlags lhs, MemoryPropertyFlags rhs ) {
+    return static_cast<MemoryPropertyFlags>( static_cast<uint32_t>( lhs ) & static_cast<uint32_t>( rhs ) );
 }
-inline bool operator&(MemoryPropertyFlags lhs, uint32_t rhs) {
-    return (static_cast<uint32_t>(lhs) & rhs) != 0;
+inline bool operator&( MemoryPropertyFlags lhs, uint32_t rhs ) {
+    return ( static_cast<uint32_t>( lhs ) & rhs ) != 0;
 }
 typedef enum ShaderStageFlagsBits
 {
@@ -571,18 +573,18 @@ typedef enum ShaderStageFlagsBits
     SHADER_STAGE_TASK                    = 0x00000040,
     SHADER_STAGE_MESH                    = 0x00000080
 } ShaderStageFlags;
-inline ShaderStageFlags operator|(ShaderStageFlags lhs, ShaderStageFlags rhs) {
-    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+inline ShaderStageFlags operator|( ShaderStageFlags lhs, ShaderStageFlags rhs ) {
+    return static_cast<ShaderStageFlags>( static_cast<uint32_t>( lhs ) | static_cast<uint32_t>( rhs ) );
 }
-inline ShaderStageFlags& operator|=(ShaderStageFlags& lhs, ShaderStageFlags rhs) {
+inline ShaderStageFlags& operator|=( ShaderStageFlags& lhs, ShaderStageFlags rhs ) {
     lhs = lhs | rhs;
     return lhs;
 }
-inline ShaderStageFlags operator&(ShaderStageFlags lhs, ShaderStageFlags rhs) {
-    return static_cast<ShaderStageFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+inline ShaderStageFlags operator&( ShaderStageFlags lhs, ShaderStageFlags rhs ) {
+    return static_cast<ShaderStageFlags>( static_cast<uint32_t>( lhs ) & static_cast<uint32_t>( rhs ) );
 }
-inline bool operator&(ShaderStageFlags lhs, uint32_t rhs) {
-    return (static_cast<uint32_t>(lhs) & rhs) != 0;
+inline bool operator&( ShaderStageFlags lhs, uint32_t rhs ) {
+    return ( static_cast<uint32_t>( lhs ) & rhs ) != 0;
 }
 
 /*

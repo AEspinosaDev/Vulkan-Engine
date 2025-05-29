@@ -137,7 +137,9 @@ bool        is_hdr_format(ColorFormatType colorFormatType);
 size_t      get_pixel_size_in_bytes(ColorFormatType format);
 ImageAspect get_aspect(ColorFormatType format);
 
-
+inline void hash_combine(std::size_t& seed, std::size_t value) {
+    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
 
 }; // namespace Utils
 

@@ -4,7 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-void Buffer::upload_data(const void* bufferData, size_t size) {
+void Buffer::upload_data(const void* bufferData, size_t size) const {
     PROFILING_EVENT()
     if (!bufferData)
         return;
@@ -34,7 +34,7 @@ void Buffer::upload_data(const void* bufferData, size_t size) {
     }
 }
 
-void Buffer::upload_data(const void* bufferData, size_t size, size_t offset) {
+void Buffer::upload_data(const void* bufferData, size_t size, size_t offset) const {
     PROFILING_EVENT()
     if (!bufferData)
         return;
@@ -64,7 +64,7 @@ void Buffer::upload_data(const void* bufferData, size_t size, size_t offset) {
         vkUnmapMemory(device, memory);
     }
 }
-void Buffer::copy_to(void* data) {
+void Buffer::copy_to(void* data) const {
     void* passthroughData;
     if (allocation)
         VK_CHECK(vmaMapMemory(allocator, allocation, &passthroughData));
@@ -79,7 +79,7 @@ void Buffer::copy_to(void* data) {
         vkUnmapMemory(device, memory);
 }
 
-uint64_t Buffer::get_device_address() {
+uint64_t Buffer::get_device_address() const {
 
     VkBufferDeviceAddressInfoKHR bufferDeviceAI{};
     bufferDeviceAI.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;

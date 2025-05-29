@@ -29,10 +29,10 @@ struct Buffer {
     VkDeviceMemory memory    = VK_NULL_HANDLE;
     bool           coherence = false;
 
-    void     upload_data(const void* bufferData, size_t size);
-    void     upload_data(const void* bufferData, size_t size, size_t offset);
-    void     copy_to(void* data);
-    uint64_t get_device_address();
+    void     upload_data( const void* bufferData, size_t size ) const;
+    void     upload_data( const void* bufferData, size_t size, size_t offset ) const;
+    void     copy_to( void* data ) const;
+    uint64_t get_device_address() const;
     void     cleanup();
 };
 
