@@ -117,7 +117,7 @@ void PreCompositionPass::setup_shader_passes() {
     GraphicShaderPass* compPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/pre_composition.glsl"));
     compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    compPass->graphicSettings.attributes      = {
+    compPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     compPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(AO))};
@@ -129,7 +129,7 @@ void PreCompositionPass::setup_shader_passes() {
     GraphicShaderPass* blurPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/misc/bilateral_filter.glsl"));
     blurPass->settings.descriptorSetLayoutIDs = {{0, true}, {1, true}};
-    blurPass->graphicSettings.attributes      = {
+    blurPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     blurPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};

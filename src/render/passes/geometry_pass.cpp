@@ -119,18 +119,18 @@ void GeometryPass::setup_shader_passes() {
     GraphicShaderPass* geomPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/geometry.glsl"));
     geomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    geomPass->graphicSettings.attributes      = {
+    geomPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
-    geomPass->graphicSettings.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT,
+    geomPass->config.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT,
                                                   VK_DYNAMIC_STATE_SCISSOR,
                                                   VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
                                                   VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,
                                                   VK_DYNAMIC_STATE_CULL_MODE};
-    geomPass->graphicSettings.blendAttachments = {Init::color_blend_attachment_state(false),
+    geomPass->config.blendAttachments = {Init::color_blend_attachment_state(false),
                                                   Init::color_blend_attachment_state(false),
                                                   Init::color_blend_attachment_state(false),
                                                   Init::color_blend_attachment_state(false)};
-    geomPass->graphicSettings.depthOp          = VK_COMPARE_OP_GREATER_OR_EQUAL;
+    geomPass->config.depthOp          = VK_COMPARE_OP_GREATER_OR_EQUAL;
 
     geomPass->compile_shader_stages();
     geomPass->build(m_descriptorPool);
@@ -140,9 +140,9 @@ void GeometryPass::setup_shader_passes() {
     GraphicShaderPass* geomLinePass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/line_to_tri_geometry.glsl"));
     geomLinePass->settings.descriptorSetLayoutIDs = geomPass->settings.descriptorSetLayoutIDs;
-    geomLinePass->graphicSettings                 = geomPass->graphicSettings;
-    geomLinePass->graphicSettings.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    geomLinePass->graphicSettings.attributes      = {
+    geomLinePass->config                 = geomPass->config;
+    geomLinePass->config.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    geomLinePass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
 
     geomLinePass->compile_shader_stages();
@@ -153,9 +153,9 @@ void GeometryPass::setup_shader_passes() {
     GraphicShaderPass* linePass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/line_geometry.glsl"));
     linePass->settings.descriptorSetLayoutIDs = geomPass->settings.descriptorSetLayoutIDs;
-    linePass->graphicSettings                 = geomPass->graphicSettings;
-    linePass->graphicSettings.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    linePass->graphicSettings.attributes      = {
+    linePass->config                 = geomPass->config;
+    linePass->config.topology        = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    linePass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
 
     linePass->compile_shader_stages();
@@ -166,10 +166,10 @@ void GeometryPass::setup_shader_passes() {
     GraphicShaderPass* skyboxPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/skybox.glsl"));
     skyboxPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
-    skyboxPass->graphicSettings.attributes      = {
+    skyboxPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
-    skyboxPass->graphicSettings.dynamicStates    = geomPass->graphicSettings.dynamicStates;
-    skyboxPass->graphicSettings.blendAttachments = geomPass->graphicSettings.blendAttachments;
+    skyboxPass->config.dynamicStates    = geomPass->config.dynamicStates;
+    skyboxPass->config.blendAttachments = geomPass->config.blendAttachments;
 
     skyboxPass->compile_shader_stages();
     skyboxPass->build(m_descriptorPool);

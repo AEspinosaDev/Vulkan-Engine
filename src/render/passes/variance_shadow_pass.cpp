@@ -78,7 +78,7 @@ void VarianceShadowPass::setup_shader_passes() {
     // DEPTH PASSES
 
     PipelineSettings        settings{};
-    GraphicPipelineSettings gfxSettings{};
+    GraphicPipelineConfig gfxSettings{};
     settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
     gfxSettings.attributes          = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
@@ -94,7 +94,7 @@ void VarianceShadowPass::setup_shader_passes() {
     GraphicShaderPass* depthPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_geom.glsl"));
     depthPass->settings        = settings;
-    depthPass->graphicSettings = gfxSettings;
+    depthPass->config = gfxSettings;
     depthPass->compile_shader_stages();
     depthPass->build(m_descriptorPool);
     m_shaderPasses["shadowTri"] = depthPass;
@@ -102,9 +102,9 @@ void VarianceShadowPass::setup_shader_passes() {
     GraphicShaderPass* depthLinePass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/shadows/vsm_line_geom.glsl"));
     depthLinePass->settings                    = settings;
-    depthLinePass->graphicSettings             = gfxSettings;
-    depthLinePass->graphicSettings.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    depthLinePass->graphicSettings.poligonMode = VK_POLYGON_MODE_LINE;
+    depthLinePass->config             = gfxSettings;
+    depthLinePass->config.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    depthLinePass->config.poligonMode = VK_POLYGON_MODE_LINE;
     depthLinePass->compile_shader_stages();
     depthLinePass->build(m_descriptorPool);
     m_shaderPasses["shadowLine"] = depthLinePass;

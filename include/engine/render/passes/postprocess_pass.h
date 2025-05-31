@@ -114,7 +114,7 @@ template <std::size_t numberIN, std::size_t numberOUT> void PostProcessPass<numb
     Graphics::GraphicShaderPass* ppPass =
         new Graphics::GraphicShaderPass(this->m_device->get_handle(), this->m_renderpass, this->m_imageExtent, this->m_shaderPath);
     ppPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    ppPass->graphicSettings.attributes      = {
+    ppPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     ppPass->compile_shader_stages();

@@ -17,6 +17,8 @@ namespace Render {
 
 class RenderGraph;
 
+using UniformResource = std::variant<Graphics::Buffer, Graphics::Texture, Graphics::Accel>;
+
 class ShaderProgram
 {
 protected:
@@ -50,16 +52,11 @@ public:
     }
     virtual ~ShaderProgram() = default;
 
-    void attach( const std::string& uName,
+    void attach( const std::string& uniformName,
                  Frame&             frame );
-    // void attach( const std::string& uName, std::variant<Buffer, > reosurce     );
-    // void attach( const std::string& uName,
-    //             std::variant<Buffer, > reosurce
-    //              uint32_t arraySlot);
+    void attach( const std::string& uniformName, UniformResource& resource, Frame& frame );
+    void attach( const std::string& uniformName, UniformResource& reosurce, uint32_t arraySlot, Frame& frame );
 
-    // update descriptors
-    // attach(const std::string& uniformName,variantResource)
-    // update("uniform",std::variant<resource>, frame) updatedescriptors
     void bind_uniforms( uint32_t                     set,
                         Frame&                       frame,
                         const std::vector<uint32_t>& offsets = {} ); // if needed
@@ -75,43 +72,6 @@ public:
     const std::vector<UniformBinding>& get_uniform_bindings() const { return m_uniformBindings; }
     const std::string&                 get_shader_source_path() const { return m_shaderPath; }
     const std::string&                 get_name() const { return m_name; }
-};
-
-class GraphicShaderProgram final : public ShaderProgram
-{
-    Graphics::GraphicShaderPass m_shaderpass = {};
-
-public:
-    GraphicShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings, const Graphics::GraphicPipelineSettings& settings = {} )
-        : ShaderProgram( name, glslPath, uniformBindings ) {
-        m_shaderpass.settings = settings
-    }
-
-    void        compile( const std::shared_ptr<Graphics::Device>& device ) override;
-    inline bool is_graphics() const override { return true; }
-    bool        is_compute() const override {
-        { return false; }
-    }
-    void cleanup() override;
-
-    const Graphics::GraphicPipelineSettings& get_settings() const { return m_shaderpass.graphicSettings; }
-};
-
-class ComputeShaderProgram final : public ShaderProgram
-{
-    Graphics::ComputeShaderPass m_shaderpass = {};
-
-public:
-    ComputeShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings )
-        : ShaderProgram( name, glslPath, uniformBindings ) {
-    }
-
-    void        compile( const std::shared_ptr<Graphics::Device>& device ) override;
-    inline bool is_graphics() const override { return true; }
-    bool        is_compute() const override {
-        { return false; }
-    }
-    void cleanup() override;
 };
 
 // ShaderProgram lightingShader(

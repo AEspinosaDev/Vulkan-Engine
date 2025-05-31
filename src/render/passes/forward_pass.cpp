@@ -165,65 +165,65 @@ void ForwardPass::setup_shader_passes() {
     // Setup shaderpasses
     GraphicShaderPass* unlitPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/unlit.glsl"));
     unlitPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    unlitPass->graphicSettings.attributes      = {
+    unlitPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
-    unlitPass->graphicSettings.blendAttachments = blendAttachments;
-    unlitPass->graphicSettings.dynamicStates    = dynamicStates;
-    unlitPass->graphicSettings.samples          = samples;
+    unlitPass->config.blendAttachments = blendAttachments;
+    unlitPass->config.dynamicStates    = dynamicStates;
+    unlitPass->config.samples          = samples;
     m_shaderPasses["unlit"]                     = unlitPass;
 
     GraphicShaderPass* phongPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/phong.glsl"));
     phongPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    phongPass->graphicSettings.attributes      = {
+    phongPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
-    phongPass->graphicSettings.blendAttachments = blendAttachments;
-    phongPass->graphicSettings.dynamicStates    = dynamicStates;
-    phongPass->graphicSettings.samples          = samples;
+    phongPass->config.blendAttachments = blendAttachments;
+    phongPass->config.dynamicStates    = dynamicStates;
+    phongPass->config.samples          = samples;
     m_shaderPasses["phong"]                     = phongPass;
 
     GraphicShaderPass* PBRPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/physically_based.glsl"));
     PBRPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    PBRPass->graphicSettings.attributes      = {
+    PBRPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, false}};
-    PBRPass->graphicSettings.blendAttachments = blendAttachments;
-    PBRPass->graphicSettings.dynamicStates    = dynamicStates;
-    PBRPass->graphicSettings.samples          = samples;
+    PBRPass->config.blendAttachments = blendAttachments;
+    PBRPass->config.dynamicStates    = dynamicStates;
+    PBRPass->config.samples          = samples;
     m_shaderPasses["physical"]                = PBRPass;
 
     GraphicShaderPass* hairStrandPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/hair_strand.glsl"));
     hairStrandPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, false}};
-    hairStrandPass->graphicSettings.attributes      = {
+    hairStrandPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, true}};
-    hairStrandPass->graphicSettings.dynamicStates    = dynamicStates;
-    hairStrandPass->graphicSettings.blendAttachments = blendAttachments;
-    hairStrandPass->graphicSettings.samples          = samples;
-    hairStrandPass->graphicSettings.sampleShading    = false;
-    hairStrandPass->graphicSettings.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    hairStrandPass->config.dynamicStates    = dynamicStates;
+    hairStrandPass->config.blendAttachments = blendAttachments;
+    hairStrandPass->config.samples          = samples;
+    hairStrandPass->config.sampleShading    = false;
+    hairStrandPass->config.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     m_shaderPasses["hairstr"]                        = hairStrandPass;
 
     GraphicShaderPass* hairStrandPass2 =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/hair_strand2.glsl"));
     hairStrandPass2->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    hairStrandPass2->graphicSettings.attributes      = {
+    hairStrandPass2->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, true}, {COLOR_ATTRIBUTE, true}};
-    hairStrandPass2->graphicSettings.dynamicStates    = dynamicStates;
-    hairStrandPass2->graphicSettings.samples          = samples;
-    hairStrandPass2->graphicSettings.sampleShading    = false;
-    hairStrandPass2->graphicSettings.blendAttachments = blendAttachments;
-    hairStrandPass2->graphicSettings.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    hairStrandPass2->config.dynamicStates    = dynamicStates;
+    hairStrandPass2->config.samples          = samples;
+    hairStrandPass2->config.sampleShading    = false;
+    hairStrandPass2->config.blendAttachments = blendAttachments;
+    hairStrandPass2->config.topology         = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     m_shaderPasses["hairstr2"]                        = hairStrandPass2;
 
     GraphicShaderPass* skyboxPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/forward/skybox.glsl"));
     skyboxPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, false}, {OBJECT_TEXTURE_LAYOUT, false}};
-    skyboxPass->graphicSettings.attributes      = {
+    skyboxPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
-    skyboxPass->graphicSettings.dynamicStates    = dynamicStates;
-    skyboxPass->graphicSettings.samples          = samples;
-    skyboxPass->graphicSettings.blendAttachments = blendAttachments;
-    skyboxPass->graphicSettings.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
+    skyboxPass->config.dynamicStates    = dynamicStates;
+    skyboxPass->config.samples          = samples;
+    skyboxPass->config.blendAttachments = blendAttachments;
+    skyboxPass->config.depthOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
     m_shaderPasses["skybox"]                     = skyboxPass;
 
     for (auto pair : m_shaderPasses)

@@ -12,7 +12,7 @@ void TonemappingPass::setup_shader_passes() {
 
     GraphicShaderPass* ppPass               = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, m_shaderPath);
     ppPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    ppPass->graphicSettings.attributes      = {
+    ppPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     ppPass->settings.pushConstants = {Graphics::PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float) * 2)};
 

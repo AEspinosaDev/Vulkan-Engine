@@ -17,13 +17,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-// GENERAL PIPELINE SETTINGS
-struct PipelineSettings {
-
-    std::vector<PushConstant> pushConstants = {};
-};
 // GRAPHIC PIPELINE SETTINGS
-struct GraphicPipelineSettings {
+struct GraphicPipelineConfig {
     std::unordered_map<int, bool>                    attributes;
     VkPrimitiveTopology                              topology         = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkPolygonMode                                    poligonMode      = VK_POLYGON_MODE_FILL;
@@ -54,7 +49,7 @@ void build_graphic_pipeline( VkPipeline&                                  pipeli
                              VkDevice                                     device,
                              VkRenderPass                                 renderPass,
                              VkExtent2D                                   extent,
-                             GraphicPipelineSettings&                     settings,
+                             GraphicPipelineConfig&                       settings,
                              std::vector<VkPipelineShaderStageCreateInfo> shaderStages );
 
 void build_compute_pipeline( VkPipeline& pipeline, VkPipelineLayout& layout, VkDevice device, VkPipelineShaderStageCreateInfo computeStage );

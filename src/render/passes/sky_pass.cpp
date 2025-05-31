@@ -63,7 +63,7 @@ void SkyPass::setup_shader_passes() {
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/sky_tt_compute.glsl"));
     ttPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings) + sizeof(AerosolParams))};
     ttPass->settings.descriptorSetLayoutIDs = {{0, true}};
-    ttPass->graphicSettings.attributes      = {
+    ttPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     ttPass->compile_shader_stages();
@@ -75,7 +75,7 @@ void SkyPass::setup_shader_passes() {
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/sky_generation.glsl"));
     skyPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Core::SkySettings) + sizeof(AerosolParams))};
     skyPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
-    skyPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
+    skyPass->config.attributes      = ttPass->config.attributes;
 
     skyPass->compile_shader_stages();
     skyPass->build(m_descriptorPool);
@@ -86,7 +86,7 @@ void SkyPass::setup_shader_passes() {
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/sky_projection.glsl"));
     projPass->settings.pushConstants          = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(int))};
     projPass->settings.descriptorSetLayoutIDs = ttPass->settings.descriptorSetLayoutIDs;
-    projPass->graphicSettings.attributes      = ttPass->graphicSettings.attributes;
+    projPass->config.attributes      = ttPass->config.attributes;
 
     projPass->compile_shader_stages();
     projPass->build(m_descriptorPool);

@@ -36,7 +36,7 @@ void PipelineBuilder::build_graphic_pipeline( VkPipeline&                       
                                               VkDevice                                     device,
                                               VkRenderPass                                 renderPass,
                                               VkExtent2D                                   extent,
-                                              GraphicPipelineSettings&                     settings,
+                                              GraphicPipelineConfig&                       settings,
                                               std::vector<VkPipelineShaderStageCreateInfo> shaderStages ) {
 
     // Vertex and geometry

@@ -84,7 +84,7 @@ void BloomPass::setup_shader_passes() {
 
     GraphicShaderPass* bloomPass = new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/bloom/compose.glsl"));
     bloomPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}};
-    bloomPass->graphicSettings.attributes      = {
+    bloomPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     bloomPass->settings.pushConstants.push_back(PushConstant(SHADER_STAGE_FRAGMENT, SETTINGS_UNIFORM_SIZE));
 

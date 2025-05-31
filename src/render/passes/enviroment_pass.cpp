@@ -73,7 +73,7 @@ void EnviromentPass::setup_shader_passes() {
     GraphicShaderPass* converterPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/panorama_converter.glsl"));
     converterPass->settings.descriptorSetLayoutIDs = {{0, true}};
-    converterPass->graphicSettings.attributes      = {
+    converterPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
     converterPass->settings.pushConstants = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(float))};
 
@@ -87,7 +87,7 @@ void EnviromentPass::setup_shader_passes() {
     GraphicShaderPass* irradiancePass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/env/irradiance_compute.glsl"));
     irradiancePass->settings.descriptorSetLayoutIDs = converterPass->settings.descriptorSetLayoutIDs;
-    irradiancePass->graphicSettings.attributes      = {
+    irradiancePass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, false}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
 
     irradiancePass->compile_shader_stages();

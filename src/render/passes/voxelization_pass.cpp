@@ -137,12 +137,12 @@ void VoxelizationPass::setup_shader_passes() {
     GraphicShaderPass* voxelPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/VXGI/voxelization.glsl"));
     voxelPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {OBJECT_LAYOUT, true}, {OBJECT_TEXTURE_LAYOUT, true}};
-    voxelPass->graphicSettings.attributes      = {
+    voxelPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, true}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
-    voxelPass->graphicSettings.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    voxelPass->config.dynamicStates    = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineColorBlendAttachmentState state   = Init::color_blend_attachment_state(false);
     state.colorWriteMask                        = 0;
-    voxelPass->graphicSettings.blendAttachments = {state};
+    voxelPass->config.blendAttachments = {state};
 
     voxelPass->compile_shader_stages();
     voxelPass->build(m_descriptorPool);

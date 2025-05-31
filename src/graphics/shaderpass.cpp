@@ -155,38 +155,6 @@ void ComputeShaderPass::compile_shader_stages( const std::string& src, shaderc_o
     }
 }
 
-void GraphicShaderPass::build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants ) {
-    std::vector<VkDescriptorSetLayout> vkLayouts;
-    vkLayouts.resize( descriptorLayouts.size() );
-    for ( size_t i = 0; i < descriptorLayouts.size(); i++ )
-    {
-        vkLayouts[i] = descriptorLayouts[i].handle;
-    }
-
-    PipelineBuilder::build_pipeline_layout( pipelineLayout, device, vkLayouts, pushConstants );
-
-    std::vector<VkPipelineShaderStageCreateInfo> stages;
-    for ( auto& stage : shaderStages )
-    {
-        stages.push_back( Init::pipeline_shader_stage_create_info( stage.stage, stage.shaderModule ) );
-    }
-    PipelineBuilder::build_graphic_pipeline( pipeline, pipelineLayout, device, renderpass->handle, extent, graphicSettings, stages );
-}
-
-void ComputeShaderPass::build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants ) {
-
-    std::vector<VkDescriptorSetLayout> vkLayouts;
-    vkLayouts.resize( descriptorLayouts.size() );
-    for ( size_t i = 0; i < descriptorLayouts.size(); i++ )
-    {
-        vkLayouts[i] = descriptorLayouts[i].handle;
-    }
-
-    PipelineBuilder::build_pipeline_layout( pipelineLayout, device, vkLayouts, pushConstants );
-
-    PipelineBuilder::build_compute_pipeline(
-        pipeline, pipelineLayout, device, Init::pipeline_shader_stage_create_info( computeStage.stage, computeStage.shaderModule ) );
-}
 void GraphicShaderPass::cleanup() {
 
     for ( auto& stage : shaderStages )

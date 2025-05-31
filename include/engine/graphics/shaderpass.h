@@ -52,17 +52,15 @@ Base shader pass data structure
 */
 struct BaseShaderPass {
 
-    const QueueType QUEUE_TYPE;
-
     VkDevice         device         = VK_NULL_HANDLE;
     VkPipeline       pipeline       = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
     std::vector<PushConstant> pushConstants;
 
+    BaseShaderPass() {}
     virtual void
                  compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance ) = 0;
-    virtual void build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants = {} )    = 0;
     virtual void cleanup();
 };
 /*
@@ -75,12 +73,13 @@ Standard ShaderPass for drawing purposes
 struct GraphicShaderPass final : public ShaderPass {
 
     std::vector<ShaderStage> shaderStages;
-    GraphicPipelineSettings  graphicSettings = {};
-    RenderPass*              renderpass      = nullptr;
-    Extent2D                 extent          = { 0, 0 };
+    GraphicPipelineConfig    config     = {};
+    RenderPass*              renderpass = nullptr;
+    Extent2D                 extent     = { 0, 0 };
 
+    GraphicShaderPass()
+        : ShaderPass() {}
     void compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
-    void build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants = {} );
     void cleanup();
 };
 
@@ -91,8 +90,9 @@ struct ComputeShaderPass final : public ShaderPass {
 
     ShaderStage computeStage = {};
 
+    ComputeShaderPass()
+        : ShaderPass() {}
     void compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
-    void build( const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants = {} );
     void cleanup();
 };
 

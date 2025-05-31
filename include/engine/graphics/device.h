@@ -134,8 +134,14 @@ public:
     /*Create command buffer*/
     CommandBuffer create_command_buffer( CommandPool commandPool, CommandBufferLevel level = COMMAND_BUFFER_LEVEL_PRIMARY );
     /*Create shader pass*/
-    GraphicShaderPass create_graphic_shader_pass( const std::string shaderFile, PipelineSettings sett = {} );
-    ComputeShaderPass create_compute_shader_pass( const std::string shaderFile, PipelineSettings sett = {} );
+    GraphicShaderPass create_graphic_shader_pass( const std::string                              shaderFile,
+                                                  const std::vector<Graphics::DescriptorLayout>& descriptorLayouts,
+                                                  const GraphicPipelineConfig&                   config,
+                                                  const RenderPass&                              renderPass,
+                                                  const std::vector<PushConstant>&               pushConstants = {} );
+    ComputeShaderPass create_compute_shader_pass( const std::string                              shaderFile,
+                                                  const std::vector<Graphics::DescriptorLayout>& descriptorLayouts,
+                                                  const std::vector<PushConstant>&               pushConstants = {} );
     /*
     PRESENTING
     -----------------------------------------------

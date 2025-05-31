@@ -100,9 +100,9 @@ void CompositionPass::setup_shader_passes() {
     GraphicShaderPass* compPass =
         new GraphicShaderPass(m_device->get_handle(), m_renderpass, m_imageExtent, GET_RESOURCE_PATH("shaders/deferred/composition.glsl"));
     compPass->settings.descriptorSetLayoutIDs = {{GLOBAL_LAYOUT, true}, {1, true}};
-    compPass->graphicSettings.attributes      = {
+    compPass->config.attributes      = {
         {POSITION_ATTRIBUTE, true}, {NORMAL_ATTRIBUTE, false}, {UV_ATTRIBUTE, true}, {TANGENT_ATTRIBUTE, false}, {COLOR_ATTRIBUTE, false}};
-    compPass->graphicSettings.blendAttachments = {Init::color_blend_attachment_state(false), Init::color_blend_attachment_state(false)};
+    compPass->config.blendAttachments = {Init::color_blend_attachment_state(false), Init::color_blend_attachment_state(false)};
     compPass->settings.pushConstants           = {PushConstant(SHADER_STAGE_FRAGMENT, sizeof(Settings))};
 
     compPass->compile_shader_stages();

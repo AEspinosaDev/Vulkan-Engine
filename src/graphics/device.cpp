@@ -305,6 +305,46 @@ CommandBuffer Device::create_command_buffer( CommandPool commandPool, CommandBuf
     return cmd;
 }
 
+GraphicShaderPass Device::create_graphic_shader_pass( const std::string shaderFile, const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const GraphicPipelineConfig& config, const RenderPass& renderPass, const std::vector<PushConstant>& pushConstants ) {
+    GraphicShaderPass shaderPass;
+    shaderPass.device = m_handle;
+
+    shaderPass.compile_shader_stages( shaderFile );
+
+    std::vector<VkDescriptorSetLayout> vkLayouts;
+    vkLayouts.resize( descriptorLayouts.size() );
+    for ( size_t i = 0; i < descriptorLayouts.size(); i++ )
+    {
+        vkLayouts[i] = descriptorLayouts[i].handle;
+    }
+
+    PipelineBuilder::build_pipeline_layout( shaderPass.pipelineLayout, m_handle, vkLayouts, pushConstants );
+
+    std::vector<VkPipelineShaderStageCreateInfo> stages;
+    for ( auto& stage : shaderPass.shaderStages )
+    {
+        stages.push_back( Init::pipeline_shader_stage_create_info( stage.stage, stage.shaderModule ) );
+    }
+    PipelineBuilder::build_graphic_pipeline( shaderPass.pipeline, shaderPass.pipelineLayout, m_handle, renderPass.handle, { 0, 0 }, config, stages );
+}
+ComputeShaderPass Device::create_compute_shader_pass( const std::string shaderFile, const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants ) {
+    ComputeShaderPass shaderPass;
+    shaderPass.device = m_handle;
+
+    shaderPass.compile_shader_stages( shaderFile );
+
+    std::vector<VkDescriptorSetLayout> vkLayouts;
+    vkLayouts.resize( descriptorLayouts.size() );
+    for ( size_t i = 0; i < descriptorLayouts.size(); i++ )
+    {
+        vkLayouts[i] = descriptorLayouts[i].handle;
+    }
+
+    PipelineBuilder::build_pipeline_layout( shaderPass.pipelineLayout, m_handle, vkLayouts, pushConstants );
+
+    PipelineBuilder::build_compute_pipeline(
+        shaderPass.pipeline, shaderPass.pipelineLayout, m_handle, Init::pipeline_shader_stage_create_info( shaderPass.computeStage.stage, shaderPass.computeStage.shaderModule ) );
+}
 DescriptorPool Device::create_descriptor_pool( uint32_t                       maxSets,
                                                uint32_t                       numUBO,
                                                uint32_t                       numUBODynamic,
@@ -516,37 +556,7 @@ Fence Device::create_fence( bool signaled ) {
     VK_CHECK( vkCreateFence( m_handle, &fenceCreateInfo, nullptr, &fence.handle ) );
     return fence;
 }
-Frame Device::create_frame( uint16_t id ) {
-    Frame frame            = {};
-    frame.index            = id;
-    frame.commandPool      = create_command_pool( QueueType::GRAPHIC_QUEUE, COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER );
-    frame.commandBuffer    = create_command_buffer( frame.commandPool );
-    frame.renderFence      = create_fence();
-    frame.renderSemaphore  = create_semaphore();
-    frame.presentSemaphore = create_semaphore();
 
-    return frame;
-}
-RenderResult Device::wait_frame( Frame& frame, uint32_t& imageIndex ) {
-
-    frame.renderFence.wait();
-    RenderResult imageResult = aquire_present_image( frame.presentSemaphore, imageIndex );
-
-    return imageResult;
-}
-
-void Device::start_frame( Frame& frame ) {
-    frame.renderFence.reset();
-    frame.commandBuffer.reset();
-    frame.commandBuffer.begin();
-}
-RenderResult Device::submit_frame( Frame& frame, uint32_t imageIndex ) {
-
-    frame.commandBuffer.end();
-    frame.commandBuffer.submit( frame.renderFence, { frame.presentSemaphore }, { frame.renderSemaphore } );
-
-    return present_image( frame.renderSemaphore, imageIndex );
-}
 RenderResult Device::aquire_present_image( Semaphore& waitSemahpore, uint32_t& imageIndex ) {
 
     VkResult result = vkAcquireNextImageKHR( m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.handle, VK_NULL_HANDLE, &imageIndex );
