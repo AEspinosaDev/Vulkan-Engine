@@ -18,7 +18,18 @@ namespace Render {
 
 class RenderGraph;
 class ShaderProgram;
+class GraphicShaderProgram;
+class ComputeShaderProgram;
 class RenderViewBuilder;
+
+struct PairHash {
+    std::size_t operator()( const std::pair<std::string, uint32_t>& key ) const {
+        std::size_t seed = 0;
+        Utils::hash_combine( seed, std::hash<std::string> {}( key.first ) );
+        Utils::hash_combine( seed, std::hash<uint32_t> {}( key.second ) );
+        return seed;
+    }
+};
 
 class Frame
 {
@@ -41,9 +52,11 @@ class Frame
 
     uint32_t m_index = 0;
 
-    friend class RenderGraph;       // For allocating descriptors
-    friend class ShaderProgram;     // For updating descriptors
-    friend class RenderViewBuilder; // For updating UBOs
+    friend class RenderGraph;          // For allocating descriptors
+    friend class ShaderProgram;        // For updating descriptors
+    friend class GraphicShaderProgram; // For updating descriptors
+    friend class ComputeShaderProgram; // For updating descriptors
+    friend class RenderViewBuilder;    // For updating UBOs
 
     template <typename UBO>
     size_t pad_size() const {
@@ -71,7 +84,7 @@ public:
 
     // Uniform Buffer Managment
     // ---------------------------
-    
+
     template <typename... UBOs>
     inline void register_UBO( const std::string& name ) {
         size_t           totalSize = ( pad_size<UBOs>() + ... );
@@ -95,15 +108,6 @@ public:
 
     const Graphics::Buffer& get_ubo( const std::string& name ) const {
         return m_ubos.at( name );
-    }
-};
-
-struct PairHash {
-    std::size_t operator()( const std::pair<std::string, uint32_t>& key ) const {
-        std::size_t seed = 0;
-        Utils::hash_combine( seed, std::hash<std::string> {}( key.first ) );
-        Utils::hash_combine( seed, std::hash<uint32_t> {}( key.second ) );
-        return seed;
     }
 };
 

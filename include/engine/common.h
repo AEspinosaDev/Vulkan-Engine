@@ -279,6 +279,12 @@ enum QueueType
     COMPUTE_QUEUE = 2,
     RT_QUEUE      = 3
 };
+enum PipelineType
+{
+    GRAPHIC_PIPELINE = 0,
+    COMPUTE_PIPELINE = 1,
+    RT_PIPELINE      = 2
+};
 enum AttachmentType
 {
     COLOR_ATTACHMENT   = 0,

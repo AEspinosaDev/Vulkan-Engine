@@ -52,13 +52,15 @@ Base shader pass data structure
 */
 struct BaseShaderPass {
 
-    VkDevice         device         = VK_NULL_HANDLE;
-    VkPipeline       pipeline       = VK_NULL_HANDLE;
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    const PipelineType TYPE;
+    VkDevice           device         = VK_NULL_HANDLE;
+    VkPipeline         pipeline       = VK_NULL_HANDLE;
+    VkPipelineLayout   pipelineLayout = VK_NULL_HANDLE;
 
     std::vector<PushConstant> pushConstants;
 
-    BaseShaderPass() {}
+    BaseShaderPass( PipelineType t )
+        : TYPE( t ) {}
     virtual void
                  compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance ) = 0;
     virtual void cleanup();
@@ -78,7 +80,7 @@ struct GraphicShaderPass final : public ShaderPass {
     Extent2D                 extent     = { 0, 0 };
 
     GraphicShaderPass()
-        : ShaderPass() {}
+        : ShaderPass( PipelineType::GRAPHIC_PIPELINE ) {}
     void compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
     void cleanup();
 };
@@ -91,7 +93,7 @@ struct ComputeShaderPass final : public ShaderPass {
     ShaderStage computeStage = {};
 
     ComputeShaderPass()
-        : ShaderPass() {}
+        : ShaderPass( PipelineType::COMPUTE_PIPELINE ) {}
     void compile_shader_stages( const std::string& src, shaderc_optimization_level optimization = shaderc_optimization_level_performance );
     void cleanup();
 };

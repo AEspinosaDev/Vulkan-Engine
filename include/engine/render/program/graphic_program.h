@@ -9,13 +9,14 @@
 #ifndef GFX_SHADER_PROGRAM
 #define GFX_SHADER_PROGRAM
 
-#include <engine/render/shader_program.h>
+#include <engine/render/program/shader_program.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Render {
 
 class GraphicShaderProgram final : public ShaderProgram
 {
+
     Graphics::GraphicShaderPass m_shaderpass = {};
 
 public:
@@ -25,6 +26,9 @@ public:
     }
 
     void        compile( const std::shared_ptr<Graphics::Device>& device ) override;
+    void        bind( Frame& frame ) override;
+    void        bind_uniform_set( uint32_t set, Frame& frame ) override;
+    void        bind_uniform_set( uint32_t set, Frame& frame, const std::vector<uint32_t>& offsets ) override; // if needed
     inline bool is_graphics() const override { return true; }
     bool        is_compute() const override {
         { return false; }
@@ -33,7 +37,6 @@ public:
 
     const Graphics::GraphicPipelineConfig& get_config() const { return m_shaderpass.config; }
 };
-
 
 } // namespace Render
 VULKAN_ENGINE_NAMESPACE_END
