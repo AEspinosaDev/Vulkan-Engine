@@ -97,16 +97,24 @@ public:
     }
     template <typename... UBOs>
     inline void register_UBO_array( const std::string& name, uint32_t count ) {
-        size_t           strideSize = ( pad_size<UBOs>() + ... );
-        Graphics::Buffer buffer     = m_device->create_buffer_VMA(
+        std::vector<size_t> batchSizes = { pad_size<UBOs>()... };
+        size_t              strideSize = 0;
+        for ( size_t s : batchSizes )
+        {
+            strideSize += s;
+        }
+        // Create buffer
+        Graphics::Buffer buffer = m_device->create_buffer_VMA(
             strideSize * count,
             BUFFER_USAGE_UNIFORM_BUFFER,
             VMA_MEMORY_USAGE_CPU_TO_GPU,
-            (uint32_t)strideSize );
-        m_ubos[name] = buffer;
+            static_cast<uint32_t>( strideSize ) );
+        buffer.batchSizes = std::move( batchSizes );
+        m_ubos[name]      = buffer;
     }
 
-    const Graphics::Buffer& get_ubo( const std::string& name ) const {
+    const Graphics::Buffer&
+    get_ubo( const std::string& name ) const {
         return m_ubos.at( name );
     }
 };

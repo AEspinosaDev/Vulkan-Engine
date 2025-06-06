@@ -305,7 +305,7 @@ CommandBuffer Device::create_command_buffer( CommandPool commandPool, CommandBuf
     return cmd;
 }
 
-GraphicShaderPass Device::create_graphic_shader_pass( const std::string shaderFile, const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const GraphicPipelineConfig& config, const RenderPass& renderPass, const std::vector<PushConstant>& pushConstants ) {
+GraphicShaderPass Device::create_graphic_shader_pass( const std::string shaderFile, const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, GraphicPipelineConfig& config, const RenderPass& renderPass, const std::vector<PushConstant>& pushConstants ) {
     GraphicShaderPass shaderPass;
     shaderPass.device = m_handle;
 
@@ -326,6 +326,8 @@ GraphicShaderPass Device::create_graphic_shader_pass( const std::string shaderFi
         stages.push_back( Init::pipeline_shader_stage_create_info( stage.stage, stage.shaderModule ) );
     }
     PipelineBuilder::build_graphic_pipeline( shaderPass.pipeline, shaderPass.pipelineLayout, m_handle, renderPass.handle, { 0, 0 }, config, stages );
+
+    return shaderPass;
 }
 ComputeShaderPass Device::create_compute_shader_pass( const std::string shaderFile, const std::vector<Graphics::DescriptorLayout>& descriptorLayouts, const std::vector<PushConstant>& pushConstants ) {
     ComputeShaderPass shaderPass;
@@ -344,6 +346,8 @@ ComputeShaderPass Device::create_compute_shader_pass( const std::string shaderFi
 
     PipelineBuilder::build_compute_pipeline(
         shaderPass.pipeline, shaderPass.pipelineLayout, m_handle, Init::pipeline_shader_stage_create_info( shaderPass.computeStage.stage, shaderPass.computeStage.shaderModule ) );
+
+    return shaderPass;
 }
 DescriptorPool Device::create_descriptor_pool( uint32_t                       maxSets,
                                                uint32_t                       numUBO,

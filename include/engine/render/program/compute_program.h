@@ -19,7 +19,7 @@ class ComputeShaderProgram final : public ShaderProgram
     Graphics::ComputeShaderPass m_shaderpass = {};
 
 public:
-    ComputeShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings )
+    ComputeShaderProgram( std::string name, std::string glslPath, const std::unordered_map<std::string, UniformBinding>& uniformBindings )
         : ShaderProgram( name, glslPath, uniformBindings ) {
     }
 

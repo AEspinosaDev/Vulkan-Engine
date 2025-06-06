@@ -28,11 +28,9 @@ protected:
         uint32_t         set;
         uint32_t         binding;
         UniformType      type;
-        ShaderStageFlags stages;
-        bool             bindless = false;
-
-        // UniformBinding( uint32_t set, uint32_t binding, UniformType type, ShaderStageFlags stages, std::string name ) {}
-        // UniformBinding( UniformType type, ShaderStageFlags stages, std::string name ) {}
+        ShaderStageFlags stages        = SHADER_STAGE_VERTEX | SHADER_STAGE_FRAGMENT;
+        uint32_t         dynamicOffset = 0;
+        bool             bindless      = false;
     };
 
     std::unordered_map<std::string, UniformBinding> m_uniformBindings;
@@ -43,6 +41,8 @@ protected:
 
     friend class RenderGraph;
 
+    void create_descriptor_layouts( const std::shared_ptr<Graphics::Device>& device );
+
 public:
     ShaderProgram( std::string name, std::string glslPath, const std::unordered_map<std::string, UniformBinding>& uniformBindings )
         : m_name( name )
@@ -51,10 +51,14 @@ public:
     }
     virtual ~ShaderProgram() = default;
 
-    void attach( const std::string& uniformName,
-                 Frame&             frame );
-    void attach( const std::string& uniformName, UniformResource& resource, Frame& frame );
-    void attach( const std::string& uniformName, UniformResource& reosurce, uint32_t arraySlot, Frame& frame );
+    void attach( const std::string& uniformName, Graphics::Buffer& resource, Frame& frame );
+    void attach( const std::string& uniformName, Graphics::Texture& resource, Frame& frame );
+    void attach( const std::string& uniformName, Graphics::Accel& resource, Frame& frame );
+    void attach( const std::string& uniformName, Graphics::Buffer& resource, uint32_t arraySlot, Frame& frame );
+    void attach( const std::string& uniformName, Graphics::Texture& resource, uint32_t arraySlot, Frame& frame );
+    void attach( const std::string& uniformName, Graphics::Accel& resource, uint32_t arraySlot, Frame& frame );
+    // void attach( const std::string& uniformName, UniformResource& reosurce, Frame& frame );
+    // void attach( const std::string& uniformName, UniformResource& reosurce, uint32_t arraySlot, Frame& frame );
 
     virtual void compile( const std::shared_ptr<Graphics::Device>& device )                           = 0;
     virtual void bind( Frame& frame )                                                                 = 0;
@@ -62,7 +66,8 @@ public:
     virtual void bind_uniform_set( uint32_t set, Frame& frame, const std::vector<uint32_t>& offsets ) = 0; // if needed
     virtual bool is_graphics() const                                                                  = 0;
     virtual bool is_compute() const                                                                   = 0;
-    virtual void cleanup()                                                                            = 0;
+
+    virtual void cleanup();
 
     const std::unordered_map<std::string, UniformBinding>& get_uniform_bindings() const { return m_uniformBindings; }
     const std::string&                                     get_shader_source_path() const { return m_shaderPath; }

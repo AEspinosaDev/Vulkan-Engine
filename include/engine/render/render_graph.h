@@ -30,9 +30,9 @@ public:
 class RenderGraphAttachment
 {
 public:
-    Graphics::Image image = {};
-    // std::unordered_map<std::string, Graphics::Texture> textures; // pass name
-    bool used = false;
+    Graphics::Image                                    image = {};
+    std::unordered_map<std::string, Graphics::Texture> textures; // pass name
+    bool                                               used = false;
 };
 
 class RenderGraph;
@@ -45,9 +45,10 @@ public:
         , m_passIndex( passID ) {
     }
 
-    std::string create_target( const std::string& name, const Graphics::RenderTargetInfo& info );
-    std::string read( const std::string& name );
+    std::string create_target( const std::string& name, const TargetInfo& info );
+    std::string read( const std::string& name, const ReadInfo& info, ImageLayout expectedLayout );
     void        write( const std::string& name );
+    // std::string create_swapchain_target( const std::string& name, const Graphics::RenderTargetInfo& info );
 
 private:
     RenderGraph& m_graph;
@@ -75,31 +76,32 @@ class RenderGraph
 {
 private:
     ptr<Graphics::Device> m_device;
-    Render::Frame*      m_frame = nullptr;
+    Render::Frame*        m_frame = nullptr;
 
-    std::vector<RenderPassInfo>                          m_passes;
-    std::unordered_map<std::string, RenderGraphResource> m_transientResources; // Graph Resource (image ID)
-
-    std::unordered_map<std::string, RenderGraphAttachment>       m_attachmentCache; // Image attachments (image ID)
-    std::unordered_map<std::string, RenderPassInfo::RuntimeData> m_renderCache;     // Render runtime data (pass ID)
-
-    // std::unordered_map<std::string, ShaderProgram> m_shaderCache; // Pre-registered shaders (shader ID)
-    std::unordered_map<std::string, std::unique_ptr<ShaderProgram>> m_shaderCache;
+    std::vector<RenderPassInfo>                                     m_passes;
+    std::unordered_map<std::string, RenderGraphResource>            m_transientResources; // Graph Resource (image ID)
+    std::unordered_map<std::string, RenderGraphAttachment>          m_attachmentCache;    // Image attachments (image ID)
+    std::unordered_map<std::string, RenderPassInfo::RuntimeData>    m_renderCache;        // Render runtime data (pass ID)
+    std::unordered_map<std::string, std::unique_ptr<ShaderProgram>> m_shaderCache;        // Pre-registered shaders (shader ID)
 
     friend class RenderGraphBuilder;
 
-    void create_shader_program( const std::string& name );
-    void create_render_pass( Graphics::RenderPass& renderpass );
-
-    bool reconcile( const Graphics::RenderTargetInfo& info, const Graphics::Image& image ) {
+    bool reconcile( const RenderGraphResource& res, const Graphics::Image& image ) {
         auto& config = image.config;
-        return image.extent.width != info.extent.width &&
-               image.extent.height != info.extent.height &&
-               config.usageFlags != info.usage &&
-               config.format != info.format &&
-               config.layers != info.layers &&
-               config.mipmaps != info.mipmaps &&
-               config.samples != info.samples;
+        auto& info   = res.info;
+
+        bool dirtyFBO = image.extent.width != info.extent.width &&
+                        image.extent.height != info.extent.height &&
+                        config.usageFlags != info.usage &&
+                        config.format != info.format &&
+                        config.layers != info.layers &&
+                        config.mipmaps != info.mipmaps &&
+                        config.samples != info.samples;
+
+        //     bool dirtyRenderPass =
+
+        m_renderCache[m_passes[res.firstWriter].name].validFBO = !dirtyFBO;
+        return dirtyFBO;
     }
     void bake() {
 
@@ -107,13 +109,14 @@ private:
         // GraphResource Info
         for ( auto& [name, res] : m_transientResources )
         {
-            auto&       attachment = m_attachmentCache[name];
-            const auto& info       = res.info;
-            if ( !attachment.image.handle || reconcile( info, attachment.image ) )
+            auto& attachment = m_attachmentCache[name];
+            bool  dirty      = reconcile( res, attachment.image );
+            if ( !attachment.image.handle || dirty )
             {
                 // Clean
                 attachment.image.cleanup();
                 // Create
+                const auto& info = res.info;
                 attachment.image = m_device->create_image( { info.extent.width, info.extent.height, 1 },
                                                            { .format     = info.format,
                                                              .usageFlags = info.usage,
@@ -121,15 +124,15 @@ private:
                                                              .mipmaps    = info.mipmaps,
                                                              .layers     = info.layers,
                                                              .clearValue = info.clearValue } );
-                // // Check texture reads
-                // for ( auto& [name, read] : res.readInfos )
-                // {
-                //     attachment.textures[name].cleanup();
-                //     attachment.textures[name] = m_device->create_texture( &attachment.image, read );
-                // }
-
-                // Make Renderpass resource bound to image invalid
-                m_renderCache[m_passes[res.firstWriter].name].validFBO = false;
+            }
+            // Check texture reads
+            for ( auto& [name, read] : res.readInfos )
+            {
+                if ( dirty || reconcileRead( res, attachment.textures[name] ) )
+                {
+                    attachment.textures[name].cleanup();
+                    attachment.textures[name] = m_device->create_texture( &attachment.image, read );
+                }
             }
         }
 
@@ -137,80 +140,80 @@ private:
         //  and compile shader programs and update uniforms
         for ( auto& pass : m_passes )
         {
-            auto& rt = m_renderCache[pass.name];
-            if ( !rt.valid )
+            auto&      rt          = m_renderCache[pass.name];
+            const auto NUM_TARGETS = pass.writeAttachmentsKeys.size();
+
+            // IF NOT VALID FRAMEBUFFER
+            // -------------------------
+            if ( !rt.validFBO )
             {
                 // Clean
-                rt.renderPass.cleanup();
                 for ( auto& fbo : rt.fbos )
-                {
                     fbo.cleanup();
-                }
                 rt.fbos.clear();
 
                 // Create
-                std::vector<Graphics::Image*>           fboAttachments;
-                std::vector<Graphics::RenderTargetInfo> targets;
-                const auto                              NUM_TARGETS = pass.writeAttachmentsKeys.size();
+                std::vector<Graphics::Image*> fboAttachments;
                 fboAttachments.resize( NUM_TARGETS );
-                targets.resize( NUM_TARGETS );
                 for ( size_t i = 0; i < NUM_TARGETS; i++ )
                 {
-                    targets[i]        = m_transientResources[pass.writeAttachmentsKeys[i]].info;
                     fboAttachments[i] = &m_attachmentCache[pass.writeAttachmentsKeys[i]].image;
                 }
                 // With pass and attachment info
-                rt.renderPass = m_device->create_render_pass( targets, {} );
                 rt.fbos.push_back( m_device->create_framebuffer( rt.renderPass, fboAttachments ) );
+
+                rt.validFBO = true;
             }
 
+            // IF NOT VALID RENDERPASS
+            // -------------------------------
+            if ( !rt.validRenderPass )
+            {
+                rt.renderPass.cleanup();
+
+                std::vector<Graphics::RenderTargetInfo> targets;
+                targets.resize( NUM_TARGETS );
+                for ( size_t i = 0; i < NUM_TARGETS; i++ )
+                {
+                    targets[i] = m_transientResources[pass.writeAttachmentsKeys[i]].info;
+                }
+
+                rt.renderPass = m_device->create_render_pass( targets, {} );
+            }
+
+            // Compile and prepare shaders programs
             for ( const auto& shaderKey : pass.shaderProgramKeys )
             {
                 auto& shader = m_shaderCache[shaderKey];
-                if ( !shader.compiled() || !rt.valid )
+                if ( !shader->compiled() || !rt.validRenderPass )
                 {
-                    shader.cleanup();
-
-                    // Create layouts
-                    std::unordered_map<uint32_t, std::vector<Graphics::LayoutBinding>> sets;
-                    for ( auto& bindingSet : shader.m_uniformBindings )
-                    {
-                        sets[bindingSet.set].push_back( { bindingSet.type, bindingSet.stages, bindingSet.binding, 1, bindingSet.bindless } );
-                    }
-                    shader.m_descriptorLayouts.resize( sets.size() );
-
-                    uint16_t i = 0;
-                    for ( auto& [set, bindings] : sets )
-                    {
-                        shader.m_descriptorLayouts[i] =
-                            m_device->create_descriptor_layout( bindings,
-                                                                0,
-                                                                bindings.size() == 1 && bindings.back().bindless ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT : 0 );
-                        i++;
-                    }
+                    shader->cleanup();
+                    shader->create_descriptor_layouts( m_device );
 
                     // shader.m_shaderpass = m_device->create_shader_pass();
-
                     shader->m_compiled = true;
                 }
 
                 // Update uniforms and allocate ALWAYS !!
                 // Allocate
-                for ( auto& bindingSet : shader.m_uniformBindings )
+                for ( auto& bindingSet : shader->m_uniformBindings )
                 {
                     // m_frame
                 }
                 // Update
             }
-            rt.valid = true;
+
+            rt.validRenderPass = true;
         }
     }
 
 public:
-    void begin_frame( Graphics::Frame& f ) {
+    void
+    begin_frame( Frame& f ) {
         m_frame = &f;
         m_passes.clear();
         m_transientResources.clear();
+        m_frame->wait();
     }
 
     int add_pass( const std::string&                                                                         name,
@@ -228,17 +231,18 @@ public:
         // Baking
         bake();
         // Begin Command Buffer
-        m_frame->commandBuffer.reset();
-        m_frame->commandBuffer.begin();
+        m_frame->start();
         // Execute Passes
         for ( auto& p : m_passes )
         {
-            RenderPassOutputs outputs = build_outputs( p.name );
-            auto&             rt      = runtimeCache[p.name];
-            p.execute( view, shared, outputs );
+            // RenderPassOutputs outputs = build_outputs( p.name );
+            // auto&             rt      = runtimeCache[p.name];
+            // p.execute( view, shared, outputs );
         }
         // End Command Buffer
-        m_frame->commandBuffer.end();
+        m_frame->end();
+        // Submit worload
+        m_frame->submit();
     }
 
     RenderGraphResource& get_or_create_resource( const std::string& name ) {
@@ -254,17 +258,6 @@ public:
         return m_transientResources[name];
     }
 
-    // RuntimeResource& get_runtime_resource(const std::string& name) {
-    //     return persistentResources.at(name);
-    // }
-
-    // ShaderProgram* get_shader_program(const std::string& name) {
-    //     return shaderCache.count(name) ? &shaderCache[name] : nullptr;
-    // }
-
-    // void register_shader( ShaderProgram&& shader ) {
-    //     m_shaderCache[shader.m_name] = std::move( shader );
-    // }
     template <typename T, typename... Args>
     void register_shader( const std::string& name, Args&&... args ) {
         m_shaderPrograms[name] = std::make_unique<T>( name, std::forward<Args>( args )... );
@@ -283,7 +276,7 @@ std::string RenderGraphBuilder::create_target( const std::string& name, const Ta
     return name;
 }
 
-std::string RenderGraphBuilder::read( const std::string& name ) {
+std::string RenderGraphBuilder::read( const std::string& name, const ReadInfo& info, ImageLayout expectedLayout ) {
     m_graph.get_or_create_resource( name );
 
     m_graph.m_passes[m_passIndex].readAttachmentKeys.push_back( name );
@@ -292,9 +285,9 @@ std::string RenderGraphBuilder::read( const std::string& name ) {
 }
 
 void RenderGraphBuilder::write( const std::string& name ) {
-    auto& r       = m_graph.get_or_create_resource( name );
-    r.written     = true;
-    r.firstWriter = m_passIndex;
+    auto& r   = m_graph.get_or_create_resource( name );
+    r.written = true;
+    // r.firstWriter = m_passIndex;
 
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
 }

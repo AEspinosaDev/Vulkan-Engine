@@ -37,11 +37,11 @@ struct DescriptorSet {
     /*
     Update for Uniform Buffers
     */
-    void update( Buffer* buffer, size_t dataSize, size_t readOffset, UniformType type, uint32_t binding );
+    void update( Buffer& buffer, size_t dataSize, size_t readOffset, UniformType type, uint32_t binding );
     /*
     Update for Textures
     */
-    void update( Texture* image, ImageLayout layout, uint32_t binding, UniformType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0 );
+    void update( Texture& image, ImageLayout layout, uint32_t binding, UniformType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0 );
     /*
     Update for Texture Array
     */
@@ -49,7 +49,7 @@ struct DescriptorSet {
     /*
     Update for Acceleration Structures
     */
-    void update( TLAS* accel, uint32_t binding );
+    void update( TLAS& accel, uint32_t binding );
 };
 
 struct LayoutBinding {

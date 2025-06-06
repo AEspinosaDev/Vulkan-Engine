@@ -18,6 +18,11 @@ void ComputeShaderProgram::bind_uniform_set( uint32_t set, Frame& frame, const s
     frame.m_commandBuffer.bind_descriptor_set( descriptorSet, set, m_shaderpass, offsets );
 }
 
+void ComputeShaderProgram::cleanup() {
+    ShaderProgram::cleanup();
+    m_shaderpass.cleanup();
+}
+
 } // namespace Render
 
 VULKAN_ENGINE_NAMESPACE_END

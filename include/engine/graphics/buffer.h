@@ -16,10 +16,10 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Graphics {
 // Vulkan buffer object. Device class should populate the struct
 struct Buffer {
-    VkBuffer              handle     = VK_NULL_HANDLE;
-    uint32_t              size       = 0;
-    uint32_t              strideSize = 0;
-    std::vector<uint32_t> partitionsSize;
+    VkBuffer            handle     = VK_NULL_HANDLE;
+    uint32_t            size       = 0;
+    uint32_t            strideSize = 0;
+    std::vector<size_t> batchSizes;
 
     /*IF Memory allocation is controlled by VMA*/
     VmaAllocator  allocator  = VK_NULL_HANDLE;

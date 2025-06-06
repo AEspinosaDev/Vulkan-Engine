@@ -20,7 +20,7 @@ class GraphicShaderProgram final : public ShaderProgram
     Graphics::GraphicShaderPass m_shaderpass = {};
 
 public:
-    GraphicShaderProgram( std::string name, std::string glslPath, const std::vector<UniformBinding>& uniformBindings, const Graphics::GraphicPipelineConfig& config = {} )
+    GraphicShaderProgram( std::string name, std::string glslPath, const std::unordered_map<std::string, UniformBinding>& uniformBindings, const Graphics::GraphicPipelineConfig& config = {} )
         : ShaderProgram( name, glslPath, uniformBindings ) {
         m_shaderpass.config = config;
     }

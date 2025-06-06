@@ -136,7 +136,7 @@ public:
     /*Create shader pass*/
     GraphicShaderPass create_graphic_shader_pass( const std::string                              shaderFile,
                                                   const std::vector<Graphics::DescriptorLayout>& descriptorLayouts,
-                                                  const GraphicPipelineConfig&                   config,
+                                                  GraphicPipelineConfig&                         config,
                                                   const RenderPass&                              renderPass,
                                                   const std::vector<PushConstant>&               pushConstants = {} );
     ComputeShaderPass create_compute_shader_pass( const std::string                              shaderFile,

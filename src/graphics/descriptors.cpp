@@ -4,8 +4,8 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Graphics {
 
-void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, UniformType type, uint32_t binding) {
-    VkBuffer newBuffer = buffer->handle;
+void DescriptorSet::update(Buffer& buffer, size_t dataSize, size_t readOffset, UniformType type, uint32_t binding) {
+    VkBuffer newBuffer = buffer.handle;
 
     auto it = boundSlots.find(binding);
     if (it != boundSlots.end() && std::holds_alternative<VkBuffer>(it->second) && std::get<VkBuffer>(it->second) == newBuffer)
@@ -26,8 +26,8 @@ void DescriptorSet::update(Buffer* buffer, size_t dataSize, size_t readOffset, U
     // Track resource
     boundSlots[binding] = newBuffer;
 }
-void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding, UniformType type, uint32_t arraySlot) {
-    VkImageView newView = image->viewHandle;
+void DescriptorSet::update(Texture& image, ImageLayout layout, uint32_t binding, UniformType type, uint32_t arraySlot) {
+    VkImageView newView = image.viewHandle;
 
     if (!isArrayed) // If standard descriptor set (not variant)
     {
@@ -39,7 +39,7 @@ void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding,
         } else
         {
             // Track resource
-            boundSlots[binding] = image->viewHandle;
+            boundSlots[binding] = image.viewHandle;
         }
     } else
     {
@@ -52,13 +52,13 @@ void DescriptorSet::update(Texture* image, ImageLayout layout, uint32_t binding,
         } else
         {
             // Track resource
-            boundArraySlots[arraySlot] = image->viewHandle;
+            boundArraySlots[arraySlot] = image.viewHandle;
         }
     }
 
     VkDescriptorImageInfo imageBufferInfo;
-    imageBufferInfo.sampler     = image->samplerHandle;
-    imageBufferInfo.imageView   = image->viewHandle;
+    imageBufferInfo.sampler     = image.samplerHandle;
+    imageBufferInfo.imageView   = image.viewHandle;
     imageBufferInfo.imageLayout = Translator::get(layout);
 
     VkWriteDescriptorSet texture1 = Init::write_descriptor_image(Translator::get(type), handle, &imageBufferInfo, 1, arraySlot, binding);
@@ -91,9 +91,9 @@ void DescriptorSet::update(std::vector<Texture>& images, ImageLayout layout, uin
     // Track resource
     boundSlots[binding] = newView;
 }
-void DescriptorSet::update(TLAS* accel, uint32_t binding) {
+void DescriptorSet::update(TLAS& accel, uint32_t binding) {
 
-    VkAccelerationStructureKHR newAS = accel->handle;
+    VkAccelerationStructureKHR newAS = accel.handle;
 
     auto it = boundSlots.find(binding);
     if (it != boundSlots.end() && std::holds_alternative<VkAccelerationStructureKHR>(it->second) && std::get<VkAccelerationStructureKHR>(it->second) == newAS)
@@ -104,7 +104,7 @@ void DescriptorSet::update(TLAS* accel, uint32_t binding) {
 
     VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = Init::write_descriptor_set_acceleration_structure();
     descriptorAccelerationStructureInfo.accelerationStructureCount                   = 1;
-    descriptorAccelerationStructureInfo.pAccelerationStructures                      = &accel->handle;
+    descriptorAccelerationStructureInfo.pAccelerationStructures                      = &accel.handle;
 
     VkWriteDescriptorSet accelerationStructureWrite{};
     accelerationStructureWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -117,7 +117,7 @@ void DescriptorSet::update(TLAS* accel, uint32_t binding) {
     vkUpdateDescriptorSets(device, 1, &accelerationStructureWrite, 0, nullptr);
 
     // Track resource
-    boundSlots[binding] = accel->handle;
+    boundSlots[binding] = accel.handle;
 }
 
 void DescriptorPool::set_layout(uint32_t                         layoutSetIndex,
