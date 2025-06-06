@@ -31,6 +31,23 @@ struct TextureConfig {
     AddressMode samplerAddressMode = ADDRESS_MODE_REPEAT;
     float       maxAnysotropy      = 1.0f;
     BorderColor border             = BorderColor::FLOAT_OPAQUE_WHITE;
+
+    ImageLayout expectedLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    bool operator==( const TextureConfig& other ) const {
+        return type == other.type &&
+               maxMipLevel == other.maxMipLevel &&
+               baseMipLevel == other.baseMipLevel &&
+               maxLayer == other.maxLayer &&
+               minLayer == other.minLayer &&
+               sampled == other.sampled &&
+               filters == other.filters &&
+               mipmapMode == other.mipmapMode &&
+               samplerAddressMode == other.samplerAddressMode &&
+               maxAnysotropy == other.maxAnysotropy &&
+               border == other.border &&
+               expectedLayout == other.expectedLayout;
+    }
 };
 
 struct Texture {
@@ -40,10 +57,10 @@ struct Texture {
     VkDescriptorSet GUIReadHandle = VK_NULL_HANDLE;
 
     /* Points to an existing image */
-    Image* image{nullptr};
+    Image* image { nullptr };
 
     /* Config */
-    TextureConfig config{};
+    TextureConfig config {};
 
     const Extent3D& get_extent() const {
         return image->extent;

@@ -7,6 +7,7 @@
 #include <engine/graphics/texture.h>
 #include <engine/render/frame.h>
 #include <engine/render/program/shader_program.h>
+#include <engine/render/render_resources.h>
 #include <engine/render/render_view_builder.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
@@ -23,16 +24,16 @@ public:
     TargetInfo  info;
     bool        written     = false;
     int         firstWriter = -1;
-    // std::unordered_map<std::string, ReadInfo> readInfos; // pass name
-    // std::vector<int> readers;
+
+    std::unordered_map<std::string, ReadInfo> readInfos; // pass name ID
 };
 
 class RenderGraphAttachment
 {
 public:
     Graphics::Image                                    image = {};
-    std::unordered_map<std::string, Graphics::Texture> textures; // pass name
-    bool                                               used = false;
+    std::unordered_map<std::string, Graphics::Texture> textures;     // pass name ID
+    bool                                               used = false; // if needs to be destroyed
 };
 
 class RenderGraph;
@@ -46,7 +47,7 @@ public:
     }
 
     std::string create_target( const std::string& name, const TargetInfo& info );
-    std::string read( const std::string& name, const ReadInfo& info, ImageLayout expectedLayout );
+    std::string read( const std::string& name, const ReadInfo& info );
     void        write( const std::string& name );
     // std::string create_swapchain_target( const std::string& name, const Graphics::RenderTargetInfo& info );
 
@@ -55,11 +56,16 @@ private:
     int          m_passIndex;
 };
 
+struct RenderPassOutputs {
+    Graphics::RenderPass&               renderPass;
+    std::vector<Graphics::Framebuffer>& fbos;
+};
+
 struct RenderPassInfo {
-    std::string                                                                                name;
-    std::function<void( RenderGraphBuilder& )>                                                 setupCallback;
-    std::function<void( const RenderView&, const RenderResources&, const RenderPassOutputs& )> executeCallback;
-    std::vector<std::string>                                                                   shaderProgramKeys;
+    std::string                                                                          name;
+    std::function<void( RenderGraphBuilder& )>                                           setupCallback;
+    std::function<void( const RenderView&, const Resources&, const RenderPassOutputs& )> executeCallback;
+    std::vector<std::string>                                                             shaderProgramKeys;
 
     std::vector<std::string> writeAttachmentsKeys;
     std::vector<std::string> readAttachmentKeys;
@@ -103,6 +109,15 @@ private:
         m_renderCache[m_passes[res.firstWriter].name].validFBO = !dirtyFBO;
         return dirtyFBO;
     }
+
+    bool reconcileRead( const ReadInfo& info, const Graphics::Texture& texture ) {
+        auto& config = texture.config;
+
+        bool dirtyTex = config != info;
+
+        return dirtyTex;
+    }
+
     void bake() {
 
         // Create of update images based on the current volatile
@@ -128,7 +143,7 @@ private:
             // Check texture reads
             for ( auto& [name, read] : res.readInfos )
             {
-                if ( dirty || reconcileRead( res, attachment.textures[name] ) )
+                if ( !attachment.textures[name].image || dirty || reconcileRead( read, attachment.textures[name] ) )
                 {
                     attachment.textures[name].cleanup();
                     attachment.textures[name] = m_device->create_texture( &attachment.image, read );
@@ -206,20 +221,30 @@ private:
             rt.validRenderPass = true;
         }
     }
+    void transition_attachments( const RenderPassInfo& pass ) {
+        // Perform layout transitions for images
+        for ( auto& attachmentName : pass.readAttachmentKeys )
+        {
+            auto& tex = m_attachmentCache[attachmentName].textures[pass.name];
+            m_frame->m_commandBuffer.pipeline_barrier( *tex.image, tex.image->currentLayout, tex.config.expectedLayout );
+        };
+    }
+    RenderPassOutputs& prepare_outputs( const std::string& name ) {
+        return { m_renderCache[name].renderPass, m_renderCache[name].fbos };
+    }
 
 public:
-    void
-    begin_frame( Frame& f ) {
+    void begin_frame( Frame& f ) {
         m_frame = &f;
         m_passes.clear();
         m_transientResources.clear();
         m_frame->wait();
     }
 
-    int add_pass( const std::string&                                                                         name,
-                  const std::vector<std::string>&                                                            shaderPrograms,
-                  std::function<void( RenderGraphBuilder& )>                                                 onSetup,
-                  std::function<void( const RenderView&, const RenderResources&, const RenderPassOutputs& )> onExecute ) {
+    int add_pass( const std::string&                                                                   name,
+                  const std::vector<std::string>&                                                      shaderPrograms,
+                  std::function<void( RenderGraphBuilder& )>                                           onSetup,
+                  std::function<void( const RenderView&, const Resources&, const RenderPassOutputs& )> onExecute ) {
         int id = static_cast<int>( m_passes.size() );
         m_passes.push_back( { name, onSetup, onExecute, shaderPrograms } );
         RenderGraphBuilder builder( *this, id );
@@ -227,7 +252,7 @@ public:
         return id;
     }
 
-    void end_frame( const RenderView& view, const RenderResources& shared ) {
+    void end_frame( const RenderView& view, const Resources& shared ) {
         // Baking
         bake();
         // Begin Command Buffer
@@ -235,9 +260,11 @@ public:
         // Execute Passes
         for ( auto& p : m_passes )
         {
-            // RenderPassOutputs outputs = build_outputs( p.name );
-            // auto&             rt      = runtimeCache[p.name];
-            // p.execute( view, shared, outputs );
+            transition_attachments( p );
+
+            RenderPassOutputs outputs = prepare_outputs( p.name );
+
+            p.executeCallback( view, shared, outputs );
         }
         // End Command Buffer
         m_frame->end();
@@ -260,37 +287,10 @@ public:
 
     template <typename T, typename... Args>
     void register_shader( const std::string& name, Args&&... args ) {
-        m_shaderPrograms[name] = std::make_unique<T>( name, std::forward<Args>( args )... );
+        m_shaderCache[name] = std::make_unique<T>( name, std::forward<Args>( args )... );
     }
     // register_shader<GraphicShaderProgram>( "lighting", "shaders/lighting.glsl", uniformBindings, settings );
 };
-
-std::string RenderGraphBuilder::create_target( const std::string& name, const TargetInfo& info ) {
-    auto& r       = m_graph.get_or_create_resource( name );
-    r.info        = info;
-    r.written     = true;
-    r.firstWriter = m_passIndex;
-
-    m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
-
-    return name;
-}
-
-std::string RenderGraphBuilder::read( const std::string& name, const ReadInfo& info, ImageLayout expectedLayout ) {
-    m_graph.get_or_create_resource( name );
-
-    m_graph.m_passes[m_passIndex].readAttachmentKeys.push_back( name );
-
-    return name;
-}
-
-void RenderGraphBuilder::write( const std::string& name ) {
-    auto& r   = m_graph.get_or_create_resource( name );
-    r.written = true;
-    // r.firstWriter = m_passIndex;
-
-    m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
-}
 
 // class GBufferPass : public IRenderPass {
 // public:
