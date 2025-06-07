@@ -292,14 +292,21 @@ enum AttachmentType
     RESOLVE_ATTACHMENT = 2,
 };
 
-enum UniformType
+enum class UniformType
 {
-    UNIFORM_BUFFER                 = 0,
-    UNIFORM_DYNAMIC_BUFFER         = 1,
-    UNIFORM_COMBINED_IMAGE_SAMPLER = 2,
-    UNIFORM_ACCELERATION_STRUCTURE = 3,
-    UNIFORM_STORAGE_IMAGE          = 4,
-    PUSH_CONSTANT                  = 5,
+    Buffer                = 0,
+    DynamicBuffer         = 1,
+    ImageSampler          = 2,
+    AccelerationStructure = 3,
+    StorageImage          = 4,
+    PushConstant          = 5,
+};
+enum class BindingSource
+{
+    Attachment, // from attachment (same name as uniform)           Automatic update
+    Frame,      // from per frame resources (needs resourceName)    Automatic update
+    Shared,     // from shared resources (needs resourceName)       Automatic update
+    Manual,     // user-supplied via attach()
 };
 enum BorderColor
 {

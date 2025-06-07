@@ -146,8 +146,8 @@ public:
     PRESENTING
     -----------------------------------------------
     */
-    RenderResult aquire_present_image( Semaphore& waitSemahpore, uint32_t& imageIndex );
-    RenderResult present_image( Semaphore& signalSemaphore, uint32_t imageIndex );
+    RenderResult aquire_present_image( const Semaphore& waitSemahpore, uint32_t& imageIndex );
+    RenderResult present_image( const Semaphore& signalSemaphore, uint32_t imageIndex );
     /*
     DATA TRANSFER
     -----------------------------------------------

@@ -42,7 +42,6 @@ struct DrawCall {
 
 struct RenderView {
     /*Index*/
-    uint32_t frameIndex        = 0;
     uint32_t presentImageIndex = 0;
     /*Draw Calls*/
     std::vector<DrawCall> drawCalls;

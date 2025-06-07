@@ -561,13 +561,13 @@ Fence Device::create_fence( bool signaled ) {
     return fence;
 }
 
-RenderResult Device::aquire_present_image( Semaphore& waitSemahpore, uint32_t& imageIndex ) {
+RenderResult Device::aquire_present_image( const Semaphore& waitSemahpore, uint32_t& imageIndex ) {
 
     VkResult result = vkAcquireNextImageKHR( m_handle, m_swapchain.get_handle(), UINT64_MAX, waitSemahpore.handle, VK_NULL_HANDLE, &imageIndex );
     return static_cast<RenderResult>( result );
 }
 
-RenderResult Device::present_image( Semaphore& signalSemaphore, uint32_t imageIndex ) {
+RenderResult Device::present_image( const Semaphore& signalSemaphore, uint32_t imageIndex ) {
 
     VkSemaphore      signalSemaphores[] = { signalSemaphore.handle };
     VkPresentInfoKHR presentInfo        = Init::present_info();

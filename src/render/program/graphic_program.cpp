@@ -8,7 +8,7 @@ void GraphicShaderProgram::compile( const std::shared_ptr<Graphics::Device>& dev
 
     ShaderProgram::create_descriptor_layouts( device );
 
-    m_shaderpass = device->create_graphic_shader_pass( m_shaderPath, m_descriptorLayouts, m_shaderpass.config, );
+    // m_shaderpass = device->create_graphic_shader_pass( m_shaderPath, m_descriptorLayouts, m_shaderpass.config, );
 
     m_compiled = true;
 }
