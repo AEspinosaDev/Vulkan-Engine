@@ -15,19 +15,39 @@ std::string RenderGraphBuilder::create_target( const std::string& name, const Ta
     return name;
 }
 
+std::string RenderGraphBuilder::create_depth_target( const std::string& name, Extent2D size, FloatPrecission precission, uint32_t layers ) {
+    auto& r = m_graph.get_or_create_resource( name );
+    r.info  = Render::TargetInfo {
+         .extent      = size,
+         .format      = precission == FloatPrecission::F16 ? DEPTH_16F : DEPTH_32F,
+         .usage       = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+         .finalLayout = LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+         .clearValue  = { .depthStencil.depth = 1.0f },
+         .load        = false,
+         .store       = true,
+         .layers      = layers };
+    r.written     = true;
+    r.firstWriter = m_passIndex;
+
+    m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
+    
+    return name;
+}
 std::string RenderGraphBuilder::read( const std::string& name, const ReadInfo& info ) {
     auto& res = m_graph.get_or_create_resource( name );
-
+    
     res.readInfos[m_graph.m_passes[m_passIndex].name] = {};
     m_graph.m_passes[m_passIndex].readAttachmentKeys.push_back( name );
-
+    // res.layoutHistory.push_back({passName, info.expectedLayout, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, false});
+    
     return name;
 }
 
 void RenderGraphBuilder::write( const std::string& name ) {
     auto& r   = m_graph.get_or_create_resource( name );
     r.written = true;
-
+    
+    // res.layoutHistory.push_back( { passName, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, true } );
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
 }
 #pragma region Reconciler
@@ -170,7 +190,7 @@ void RenderGraph::bake() {
                 switch ( binding.source )
                 {
                     case BindingSource::Attachment:
-                        auto& tex  = m_attachmentCache[name].textures[pass.name];
+                        auto& tex  = m_attachmentCache[binding.resourceName].textures[pass.name];
                         auto& desc = m_frame->m_descriptorSets[{ shaderKey, binding.set }];
                         // IF there is no texture you use a dummy texture from shared resources
                         desc.update( tex, tex.config.expectedLayout, binding.binding, binding.type );
@@ -237,10 +257,10 @@ void RenderGraph::begin_frame( Frame& f ) {
     m_frame->wait();
 }
 
-int RenderGraph::add_pass( const std::string&                                                                   name,
-                           const std::vector<std::string>&                                                      shaderPrograms,
-                           std::function<void( RenderGraphBuilder& )>                                           onSetup,
-                           std::function<void( const RenderView&, const Resources&, const RenderPassOutputs& )> onExecute ) {
+int RenderGraph::add_pass( const std::string&                                                                           name,
+                           const std::vector<std::string>&                                                              shaderPrograms,
+                           std::function<void( RenderGraphBuilder& )>                                                   onSetup,
+                           std::function<void( const RenderView&, Frame&, const Resources&, const RenderPassOutputs& )> onExecute ) {
     int id = static_cast<int>( m_passes.size() );
     m_passes.push_back( { name, onSetup, onExecute, shaderPrograms } );
     RenderGraphBuilder builder( *this, id );
@@ -257,8 +277,7 @@ void RenderGraph::end_frame( const RenderView& view, const Resources& shared ) {
     for ( auto& p : m_passes )
     {
         transition_attachments( p );
-
-        p.executeCallback( view, shared, { m_renderCache[p.name].renderPass, m_renderCache[p.name].fbos } );
+        p.executeCallback( view, *m_frame, shared, { m_renderCache[p.name].renderPass, m_renderCache[p.name].fbos } );
     }
     // End Command Buffer
     m_frame->end();

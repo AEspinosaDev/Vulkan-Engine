@@ -25,10 +25,14 @@ namespace Render {
 // void ShaderProgram::attach( const std::string& uniformName, UniformResource& reosurce, uint32_t arraySlot, Frame& frame ) {
 // }
 
+void ShaderProgram::attach( const std::string& uniformName, UniformResource& reosurce, Frame& frame ) {
+}
+void ShaderProgram::attach( const std::string& uniformName, UniformResource& reosurce, uint32_t arraySlot, Frame& frame ) {
+}
+
 void ShaderProgram::create_descriptor_layouts( const std::shared_ptr<Graphics::Device>& device ) {
 
     // Setup descriptor layouts
-
     std::unordered_map<uint32_t, std::vector<Graphics::LayoutBinding>> sets;
     for ( auto& [name, uniform] : m_uniformBindings )
     {
@@ -39,10 +43,9 @@ void ShaderProgram::create_descriptor_layouts( const std::shared_ptr<Graphics::D
     uint16_t i = 0;
     for ( auto& [set, bindings] : sets )
     {
+        auto flags = bindings.size() == 1 && bindings.back().bindless ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT : 0;
         m_descriptorLayouts[i] =
-            device->create_descriptor_layout( bindings,
-                                              0,
-                                              bindings.size() == 1 && bindings.back().bindless ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT : 0 );
+            device->create_descriptor_layout( bindings, 0, flags );
         i++;
     }
 }

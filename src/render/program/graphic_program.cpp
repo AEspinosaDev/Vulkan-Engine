@@ -4,6 +4,7 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Render {
 
+
 void GraphicShaderProgram::compile( const std::shared_ptr<Graphics::Device>& device ) {
 
     ShaderProgram::create_descriptor_layouts( device );

@@ -41,11 +41,11 @@ struct DescriptorSet {
     /*
     Update for Textures
     */
-    void update( Texture& image, ImageLayout layout, uint32_t binding, UniformType type = UNIFORM_COMBINED_IMAGE_SAMPLER, uint32_t arraySlot = 0 );
+    void update( Texture& image, ImageLayout layout, uint32_t binding, UniformType type = UniformType::ImageSampler, uint32_t arraySlot = 0 );
     /*
     Update for Texture Array
     */
-    void update( std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformType type = UNIFORM_COMBINED_IMAGE_SAMPLER );
+    void update( std::vector<Texture>& images, ImageLayout layout, uint32_t binding, UniformType type = UniformType::ImageSampler );
     /*
     Update for Acceleration Structures
     */

@@ -36,13 +36,6 @@ void DeferredRenderer2::init_resources() {
     // samplerText->set_use_mipmaps( false );
     // m_renderResources.upload_texture_data( m_device, samplerText );
     // m_renderResources.sharedTextures[0] = samplerText;
-
-    // Core::TextureHDR* brdfText = new Core::TextureHDR();
-    // Tools::Loaders::load_HDRi( brdfText, GET_RESOURCE_PATH( "textures/cookTorranceBRDF.png" ) );
-    // brdfText->set_adress_mode( ADDRESS_MODE_CLAMP_TO_BORDER );
-    // brdfText->set_use_mipmaps( false );
-    // m_renderResources.upload_texture_data( m_device, brdfText );
-    // m_renderResources.sharedTextures[1] = brdfText;
 }
 void DeferredRenderer2::register_shaders() {
 
@@ -52,7 +45,7 @@ void DeferredRenderer2::register_shaders() {
         { "u_object", { .set = 1, .binding = 0, .type = UniformType::DynamicBuffer, .dynamicOffset = 0, .source = BindingSource::Frame, .resourceName = "objectUBO" } },
         { "u_material", { .set = 1, .binding = 1, .type = UniformType::DynamicBuffer, .dynamicOffset = 1, .source = BindingSource::Frame, .resourceName = "objectUBO" } },
     };
-    m_graph.register_shader<Render::GraphicShaderProgram>( "shadows", GET_RESOURCE_PATH( "shaders/shadows/vsm_geom.glsl" ), shadowsBindings );
+    m_graph.register_shader<Render::GraphicShaderProgram>( "ShadowProgram", GET_RESOURCE_PATH( "shaders/shadows/vsm_geom.glsl" ), shadowsBindings );
 
     std::unordered_map<std::string, Render::ShaderProgram::UniformBinding> geomBindings = {
         { "u_camera", { .set = 0, .binding = 0, .type = UniformType::DynamicBuffer, .dynamicOffset = 0, .source = BindingSource::Frame, .resourceName = "globalUBO" } },
@@ -61,29 +54,35 @@ void DeferredRenderer2::register_shaders() {
         { "u_material", { .set = 1, .binding = 1, .type = UniformType::DynamicBuffer, .dynamicOffset = 1, .source = BindingSource::Frame, .resourceName = "objectUBO" } },
         { "u_textures", { .set = 2, .binding = 0, .type = UniformType::ImageSampler, .bindless = true, .source = BindingSource::Manual } },
     };
-    m_graph.register_shader<Render::GraphicShaderProgram>( "geometry", GET_RESOURCE_PATH( "shaders/deferred/geometry.glsl" ), geomBindings );
+    m_graph.register_shader<Render::GraphicShaderProgram>( "GeometryProgram", GET_RESOURCE_PATH( "shaders/deferred/geometry.glsl" ), geomBindings );
+
+    std::unordered_map<std::string, Render::ShaderProgram::UniformBinding> skyGeomBindings = {
+        { "u_camera", { .set = 0, .binding = 0, .type = UniformType::DynamicBuffer, .dynamicOffset = 0, .source = BindingSource::Frame, .resourceName = "globalUBO" } },
+        { "u_scene", { .set = 0, .binding = 1, .type = UniformType::DynamicBuffer, .dynamicOffset = 1, .source = BindingSource::Frame, .resourceName = "globalUBO" } },
+    };
+    m_graph.register_shader<Render::GraphicShaderProgram>( "SkyboxGeometryProgram", GET_RESOURCE_PATH( "shaders/deferred/skybox.glsl" ), skyGeomBindings );
 
     std::unordered_map<std::string, Render::ShaderProgram::UniformBinding> compBindings = {
         { "u_camera", { .set = 0, .binding = 0, .type = UniformType::DynamicBuffer, .dynamicOffset = 0, .source = BindingSource::Frame, .resourceName = "globalUBO" } },
         { "u_scene", { .set = 0, .binding = 1, .type = UniformType::DynamicBuffer, .dynamicOffset = 1, .source = BindingSource::Frame, .resourceName = "globalUBO" } },
         { "u_shadows", { .set = 0, .binding = 2, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "shadows" } },
-        { "u_env", { .set = 0, .binding = 3, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "enviroment" } },
-        { "u_accel", { .set = 0, .binding = 4, .type = UniformType::AccelerationStructure, .source = BindingSource::Shared, .resourceName = "tlas" } },
-        { "u_noise", { .set = 0, .binding = 5, .type = UniformType::ImageSampler, .source = BindingSource::Shared, .resourceName = "noiseTex" } },
-        { "u_voxel", { .set = 0, .binding = 6, .type = UniformType::ImageSampler, .source = BindingSource::Shared, .resourceName = "voxelTex" } },
+        // { "u_env", { .set = 0, .binding = 3, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "enviroment" } },
+        // { "u_accel", { .set = 0, .binding = 4, .type = UniformType::AccelerationStructure, .source = BindingSource::Shared, .resourceName = "tlas" } },
+        // { "u_noise", { .set = 0, .binding = 5, .type = UniformType::ImageSampler, .source = BindingSource::Shared, .resourceName = "noiseTex" } },
+        // { "u_voxel", { .set = 0, .binding = 6, .type = UniformType::ImageSampler, .source = BindingSource::Shared, .resourceName = "voxelTex" } },
 
         { "u_depth", { .set = 1, .binding = 0, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "depth" } },
         { "u_normal", { .set = 1, .binding = 1, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "normals" } },
         { "u_albedo", { .set = 1, .binding = 2, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "albedo" } },
         { "u_material", { .set = 1, .binding = 3, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "material" } },
-        { "u_emisison", { .set = 1, .binding = 4, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "emission" } },
+        { "u_emissison", { .set = 1, .binding = 4, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "emission" } },
     };
-    m_graph.register_shader<Render::GraphicShaderProgram>( "lighting", GET_RESOURCE_PATH( "shaders/deferred/composition.glsl" ), compBindings );
+    m_graph.register_shader<Render::GraphicShaderProgram>( "LightingProgram", GET_RESOURCE_PATH( "shaders/deferred/composition.glsl" ), compBindings );
 
     std::unordered_map<std::string, Render::ShaderProgram::UniformBinding> toneBindings = {
         { "u_input", { .set = 0, .binding = 0, .type = UniformType::ImageSampler, .source = BindingSource::Attachment, .resourceName = "lighting" } },
     };
-    m_graph.register_shader<Render::GraphicShaderProgram>( "tonemapping", GET_RESOURCE_PATH( "shaders/misc/tonemapping.glsl" ), toneBindings );
+    m_graph.register_shader<Render::GraphicShaderProgram>( "TonemapProgram", GET_RESOURCE_PATH( "shaders/misc/tonemapping.glsl" ), toneBindings );
 }
 
 void DeferredRenderer2::configure_passes() {
@@ -95,56 +94,193 @@ void DeferredRenderer2::configure_passes() {
     const Extent2D        SHADOW_RES     = { (uint32_t)m_settings.shadowQuality, (uint32_t)m_settings.shadowQuality };
     const Extent2D        SKY_RES        = { 1024, 512 };
 
-    m_graph.add_pass( "ShadowPass", { "shadows" }, [&]( Render::RenderGraphBuilder& builder ) {
+    // SHADOW PASS
+    m_graph.add_pass( "ShadowPass", { "ShadowProgram" }, [&]( Render::RenderGraphBuilder& builder ) {
             builder.create_target("shadows", Render::TargetInfo{
-                .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-                .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .clearValue = {.color = {{0, 0, 0, 1}}},
+                .extent = SHADOW_RES,
+                .format = SRG_32F,
+                .usage =  IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED,
+                .finalLayout = LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .clearValue = {.depthStencil.depth = 1.0f},
                 .load = false,
-                .store = true
-            }); }, [&]( const RenderView& view, const RenderResources& shared, const RenderPassOutputs& outputs ) {
+                .store = true,
+                .layers = ENGINE_MAX_LIGHTS
+            }); 
+            builder.create_depth_target("shadows_depth", SHADOW_RES, m_settings.depthPrecission, ENGINE_MAX_LIGHTS); }, [&]( const Render::RenderView& view, Render::Frame& frame, const Render::Resources& shared, const Render::RenderPassOutputs& outputs ) {
+                auto& cmd = frame.get_command_buffer();
+                
+                cmd.begin_renderpass(outputs.renderPass, outputs.fbos[0]);
+                cmd.set_viewport( SHADOW_RES );
+                
+                cmd.set_depth_bias_enable( true );
+                float depthBiasConstant = 0.0;
+                float depthBiasSlope    = 0.0f;
+                cmd.set_depth_bias( depthBiasConstant, 0.0f, depthBiasSlope );
+                
+                for ( const auto& drawCallIdx : view.shadowDrawCalls )
+                {
+                    auto drawCall = view.drawCalls[drawCallIdx];
+                    auto program = m_graph.get_shader_program( "ShadowProgram" );
 
-        auto* program = graph.get_shader_program( "Lighting" );
-        // Bind pipeline and descriptor set, draw fullscreen quad
-    } );
+                    cmd.set_depth_test_enable( drawCall.params.depthTest );
+                    cmd.set_depth_write_enable( drawCall.params.depthWrites );
+                    cmd.set_cull_mode( drawCall.params.culling );
 
-    graph.add_pass( "LightingPass", graph.get_shader_program( "Lighting" ), [&]( Render::RenderGraphBuilder& builder ) {
-            builder.read("depth");
-            builder.read("albedo");
-            builder.create_target("lighting", RenderTargetInfo{
-                .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-                .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .clearValue = {.color = {{0, 0, 0, 1}}},
-                .load = false,
-                .store = true
-            }); }, [&]( const RenderView& view, const RenderResources& shared, const RenderPassOutputs& outputs ) {
-        auto* program = graph.get_shader_program( "Lighting" );
-         PROFILING_EVENT()
+                    program->bind(frame);
+                    program->bind_uniform_set(0,frame, {0,0});
+                    program->bind_uniform_set(1,frame,  { drawCall.bufferOffset, drawCall.bufferOffset });
+                    
+                    // DRAW
+                    cmd.draw_geometry( drawCall.vertexArrays );
+                }
+                
+                cmd.end_renderpass( outputs.renderPass, outputs.fbos[0] ); } );
 
-    CommandBuffer cmd = view.commandBuffer;
+    // GEOMETRY PASS
+    m_graph.add_pass( "GeometryPass", { "GeometryProgram" }, [&]( Render::RenderGraphBuilder& builder ) {
+        // Normals + Depth
+        builder.create_target( "normals", Render::TargetInfo { .extent = DISPLAY_EXTENT, .format = HDR_FORMAT, .usage = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST, .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL, .clearValue = { .depthStencil.depth = 1.0f } } );
+        // Albedo + Opacity
+        builder.create_target( "albedo", Render::TargetInfo {
+                                             .extent      = DISPLAY_EXTENT,
+                                             .format      = RGBA_8U,
+                                             .usage       = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
+                                             .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                             .clearValue  ={.color = {{0, 0, 0, 1}}},
+                                         } );
+        // Material + ID
+        builder.create_target( "material", Render::TargetInfo {
+                                               .extent      = DISPLAY_EXTENT,
+                                               .format      = RGBA_8U,
+                                               .usage       = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
+                                               .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                               .clearValue  = {.color = {{0, 0, 0, 1}}},
+                                           } );
+        // Velocity + Emissive strength
+        builder.create_target( "emissive", Render::TargetInfo {
+                                               .extent      = DISPLAY_EXTENT,
+                                               .format      = HDR_FORMAT,
+                                               .usage       = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
+                                               .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                               .clearValue  = {.color = {{0, 0, 0, 1}}},
+                                           } );
+        builder.create_depth_target( "depth", DISPLAY_EXTENT, m_settings.depthPrecission ); }, [&]( const Render::RenderView& view, Render::Frame& frame, const Render::Resources& shared, const Render::RenderPassOutputs& outputs ) {
+        auto     program = m_graph.get_shader_program( "GeometryProgram" );
+        uint32_t dcIdx   = 0;
+        for ( const auto& drawCallIdx : view.opaqueDrawCalls )
+        {
+            auto drawCall = view.drawCalls[drawCallIdx];
 
-    cmd.begin_renderpass(m_renderpass, m_framebuffers[0]);
-    cmd.set_viewport(m_imageExtent);
+            for ( auto& texture : drawCall.textureBatch )
+            {
+                if ( !texture.img->image->empty )
+                    program->attach( "u_textures",  Render::UniformResource{ *texture.img }, uint32_t(texture.binding + 6 * dcIdx), frame );
 
-    ShaderPass* shaderPass = m_shaderPasses["composition"];
+                dcIdx++;
+            }
+        }
 
-    cmd.bind_shaderpass(*shaderPass);
+            auto& cmd = frame.get_command_buffer();
+            cmd.begin_renderpass( outputs.renderPass, outputs.fbos[0] );
+            cmd.set_viewport( DISPLAY_EXTENT );
 
-    cmd.push_constants(*shaderPass, SHADER_STAGE_FRAGMENT, &m_settings, sizeof(Settings));
-    cmd.bind_descriptor_set(m_descriptors[view.frameIndex].globalDescritor, 0, *shaderPass, {0, 0});
-    cmd.bind_descriptor_set(m_descriptors[view.frameIndex].gBufferDescritor, 1, *shaderPass);
+            // Skybox
+            if ( view.enviromentDrawCall > 0 )
+            {
+                cmd.set_depth_test_enable( false );
+                cmd.set_depth_write_enable( false );
+                cmd.set_cull_mode( CullingMode::NO_CULLING );
 
-    cmd.draw_geometry(*get_VAO(shared.vignette));
+                auto program = m_graph.get_shader_program( "SkyboxGeometryProgram" );
+                program->bind( frame );
+                program->bind_uniform_set( 0, frame, { 0, 0 } );
 
-    cmd.end_renderpass(m_renderpass, m_framebuffers[0]);
-    } );
+                auto drawCall = view.drawCalls[view.enviromentDrawCall];
+                cmd.draw_geometry( drawCall.vertexArrays );
+            }
 
-    // Shadows
-    // Geometry
-    // Lighting
-    // Tonemapping
+            program = m_graph.get_shader_program( "GeometryProgram" );
+            program->bind( frame );
+            program->bind_uniform_set( 2, frame );
+
+            for ( const auto& drawCallIdx : view.opaqueDrawCalls )
+            {
+                auto drawCall = view.drawCalls[drawCallIdx];
+                if ( drawCall.culled )
+                    continue;
+
+                cmd.set_depth_test_enable( drawCall.params.depthTest );
+                cmd.set_depth_write_enable( drawCall.params.depthWrites );
+                cmd.set_cull_mode( drawCall.params.culling );
+
+                program->bind_uniform_set( 0, frame, { 0, 0 } );
+                program->bind_uniform_set( 1, frame, { drawCall.bufferOffset, drawCall.bufferOffset } );
+
+                cmd.draw_geometry( drawCall.vertexArrays );
+            }
+
+            cmd.end_renderpass( outputs.renderPass, outputs.fbos[0] ); } );
+
+    // LIGHTING PASS
+    m_graph.add_pass( "LightingPass", { "LightingProgram" }, [&]( Render::RenderGraphBuilder& builder ) {
+        builder.read( "normals", {} );
+        builder.read( "albedo", {} );
+        builder.read( "material", {} );
+        builder.read( "emissive", {} );
+        builder.read( "shadows", {} );
+
+        builder.create_target( "lighting", {
+                                               .extent      = DISPLAY_EXTENT,
+                                               .format      = HDR_FORMAT,
+                                               .usage       = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
+                                               .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                               .clearValue  = { .color = { { 0, 0, 0, 1 } } },
+                                           } ); }, [&]( const Render::RenderView& view, Render::Frame& frame, const Render::Resources& shared, const Render::RenderPassOutputs& outputs ) {
+        auto program = m_graph.get_shader_program( "LightingProgram" );
+
+        auto& cmd = frame.get_command_buffer();
+
+        cmd.begin_renderpass( outputs.renderPass, outputs.fbos[0] );
+        cmd.set_viewport( DISPLAY_EXTENT );
+
+        program->bind( frame );
+
+        program->bind_uniform_set( 0, frame, { 0, 0 } );
+        program->bind_uniform_set( 1, frame );
+
+        cmd.draw_geometry( *get_VAO( shared.vignette ) );
+
+        cmd.end_renderpass( outputs.renderPass, outputs.fbos[0] ); } );
+
+    // TONEMAP PASS
+    m_graph.add_pass( "TonemapPass", { "TonemapProgram" }, [&]( Render::RenderGraphBuilder& builder ) {
+        builder.read( "normals", {} );
+        builder.read( "albedo", {} );
+        builder.read( "material", {} );
+        builder.read( "emissive", {} );
+        builder.read( "shadows", {} );
+
+        builder.create_target( "lighting", {
+                                               .extent      = DISPLAY_EXTENT,
+                                               .format      = HDR_FORMAT,
+                                               .usage       = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
+                                               .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                               .clearValue  = { .color = { { 0, 0, 0, 1 } } },
+                                           } ); }, [&]( const Render::RenderView& view, Render::Frame& frame, const Render::Resources& shared, const Render::RenderPassOutputs& outputs ) {
+        auto program = m_graph.get_shader_program( "TonemapProgram" );
+
+        auto& cmd = frame.get_command_buffer();
+
+        cmd.begin_renderpass( outputs.renderPass, outputs.fbos[0] );
+        cmd.set_viewport( DISPLAY_EXTENT );
+
+        program->bind( frame );
+
+        program->bind_uniform_set( 0, frame );
+
+        cmd.draw_geometry( *get_VAO( shared.vignette ) );
+
+        cmd.end_renderpass( outputs.renderPass, outputs.fbos[0] ); } );
 }
 
 } // namespace Systems

@@ -33,10 +33,10 @@ struct DrawCall {
     bool           culled;
 
     struct BindedTexture {
-        Graphics::Image* img     = nullptr;
-        uint32_t         binding = 0;
+        Graphics::Texture* img     = nullptr;
+        uint32_t           binding = 0;
     };
-    
+
     std::vector<BindedTexture> textureBatch;
 };
 
@@ -56,8 +56,6 @@ struct RenderView {
     Graphics::TLAS* dynamicTLAS = nullptr;
     /*Number of shadow casting lights*/
     uint32_t numLights = 0;
-   
-   
 };
 } // namespace Render
 VULKAN_ENGINE_NAMESPACE_END

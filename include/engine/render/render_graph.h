@@ -56,6 +56,7 @@ public:
     }
 
     std::string create_target( const std::string& name, const TargetInfo& info );
+    std::string create_depth_target( const std::string& name, Extent2D size, FloatPrecission precission, uint32_t layers = 1 );
     std::string create_swapchain_target( const std::string& name );
     std::string read( const std::string& name, const ReadInfo& info );
     void        write( const std::string& name );
@@ -85,10 +86,10 @@ struct RenderPassOutputs {
 };
 
 struct RenderPassInfo {
-    std::string                                                                          name;
-    std::function<void( RenderGraphBuilder& )>                                           setupCallback;
-    std::function<void( const RenderView&, const Resources&, const RenderPassOutputs& )> executeCallback;
-    std::vector<std::string>                                                             shaderProgramKeys;
+    std::string                                                                                  name;
+    std::function<void( RenderGraphBuilder& )>                                                   setupCallback;
+    std::function<void( const RenderView&, Frame&, const Resources&, const RenderPassOutputs& )> executeCallback;
+    std::vector<std::string>                                                                     shaderProgramKeys;
 
     std::vector<std::string> writeAttachmentsKeys;
     std::vector<std::string> readAttachmentKeys;
@@ -123,19 +124,26 @@ private:
 
 public:
     void begin_frame( Frame& f );
-    int  add_pass( const std::string&                                                                   name,
-                   const std::vector<std::string>&                                                      shaderPrograms,
-                   std::function<void( RenderGraphBuilder& )>                                           onSetup,
-                   std::function<void( const RenderView&, const Resources&, const RenderPassOutputs& )> onExecute );
+    int  add_pass( const std::string&                                                                           name,
+                   const std::vector<std::string>&                                                              shaderPrograms,
+                   std::function<void( RenderGraphBuilder& )>                                                   onSetup,
+                   std::function<void( const RenderView&, Frame&, const Resources&, const RenderPassOutputs& )> onExecute );
     void end_frame( const RenderView& view, const Resources& shared );
 
     RenderGraphResource& get_or_create_resource( const std::string& name );
 
     template <typename T, typename... Args>
     void register_shader( const std::string& name, Args&&... args ) {
-        m_shaderCache[name] = std::make_unique<T>( name, std::forward<Args>( args )... );
+        m_shaderCache[name] = std::make_shared<T>( name, std::forward<Args>( args )... );
     }
-    // register_shader<GraphicShaderProgram>( "lighting", "shaders/lighting.glsl", uniformBindings, settings );
+    std::shared_ptr<ShaderProgram> get_shader_program( const std::string& name ) {
+        auto it = m_shaderCache.find( name );
+        if ( it != m_shaderCache.end() )
+        {
+            return it->second;
+        }
+        return nullptr;
+    }
 };
 
 // class GBufferPass : public IRenderPass {
@@ -167,52 +175,6 @@ public:
 //     }
 // };
 
-// void exampleUsage(RenderGraph& graph, const RenderView& view, const FrameContext& frame, const RenderResources& shared) {
-//     ShaderProgram gbufferShader("GBuffer");
-//     ShaderProgram lightingShader("Lighting");
-
-//     graph.register_shader(std::move(gbufferShader));
-//     graph.register_shader(std::move(lightingShader));
-
-//     graph.begin_frame(frame);
-
-//     GBufferPass gpass(graph.get_shader_program("GBuffer"));
-//     graph.add_pass("GBuffer", gpass.shader, [&](RenderGraphBuilder& b) { gpass.build(b); },
-//                    [&](const RenderView& view, const RenderResources& shared, const RenderPassOutputs& outputs) {
-//                        gpass.execute(view, frame, shared, outputs, gpass.shader);
-//                    });
-
-//     graph.add_pass("Lighting", graph.get_shader_program("Lighting"),
-//         [&](RenderGraphBuilder& builder) {
-//             builder.read("depth");
-//             builder.read("albedo");
-//             builder.create_target("lighting", RenderTargetInfo{
-//                 .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-//                 .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                 .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//                 .clearValue = {.color = {{0, 0, 0, 1}}},
-//                 .load = false,
-//                 .store = true
-//             });
-//         },
-//         [&](const RenderView& view, const RenderResources& shared, const RenderPassOutputs& outputs) {
-//             auto* program = graph.get_shader_program("Lighting");
-//             // Bind pipeline and descriptor set, draw fullscreen quad
-//         });
-
-//     graph.end_frame(view, shared);
-// }
-
-// struct RenderPassOutputs {
-//     std::unordered_map<std::string, VkImageView> views;
-//     VkFramebuffer                                framebuffer = VK_NULL_HANDLE;
-
-//     VkImageView get(const std::string& name) const {
-//         auto it = views.find(name);
-//         return it != views.end() ? it->second : VK_NULL_HANDLE;
-//     }
-// };
-
 // class IRenderPass
 // {
 //   public:
@@ -222,16 +184,7 @@ public:
 //     execute(const RenderView& view, const FrameContext& frame, const RenderResources& shared, const RenderPassOutputs& outputs, ShaderProgram* program) = 0;
 // };
 
-//     RenderPassOutputs build_outputs(const std::string& passName) {
-//         RenderPassOutputs outputs;
-//         for (auto& [name, res] : transientResources)
-//         {
-//             if (res.firstWriter == -1 || passes[res.firstWriter].name != passName)
-//                 continue;
-//             outputs.views[name] = persistentResources[name].view;
-//         }
-//         return outputs;
-//     }
+
 
 } // namespace Render
 VULKAN_ENGINE_NAMESPACE_END

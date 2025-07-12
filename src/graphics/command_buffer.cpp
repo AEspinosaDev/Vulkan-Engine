@@ -129,14 +129,14 @@ void CommandBuffer::submit( Fence fence, std::vector<Semaphore> waitSemaphores, 
 
 // vkCmdBeginRenderPass(handle, &renderPassInfo, subpassContents);
 // }
-void CommandBuffer::end_renderpass( RenderPass& renderpass, Framebuffer& fbo ) {
+void CommandBuffer::end_renderpass( RenderPass& renderpass, Framebuffer& fbo ) const {
     // for (size_t i = 0; i < fbo.attachmentImagesPtrs.size(); i++)
     // {
     //     fbo.attachmentImagesPtrs[i]->currentLayout = renderpass.attachmentsConfig[i].finalLayout;
     // }
     vkCmdEndRenderPass( handle );
 }
-void CommandBuffer::draw_geometry( VertexArrays& vao, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance ) {
+void CommandBuffer::draw_geometry( VertexArrays& vao, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance ) const {
     if ( !vao.loadedOnGPU )
         return;
     PROFILING_EVENT()
@@ -154,11 +154,11 @@ void CommandBuffer::draw_geometry( VertexArrays& vao, uint32_t instanceCount, ui
         vkCmdDraw( handle, vao.vertexCount, instanceCount, firstOcurrence, firstInstance );
     }
 }
-void CommandBuffer::draw_gui_data() {
+void CommandBuffer::draw_gui_data() const {
     if ( ImGui::GetDrawData() )
         ImGui_ImplVulkan_RenderDrawData( ImGui::GetDrawData(), handle );
 }
-void CommandBuffer::bind_shaderpass( ShaderPass& pass ) {
+void CommandBuffer::bind_shaderpass( ShaderPass& pass ) const {
     switch ( pass.TYPE )
     {
         case GRAPHIC_PIPELINE:
@@ -174,11 +174,11 @@ void CommandBuffer::bind_shaderpass( ShaderPass& pass ) {
             break;
     }
 }
-void CommandBuffer::bind_descriptor_set( DescriptorSet descriptor, uint32_t ocurrence, ShaderPass& pass, std::vector<uint32_t> offsets, BindingType binding ) {
+void CommandBuffer::bind_descriptor_set( DescriptorSet descriptor, uint32_t ocurrence, ShaderPass& pass, std::vector<uint32_t> offsets, BindingType binding ) const {
     vkCmdBindDescriptorSets(
         handle, static_cast<VkPipelineBindPoint>( binding ), pass.pipelineLayout, ocurrence, 1, &descriptor.handle, offsets.size(), offsets.data() );
 }
-void CommandBuffer::set_viewport( Extent2D extent, Offset2D scissorOffset ) {
+void CommandBuffer::set_viewport( Extent2D extent, Offset2D scissorOffset ) const {
     VkViewport viewport = Init::viewport( extent );
     vkCmdSetViewport( handle, 0, 1, &viewport );
     VkRect2D scissor {};
@@ -186,21 +186,21 @@ void CommandBuffer::set_viewport( Extent2D extent, Offset2D scissorOffset ) {
     scissor.extent = extent;
     vkCmdSetScissor( handle, 0, 1, &scissor );
 }
-void CommandBuffer::set_cull_mode( CullingMode mode ) {
+void CommandBuffer::set_cull_mode( CullingMode mode ) const {
     vkCmdSetCullMode( handle, (VkCullModeFlags)mode );
 }
 
-void CommandBuffer::set_depth_write_enable( bool op ) {
+void CommandBuffer::set_depth_write_enable( bool op ) const {
     vkCmdSetDepthWriteEnable( handle, op );
 }
 
-void CommandBuffer::set_depth_test_enable( bool op ) {
+void CommandBuffer::set_depth_test_enable( bool op ) const {
     vkCmdSetDepthTestEnable( handle, op );
 }
-void CommandBuffer::set_depth_bias_enable( bool op ) {
+void CommandBuffer::set_depth_bias_enable( bool op ) const {
     vkCmdSetDepthBiasEnable( handle, true );
 }
-void CommandBuffer::set_depth_bias( float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor ) {
+void CommandBuffer::set_depth_bias( float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor ) const {
     vkCmdSetDepthBias( handle, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor );
 }
 } // namespace Graphics
@@ -211,7 +211,7 @@ void Graphics::CommandBuffer::pipeline_barrier( Image&        img,
                                                 AccessFlags   srcMask,
                                                 AccessFlags   dstMask,
                                                 PipelineStage srcStage,
-                                                PipelineStage dstStage ) {
+                                                PipelineStage dstStage ) const {
 
     VkImageMemoryBarrier barrier            = {};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -238,7 +238,7 @@ void Graphics::CommandBuffer::pipeline_barrier( Image&        img,
                                                 AccessFlags   srcMask,
                                                 AccessFlags   dstMask,
                                                 PipelineStage srcStage,
-                                                PipelineStage dstStage ) {
+                                                PipelineStage dstStage ) const {
 
     VkImageMemoryBarrier barrier            = {};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -257,7 +257,7 @@ void Graphics::CommandBuffer::pipeline_barrier( Image&        img,
 
     img.currentLayout = newLayout;
 }
-void Graphics::CommandBuffer::clear_image( Image& img, ImageLayout layout, ImageAspect aspect, Vec4 clearColor ) {
+void Graphics::CommandBuffer::clear_image( Image& img, ImageLayout layout, ImageAspect aspect, Vec4 clearColor ) const {
 
     VkClearColorValue vclearColor = {};
     vclearColor.float32[0]        = clearColor.r;
@@ -274,7 +274,7 @@ void Graphics::CommandBuffer::clear_image( Image& img, ImageLayout layout, Image
 
     vkCmdClearColorImage( handle, img.handle, Translator::get( layout ), &vclearColor, 1, &subresourceRange );
 }
-void Graphics::CommandBuffer::blit_image( Image& srcImage, Image& dstImage, FilterType filter, uint32_t mipLevel, ImageAspect srcAspect, ImageAspect dstAspect ) {
+void Graphics::CommandBuffer::blit_image( Image& srcImage, Image& dstImage, FilterType filter, uint32_t mipLevel, ImageAspect srcAspect, ImageAspect dstAspect ) const {
     VkImageBlit blitRegion                   = {};
     blitRegion.srcOffsets[0]                 = { 0, 0, 0 };
     blitRegion.srcOffsets[1]                 = { static_cast<int32_t>( srcImage.extent.width ), static_cast<int32_t>( srcImage.extent.height ), 1 };
@@ -308,7 +308,7 @@ void Graphics::CommandBuffer::blit_image( Image&      srcImage,
                                           FilterType  filter,
                                           uint32_t    mipLevel,
                                           ImageAspect srcAspect,
-                                          ImageAspect dstAspect ) {
+                                          ImageAspect dstAspect ) const {
 
     VkImageBlit blitRegion                   = {};
     blitRegion.srcOffsets[0]                 = { static_cast<int32_t>( srcOrigin.width ), static_cast<int32_t>( srcOrigin.height ), 0 };
@@ -334,15 +334,15 @@ void Graphics::CommandBuffer::blit_image( Image&      srcImage,
                     &blitRegion,
                     Translator::get( filter ) );
 }
-void Graphics::CommandBuffer::push_constants( ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset ) {
+void Graphics::CommandBuffer::push_constants( ShaderPass& pass, ShaderStageFlags stage, const void* data, uint32_t size, uint32_t offset ) const {
     vkCmdPushConstants( handle, pass.pipelineLayout, Translator::get( stage ), offset, size, data );
 }
 
-void Graphics::CommandBuffer::dispatch_compute( Extent3D grid ) {
+void Graphics::CommandBuffer::dispatch_compute( Extent3D grid ) const {
     vkCmdDispatch( handle, grid.width, grid.height, grid.depth );
 }
 
-void Graphics::CommandBuffer::copy_buffer( Buffer& srcBuffer, Buffer& dstBuffer, size_t size ) {
+void Graphics::CommandBuffer::copy_buffer( Buffer& srcBuffer, Buffer& dstBuffer, size_t size ) const {
     VkBufferCopy copy;
     copy.dstOffset = 0;
     copy.srcOffset = 0;
@@ -350,7 +350,7 @@ void Graphics::CommandBuffer::copy_buffer( Buffer& srcBuffer, Buffer& dstBuffer,
     vkCmdCopyBuffer( handle, srcBuffer.handle, dstBuffer.handle, 1, &copy );
 }
 
-void Graphics::CommandBuffer::copy_buffer_to_image( Image& img, Buffer& buffer ) {
+void Graphics::CommandBuffer::copy_buffer_to_image( Image& img, Buffer& buffer ) const {
 
     VkImageSubresourceRange range;
     range.aspectMask     = Translator::get( Utils::get_aspect( img.config.format ) );
@@ -406,7 +406,7 @@ void Graphics::CommandBuffer::copy_buffer_to_image( Image& img, Buffer& buffer )
     }
 }
 
-void Graphics::CommandBuffer::copy_image_to_buffer( Image& img, Buffer& buffer ) {
+void Graphics::CommandBuffer::copy_image_to_buffer( Image& img, Buffer& buffer ) const {
     VkImageSubresourceRange range;
     range.aspectMask     = Translator::get( Utils::get_aspect( img.config.format ) );
     range.baseMipLevel   = 0;
@@ -445,7 +445,7 @@ void Graphics::CommandBuffer::copy_image_to_buffer( Image& img, Buffer& buffer )
         vkCmdCopyImageToBuffer( handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.handle, 1, &copyRegion );
     }
 }
-void Graphics::CommandBuffer::generate_mipmaps( Image& img, ImageLayout initialLayout, ImageLayout finalLayout ) {
+void Graphics::CommandBuffer::generate_mipmaps( Image& img, ImageLayout initialLayout, ImageLayout finalLayout ) const {
 
     int32_t mipWidth  = img.extent.width;
     int32_t mipHeight = img.extent.height;
