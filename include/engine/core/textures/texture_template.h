@@ -15,42 +15,100 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Core {
 
-template <typename T> class Texture;
-typedef Texture<unsigned char> TextureLDR; /* Standard Low Dynamic Range */
-typedef Texture<float>         TextureHDR; /* High Dynamic Range */
-
-template <typename T> class Texture final : public ITexture
+enum class DynamicRange
 {
-  private:
-    T* m_chache{nullptr};
+    LDR,   // uint8_t (non-normalized)
+    UNORM, // uint8_t [0,1]
+    HDR    // float32
+};
 
-  public:
+enum class ChannelFormat
+{
+    R    = 1,
+    RG   = 2,
+    RGB  = 3,
+    RGBA = 4
+};
+
+enum class ColorEncoding
+{
+    Linear, // Linear space (default)
+    SRGB    // sRGB gamma encoded
+};
+
+template <DynamicRange DR>
+struct PixelTraits;
+
+template <>
+struct PixelTraits<DynamicRange::LDR> {
+    using Type                         = uint8_t;
+    static constexpr bool IsNormalized = false;
+};
+
+template <>
+struct PixelTraits<DynamicRange::UNORM> {
+    using Type                         = uint8_t;
+    static constexpr bool IsNormalized = true;
+};
+
+template <>
+struct PixelTraits<DynamicRange::HDR> {
+    using Type                         = float;
+    static constexpr bool IsNormalized = false;
+};
+
+template <DynamicRange DR, ChannelFormat CF, ColorEncoding CE = ColorEncoding::Linear>
+class Texture : public ITexture
+{
+public:
+    using ElementType                  = typename PixelTraits<DR>::Type;
+    static constexpr bool IsNormalized = PixelTraits<DR>::IsNormalized;
+    static constexpr bool IsSRGB       = ( CE == ColorEncoding::SRGB );
+
+private:
+    ElementType* m_cache { nullptr };
+
+public:
     Texture()
-        : ITexture() {
-    }
-    Texture(TextureSettings settings)
-        : ITexture(settings) {
-    }
-    Texture(T* data, Extent3D size, uint16_t channels, TextureSettings settings = {})
-        : ITexture(size, channels, settings)
-        , m_chache(data) {
+        : ITexture() {}
+
+    Texture( TextureSettings settings )
+        : ITexture( settings ) {}
+
+    Texture( ElementType* data, Extent3D size, TextureSettings settings = {} )
+        : ITexture( size, static_cast<uint16_t>( CF ), settings )
+        , m_cache( data ) {
         m_image.loadedOnCPU = true;
     }
 
-    inline void set_image_cache(void* cache, Extent3D extent, uint16_t channels) override {
-        m_chache            = static_cast<T*>(cache);
-        m_channels          = channels; // Set the number of channels
-        m_image.extent      = extent;   // Set the image extent
-        m_image.loadedOnCPU = true;     // Mark the image as loaded on CPU
-        m_isDirty           = true;     // Mark as dirty
+    inline void set_image_cache( void* cache, Extent3D extent ) override {
+        m_cache             = static_cast<ElementType*>( cache );
+        m_image.extent      = extent;
+        m_image.loadedOnCPU = true;
+        m_isDirty           = true;
     }
-    inline void get_image_cache(void*& cache) const override {
-        cache = static_cast<void*>(m_chache);
+
+    inline void get_image_cache( void*& cache ) const override {
+        cache = static_cast<void*>( m_cache );
     }
+
     inline size_t get_bytes_per_pixel() const override {
-        return static_cast<size_t>(m_channels) * sizeof(T);
+        return static_cast<size_t>( m_channels ) * sizeof( ElementType );
+    }
+
+    inline bool is_srgb() const {
+        return IsSRGB;
     }
 };
+
+using TextureRGBA      = Texture<DynamicRange::LDR, ChannelFormat::RGBA>;
+using TextureUnormRGBA = Texture<DynamicRange::UNORM, ChannelFormat::RGBA>;
+using TextureSRGBA     = Texture<DynamicRange::UNORM, ChannelFormat::RGBA, ColorEncoding::SRGB>;
+using TextureFloatRGBA = Texture<DynamicRange::HDR, ChannelFormat::RGBA>;
+using TextureRGB       = Texture<DynamicRange::LDR, ChannelFormat::RGB>;
+using TextureUnormRGB  = Texture<DynamicRange::UNORM, ChannelFormat::RGB>;
+using TextureSRGB      = Texture<DynamicRange::UNORM, ChannelFormat::RGB, ColorEncoding::SRGB>;
+using TextureFloatRGB  = Texture<DynamicRange::HDR, ChannelFormat::RGB>;
 
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END
