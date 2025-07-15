@@ -16,7 +16,7 @@ void load_extensions(VkDevice& device, VkInstance& instance) {
 
     if (!vkCmdSetPolygonMode)
     {
-        ERR_LOG("Failed to load vkCmdSetPolygonModeEXT!");
+        LOG_ERROR("Failed to load vkCmdSetPolygonModeEXT!");
     }
 
     vkCmdSetRasterizationSamples =
@@ -24,7 +24,7 @@ void load_extensions(VkDevice& device, VkInstance& instance) {
 
     if (!vkCmdSetRasterizationSamples)
     {
-        ERR_LOG("Failed to load vkCmdSetRasterizationSamplesEXT!");
+        LOG_ERROR("Failed to load vkCmdSetRasterizationSamplesEXT!");
     }
 
     vkCreateAccelerationStructure = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
@@ -32,48 +32,48 @@ void load_extensions(VkDevice& device, VkInstance& instance) {
 
     if (!vkCreateAccelerationStructure)
     {
-        ERR_LOG("Failed to load vkCreateAccelerationStructureKHR!");
+        LOG_ERROR("Failed to load vkCreateAccelerationStructureKHR!");
     }
     vkDestroyAccelerationStructure = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
         vkGetDeviceProcAddr(device, "vkDestroyAccelerationStructureKHR"));
 
     if (!vkDestroyAccelerationStructure)
     {
-        ERR_LOG("Failed to load vkDestroyAccelerationStructureKHR!");
+        LOG_ERROR("Failed to load vkDestroyAccelerationStructureKHR!");
     }
     vkGetAccelerationStructureBuildSizes = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
         vkGetDeviceProcAddr(device, "vkGetAccelerationStructureBuildSizesKHR"));
 
     if (!vkGetAccelerationStructureBuildSizes)
     {
-        ERR_LOG("Failed to load vkGetAccelerationStructureBuildSizesKHR!");
+        LOG_ERROR("Failed to load vkGetAccelerationStructureBuildSizesKHR!");
     }
     vkGetAccelerationStructureDeviceAddress = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
         vkGetDeviceProcAddr(device, "vkGetAccelerationStructureDeviceAddressKHR"));
 
     if (!vkGetAccelerationStructureDeviceAddress)
     {
-        ERR_LOG("Failed to load vkGetAccelerationStructureDeviceAddressKHR!");
+        LOG_ERROR("Failed to load vkGetAccelerationStructureDeviceAddressKHR!");
     }
     vkCmdBuildAccelerationStructures = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
         vkGetDeviceProcAddr(device, "vkCmdBuildAccelerationStructuresKHR"));
 
     if (!vkCmdBuildAccelerationStructures)
     {
-        ERR_LOG("Failed to load vkCmdBuildAccelerationStructuresKHR!");
+        LOG_ERROR("Failed to load vkCmdBuildAccelerationStructuresKHR!");
     }
     vkBuildAccelerationStructures = reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(
         vkGetDeviceProcAddr(device, "vkBuildAccelerationStructuresKHR"));
 
     if (!vkBuildAccelerationStructures)
     {
-        ERR_LOG("Failed to load vkBuildAccelerationStructuresKHR!");
+        LOG_ERROR("Failed to load vkBuildAccelerationStructuresKHR!");
     }
 
     vkSetDebugUtilsObjectName =
         reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT"));
     if (!vkSetDebugUtilsObjectName)
     {
-        ERR_LOG("Failed to load vkSetDebugUtilsObjectNameEXT!");
+        LOG_ERROR("Failed to load vkSetDebugUtilsObjectNameEXT!");
     }
 }

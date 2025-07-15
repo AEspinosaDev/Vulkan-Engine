@@ -51,7 +51,7 @@ bool AABB::is_on_frustrum(const Frustum& frustum) const {
 IMaterial* Mesh::change_material(IMaterial* m, size_t id) {
     if (m_material.size() < id + 1)
     {
-        ERR_LOG("Not enough material slots");
+        LOG_ERROR("Not enough material slots");
         return nullptr;
     }
 

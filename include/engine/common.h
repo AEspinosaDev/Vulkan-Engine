@@ -52,6 +52,7 @@
 #include <vector>
 #include <vma/vk_mem_alloc.h>
 #include <memory>
+#include <logger.h>
 
 // ENGINE DEFINITIONS
 
@@ -66,25 +67,14 @@
 #define PROFILING_FRAME()
 #endif
 
-#define _LOG(msg)                                                                                                                                              \
-    {                                                                                                                                                          \
-        std::cout << "[VKEngine Log] " << msg << std::endl;                                                                                                    \
-    }
-#define DEBUG_LOG(msg)                                                                                                                                         \
-    {                                                                                                                                                          \
-        std::cout << "[VKEngine Debug] " << msg << std::endl;                                                                                                  \
-    }
-#define ERR_LOG(msg)                                                                                                                                           \
-    {                                                                                                                                                          \
-        std::cerr << "[VKEngine Error] " << msg << std::endl;                                                                                                  \
-    }
+
 #define VK_CHECK(x)                                                                                                                                            \
     do                                                                                                                                                         \
     {                                                                                                                                                          \
         VkResult err = x;                                                                                                                                      \
         if (err)                                                                                                                                               \
         {                                                                                                                                                      \
-            std::cout << "VKEngine detected a Vulkan error: " << err << std::endl;                                                                             \
+            LOG_ERROR("VKEngine detected a Vulkan error: " + std::to_string(err));                                                                            \
             abort();                                                                                                                                           \
         }                                                                                                                                                      \
     } while (0)

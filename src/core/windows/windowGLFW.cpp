@@ -14,7 +14,7 @@ void WindowGLFW::init() {
     if (!m_handle)
     {
         glfwTerminate();
-        ERR_LOG("Failed to create GLFW window");
+        LOG_ERROR("Failed to create GLFW window");
     }
 
     glfwSetWindowPos(m_handle, (int)m_screenPos.x, (int)m_screenPos.y);
@@ -86,7 +86,7 @@ void WindowGLFW::set_window_icon(const char* iconPath) {
     unsigned char* pixels = stbi_load(iconPath, &width, &height, &channels, 4); // Force 4 channels (RGBA)
     if (!pixels)
     {
-        ERR_LOG("failed to load window ICON");
+        LOG_ERROR("failed to load window ICON");
         return;
     }
 

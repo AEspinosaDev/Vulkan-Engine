@@ -50,6 +50,7 @@ add_subdirectory(thirdparty/tiny_obj_loader)
 add_subdirectory(thirdparty/tinyply)	
 add_subdirectory(thirdparty/tinyxml)	
 add_subdirectory(thirdparty/optick-1.4.0)	
+add_subdirectory(thirdparty/logger)	
 add_subdirectory(thirdparty/ImGuiFileDialog)	
 target_link_libraries(ImGuiFileDialog PUBLIC imgui )
 
@@ -85,6 +86,7 @@ target_link_libraries(VulkanEngine PUBLIC
     tinyply
     tinyxml
     optick
+    logger
     ImGuiFileDialog)
 
 # Set dependencies inside folder

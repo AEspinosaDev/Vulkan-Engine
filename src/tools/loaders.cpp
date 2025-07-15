@@ -17,12 +17,12 @@ void VKFW::Tools::Loaders::load_OBJ(Core::Mesh* const mesh, const std::string fi
     // Check for errors
     if (!warn.empty())
     {
-        DEBUG_LOG("WARN: " + warn);
+        LOG_WARN("WARN: " + warn);
     }
     if (!err.empty())
     {
-        ERR_LOG(err);
-        DEBUG_LOG("ERROR: Couldn't load mesh");
+        LOG_ERROR(err);
+        LOG_ERROR("ERROR: Couldn't load mesh");
         return;
     }
 
@@ -154,12 +154,12 @@ void VKFW::Tools::Loaders::load_OBJ_topology(Core::Mesh* const mesh,
     // Check for errors
     if (!warn.empty())
     {
-        DEBUG_LOG("WARN: " + warn);
+        LOG_WARN("WARN: " + warn);
     }
     if (!err.empty())
     {
-        ERR_LOG(err);
-        DEBUG_LOG("ERROR: Couldn't load mesh");
+        LOG_ERROR(err);
+        LOG_ERROR("ERROR: Couldn't load mesh");
         return;
     }
 
@@ -838,12 +838,12 @@ void VKFW::Tools::Loaders::load_PNG(Core::TextureLDR* const texture, const std::
     } else
     {
 #ifndef NDEBUG
-        ERR_LOG("Failed to load texture PNG file" + fileName);
+        LOG_ERROR("Failed to load texture PNG file" + fileName);
 #endif
         return;
     };
 #ifndef NDEBUG
-    DEBUG_LOG("PNG Texture loaded successfully");
+    LOG_DEBUG("PNG Texture loaded successfully");
 #endif // DEBUG
 }
 
@@ -860,12 +860,12 @@ void VKFW::Tools::Loaders::load_HDRi(Core::TextureHDR* const texture, const std:
     } else
     {
 #ifndef NDEBUG
-        ERR_LOG("Failed to load texture HDRi file" + fileName);
+        LOG_ERROR("Failed to load texture HDRi file" + fileName);
 #endif
         return;
     };
 #ifndef NDEBUG
-    DEBUG_LOG("HDRi Texture loaded successfully");
+    LOG_DEBUG("HDRi Texture loaded successfully");
 #endif // DEBUG
 }
 void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture, const std::string fileName, uint16_t depth, TextureFormatType textureFormat) {
@@ -901,12 +901,12 @@ void VKFW::Tools::Loaders::load_3D_texture(Core::ITexture* const texture, const 
     } else
     {
 #ifndef NDEBUG
-        ERR_LOG("Failed to load texture PNG file" + fileName);
+        LOG_ERROR("Failed to load texture PNG file" + fileName);
 #endif
         return;
     };
 #ifndef NDEBUG
-    DEBUG_LOG("PNG Texture loaded successfully");
+    LOG_DEBUG("PNG Texture loaded successfully");
 #endif // DEBUG
 }
 

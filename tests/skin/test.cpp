@@ -14,8 +14,8 @@ void Application::init(Systems::RendererSettings settings) {
 
     m_renderer = std::make_shared<Systems::DeferredRenderer>(m_window, settings);
 
-    setup();
     m_renderer->init();
+    setup();
     setup_gui();
 }
 

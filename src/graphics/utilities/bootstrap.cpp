@@ -518,26 +518,26 @@ bool Booter::is_device_extension_supported(VkPhysicalDevice physicalDevice, cons
     return false;
 }
 void Booter::log_available_extensions(std::vector<VkExtensionProperties> ext) {
-    DEBUG_LOG("---------------------");
-    DEBUG_LOG("Available extensions");
-    DEBUG_LOG("---------------------");
+    LOG_DEBUG("---------------------");
+    LOG_DEBUG("Available extensions");
+    LOG_DEBUG("---------------------");
     for (const auto& extension : ext)
     {
-        DEBUG_LOG(extension.extensionName);
+        LOG_DEBUG(extension.extensionName);
     }
-    DEBUG_LOG("---------------------");
+    LOG_DEBUG("---------------------");
 }
 void Booter::log_available_gpus(std::multimap<int, VkPhysicalDevice> candidates) {
-    DEBUG_LOG("---------------------");
-    DEBUG_LOG("Suitable Devices");
-    DEBUG_LOG("---------------------");
+    LOG_DEBUG("---------------------");
+    LOG_DEBUG("Suitable Devices");
+    LOG_DEBUG("---------------------");
     for (const auto& candidate : candidates)
     {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(candidate.second, &deviceProperties);
-        DEBUG_LOG(deviceProperties.deviceName);
+        LOG_DEBUG(deviceProperties.deviceName);
     }
-    DEBUG_LOG("---------------------");
+    LOG_DEBUG("---------------------");
 }
 
 } // namespace Graphics

@@ -3,6 +3,7 @@
 
 int main(int argc, char* argv[])
 {
+    Logger::init(LogLevel::Debug, "skinTest.log");
     Application app;
     try
     {
@@ -10,9 +11,11 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << std::endl;
+        LOG_ERROR(e.what());
+        Logger::shutdown();
         return EXIT_FAILURE;
     }
-
+    
+    Logger::shutdown();
     return EXIT_SUCCESS;
 }
