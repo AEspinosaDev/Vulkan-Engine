@@ -29,7 +29,7 @@ inline static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSe
                                                            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                            void*                                       pUserData) {
 
-    LOG_DEBUG("(Validation Layer) " + std::string(pCallbackData->pMessage));
+    LOG_DEBUG(Logger::format_with_tag("[Validation Layer]", "\033[34m", pCallbackData->pMessage));
 
     return VK_FALSE;
 }

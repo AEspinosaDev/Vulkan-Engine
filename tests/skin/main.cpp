@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-    Logger::init(LogLevel::Debug, "skinTest.log");
+    Logger::init(LogLevel::Info, "skinTest.log");
     Application app;
     try
     {

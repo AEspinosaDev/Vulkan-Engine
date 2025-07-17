@@ -18,17 +18,16 @@
 
 enum class LogLevel
 {
-    Debug = 0,
-    Info  = 1,
-    Warn  = 2,
-    Error = 3,
-    None  = 4
+    Info  = 0,
+    Warn  = 1,
+    Error = 2,
+    None  = 3
 };
 
 class Logger
 {
   public:
-    static void init(LogLevel level = LogLevel::Debug, const std::string& file = "") {
+    static void init(LogLevel level = LogLevel::Info, const std::string& file = "") {
         instance().logLevel = level;
         if (!file.empty())
         {
@@ -88,8 +87,14 @@ class Logger
         }
     }
 
+    static std::string format_with_tag(const std::string& tag, const char* color, const std::string& message) {
+    std::ostringstream oss;
+    oss << color << tag << reset_color() << " " << message;
+    return oss.str();
+}
+
   private:
-    LogLevel      logLevel = LogLevel::Debug;
+    LogLevel      logLevel = LogLevel::Info;
     std::ofstream logFile;
     std::mutex    mtx;
 
@@ -109,8 +114,6 @@ class Logger
     static const char* level_to_string(LogLevel level) {
         switch (level)
         {
-        case LogLevel::Debug:
-            return "DEBUG";
         case LogLevel::Info:
             return "INFO";
         case LogLevel::Warn:
@@ -125,10 +128,8 @@ class Logger
     static const char* level_color(LogLevel level) {
         switch (level)
         {
-        case LogLevel::Debug:
-            return "\033[36m"; // Cyan
         case LogLevel::Info:
-            return "\033[32m"; // Green
+            return "\033[36m"; // Cyan
         case LogLevel::Warn:
             return "\033[33m"; // Yellow
         case LogLevel::Error:
@@ -141,9 +142,10 @@ class Logger
     static const char* reset_color() {
         return "\033[0m";
     }
+
+    
 };
 
-#define LOG_DEBUG(msg) Logger::log(LogLevel::Debug, msg)
-#define LOG_INFO(msg) Logger::log(LogLevel::Info, msg)
+#define LOG_DEBUG(msg) Logger::log(LogLevel::Info, msg)
 #define LOG_WARN(msg) Logger::log_with_context(LogLevel::Warn, msg, __FILE__, __LINE__, __func__)
 #define LOG_ERROR(msg) Logger::log_with_context(LogLevel::Error, msg, __FILE__, __LINE__, __func__)

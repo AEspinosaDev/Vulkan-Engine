@@ -93,7 +93,7 @@ ShaderSource::compile_shader(const std::string src, const std::string shaderName
     shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(src, kind, shaderName.c_str(), options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success)
     {
-        LOG_ERROR("Error compiling module - " + std::string(result.GetErrorMessage()));
+        Logger::log(LogLevel::Error, Logger::format_with_tag("[Shader]", "\033[35m", "Compile Error - " + result.GetErrorMessage()));
     }
 
     std::vector<uint32_t> spirv = {result.cbegin(), result.cend()};
