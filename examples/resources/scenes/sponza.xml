@@ -272,7 +272,7 @@
                     <albedo r="0.5" g="0.5" b="0.5" />
                 </Material>
             </Mesh>
-            <!-- <Mesh type="file" name="Curtain 0">
+             <Mesh type="file" name="Curtain 0">
                 <Filename value="meshes/curtain1.obj" />
                 
                 <Material type="physical">
@@ -355,8 +355,8 @@
                     </Textures>
                     <albedo r="0.5" g="0.5" b="0.5" />
                 </Material>
-            </Mesh> -->
-            <!-- <Mesh type="file" name="Carpet">
+            </Mesh> 
+             <Mesh type="file" name="Carpet">
                 <Filename value="meshes/carpet.obj" />
                 
                 <Material type="physical">
@@ -369,7 +369,7 @@
                     </Textures>
                     <albedo r="0.5" g="0.5" b="0.5" />
                 </Material>
-            </Mesh> -->
+            </Mesh> 
 
         </Children>
     </Mesh>

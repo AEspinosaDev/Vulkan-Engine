@@ -445,6 +445,7 @@ void Graphics::CommandBuffer::copy_image_to_buffer(Image& img, Buffer& buffer) {
         vkCmdCopyImageToBuffer(handle, img.handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.handle, 1, &copyRegion);
     }
 }
+
 void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLayout, ImageLayout finalLayout) {
 
     int32_t mipWidth  = img.extent.width;
@@ -525,4 +526,5 @@ void Graphics::CommandBuffer::generate_mipmaps(Image& img, ImageLayout initialLa
 
     img.currentLayout = finalLayout;
 }
+
 VULKAN_ENGINE_NAMESPACE_END
