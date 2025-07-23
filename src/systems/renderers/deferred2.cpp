@@ -254,19 +254,9 @@ void DeferredRenderer2::configure_passes() {
 
     // TONEMAP PASS
     m_graph.add_pass( "TonemapPass", { "TonemapProgram" }, [&]( Render::RenderGraphBuilder& builder ) {
-        builder.read( "normals", {} );
-        builder.read( "albedo", {} );
-        builder.read( "material", {} );
-        builder.read( "emissive", {} );
-        builder.read( "shadows", {} );
+        builder.read( "lighting", {} );
 
-        builder.create_target( "lighting", {
-                                               .extent      = DISPLAY_EXTENT,
-                                               .format      = HDR_FORMAT,
-                                               .usage       = IMAGE_USAGE_COLOR_ATTACHMENT | IMAGE_USAGE_SAMPLED | IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_TRANSFER_DST,
-                                               .finalLayout = LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                               .clearValue  = { .color = { { 0, 0, 0, 1 } } },
-                                           } ); }, [&]( const Render::RenderView& view, Render::Frame& frame, const Render::Resources& shared, const Render::RenderPassOutputs& outputs ) {
+        builder.create_swapchain_target( ); }, [&]( const Render::RenderView& view, Render::Frame& frame, const Render::Resources& shared, const Render::RenderPassOutputs& outputs ) {
         auto program = m_graph.get_shader_program( "TonemapProgram" );
 
         auto& cmd = frame.get_command_buffer();

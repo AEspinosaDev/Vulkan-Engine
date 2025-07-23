@@ -45,20 +45,20 @@ void load_hair(Core::Mesh* const mesh, const char* fileName);
 /*
 Load image texture (HDR, PNG, JPG SUPPORTED)
 */
-void load_texture(Core::ITexture* texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB, bool asyncCall = true);
+void load_texture_2D(Core::ITexture* texture, const std::string fileName, bool asyncCall = true);
 /*
 Load .png file.
  */
-void load_PNG(Core::TextureLDR* const texture, const std::string fileName, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
+void load_PNG(Core::ITexture* const texture, const std::string fileName);
 /*
 Load .hrd
 */
-void load_HDRi(Core::TextureHDR* const texture, const std::string fileName);
+void load_HDR(Core::ITexture* const texture, const std::string fileName);
 /*
 Load texture as 3D image. It will require and image with all the layers defined. The larger of their extent properties
 will be used for computing the depth if no depthy input is given. PNG or JPEG available.
 */
-void load_3D_texture(Core::ITexture* const texture, const std::string fileName, uint16_t depth = 0, TextureFormatType textureFormat = TEXTURE_FORMAT_SRGB);
+void load_3D_texture(Core::ITexture* const texture, const std::string fileName, uint16_t depth = 0);
 
 /*
 Save texture image  (HDR, PNG, JPG, BMP SUPPORTED)

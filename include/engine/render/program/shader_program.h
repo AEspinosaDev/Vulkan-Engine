@@ -20,7 +20,6 @@ class RenderGraph;
 using UniformResource = std::variant<Graphics::Buffer, Graphics::Texture, Graphics::Accel>;
 
 
-
 class ShaderProgram
 {
 public:

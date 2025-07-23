@@ -52,10 +52,10 @@ Base shader pass data structure
 */
 struct BaseShaderPass {
 
-    const PipelineType TYPE;
-    VkDevice           device         = VK_NULL_HANDLE;
-    VkPipeline         pipeline       = VK_NULL_HANDLE;
-    VkPipelineLayout   pipelineLayout = VK_NULL_HANDLE;
+    PipelineType     TYPE;
+    VkDevice         device         = VK_NULL_HANDLE;
+    VkPipeline       pipeline       = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
     std::vector<PushConstant> pushConstants;
 

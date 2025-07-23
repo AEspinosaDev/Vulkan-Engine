@@ -9,7 +9,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <engine/core/textures/texture.h>
+#include <engine/core/textures/texture_interface.h>
 #include <engine/graphics/shaderpass.h>
 #include <engine/render/uniforms.h>
 #include <unordered_map>

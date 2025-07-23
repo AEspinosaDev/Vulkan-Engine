@@ -55,6 +55,7 @@ void ShaderProgram::cleanup() {
     {
         layout.cleanup();
     }
+    m_compiled = false;
 }
 
 } // namespace Render

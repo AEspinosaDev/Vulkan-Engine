@@ -18,11 +18,16 @@ class GraphicShaderProgram final : public ShaderProgram
 {
 
     Graphics::GraphicShaderPass m_shaderpass = {};
+    Graphics::RenderPass        m_renderpass = {};
 
 public:
     GraphicShaderProgram( std::string name, std::string glslPath, const std::unordered_map<std::string, UniformBinding>& uniformBindings, const Graphics::GraphicPipelineConfig& config = {} )
         : ShaderProgram( name, glslPath, uniformBindings ) {
         m_shaderpass.config = config;
+    }
+
+    void set_renderpass( const Graphics::RenderPass& rp ) {
+        m_renderpass = rp;
     }
 
     void        compile( const std::shared_ptr<Graphics::Device>& device ) override;

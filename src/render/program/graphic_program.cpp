@@ -4,14 +4,12 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Render {
 
-
 void GraphicShaderProgram::compile( const std::shared_ptr<Graphics::Device>& device ) {
 
     ShaderProgram::create_descriptor_layouts( device );
-
-    // m_shaderpass = device->create_graphic_shader_pass( m_shaderPath, m_descriptorLayouts, m_shaderpass.config, );
-
-    m_compiled = true;
+    m_shaderpass = device->create_graphic_shader_pass( m_shaderPath, m_descriptorLayouts, m_shaderpass.config, m_renderpass );
+    // m_shaderpass = std::move( device->create_graphic_shader_pass( m_shaderPath, m_descriptorLayouts, m_shaderpass.config, m_renderpass ) );
+    m_compiled   = true;
 }
 void GraphicShaderProgram::bind( Frame& frame ) {
 

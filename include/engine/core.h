@@ -13,7 +13,7 @@
 
 #include <engine/core/geometries/geometry.h>
 
-#include <engine/core/textures/texture.h>
+#include <engine/core/textures/texture_defines.h>
 
 #include <engine/core/windows/window.h>
 #include <engine/core/windows/windowGLFW.h>

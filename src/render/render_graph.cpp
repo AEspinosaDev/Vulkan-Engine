@@ -7,7 +7,7 @@ namespace Render {
 std::string RenderGraphBuilder::create_target( const std::string& name, const TargetInfo& info ) {
     auto& r       = m_graph.get_or_create_resource( name );
     r.info        = info;
-    r.written     = true;
+    r.writeFBO    = 0;
     r.firstWriter = m_passIndex;
 
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
@@ -26,27 +26,46 @@ std::string RenderGraphBuilder::create_depth_target( const std::string& name, Ex
          .load        = false,
          .store       = true,
          .layers      = layers };
-    r.written     = true;
+    r.writeFBO    = 0;
     r.firstWriter = m_passIndex;
 
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
-    
+
     return name;
+}
+
+std::string
+RenderGraphBuilder::create_swapchain_target() {
+    auto& r         = m_graph.get_or_create_resource( SWAPCHAIN_KEY );
+    auto  swp       = m_graph.m_device->get_swapchain();
+    auto  swpImage0 = swp.get_present_images()[0];
+    r.info          = Render::TargetInfo {
+                 .extent      = { swpImage0.extent.width, swpImage0.extent.height },
+                 .format      = swpImage0.config.format,
+                 .usage       = IMAGE_USAGE_COLOR_ATTACHMENT,
+                 .finalLayout = LAYOUT_PRESENT,
+                 .load        = false,
+                 .store       = true,
+                 .layers      = 1 };
+    r.writeFBO    = 0;
+    r.firstWriter = m_passIndex;
+
+    m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( SWAPCHAIN_KEY );
 }
 std::string RenderGraphBuilder::read( const std::string& name, const ReadInfo& info ) {
     auto& res = m_graph.get_or_create_resource( name );
-    
+
     res.readInfos[m_graph.m_passes[m_passIndex].name] = {};
     m_graph.m_passes[m_passIndex].readAttachmentKeys.push_back( name );
     // res.layoutHistory.push_back({passName, info.expectedLayout, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, false});
-    
+
     return name;
 }
 
 void RenderGraphBuilder::write( const std::string& name ) {
-    auto& r   = m_graph.get_or_create_resource( name );
-    r.written = true;
-    
+    auto& r = m_graph.get_or_create_resource( name );
+    // r.written = true;
+
     // res.layoutHistory.push_back( { passName, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, true } );
     m_graph.m_passes[m_passIndex].writeAttachmentsKeys.push_back( name );
 }
@@ -95,6 +114,10 @@ void RenderGraph::bake() {
     {
         auto& attachment = m_attachmentCache[name];
         bool  dirty      = reconcile( res, attachment.image );
+
+        if ( name == SWAPCHAIN_KEY ) // If swapchain target that is all
+            continue;
+
         if ( !attachment.image.handle || dirty )
         {
             // Clean
@@ -158,8 +181,19 @@ void RenderGraph::bake() {
             {
                 fboAttachments[i] = &m_attachmentCache[pass.writeAttachmentsKeys[i]].image;
             }
-            // With pass and attachment info
-            rt.fbos.push_back( m_device->create_framebuffer( rt.renderPass, fboAttachments ) );
+            // With pass and attachment info (cehck if its swapchain)
+            const bool IS_SWAPCHAIN = pass.writeAttachmentsKeys[0] == SWAPCHAIN_KEY;
+            if ( !IS_SWAPCHAIN )
+                rt.fbos.push_back( m_device->create_framebuffer( rt.renderPass, fboAttachments ) );
+            else
+            {
+                auto swp       = m_device->get_swapchain();
+                auto swpImages = swp.get_present_images();
+                for ( size_t i = 0; i < swpImages.size(); i++ )
+                {
+                    rt.fbos.push_back( m_device->create_framebuffer( rt.renderPass, { &swpImages[i] } ) );
+                }
+            }
 
             rt.validFBO = true;
         }
@@ -171,16 +205,11 @@ void RenderGraph::bake() {
             if ( !shader->compiled() || !rt.validRenderPass )
             {
                 shader->cleanup();
-                shader->create_descriptor_layouts( m_device );
-                shader->is_graphics() ? std::static_pointer_cast<GraphicShaderProgram>( shader )->m_shaderpass =
-                                            m_device->create_graphic_shader_pass( shader->m_shaderPath,
-                                                                                  shader->m_descriptorLayouts,
-                                                                                  std::static_pointer_cast<GraphicShaderProgram>( shader )->m_shaderpass.config,
-                                                                                  rt.renderPass )
-                                      : std::static_pointer_cast<ComputeShaderProgram>( shader )->m_shaderpass =
-                                            m_device->create_compute_shader_pass( shader->m_shaderPath,
-                                                                                  shader->m_descriptorLayouts );
-                shader->m_compiled = true;
+                if ( shader->is_graphics() )
+                {
+                    std::static_pointer_cast<GraphicShaderProgram>( shader )->set_renderpass(rt.renderPass);
+                }
+                shader->compile( m_device );
             }
 
             // Update uniforms and allocate ALWAYS !!

@@ -4,7 +4,14 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 
 namespace Render {
 
+void ComputeShaderProgram::compile( const std::shared_ptr<Graphics::Device>& device ) {
+    
+    ShaderProgram::create_descriptor_layouts( device );
+    m_shaderpass = device->create_compute_shader_pass( m_shaderPath, m_descriptorLayouts );
+    m_compiled   = true;
+}
 void ComputeShaderProgram::bind( Frame& frame ) {
+
     frame.m_commandBuffer.bind_shaderpass( m_shaderpass );
 }
 

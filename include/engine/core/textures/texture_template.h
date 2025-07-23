@@ -9,7 +9,7 @@
 #ifndef TEXTURE_CORE_TEMPLATE_H
 #define TEXTURE_CORE_TEMPLATE_H
 
-#include <engine/core/textures/texture.h>
+#include <engine/core/textures/texture_interface.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -17,17 +17,9 @@ namespace Core {
 
 enum class DynamicRange
 {
-    LDR,   // uint8_t (non-normalized)
-    UNORM, // uint8_t [0,1]
-    HDR    // float32
-};
-
-enum class ChannelFormat
-{
-    R    = 1,
-    RG   = 2,
-    RGB  = 3,
-    RGBA = 4
+    Uint,  // uint8_t / char
+    Unorm, // uint8_t / normalized
+    Float, // float32
 };
 
 enum class ColorEncoding
@@ -40,25 +32,25 @@ template <DynamicRange DR>
 struct PixelTraits;
 
 template <>
-struct PixelTraits<DynamicRange::LDR> {
+struct PixelTraits<DynamicRange::Uint> {
     using Type                         = uint8_t;
     static constexpr bool IsNormalized = false;
 };
 
 template <>
-struct PixelTraits<DynamicRange::UNORM> {
+struct PixelTraits<DynamicRange::Unorm> {
     using Type                         = uint8_t;
     static constexpr bool IsNormalized = true;
 };
 
 template <>
-struct PixelTraits<DynamicRange::HDR> {
+struct PixelTraits<DynamicRange::Float> {
     using Type                         = float;
     static constexpr bool IsNormalized = false;
 };
 
-template <DynamicRange DR, ChannelFormat CF, ColorEncoding CE = ColorEncoding::Linear>
-class Texture : public ITexture
+template <DynamicRange DR, TextureType T, ColorEncoding CE = ColorEncoding::Linear>
+class TextureTemplate : public ITexture
 {
 public:
     using ElementType                  = typename PixelTraits<DR>::Type;
@@ -69,23 +61,27 @@ private:
     ElementType* m_cache { nullptr };
 
 public:
-    Texture()
+    TextureTemplate()
         : ITexture() {}
 
-    Texture( TextureSettings settings )
+    TextureTemplate( SamplingConfig settings )
         : ITexture( settings ) {}
 
-    Texture( ElementType* data, Extent3D size, TextureSettings settings = {} )
-        : ITexture( size, static_cast<uint16_t>( CF ), settings )
+    TextureTemplate( ElementType*   data,
+             Extent3D       size,
+             uint16_t       channels,
+             TextureType    type     = TextureType::TEXTURE_2D,
+             SamplingConfig settings = {} )
+        : ITexture( size, channels, settings )
         , m_cache( data ) {
-        m_image.loadedOnCPU = true;
+        m_loadedOnClient = true;
     }
 
-    inline void set_image_cache( void* cache, Extent3D extent ) override {
-        m_cache             = static_cast<ElementType*>( cache );
-        m_image.extent      = extent;
-        m_image.loadedOnCPU = true;
-        m_isDirty           = true;
+    inline void set_image_cache( void* cache, Extent3D extent, uint16_t channels ) override {
+        m_cache          = static_cast<ElementType*>( cache );
+        m_channels       = channels;
+        m_loadedOnClient = true;
+        m_isDirty        = true;
     }
 
     inline void get_image_cache( void*& cache ) const override {
@@ -96,19 +92,10 @@ public:
         return static_cast<size_t>( m_channels ) * sizeof( ElementType );
     }
 
-    inline bool is_srgb() const {
+    inline bool is_SRGB() const {
         return IsSRGB;
     }
 };
-
-using TextureRGBA      = Texture<DynamicRange::LDR, ChannelFormat::RGBA>;
-using TextureUnormRGBA = Texture<DynamicRange::UNORM, ChannelFormat::RGBA>;
-using TextureSRGBA     = Texture<DynamicRange::UNORM, ChannelFormat::RGBA, ColorEncoding::SRGB>;
-using TextureFloatRGBA = Texture<DynamicRange::HDR, ChannelFormat::RGBA>;
-using TextureRGB       = Texture<DynamicRange::LDR, ChannelFormat::RGB>;
-using TextureUnormRGB  = Texture<DynamicRange::UNORM, ChannelFormat::RGB>;
-using TextureSRGB      = Texture<DynamicRange::UNORM, ChannelFormat::RGB, ColorEncoding::SRGB>;
-using TextureFloatRGB  = Texture<DynamicRange::HDR, ChannelFormat::RGB>;
 
 } // namespace Core
 VULKAN_ENGINE_NAMESPACE_END

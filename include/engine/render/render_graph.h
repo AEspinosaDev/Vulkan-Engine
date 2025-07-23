@@ -5,15 +5,21 @@
 #include <engine/graphics/device.h>
 #include <engine/graphics/renderpass.h>
 #include <engine/graphics/texture.h>
+
 #include <engine/render/frame.h>
 #include <engine/render/program/shader_program.h>
+#include <engine/render/program/graphic_program.h>
+#include <engine/render/program/compute_program.h>
 #include <engine/render/render_resources.h>
 #include <engine/render/render_view_builder.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Render {
 
+#define SWAPCHAIN_KEY "swapchain"
+
 // Resource data
+
 using TargetInfo = Graphics::RenderTargetInfo;
 using ReadInfo   = Graphics::TextureConfig;
 
@@ -22,7 +28,7 @@ class RenderGraphResource
 public:
     std::string name;
     TargetInfo  info;
-    bool        written     = false;
+    int         writeFBO    = -1;
     int         firstWriter = -1;
 
     std::unordered_map<std::string, ReadInfo> readInfos; // pass name ID
@@ -55,9 +61,9 @@ public:
         , m_passIndex( passID ) {
     }
 
-    std::string create_target( const std::string& name, const TargetInfo& info );
-    std::string create_depth_target( const std::string& name, Extent2D size, FloatPrecission precission, uint32_t layers = 1 );
-    std::string create_swapchain_target( const std::string& name );
+    std::string create_target( const std::string& name, const TargetInfo& info);
+    std::string create_depth_target( const std::string& name, Extent2D size, FloatPrecission precission, uint32_t layers = 1);
+    std::string create_swapchain_target( );
     std::string read( const std::string& name, const ReadInfo& info );
     void        write( const std::string& name );
 
@@ -145,44 +151,6 @@ public:
         return nullptr;
     }
 };
-
-// class GBufferPass : public IRenderPass {
-// public:
-//     ShaderProgram* shader = nullptr;
-
-//     GBufferPass(ShaderProgram* program) : shader(program) {}
-
-//     void build(RenderGraphBuilder& builder) override {
-//         builder.create_target("depth", RenderTargetInfo{
-//             .format = VK_FORMAT_D32_SFLOAT,
-//             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-//             .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-//             .clearValue = {.depthStencil = {1.0f, 0}},
-//             .isDepth = true
-//         });
-
-//         builder.create_target("albedo", RenderTargetInfo{
-//             .format = VK_FORMAT_R8G8B8A8_UNORM,
-//             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//             .clearValue = {.color = {{0, 0, 0, 1}}}
-//         });
-//     }
-
-//     void execute(const RenderView& view, const FrameContext& frame, const RenderResources& shared, const RenderPassOutputs& outputs, ShaderProgram* program)
-//     override {
-//         // Bind pipeline, descriptor set, draw meshes
-//     }
-// };
-
-// class IRenderPass
-// {
-//   public:
-//     virtual ~IRenderPass()                          = default;
-//     virtual void build(RenderGraphBuilder& builder) = 0;
-//     virtual void
-//     execute(const RenderView& view, const FrameContext& frame, const RenderResources& shared, const RenderPassOutputs& outputs, ShaderProgram* program) = 0;
-// };
 
 
 
