@@ -17,40 +17,38 @@ USING_VULKAN_ENGINE_NAMESPACE
 using namespace Core;
 class Application
 {
-    struct UserInterface
-    {
-        Tools::GUIOverlay *overlay{nullptr};
-        Tools::Panel *explorer{nullptr};
-        Tools::Panel *tutorial{nullptr};
-        Tools::Panel *properties{nullptr};
-        Tools::ExplorerWidget *scene{nullptr};
-        Tools::ObjectExplorerWidget *object{nullptr};
+    struct UserInterface {
+        Tools::GUIOverlay*           overlay { nullptr };
+        Tools::Panel*                explorer { nullptr };
+        Tools::Panel*                tutorial { nullptr };
+        Tools::Panel*                properties { nullptr };
+        Tools::ExplorerWidget*       scene { nullptr };
+        Tools::ObjectExplorerWidget* object { nullptr };
     };
-    UserInterface m_interface{};
+    UserInterface m_interface {};
 
-    IWindow *m_window;
-    Systems::BaseRenderer *m_renderer;
-    Scene *m_scene;
-    Camera *m_camera;
-    Tools::Controller *m_controller;
+    ptr<IWindow>               m_window;
+    ptr<Systems::BaseRenderer> m_renderer;
+    Scene*                     m_scene;
+    Camera*                    m_camera;
+    Tools::Controller*         m_controller;
 
-    Mesh *m_lightDummy;
-    bool animateLight{true};
+    Mesh* m_lightDummy;
+    bool  animateLight { true };
 
-    struct Time
-    {
-        float delta{0.0f};
-        float last{0.0f};
-        float framesPerSecond{0.0f};
+    struct Time {
+        float delta { 0.0f };
+        float last { 0.0f };
+        float framesPerSecond { 0.0f };
     };
-    Time m_time{};
+    Time m_time {};
 
-  public:
-    void init(Systems::RendererSettings settings);
+public:
+    void init( Systems::RendererSettings settings );
 
-    void run(int argc, char *argv[]);
+    void run( int argc, char* argv[] );
 
-  private:
+private:
     void setup();
 
     void setup_gui();
@@ -61,38 +59,35 @@ class Application
 
 #pragma region Input Management
 
-    void keyboard_callback(int key, int scancode, int action, int mods)
-    {
-        void *windowHandle{nullptr};
-        m_window->get_handle(windowHandle);
-        GLFWwindow *glfwWindow = static_cast<GLFWwindow *>(windowHandle);
-        if (glfwGetKey(glfwWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    void keyboard_callback( int key, int scancode, int action, int mods ) {
+        void* windowHandle { nullptr };
+        m_window->get_handle( windowHandle );
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>( windowHandle );
+        if ( glfwGetKey( glfwWindow, GLFW_KEY_ESCAPE ) == GLFW_PRESS )
         {
-            m_window->set_window_should_close(true);
+            m_window->set_window_should_close( true );
         }
 
-        if (glfwGetKey(glfwWindow, GLFW_KEY_F11) == GLFW_PRESS)
+        if ( glfwGetKey( glfwWindow, GLFW_KEY_F11 ) == GLFW_PRESS )
         {
-            m_window->set_fullscreen(m_window->is_fullscreen() ? false : true);
+            m_window->set_fullscreen( m_window->is_fullscreen() ? false : true );
         }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_L) == GLFW_PRESS)
+        if ( glfwGetKey( glfwWindow, GLFW_KEY_L ) == GLFW_PRESS )
         {
             animateLight = animateLight ? false : true;
         }
     }
 
-    void mouse_callback(double xpos, double ypos)
-    {
-        if (m_interface.overlay->wants_to_handle_input())
+    void mouse_callback( double xpos, double ypos ) {
+        if ( m_interface.overlay->wants_to_handle_input() )
             return;
 
-        m_controller->handle_mouse((float)xpos, (float)ypos);
+        m_controller->handle_mouse( (float)xpos, (float)ypos );
     }
 
-    void window_resize_callback(int width, int height)
-    {
-        m_window->set_size(width, height);
-        m_interface.overlay->set_extent({width, height});
+    void window_resize_callback( int width, int height ) {
+        m_window->set_size( width, height );
+        m_interface.overlay->set_extent( { width, height } );
     }
 
 #pragma endregion

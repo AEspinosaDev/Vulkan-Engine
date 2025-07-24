@@ -69,6 +69,49 @@ namespace Graphics {
     
         vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
     }
+    void DescriptorSet::update(const Image          &image,
+                                           ImageLayout     layout,
+                                           uint32_t        binding,
+                                           UniformDataType type,
+                                           uint32_t        arraySlot) {
+        VkImageView newView = image.view;
+    
+        if (!isArrayed) // If standard descriptor set (not variant)
+        {
+            auto it = boundSlots.find(binding);
+            if (it != boundSlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
+            {
+                // Image is already bound — skip update
+                return;
+            } else
+            {
+                // Track resource
+                boundSlots[binding] = image.view;
+            }
+        } else
+        {
+    
+            auto it = boundArraySlots.find(arraySlot);
+            if (it != boundArraySlots.end() && std::holds_alternative<VkImageView>(it->second) && std::get<VkImageView>(it->second) == newView)
+            {
+                // Image in array is already bound — skip update
+                return;
+            } else
+            {
+                // Track resource
+                boundArraySlots[arraySlot] = image.view;
+            }
+        }
+    
+        VkDescriptorImageInfo imageBufferInfo;
+        imageBufferInfo.sampler     = image.sampler;
+        imageBufferInfo.imageView   = image.view;
+        imageBufferInfo.imageLayout = Translator::get(layout);
+    
+        VkWriteDescriptorSet texture1 = Init::write_descriptor_image(Translator::get(type), handle, &imageBufferInfo, 1, arraySlot, binding);
+    
+        vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
+    }
     void DescriptorSet::update(std::vector<Image>& images, ImageLayout layout, uint32_t binding, UniformDataType type) {
     
         VkImageView newView = images[0].view;

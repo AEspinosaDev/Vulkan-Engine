@@ -1,14 +1,14 @@
 #ifndef FORWARD_H
 #define FORWARD_H
 
-#include <engine/core/passes/bloom_pass.h>
-#include <engine/core/passes/enviroment_pass.h>
-#include <engine/core/passes/forward_pass.h>
-#include <engine/core/passes/gui_pass.h>
-#include <engine/core/passes/postprocess_pass.h>
-#include <engine/core/passes/sky_pass.h>
-#include <engine/core/passes/tonemapping_pass.h>
-#include <engine/core/passes/variance_shadow_pass.h>
+#include <engine/render/passes/bloom_pass.h>
+#include <engine/render/passes/enviroment_pass.h>
+#include <engine/render/passes/forward_pass.h>
+#include <engine/render/passes/gui_pass.h>
+#include <engine/render/passes/postprocess_pass.h>
+#include <engine/render/passes/sky_pass.h>
+#include <engine/render/passes/tonemapping_pass.h>
+#include <engine/render/passes/variance_shadow_pass.h>
 
 #include <engine/systems/renderers/renderer.h>
 
@@ -67,14 +67,14 @@ class ForwardRenderer : public BaseRenderer
     inline float get_bloom_strength() {
         if (m_passes[BLOOM_PASS])
         {
-            return get_pass<Core::BloomPass>(BLOOM_PASS)->get_bloom_strength();
+            return get_pass<Render::BloomPass>(BLOOM_PASS)->get_bloom_strength();
         }
         return 0.0f;
     }
     inline void set_bloom_strength(float st) {
         if (m_passes[BLOOM_PASS])
         {
-            return get_pass<Core::BloomPass>(BLOOM_PASS)->set_bloom_strength(st);
+            return get_pass<Render::BloomPass>(BLOOM_PASS)->set_bloom_strength(st);
         }
     }
 };

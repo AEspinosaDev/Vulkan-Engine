@@ -17,22 +17,22 @@ VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 
 struct Face {
-    Vec3  normal   = {0.f, 1.f, 0.f}; // unit vector
-    float distance = 0.f;             // Distance with origin
+    Vec3  normal   = { 0.f, 1.f, 0.f }; // unit vector
+    float distance = 0.f;               // Distance with origin
 
     Face() = default;
 
-    Face(const Vec3& p1, const Vec3& norm)
-        : normal(math::normalize(norm))
-        , distance(math::dot(normal, p1)) {
+    Face( const Vec3& p1, const Vec3& norm )
+        : normal( math::normalize( norm ) )
+        , distance( math::dot( normal, p1 ) ) {
     }
-    Face(const float dist, const Vec3& norm)
-        : normal(math::normalize(norm))
-        , distance(dist) {
+    Face( const float dist, const Vec3& norm )
+        : normal( math::normalize( norm ) )
+        , distance( dist ) {
     }
 
-    float get_signed_distance(const Vec3& point) const {
-        return math::dot(normal, point) - distance;
+    float get_signed_distance( const Vec3& point ) const {
+        return math::dot( normal, point ) - distance;
     }
 };
 
@@ -50,7 +50,7 @@ struct Frustum {
 class Camera : public Object3D
 {
 
-  private:
+private:
     Mat4 m_view;
     Mat4 m_proj;
 
@@ -62,36 +62,36 @@ class Camera : public Object3D
     float m_zoom;
     float m_aspect;
 
-    bool m_perspective{true};
-    bool m_frustrumCulling{true};
-    bool m_inverse_Z{false};
+    bool m_perspective { true };
+    bool m_frustrumCulling { true };
+    bool m_inverse_Z { false };
 
     static int m_instanceCount;
 
-  public:
-    Camera(Vec3 p = Vec3(0.0f, 1.0f, 8.0f), Vec3 f = Vec3(0.0f, 0.0f, 1.0f), Vec3 up = Vec3(0.0f, 1.0f, 0.0f))
-        : Object3D("Camera #" + std::to_string(Camera::m_instanceCount), p, ObjectType::CAMERA)
-        , m_fov(45.0f)
-        , m_near(.1f)
-        , m_far(100.0f) {
-        set_rotation({-90, 0, 0}, true);
+public:
+    Camera( Vec3 p = Vec3( 0.0f, 1.0f, 8.0f ), Vec3 f = Vec3( 0.0f, 0.0f, 1.0f ), Vec3 up = Vec3( 0.0f, 1.0f, 0.0f ) )
+        : Object3D( "Camera #" + std::to_string( Camera::m_instanceCount ), p, ObjectType::CAMERA )
+        , m_fov( 45.0f )
+        , m_near( .1f )
+        , m_far( 100.0f ) {
+        set_rotation( { -90, 0, 0 }, true );
         Camera::m_instanceCount++;
     }
 
-    inline void set_field_of_view(float fov) {
+    inline void set_field_of_view( float fov ) {
         m_fov   = fov;
         isDirty = true;
     }
     inline float get_field_of_view() const {
         return m_fov;
     }
-    inline void set_projection(int width, int height) {
+    inline void set_projection( int width, int height ) {
         m_aspect = (float)width / (float)height;
-        if (m_perspective)
-            m_proj = !m_inverse_Z ? math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_near, m_far)
-                                  : math::perspectiveRH_ZO(math::radians(m_fov), m_aspect, m_far, m_near);
+        if ( m_perspective )
+            m_proj = !m_inverse_Z ? math::perspectiveRH_ZO( math::radians( m_fov ), m_aspect, m_near, m_far )
+                                  : math::perspectiveRH_ZO( math::radians( m_fov ), m_aspect, m_far, m_near );
         else
-            m_proj = math::ortho(0.0f, (float)width, 0.0f, (float)height, m_near, m_far);
+            m_proj = math::ortho( 0.0f, (float)width, 0.0f, (float)height, m_near, m_far );
 
         m_proj[1][1] *= -1; // Because Vulkan
     }
@@ -102,13 +102,13 @@ class Camera : public Object3D
     inline bool inverse_Z() const {
         return m_inverse_Z;
     }
-    inline void inverse_Z(bool op) {
+    inline void inverse_Z( bool op ) {
         m_inverse_Z = op;
     }
     inline Mat4 get_view() {
-        if (isDirty)
+        if ( isDirty )
         {
-            m_view = math::lookAt(m_transform.position, m_transform.position + m_transform.forward, m_transform.up);
+            m_view = math::lookAt( m_transform.position, m_transform.position + m_transform.forward, m_transform.up );
             set_frustum();
             isDirty = false;
         }
@@ -117,14 +117,14 @@ class Camera : public Object3D
     inline float get_far() const {
         return m_far;
     }
-    inline void set_far(float f) {
+    inline void set_far( float f ) {
         m_far   = f;
         isDirty = true;
     }
     inline float get_near() const {
         return m_near;
     }
-    inline void set_near(float n) {
+    inline void set_near( float n ) {
         m_near  = n;
         isDirty = true;
     }
@@ -132,19 +132,35 @@ class Camera : public Object3D
     void set_frustum();
 
     inline Frustum get_frustrum() {
-        if (isDirty)
+        if ( isDirty )
         {
             set_frustum();
         }
         return m_frustrum;
     }
 
-    inline void enable_frustrum_culling(bool op) {
+    inline void enable_frustrum_culling( bool op ) {
         m_frustrumCulling = op;
     }
     inline bool get_frustrum_culling() const {
         return m_frustrumCulling;
     }
+
+    struct GPUPayload {
+        Mat4  view;
+        Mat4  proj;
+        Mat4  viewProj;
+        Mat4  invView;
+        Mat4  invProj;
+        Mat4  invViewProj;
+        Mat4  unormProj;
+        Mat4  prevViewProj;
+        Vec4  position;
+        Vec2  screenExtent;
+        float nearPlane;
+        float farPlane;
+        Vec2  jitter;
+    };
 };
 } // namespace Core
 

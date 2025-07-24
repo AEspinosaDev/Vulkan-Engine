@@ -383,22 +383,22 @@ void ExplorerWidget::displayRendererSettings() {
         switch (otype_current)
         {
         case 0:
-            renderer->set_shading_output(Core::OutputBuffer::LIGHTING);
+            renderer->set_shading_output(Render::OutputBuffer::LIGHTING);
             break;
         case 1:
-            renderer->set_shading_output(Core::OutputBuffer::ALBEDO);
+            renderer->set_shading_output(Render::OutputBuffer::ALBEDO);
             break;
         case 2:
-            renderer->set_shading_output(Core::OutputBuffer::NORMAL);
+            renderer->set_shading_output(Render::OutputBuffer::NORMAL);
             break;
         case 3:
-            renderer->set_shading_output(Core::OutputBuffer::POSITION);
+            renderer->set_shading_output(Render::OutputBuffer::POSITION);
             break;
         case 4:
-            renderer->set_shading_output(Core::OutputBuffer::MATERIAL);
+            renderer->set_shading_output(Render::OutputBuffer::MATERIAL);
             break;
         case 5:
-            renderer->set_shading_output(Core::OutputBuffer::SSAO);
+            renderer->set_shading_output(Render::OutputBuffer::SSAO);
             break;
         }
     }
@@ -435,7 +435,7 @@ void ExplorerWidget::displayRendererSettings() {
 
     ImGui::SeparatorText("GI");
 
-    Core::VXGI settings_VXGI = renderer->get_VXGI_settings();
+    Render::VXGI settings_VXGI = renderer->get_VXGI_settings();
     bool       VXGIenabled   = (bool)settings_VXGI.enabled;
     if (ImGui::Checkbox("Enable VXGI", &VXGIenabled))
     {
@@ -540,7 +540,7 @@ void ExplorerWidget::displayRendererSettings() {
 #pragma region AO
     ImGui::SeparatorText("AMBIENT OCC.");
 
-    Core::AO settings_SSAO = renderer->get_SSAO_settings();
+    Render::AO settings_SSAO = renderer->get_SSAO_settings();
     bool     SSAOEnabled   = (bool)settings_SSAO.enabled;
     if (ImGui::Checkbox("Enable AO", &SSAOEnabled))
     {
@@ -558,18 +558,18 @@ void ExplorerWidget::displayRendererSettings() {
             switch (ssao_current)
             {
             case 0:
-                settings_SSAO.type = Core::AOType::SSAO;
+                settings_SSAO.type = Render::AOType::SSAO;
                 break;
             case 1:
-                settings_SSAO.type = Core::AOType::RTAO;
+                settings_SSAO.type = Render::AOType::RTAO;
                 break;
             case 2:
-                settings_SSAO.type = Core::AOType::VXAO;
+                settings_SSAO.type = Render::AOType::VXAO;
                 break;
             }
             renderer->set_SSAO_settings(settings_SSAO);
         }
-        if (settings_SSAO.type != Core::AOType::VXAO)
+        if (settings_SSAO.type != Render::AOType::VXAO)
         {
             if (ImGui::DragInt("SSAO Samples", &SSAOsamples, 1, 1, 64))
             {
@@ -601,7 +601,7 @@ void ExplorerWidget::displayRendererSettings() {
 #pragma region SSR
     ImGui::SeparatorText("SSR");
 
-    Core::SSR settings_SSR = renderer->get_SSR_settings();
+    Render::SSR settings_SSR = renderer->get_SSR_settings();
     bool      ssrEnabled   = (bool)settings_SSR.enabled;
     if (ImGui::Checkbox("Enable SSR", &ssrEnabled))
     {
@@ -643,7 +643,7 @@ void ExplorerWidget::displayRendererSettings() {
     const char* tonemaps[]  = {"FILMIC", "REINDHART", "ACES"};
     if (ImGui::Combo("Tonemap Type", &tonemapType, tonemaps, IM_ARRAYSIZE(tonemaps)))
     {
-        renderer->set_tonemapping_type(static_cast<Core::TonemappingType>(tonemapType));
+        renderer->set_tonemapping_type(static_cast<Render::TonemappingType>(tonemapType));
     }
 }
 void ExplorerWidget::displaySkySettings() {
@@ -1501,22 +1501,22 @@ void Tools::DeferredRendererWidget::render() {
         switch (otype_current)
         {
         case 0:
-            m_renderer->set_shading_output(Core::OutputBuffer::LIGHTING);
+            m_renderer->set_shading_output(Render::OutputBuffer::LIGHTING);
             break;
         case 1:
-            m_renderer->set_shading_output(Core::OutputBuffer::ALBEDO);
+            m_renderer->set_shading_output(Render::OutputBuffer::ALBEDO);
             break;
         case 2:
-            m_renderer->set_shading_output(Core::OutputBuffer::NORMAL);
+            m_renderer->set_shading_output(Render::OutputBuffer::NORMAL);
             break;
         case 3:
-            m_renderer->set_shading_output(Core::OutputBuffer::POSITION);
+            m_renderer->set_shading_output(Render::OutputBuffer::POSITION);
             break;
         case 4:
-            m_renderer->set_shading_output(Core::OutputBuffer::MATERIAL);
+            m_renderer->set_shading_output(Render::OutputBuffer::MATERIAL);
             break;
         case 5:
-            m_renderer->set_shading_output(Core::OutputBuffer::SSAO);
+            m_renderer->set_shading_output(Render::OutputBuffer::SSAO);
             break;
         }
     }
@@ -1550,7 +1550,7 @@ void Tools::DeferredRendererWidget::render() {
     }
 
     ImGui::Separator();
-    Core::VXGI settings_VXGI = m_renderer->get_VXGI_settings();
+    Render::VXGI settings_VXGI = m_renderer->get_VXGI_settings();
     bool       VXGIenabled   = (bool)settings_VXGI.enabled;
     if (ImGui::Checkbox("Enable VXGI", &VXGIenabled))
     {
@@ -1653,7 +1653,7 @@ void Tools::DeferredRendererWidget::render() {
     }
 #pragma region AO
     ImGui::Separator();
-    Core::AO settings_SSAO = m_renderer->get_SSAO_settings();
+    Render::AO settings_SSAO = m_renderer->get_SSAO_settings();
     bool     SSAOEnabled   = (bool)settings_SSAO.enabled;
     if (ImGui::Checkbox("Enable AO", &SSAOEnabled))
     {
@@ -1671,18 +1671,18 @@ void Tools::DeferredRendererWidget::render() {
             switch (ssao_current)
             {
             case 0:
-                settings_SSAO.type = Core::AOType::SSAO;
+                settings_SSAO.type = Render::AOType::SSAO;
                 break;
             case 1:
-                settings_SSAO.type = Core::AOType::RTAO;
+                settings_SSAO.type = Render::AOType::RTAO;
                 break;
             case 2:
-                settings_SSAO.type = Core::AOType::VXAO;
+                settings_SSAO.type = Render::AOType::VXAO;
                 break;
             }
             m_renderer->set_SSAO_settings(settings_SSAO);
         }
-        if (settings_SSAO.type != Core::AOType::VXAO)
+        if (settings_SSAO.type != Render::AOType::VXAO)
         {
             if (ImGui::DragInt("SSAO Samples", &SSAOsamples, 1, 1, 64))
             {
@@ -1713,7 +1713,7 @@ void Tools::DeferredRendererWidget::render() {
     }
 #pragma region SSR
     ImGui::Separator();
-    Core::SSR settings_SSR = m_renderer->get_SSR_settings();
+    Render::SSR settings_SSR = m_renderer->get_SSR_settings();
     bool      ssrEnabled   = (bool)settings_SSR.enabled;
     if (ImGui::Checkbox("Enable SSR", &ssrEnabled))
     {
@@ -1754,7 +1754,7 @@ void Tools::DeferredRendererWidget::render() {
     const char* tonemaps[]  = {"FILMIC", "REINDHART", "ACES"};
     if (ImGui::Combo("Tonemap Type", &tonemapType, tonemaps, IM_ARRAYSIZE(tonemaps)))
     {
-        m_renderer->set_tonemapping_type(static_cast<Core::TonemappingType>(tonemapType));
+        m_renderer->set_tonemapping_type(static_cast<Render::TonemappingType>(tonemapType));
     }
 
 } // namespace Tools

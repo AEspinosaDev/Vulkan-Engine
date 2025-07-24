@@ -20,8 +20,8 @@ namespace Core {
 /// Epic's Fitted Marschner Workflow. Only works with geometry defined as lines.
 class HairStrandMaterial : public IMaterial
 {
-  protected:
-    Vec4 m_baseColor = {0.27f, 0.14f, 0.04f, 1.0f}; // w for opacity
+protected:
+    Vec4 m_baseColor = { 0.27f, 0.14f, 0.04f, 1.0f }; // w for opacity
 
     float m_thickness = 0.003f;
 
@@ -47,7 +47,7 @@ class HairStrandMaterial : public IMaterial
 
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual Graphics::MaterialUniforms                get_uniforms() const;
+    virtual IMaterial::GPUPayload                     get_uniforms() const;
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
     }
@@ -55,37 +55,37 @@ class HairStrandMaterial : public IMaterial
     virtual std::unordered_map<int, bool> get_texture_binding_state() const {
         return m_textureBindingState;
     }
-    virtual void set_texture_binding_state(int id, bool state) {
+    virtual void set_texture_binding_state( int id, bool state ) {
         m_textureBindingState[id] = state;
     }
 
-    HairStrandMaterial(Vec4 baseColor, MaterialSettings params, std::string shaderPassID)
-        : IMaterial(shaderPassID, params)
-        , m_baseColor(baseColor) {
+    HairStrandMaterial( Vec4 baseColor, MaterialSettings params, std::string shaderPassID )
+        : IMaterial( shaderPassID, params )
+        , m_baseColor( baseColor ) {
     }
 
-  public:
-    HairStrandMaterial(Vec4 baseColor = Vec4(1.0f, 1.0f, 0.5f, 1.0f))
-        : IMaterial("hairstr")
-        , m_baseColor(baseColor) {
+public:
+    HairStrandMaterial( Vec4 baseColor = Vec4( 1.0f, 1.0f, 0.5f, 1.0f ) )
+        : IMaterial( "hairstr" )
+        , m_baseColor( baseColor ) {
     }
-    HairStrandMaterial(Vec4 baseColor, MaterialSettings params)
-        : IMaterial("hairstr", params)
-        , m_baseColor(baseColor) {
+    HairStrandMaterial( Vec4 baseColor, MaterialSettings params )
+        : IMaterial( "hairstr", params )
+        , m_baseColor( baseColor ) {
     }
 
     inline Vec3 get_base_color() const {
-        return Vec3(m_baseColor);
+        return Vec3( m_baseColor );
     }
-    inline void set_base_color(Vec3 c) {
-        m_baseColor = Vec4(c, m_baseColor.w);
+    inline void set_base_color( Vec3 c ) {
+        m_baseColor = Vec4( c, m_baseColor.w );
         m_isDirty   = true;
     }
 
     float get_thickness() const {
         return m_thickness;
     }
-    void set_thickness(float thickness) {
+    void set_thickness( float thickness ) {
         m_thickness = thickness;
     }
 
@@ -93,7 +93,7 @@ class HairStrandMaterial : public IMaterial
     bool get_R() const {
         return m_R;
     }
-    void set_R(bool R) {
+    void set_R( bool R ) {
         m_R       = R;
         m_isDirty = true;
     }
@@ -102,7 +102,7 @@ class HairStrandMaterial : public IMaterial
     float get_Rpower() const {
         return m_Rpower;
     }
-    void set_Rpower(float Rpower) {
+    void set_Rpower( float Rpower ) {
         m_Rpower  = Rpower;
         m_isDirty = true;
     }
@@ -111,7 +111,7 @@ class HairStrandMaterial : public IMaterial
     bool get_TT() const {
         return m_TT;
     }
-    void set_TT(bool TT) {
+    void set_TT( bool TT ) {
         m_TT = TT;
     }
 
@@ -119,7 +119,7 @@ class HairStrandMaterial : public IMaterial
     float get_TTpower() const {
         return m_TTpower;
     }
-    void set_TTpower(float TTpower) {
+    void set_TTpower( float TTpower ) {
         m_TTpower = TTpower;
         m_isDirty = true;
     }
@@ -128,7 +128,7 @@ class HairStrandMaterial : public IMaterial
     bool get_TRT() const {
         return m_TRT;
     }
-    void set_TRT(bool TRT) {
+    void set_TRT( bool TRT ) {
         m_TRT = TRT;
     }
 
@@ -136,7 +136,7 @@ class HairStrandMaterial : public IMaterial
     float get_TRTpower() const {
         return m_TRTpower;
     }
-    void set_TRTpower(float TRTpower) {
+    void set_TRTpower( float TRTpower ) {
         m_TRTpower = TRTpower;
         m_isDirty  = true;
     }
@@ -144,7 +144,7 @@ class HairStrandMaterial : public IMaterial
     float get_roughness() const {
         return m_roughness;
     }
-    void set_roughness(float roughness) {
+    void set_roughness( float roughness ) {
         m_roughness = roughness;
         m_isDirty   = true;
     }
@@ -152,7 +152,7 @@ class HairStrandMaterial : public IMaterial
     float get_scatter() const {
         return m_scatter;
     }
-    void set_scatter(float scatter) {
+    void set_scatter( float scatter ) {
         m_scatter = scatter;
         m_isDirty = true;
     }
@@ -160,7 +160,7 @@ class HairStrandMaterial : public IMaterial
     float get_shift() const {
         return m_shift;
     }
-    void set_shift(float shift) {
+    void set_shift( float shift ) {
         m_shift   = shift;
         m_isDirty = true;
     }
@@ -168,7 +168,7 @@ class HairStrandMaterial : public IMaterial
     float get_ior() const {
         return m_ior;
     }
-    void set_ior(float ior) {
+    void set_ior( float ior ) {
         m_ior     = ior;
         m_isDirty = true;
     }
@@ -176,7 +176,7 @@ class HairStrandMaterial : public IMaterial
     bool get_glints() const {
         return m_glints;
     }
-    void set_glints(bool glints) {
+    void set_glints( bool glints ) {
         m_glints  = glints;
         m_isDirty = true;
     }
@@ -184,7 +184,7 @@ class HairStrandMaterial : public IMaterial
     bool get_useScatter() const {
         return m_useScatter;
     }
-    void set_useScatter(bool useScatter) {
+    void set_useScatter( bool useScatter ) {
         m_useScatter = useScatter;
         m_isDirty    = true;
     }
@@ -192,7 +192,7 @@ class HairStrandMaterial : public IMaterial
     bool get_coloredScatter() const {
         return m_coloredScatter;
     }
-    void set_coloredScatter(bool coloredScatter) {
+    void set_coloredScatter( bool coloredScatter ) {
         m_coloredScatter = coloredScatter;
         m_isDirty        = true;
     }
@@ -200,7 +200,7 @@ class HairStrandMaterial : public IMaterial
     bool get_occlusion() const {
         return m_occlusion;
     }
-    void set_occlusion(bool occlusion) {
+    void set_occlusion( bool occlusion ) {
         m_occlusion = occlusion;
         m_isDirty   = true;
     }
@@ -228,13 +228,13 @@ class HairStrandMaterial2 : public HairStrandMaterial
         NGI_TRT = 5,
     };
 
-    std::unordered_map<int, ITexture*> m_textures{{N1, nullptr},
-                                                  {N2, nullptr},
-                                                  {GI, nullptr},
-                                                  {MGI, nullptr},
-                                                  {NGI, nullptr},
-                                                  {NGI_TRT, nullptr}};
-    virtual Graphics::MaterialUniforms get_uniforms() const;
+    std::unordered_map<int, ITexture*> m_textures { { N1, nullptr },
+                                                    { N2, nullptr },
+                                                    { GI, nullptr },
+                                                    { MGI, nullptr },
+                                                    { NGI, nullptr },
+                                                    { NGI_TRT, nullptr } };
+    virtual IMaterial::GPUPayload      get_uniforms() const;
 
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
@@ -243,13 +243,13 @@ class HairStrandMaterial2 : public HairStrandMaterial
     virtual std::unordered_map<int, bool> get_texture_binding_state() const {
         return m_textureBindingState;
     }
-    virtual void set_texture_binding_state(int id, bool state) {
+    virtual void set_texture_binding_state( int id, bool state ) {
         m_textureBindingState[id] = state;
     }
 
-  public:
-    HairStrandMaterial2(HairPigmentType pigment = BLONDE)
-        : HairStrandMaterial(Vec4(0.0), {}, "hairstr2") {
+public:
+    HairStrandMaterial2( HairPigmentType pigment = BLONDE )
+        : HairStrandMaterial( Vec4( 0.0 ), {}, "hairstr2" ) {
         // m_coloredScatter = true;
         // TextureSettings settings{};
         // settings.useMipmaps         = false;

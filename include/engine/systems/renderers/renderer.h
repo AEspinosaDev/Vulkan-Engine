@@ -13,8 +13,10 @@
 #define RENDERER_H
 
 #include <engine/common.h>
-#include <engine/core/passes/pass.h>
-#include <engine/core/resource_manager.h>
+#include <engine/render/GPU_resource_pool.h>
+#include <engine/render/GPU_scene_builder.h>
+#include <engine/render/passes/graphic_pass.h>
+#include <engine/render/passes/pass.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -25,13 +27,13 @@ Renderer Global Settings Data
 */
 struct RendererSettings {
 
-    MSAASamples      samplesMSAA           = MSAASamples::x4;          // Multisampled AA (when possible)
-    BufferingType    bufferingType         = BufferingType::DOUBLE;    // Buffering type (Usual: double buffering)
-    SyncType         screenSync            = SyncType::MAILBOX;        // Type of display synchronization
-    ColorFormatType  displayColorFormat    = SRGBA_8;                  // Color format used for presentation
-    FloatPrecission  highDynamicPrecission = FloatPrecission::F16;     // HDR operations floating point precission
-    FloatPrecission  depthPrecission       = FloatPrecission::F32;     // Depth operations floating point precission
-    Vec4             clearColor            = Vec4{0.0, 0.0, 0.0, 1.0}; // Clear color of visible color buffer
+    MSAASamples      samplesMSAA           = MSAASamples::x4;             // Multisampled AA (when possible)
+    BufferingType    bufferingType         = BufferingType::DOUBLE;       // Buffering type (Usual: double buffering)
+    SyncType         screenSync            = SyncType::MAILBOX;           // Type of display synchronization
+    ColorFormatType  displayColorFormat    = SRGBA_8;                     // Color format used for presentation
+    FloatPrecission  highDynamicPrecission = FloatPrecission::F16;        // HDR operations floating point precission
+    FloatPrecission  depthPrecission       = FloatPrecission::F32;        // Depth operations floating point precission
+    Vec4             clearColor            = Vec4 { 0.0, 0.0, 0.0, 1.0 }; // Clear color of visible color buffer
     SoftwareAA       softwareAA            = SoftwareAA::NONE;
     ShadowResolution shadowQuality         = ShadowResolution::MEDIUM;
     bool             autoClearColor        = true;
@@ -48,20 +50,21 @@ struct RendererSettings {
 class BaseRenderer
 {
 #pragma region Properties
-  protected:
+protected:
     /*Main properties*/
     ptr<Graphics::Device>        m_device;
     ptr<Core::IWindow>           m_window;
     std::vector<Graphics::Frame> m_frames;
-    Extent2D                     m_headlessExtent{}; // In case is headless
+    Extent2D                     m_headlessExtent {}; // In case is headless
 
     /*Settings*/
-    RendererSettings m_settings{};
+    RendererSettings m_settings {};
 
-    /*Passes & Attachments*/
-    // std::vector<ptr<Core::BasePass>> m_passes;
-    std::vector<ptr<Core::BasePass>> m_passes;
+    /*Render Resources*/
+    std::vector<ptr<Render::BasePass>> m_passes;
     std::vector<Graphics::Image>     m_attachments;
+    Render::GPUSceneBuilder          m_gpuScene;
+    ptr<Render::GPUResourcePool>        m_shared;
 
     /*Automatic deletion queue*/
     Utils::DeletionQueue m_deletionQueue;
@@ -73,25 +76,25 @@ class BaseRenderer
     bool     m_updateFramebuffers = false;
 
 #pragma endregion
-  public:
-    BaseRenderer(const ptr<Core::IWindow>& window)
-        : m_window(window)
-        , m_device(nullptr) {
-        if (!window)
+public:
+    BaseRenderer( const ptr<Core::IWindow>& window )
+        : m_window( window )
+        , m_device( nullptr ) {
+        if ( !window )
             m_headless = true;
     }
-    BaseRenderer(const ptr<Core::IWindow>& window, RendererSettings settings)
-        : m_window(window)
-        , m_settings(settings)
-        , m_device(nullptr) {
-        if (!window)
+    BaseRenderer( const ptr<Core::IWindow>& window, RendererSettings settings )
+        : m_window( window )
+        , m_settings( settings )
+        , m_device( nullptr ) {
+        if ( !window )
             m_headless = true;
     }
     // Headless rendering
-    BaseRenderer(Extent2D displayExtent)
-        : m_window(nullptr)
-        , m_device(nullptr)
-        , m_headlessExtent{displayExtent} {
+    BaseRenderer( Extent2D displayExtent )
+        : m_window( nullptr )
+        , m_device( nullptr )
+        , m_headlessExtent { displayExtent } {
         m_headless = true;
     }
 
@@ -106,8 +109,8 @@ class BaseRenderer
     inline RendererSettings get_settings() const {
         return m_settings;
     }
-    virtual inline void set_settings(RendererSettings settings) {
-        if (m_settings.screenSync != settings.screenSync)
+    virtual inline void set_settings( RendererSettings settings ) {
+        if ( m_settings.screenSync != settings.screenSync )
             m_updateFramebuffers = true;
 
         m_settings = settings;
@@ -123,23 +126,23 @@ class BaseRenderer
     /**
      * Standalone pre-implemented render loop for the renderer.
      */
-    void run(Core::Scene* const scene);
+    void run( Core::Scene* const scene );
     /**
      * Renders a given scene.
      */
-    void render(Core::Scene* const scene);
+    void render( Core::Scene* const scene );
     /**
      * Shut the renderer down.
      */
-    void shutdown(Core::Scene* const scene);
+    void shutdown( Core::Scene* const scene );
     /*
      * Capture one of the attachment images in a given frame as a CPU texture.
      */
-    Core::ITexture* capture_texture(uint32_t attachmentId);
+    Core::ITexture* capture_texture( uint32_t attachmentId );
 
 #pragma endregion
 #pragma region Core Functions
-  protected:
+protected:
     /*
      Init passes
      */
@@ -152,15 +155,15 @@ class BaseRenderer
     /*
     What to do just before rendering
     */
-    virtual void on_before_render(Core::Scene* const scene);
+    virtual void on_before_render( Core::Scene* const scene );
     /*
     What to do just before rendering
     */
-    virtual void on_after_render(RenderResult& renderResult, Core::Scene* const scene);
+    virtual void on_after_render( RenderResult& renderResult, Core::Scene* const scene );
     /*
     What to do when shutting down the renderer
     */
-    virtual void on_shutdown(Core::Scene* const scene) {
+    virtual void on_shutdown( Core::Scene* const scene ) {
     }
     /*
     Resource like samplers, base textures and misc creation
@@ -174,7 +177,7 @@ class BaseRenderer
     Clean and recreates swapchain and framebuffers in the renderer. Useful to use
     when resizing context
     */
-    void update_framebuffers(Extent2D extent);
+    void update_framebuffers( Extent2D extent );
     /*
     Initialize gui layout in case ther's one enabled
     */
@@ -182,11 +185,12 @@ class BaseRenderer
 #pragma endregion
 #pragma region Utility
 
-    template <typename T> inline ptr<T> get_pass(uint32_t id) {
-        if (id >= m_passes.size())
+    template <typename T>
+    inline ptr<T> get_pass( uint32_t id ) {
+        if ( id >= m_passes.size() )
             return nullptr;
 
-        return std::static_pointer_cast<T>(m_passes[id]);
+        return std::static_pointer_cast<T>( m_passes[id] );
     }
 
 #pragma endregion

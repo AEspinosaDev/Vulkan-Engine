@@ -37,7 +37,7 @@ struct Frame {
     static bool guiEnabled;
 };
 
-} // namespace Graphics
+} 
 
 VULKAN_ENGINE_NAMESPACE_END
 #endif

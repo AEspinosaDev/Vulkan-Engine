@@ -3,9 +3,9 @@
 VULKAN_ENGINE_NAMESPACE_BEGIN
 namespace Core {
 IMaterial*                 IMaterial::debugMaterial = new PhysicalMaterial(Vec4(0.5f,0.5f,0.5f,1.0));
-Graphics::MaterialUniforms PhysicalMaterial::get_uniforms() const {
+IMaterial::GPUPayload  PhysicalMaterial::get_uniforms() const {
 
-    Graphics::MaterialUniforms uniforms;
+    IMaterial::GPUPayload  uniforms;
     uniforms.dataSlot1 = m_albedo;
     uniforms.dataSlot2 = {m_tileUV.x, m_tileUV.y, m_settings.alphaTest, m_settings.blending};
     uniforms.dataSlot3 = {m_albedoWeight, m_metalness, m_metalnessWeight, m_roughness};

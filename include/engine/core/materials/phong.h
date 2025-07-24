@@ -48,7 +48,7 @@ class PhongMaterial : public IMaterial
 
     std::unordered_map<int, bool> m_textureBindingState;
 
-    virtual Graphics::MaterialUniforms                get_uniforms() const;
+    virtual IMaterial::GPUPayload                 get_uniforms() const;
     virtual inline std::unordered_map<int, ITexture*> get_textures() const {
         return m_textures;
     }

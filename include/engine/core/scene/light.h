@@ -10,7 +10,6 @@
 #define LIGHT_H
 
 #include <engine/core/scene/object3D.h>
-#include <engine/graphics/uniforms.h>
 
 VULKAN_ENGINE_NAMESPACE_BEGIN
 
@@ -18,7 +17,7 @@ namespace Core {
 
 class Light : public Object3D
 {
-  protected:
+protected:
     Vec3  m_color;
     float m_intensity;
     float m_area = 0.0; // If ZERO is treated as a VPL (Virtual Point Light)
@@ -30,7 +29,7 @@ class Light : public Object3D
         float      nearPlane           = .5f;
         float      farPlane            = 96.0f;
         float      fov                 = 45.0f;
-        Vec3       target              = {0.0f, 0.0f, 0.0f};
+        Vec3       target              = { 0.0f, 0.0f, 0.0f };
         float      bias                = 0.005f;
         float      bleeding            = 0.75f;
         bool       angleDependableBias = false;
@@ -44,115 +43,115 @@ class Light : public Object3D
 
     static uint16_t m_nonRaytraceCount;
 
-  public:
-    Light(std::string name, LightType type, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 2.5f)
-        : Object3D(name, ObjectType::LIGHT)
-        , m_color(color)
-        , m_intensity(intensity)
-        , m_lighType(type) {
-        if (m_shadow.type != RAYTRACED_SHADOW)
+public:
+    Light( std::string name, LightType type, Vec3 color = Vec3( 1.0f, 1.0f, 1.0f ), float intensity = 2.5f )
+        : Object3D( name, ObjectType::LIGHT )
+        , m_color( color )
+        , m_intensity( intensity )
+        , m_lighType( type ) {
+        if ( m_shadow.type != RAYTRACED_SHADOW )
             m_nonRaytraceCount++;
     }
 
-    virtual ~Light(){}
+    virtual ~Light() {}
 
     virtual inline Vec3 get_color() const {
         return m_color;
     }
-    virtual inline void set_color(Vec3 c) {
+    virtual inline void set_color( Vec3 c ) {
         m_color = c;
     }
 
     virtual inline float get_intensity() const {
         return m_intensity;
     }
-    virtual inline void set_intensity(float i) {
+    virtual inline void set_intensity( float i ) {
         m_intensity = i;
     }
 
     virtual inline bool get_cast_shadows() const {
         return m_shadow.cast;
     }
-    virtual inline void set_cast_shadows(bool o) {
+    virtual inline void set_cast_shadows( bool o ) {
         m_shadow.cast = o;
     }
     virtual inline ShadowType get_shadow_type() const {
         return m_shadow.type;
     }
-    virtual inline void set_shadow_type(ShadowType t) {
+    virtual inline void set_shadow_type( ShadowType t ) {
         auto oldType  = m_shadow.type;
         m_shadow.type = t;
-        if (m_shadow.type != ShadowType::RAYTRACED_SHADOW && oldType == ShadowType::RAYTRACED_SHADOW)
+        if ( m_shadow.type != ShadowType::RAYTRACED_SHADOW && oldType == ShadowType::RAYTRACED_SHADOW )
         {
             m_nonRaytraceCount++;
-        } else if (oldType != ShadowType::RAYTRACED_SHADOW)
+        } else if ( oldType != ShadowType::RAYTRACED_SHADOW )
         { m_nonRaytraceCount--; }
     }
     virtual inline Vec3 get_shadow_target() const {
         return m_shadow.target;
     }
-    virtual inline void set_shadow_target(Vec3 o) {
+    virtual inline void set_shadow_target( Vec3 o ) {
         m_shadow.target = o;
     }
 
     virtual inline float get_shadow_near() const {
         return m_shadow.nearPlane;
     }
-    virtual inline void set_shadow_near(float n) {
+    virtual inline void set_shadow_near( float n ) {
         m_shadow.nearPlane = n;
     }
 
     virtual inline float get_shadow_far() const {
         return m_shadow.farPlane;
     }
-    virtual inline void set_shadow_far(float f) {
+    virtual inline void set_shadow_far( float f ) {
         m_shadow.farPlane = f;
     }
 
     virtual inline float get_shadow_fov() const {
         return m_shadow.fov;
     }
-    virtual inline void set_shadow_fov(float f) {
+    virtual inline void set_shadow_fov( float f ) {
         m_shadow.fov = f;
     }
 
     virtual inline float get_shadow_bias() const {
         return m_shadow.bias;
     }
-    virtual inline void set_shadow_bias(float b) {
+    virtual inline void set_shadow_bias( float b ) {
         m_shadow.bias = b;
     }
     virtual inline float get_shadow_bleeding() const {
         return m_shadow.bleeding;
     }
-    virtual inline void set_shadow_bleeding(float b) {
+    virtual inline void set_shadow_bleeding( float b ) {
         m_shadow.bleeding = b;
     }
 
     virtual inline int get_shadow_softness() const {
         return m_shadow.softness;
     }
-    virtual inline void set_shadow_softness(int k) {
+    virtual inline void set_shadow_softness( int k ) {
         m_shadow.softness = k;
     }
     virtual inline int get_shadow_ray_samples() const {
         return m_shadow.raySamples;
     }
-    virtual inline void set_shadow_ray_samples(int rays) {
+    virtual inline void set_shadow_ray_samples( int rays ) {
         m_shadow.raySamples = rays;
     }
 
     virtual inline bool get_angle_dependant_bias() const {
         return m_shadow.angleDependableBias;
     }
-    virtual inline void set_angle_dependant_bias(bool o) {
+    virtual inline void set_angle_dependant_bias( bool o ) {
         m_shadow.angleDependableBias = o;
     }
 
     virtual inline float get_shadow_kernel_radius() const {
         return m_shadow.kernelRadius;
     }
-    virtual inline void set_shadow_kernel_radius(float o) {
+    virtual inline void set_shadow_kernel_radius( float o ) {
         m_shadow.kernelRadius = o;
     }
 
@@ -162,14 +161,24 @@ class Light : public Object3D
     virtual inline float get_area() const {
         return m_area;
     }
-    virtual inline void set_area(float a) {
+    virtual inline void set_area( float a ) {
         m_area = a;
     }
 
-    virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const = 0;
-    static uint16_t                 get_non_raytraced_count() {
+    static uint16_t get_non_raytraced_count() {
         return m_nonRaytraceCount;
     }
+
+    struct GPUPayload {
+        Vec4 position      = { 0.0f, 0.0f, 0.0f, 0.0f }; // w for type
+        Vec4 worldPosition = { 0.0f, 0.0f, 0.0f, 0.0f }; // w for type
+        Vec4 color         = { 0.0f, 0.0f, 0.0f, 0.0f };
+        Vec4 dataSlot1     = { 0.0f, 0.0f, 0.0f, 0.0f };
+        Mat4 viewProj;
+        Vec4 dataSlot2 = { 0.0f, 0.0f, 0.0f, 0.0f };
+        Vec4 dataSlot3 = { 0.0f, 0.0f, 0.0f, 0.0f };
+    };
+    virtual Light::GPUPayload get_uniforms( Mat4 cameraView ) const = 0;
 };
 
 // POINT LIGHT
@@ -180,21 +189,21 @@ class PointLight : public Light
 
     static int m_instanceCount;
 
-  public:
-    PointLight(Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 2.5f)
-        : Light("Point Light #" + std::to_string(PointLight::m_instanceCount), LightType::POINT, color, intensity)
-        , m_effectArea(12.0f) {
+public:
+    PointLight( Vec3 color = Vec3( 1.0f, 1.0f, 1.0f ), float intensity = 2.5f )
+        : Light( "Point Light #" + std::to_string( PointLight::m_instanceCount ), LightType::POINT, color, intensity )
+        , m_effectArea( 12.0f ) {
         PointLight::m_instanceCount++;
     }
 
     inline float get_area_of_effect() const {
         return m_effectArea;
     }
-    inline void set_area_of_effect(float a) {
+    inline void set_area_of_effect( float a ) {
         m_effectArea = a;
     }
 
-    virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
+    virtual Light::GPUPayload get_uniforms( Mat4 cameraView ) const;
 };
 
 // DIRECTIONAL LIGHT
@@ -207,33 +216,33 @@ class DirectionalLight : public Light
 
     static int m_instanceCount;
 
-  public:
-    DirectionalLight(Vec3 direction, Vec3 color = Vec3(1.0f, 1.0f, 1.0f), float intensity = 5.0f)
-        : Light("Directional Light#" + std::to_string(DirectionalLight::m_instanceCount),
-                LightType::DIRECTIONAL,
-                color,
-                intensity)
-        , m_direction(direction) {
+public:
+    DirectionalLight( Vec3 direction, Vec3 color = Vec3( 1.0f, 1.0f, 1.0f ), float intensity = 5.0f )
+        : Light( "Directional Light#" + std::to_string( DirectionalLight::m_instanceCount ),
+                 LightType::DIRECTIONAL,
+                 color,
+                 intensity )
+        , m_direction( direction ) {
         DirectionalLight::m_instanceCount++;
     }
 
     inline Vec3 get_direction() const {
         return m_direction;
     }
-    inline void set_direction(Vec3 d) {
+    inline void set_direction( Vec3 d ) {
         m_direction = d;
-        m_direction = math::normalize(m_direction); 
+        m_direction = math::normalize( m_direction );
     }
     inline bool use_as_sun() const {
         return m_useAsSun;
     }
-    inline void use_as_sun(bool op) {
+    inline void use_as_sun( bool op ) {
         m_useAsSun = op;
     }
 
-    static Vec3 get_sun_direction(float elevationDeg, float rotationDeg);
+    static Vec3 get_sun_direction( float elevationDeg, float rotationDeg );
 
-    virtual Graphics::LightUniforms get_uniforms(Mat4 cameraView) const;
+    virtual Light::GPUPayload get_uniforms( Mat4 cameraView ) const;
 };
 } // namespace Core
 

@@ -20,7 +20,7 @@ namespace Core {
 
 class Scene : public Object3D
 {
-  private:
+private:
     Camera*              m_activeCamera;
     std::vector<Camera*> m_cameras;
     std::vector<Mesh*>   m_meshes;
@@ -33,60 +33,60 @@ class Scene : public Object3D
 
     // ENVIROMENT & FOG
     bool  m_useIBL           = false;
-    Vec3  m_ambientColor     = {0.7f, 0.5f, 0.5f}; // Fallback if no skybox
+    Vec3  m_ambientColor     = { 0.7f, 0.5f, 0.5f }; // Fallback if no skybox
     float m_ambientIntensity = 0.2f;
     bool  m_fog              = true;
-    Vec3  m_fogColor         = {0.2f, 0.2f, 0.2f};
+    Vec3  m_fogColor         = { 0.2f, 0.2f, 0.2f };
     float m_fogIntensity     = 20.0f;
     float m_fogExponent      = 1.0f;
     // BVOL
-    AABB m_volume = (this);
+    AABB m_volume = ( this );
 
-    inline void classify_object(Object3D* obj) {
-        switch (obj->get_type())
+    inline void classify_object( Object3D* obj ) {
+        switch ( obj->get_type() )
         {
-        case ObjectType::MESH:
-            m_meshes.push_back(static_cast<Mesh*>(obj));
-            break;
-        case ObjectType::CAMERA:
-            m_cameras.push_back(static_cast<Camera*>(obj));
-            m_activeCamera = static_cast<Camera*>(obj);
-            break;
-        case ObjectType::LIGHT:
-            m_lights.push_back(static_cast<Light*>(obj));
-            break;
-        default:
-            
-            break;
+            case ObjectType::MESH:
+                m_meshes.push_back( static_cast<Mesh*>( obj ) );
+                break;
+            case ObjectType::CAMERA:
+                m_cameras.push_back( static_cast<Camera*>( obj ) );
+                m_activeCamera = static_cast<Camera*>( obj );
+                break;
+            case ObjectType::LIGHT:
+                m_lights.push_back( static_cast<Light*>( obj ) );
+                break;
+            default:
+
+                break;
         }
 
-        for (auto child : obj->get_children())
-            classify_object(child);
+        for ( auto child : obj->get_children() )
+            classify_object( child );
     }
 
-    friend void            set_meshes(Scene* const scene, std::vector<Mesh*> meshes);
-    friend Graphics::TLAS* get_TLAS(Scene* const scene);
+    friend void            set_meshes( Scene* const scene, std::vector<Mesh*> meshes );
+    friend Graphics::TLAS* get_TLAS( Scene* const scene );
 
-  public:
-    Scene(Camera* cam)
-        : m_activeCamera(cam) {
-        add_child(cam);
+public:
+    Scene( Camera* cam )
+        : m_activeCamera( cam ) {
+        add_child( cam );
     };
     Scene()
-        : m_activeCamera(nullptr) {};
+        : m_activeCamera( nullptr ) {};
     ~Scene() {
         delete m_activeCamera;
         delete m_skybox;
 
-        for (Mesh* m : m_meshes)
+        for ( Mesh* m : m_meshes )
         {
             delete m;
         }
-        for (Camera* c : m_cameras)
+        for ( Camera* c : m_cameras )
         {
             delete c;
         }
-        for (Light* l : m_lights)
+        for ( Light* l : m_lights )
         {
             delete l;
         }
@@ -95,12 +95,12 @@ class Scene : public Object3D
         m_meshes.clear();
         m_lights.clear();
     };
-    inline void add(Object3D* obj) {
-        add_child(obj);
+    inline void add( Object3D* obj ) {
+        add_child( obj );
     }
-    inline void add_child(Object3D* obj) {
-        classify_object(obj);
-        Object3D::add_child(obj);
+    inline void add_child( Object3D* obj ) {
+        classify_object( obj );
+        Object3D::add_child( obj );
         isDirty = true;
     }
 
@@ -116,42 +116,42 @@ class Scene : public Object3D
     inline const std::vector<Light*> get_lights() const {
         return m_lights;
     }
-    inline void set_skybox(Skybox* skb) {
+    inline void set_skybox( Skybox* skb ) {
         m_skybox = skb;
         m_useIBL = true;
     }
     inline Skybox* const get_skybox() const {
         return m_skybox;
     }
-    inline void set_ambient_color(Vec3 c) {
+    inline void set_ambient_color( Vec3 c ) {
         m_ambientColor = c;
     }
     inline Vec3 get_ambient_color() const {
         return m_ambientColor;
     }
 
-    inline void set_ambient_intensity(float i) {
+    inline void set_ambient_intensity( float i ) {
         m_ambientIntensity = i;
     }
     inline float get_ambient_intensity() const {
         return m_ambientIntensity;
     }
 
-    inline void enable_fog(bool op) {
+    inline void enable_fog( bool op ) {
         m_fog = op;
     }
     inline bool is_fog_enabled() const {
         return m_fog;
     }
 
-    inline void set_fog_color(Vec3 c) {
+    inline void set_fog_color( Vec3 c ) {
         m_fogColor = c;
     }
     inline Vec3 get_fog_color() const {
         return m_fogColor;
     }
 
-    inline void set_fog_intensity(float i) {
+    inline void set_fog_intensity( float i ) {
         m_fogIntensity = i;
     }
     inline float get_fog_intensity() const {
@@ -160,7 +160,7 @@ class Scene : public Object3D
     inline bool use_IBL() const {
         return m_useIBL;
     }
-    inline void use_IBL(bool p) {
+    inline void use_IBL( bool p ) {
         m_useIBL = p;
     }
     /*
@@ -172,13 +172,13 @@ class Scene : public Object3D
     /*
     Set if Acceleration Structure is dynamic. That means that AS will update the positions of the meshes.
     */
-    inline void dynamic_AS(bool op) {
+    inline void dynamic_AS( bool op ) {
         m_accel.dynamic = op;
     }
     inline bool update_AS() const {
         return m_updateAccel;
     }
-    inline void update_AS(bool op) {
+    inline void update_AS( bool op ) {
         m_updateAccel = op;
     }
 
@@ -190,11 +190,27 @@ class Scene : public Object3D
     inline AABB get_AABB() const {
         return m_volume;
     }
+
+    struct GPUPayload {
+        Vec4              fogColorAndSSAO; // w is for enabling SSAO
+        Vec4              fogParams;       // x for near, y for far, z for intensity, w enable.
+        Vec4              ambientColor;    // w intensity
+        Vec4              maxCoord;
+        Vec4              minCoord;
+        Light::GPUPayload lightUniforms[ENGINE_MAX_LIGHTS];
+        int               numLights;
+        int               SSAOtype;
+        int               emphasizeAO;
+        int               useIBL;
+        float             envRotation;
+        float             envColorMultiplier;
+        float             time;
+    };
 };
 
-void set_meshes(Scene* const scene, std::vector<Mesh*> meshes);
+void set_meshes( Scene* const scene, std::vector<Mesh*> meshes );
 
-Graphics::TLAS* get_TLAS(Scene* const scene);
+Graphics::TLAS* get_TLAS( Scene* const scene );
 } // namespace Core
 
 VULKAN_ENGINE_NAMESPACE_END

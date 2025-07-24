@@ -136,7 +136,7 @@ void CommandBuffer::end_renderpass(RenderPass& renderpass, Framebuffer& fbo) {
     }
     vkCmdEndRenderPass(handle);
 }
-void CommandBuffer::draw_geometry(VertexArrays& vao, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance) {
+void CommandBuffer::draw_geometry(const VertexArrays& vao, uint32_t instanceCount, uint32_t firstOcurrence, int32_t offset, uint32_t firstInstance) {
     if (!vao.loadedOnGPU)
         return;
     PROFILING_EVENT()
