@@ -84,7 +84,7 @@ void main() {
 #include utils.glsl
 #include shadows.glsl
 #include fresnel.glsl
-#include BRDFs/cook_torrance_BRDF.glsl
+#include BRDFs/burley_BxDF.glsl
 #include warp.glsl
 #include raytracing.glsl
 
@@ -142,7 +142,7 @@ layout(set = 2, binding = 5) uniform sampler2D emissiveTex;
 
 
 //BRDF Definiiton
-CookTorranceBRDF brdf;
+BurleySimpleBRDF brdf;
 
 
 void setupBRDFProperties(){
@@ -176,6 +176,8 @@ void setupBRDFProperties(){
 
     brdf.emission =  material.hasEmissiveTexture ? mix(material.emissiveColor, texture(emissiveTex, v_uv).rgb, material.emissiveWeight) : material.emissiveColor;
     brdf.emission *= material.emissionIntensity;
+
+    brdf.diffuseModel = 0.0;
 }
 
 
@@ -194,7 +196,7 @@ void main() {
         //If inside liught area influence
         if(isInAreaOfInfluence(scene.lights[i].position, v_pos,scene.lights[i].areaEffect,int(scene.lights[i].type))){
 
-            vec3 lighting =evalCookTorranceBRDF( 
+            vec3 lighting =evalBurleySimpleBRDF( 
                 scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - v_pos) : normalize(scene.lights[i].position.xyz), //wi
                 normalize(-v_pos),                                                                                           //wo
                 scene.lights[i].color * computeAttenuation(scene.lights[i].position, v_pos,scene.lights[i].areaEffect,int(scene.lights[i].type)) *  scene.lights[i].intensity,              //radiance
@@ -229,7 +231,7 @@ void main() {
         mat3 rotY           = rotationY(radians(scene.envRotation));
         vec3 rotatedNormal  = normalize(rotY * v_modelNormal);
         vec3 irradiance     = texture(irradianceMap, rotatedNormal).rgb*scene.ambientIntensity;
-        ambient = evalDiffuseCookTorranceBRDF(
+        ambient = evalDiffuseBurleySimpleBRDF(
             rotatedNormal,
             normalize(camera.position.xyz-v_modelPos), 
             irradiance, 

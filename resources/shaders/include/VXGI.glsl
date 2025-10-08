@@ -166,7 +166,7 @@ vec4 diffuseVoxelGI2(sampler3D voxelMap, vec3 worldPos, vec3 worldNormal, VXGI v
 	return diffuseIndirect; 
 
 }
-vec4 diffuseVoxelGI_CookTorrance(sampler3D voxelMap, samplerCube envMap, vec3 worldPos, vec3 worldNormal, vec3 worldView, VXGI vxgi, CookTorranceBRDF brdf, float worldVolumeSize){
+vec4 diffuseVoxelGI_CookTorrance(sampler3D voxelMap, samplerCube envMap, vec3 worldPos, vec3 worldNormal, vec3 worldView, VXGI vxgi, BurleySimpleBRDF brdf, float worldVolumeSize){
 	
 	const float DIFFUSE_CONE_APERTURE 	= vxgi.diffuseConeSpread;
     const float VOXEL_SIZE  			= 1.0/float(vxgi.resolution);
@@ -186,7 +186,7 @@ vec4 diffuseVoxelGI_CookTorrance(sampler3D voxelMap, samplerCube envMap, vec3 wo
         coneTraceCount += 1.0;
 
 		vec4 irradiance  = traceCone(voxelMap, startPos,  DIFFUSE_CONE_DIRECTIONS[i], vxgi.maxDistance, DIFFUSE_CONE_APERTURE, voxelWorldSize);
-		diffuseIndirect += evalDiffuseCookTorranceBRDF(DIFFUSE_CONE_DIRECTIONS[i], worldView ,irradiance.rgb, brdf) * cosTheta;
+		diffuseIndirect += evalDiffuseBurleySimpleBRDF(DIFFUSE_CONE_DIRECTIONS[i], worldView ,irradiance.rgb, brdf) * cosTheta;
 		occlusion 		+= irradiance.a;
 
 		// diffuseIndirect += (1.0 - irradiance.a) *vec3(1.0,0.0,0.0) * scene.ambientIntensity; 

@@ -27,9 +27,9 @@ void main() {
 #include utils.glsl
 #include shadows.glsl
 #include fresnel.glsl
-#include BRDFs/cook_torrance_BRDF.glsl
+#include BRDFs/burley_BxDF.glsl
 #include BRDFs/marschner_BSDF.glsl
-#include BRDFs/disney_BSSDF_2015.glsl
+#include BRDFs/wip_BSSDF.glsl
 #include warp.glsl
 #include raytracing.glsl
 #include hashing.glsl
@@ -150,7 +150,7 @@ void main() {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             if(g_material.w == PHYSICAL_MATERIAL) {
             //Populate BRDF ________________________
-                CookTorranceBRDF brdf;
+                BurleySimpleBRDF brdf;
                 brdf.albedo = g_albedo;
                 brdf.opacity = g_opacity;
                 brdf.normal = g_normal;
@@ -160,13 +160,14 @@ void main() {
                 brdf.F0 = vec3(0.04);
                 brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
                 brdf.emission = g_emission;
+                brdf.diffuseModel = 1.0;
 
             // Indirect Component ____________________________
                 if(settings.vxgi.enabled == 1) {
 
                 // Diffuse
                     indirect = diffuseVoxelGI2(voxelMap, modelPos, modelNormal, settings.vxgi, scene.maxCoord.x - scene.minCoord.x);
-                    indirect.rgb = evalDiffuseCookTorranceBRDF(modelNormal, normalize(camera.position.xyz - modelPos), indirect.rgb, brdf);
+                    indirect.rgb = evalDiffuseBurleySimpleBRDF(modelNormal, normalize(camera.position.xyz - modelPos), indirect.rgb, brdf);
                     indirect.rgb *= (1.0 - indirect.a); //Account for occlusion
 
                 // Specular
@@ -175,7 +176,7 @@ void main() {
                     vec3 startPos = modelPos + modelNormal * voxelWorldSize * settings.vxgi.offset;
 
                     const float CONE_SPREAD = mix(0.005, settings.vxgi.diffuseConeSpread, brdf.roughness);
-                    indirectSpecular = evalSpecularCookTorranceBRDF(modelNormal, normalize(camera.position.xyz - modelPos), traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize).rgb, brdfMap, brdf);
+                    indirectSpecular = evalSpecularBurleySimpleBRDF(modelNormal, normalize(camera.position.xyz - modelPos), traceCone(voxelMap, startPos, specularConeDirection, settings.vxgi.maxDistance, CONE_SPREAD, voxelWorldSize).rgb, brdfMap, brdf);
 
                     indirect.rgb += indirectSpecular.rgb;
                 }
@@ -186,7 +187,7 @@ void main() {
 
                         //Direct Component ________________________
                         vec3 lighting = vec3(0.0);
-                        lighting = evalCookTorranceBRDF(scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(-scene.lights[i].position.xyz), //wi
+                        lighting = evalBurleySimpleBRDF(scene.lights[i].type != DIRECTIONAL_LIGHT ? normalize(scene.lights[i].position - g_pos) : normalize(-scene.lights[i].position.xyz), //wi
                         normalize(-g_pos),                                                                                           //wo
                         scene.lights[i].color * computeAttenuation(scene.lights[i].position, g_pos, scene.lights[i].areaEffect, int(scene.lights[i].type)) * scene.lights[i].intensity,              //radiance
                         brdf);
@@ -203,7 +204,7 @@ void main() {
                     mat3 rotY = rotationY(radians(scene.envRotation));
                     vec3 rotatedNormal = normalize(rotY * modelNormal);
                     vec3 irradiance = texture(irradianceMap, rotatedNormal).rgb * scene.ambientIntensity;
-                    ambient = evalDiffuseCookTorranceBRDF(rotatedNormal, normalize(camera.position.xyz - modelPos), irradiance, brdf);
+                    ambient = evalDiffuseBurleySimpleBRDF(rotatedNormal, normalize(camera.position.xyz - modelPos), irradiance, brdf);
                 } else {
                     ambient = (scene.ambientIntensity * scene.ambientColor) * brdf.albedo;
                 }
