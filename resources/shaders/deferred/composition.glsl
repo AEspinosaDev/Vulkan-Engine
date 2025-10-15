@@ -160,7 +160,7 @@ void main() {
                 brdf.F0 = vec3(0.04);
                 brdf.F0 = mix(brdf.F0, brdf.albedo, brdf.metalness);
                 brdf.emission = g_emission;
-                brdf.diffuseModel = 1.0;
+                brdf.diffuseModel = 2.0;
 
             // Indirect Component ____________________________
                 if(settings.vxgi.enabled == 1) {
