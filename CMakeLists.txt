@@ -109,6 +109,49 @@ create_source_group("Core\\Textures" "engine/core/textures" "core/textures")
 create_source_group("Core\\Geometries" "engine/core/geometries" "core/geometries")
 endif()
 
+# Choose if building the project for distribution (before the examples, which add their own install rules)
+option(DISTRIBUTION_MODE "Enable distribution mode (self-contained package assembled with cmake --install)" OFF)
+if(DISTRIBUTION_MODE)
+    message(STATUS "Distribution mode: package is assembled with cmake --install")
+
+    # Application to package (setup/package.bat sets both)
+    set(PACKAGE_TARGET "" CACHE STRING "Application packaged by cmake --install")
+    set(PACKAGE_ASSETS "" CACHE PATH "Overrides the assets directory declared for PACKAGE_TARGET")
+
+    # Define the macro for code (to be used in the engine)
+    target_compile_definitions(VulkanEngine PUBLIC DISTRIBUTION_MODE=1)
+
+    # Engine resources, found at runtime in <exe dir>/../resources
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/ DESTINATION resources)
+
+    if(WIN32)
+        # Shaders are compiled at runtime, so shaderc has to ship with the executables
+        get_filename_component(VULKAN_SDK_DIR ${Vulkan_INCLUDE_DIR} DIRECTORY)
+        install(FILES ${VULKAN_SDK_DIR}/Bin/shaderc_shared.dll DESTINATION bin)
+
+        # App-local MSVC runtime, so the target machine does not need the VC++ Redistributable
+        cmake_host_system_information(RESULT VS_DIR QUERY VS_17_DIR)
+        file(GLOB MSVC_CRT_DIRS "${VS_DIR}/VC/Redist/MSVC/*/x64/Microsoft.VC*.CRT")
+        if(MSVC_CRT_DIRS)
+            list(SORT MSVC_CRT_DIRS COMPARE NATURAL ORDER DESCENDING)
+            list(GET MSVC_CRT_DIRS 0 MSVC_CRT_DIR)
+            install(FILES ${MSVC_CRT_DIR}/msvcp140.dll ${MSVC_CRT_DIR}/vcruntime140.dll ${MSVC_CRT_DIR}/vcruntime140_1.dll DESTINATION bin)
+        else()
+            message(WARNING "MSVC runtime DLLs not found, the package will need the VC++ Redistributable")
+        endif()
+    endif()
+else()
+    message(STATUS "Development mode: using resources in-place")
+
+    # Define the macro for development mode
+    target_compile_definitions(VulkanEngine PUBLIC DISTRIBUTION_MODE=0)
+endif()
+# Set the resource path to the local source directory
+target_compile_definitions(VulkanEngine PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+
+# Per-application assets directory, see vkfw_app_assets()
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/app_assets.cmake)
+
 # Choose if building demos directory. User-Defined.
 option(BUILD_EXAMPLES "Build Examples Directory" ON)
 if(BUILD_EXAMPLES)
@@ -120,24 +163,24 @@ if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
-# Choose if building the project for distribution
-option(DISTRIBUTION_MODE "Enable distribution mode (copy resources and set macro to build directory)" OFF)
-if(DISTRIBUTION_MODE)
-    message(STATUS "Distribution mode: copying resources to build directory")
-    
-    # Copy resources for distribution mode
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    
-    # Define the macro for code (to be used in the engine)
-    target_compile_definitions(VulkanEngine PUBLIC DISTRIBUTION_MODE=TRUE)
-  
-else()
-    message(STATUS "Development mode: using resources in-place")
-    
-    # Define the macro for development mode
-    target_compile_definitions(VulkanEngine PUBLIC DISTRIBUTION_MODE=FALSE)
-    
+
+# Package one application: <package>/bin, <package>/resources (engine) and <package>/assets
+if(DISTRIBUTION_MODE AND PACKAGE_TARGET)
+    if(NOT TARGET ${PACKAGE_TARGET})
+        message(FATAL_ERROR "PACKAGE_TARGET '${PACKAGE_TARGET}' is not a target of this project")
+    endif()
+    install(TARGETS ${PACKAGE_TARGET} RUNTIME DESTINATION bin)
+
+    if(PACKAGE_ASSETS)
+        get_filename_component(PACKAGE_ASSETS_DIR ${PACKAGE_ASSETS} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    else()
+        get_target_property(PACKAGE_ASSETS_DIR ${PACKAGE_TARGET} VKFW_ASSETS_DIR)
+    endif()
+    if(PACKAGE_ASSETS_DIR)
+        message(STATUS "Packaging ${PACKAGE_TARGET} with assets from ${PACKAGE_ASSETS_DIR}")
+        install(DIRECTORY ${PACKAGE_ASSETS_DIR}/ DESTINATION assets)
+    else()
+        message(STATUS "Packaging ${PACKAGE_TARGET} without assets")
+    endif()
 endif()
-# Set the resource path to the local source directory
-target_compile_definitions(VulkanEngine PUBLIC ENGINE_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 

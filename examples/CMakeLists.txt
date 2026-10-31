@@ -39,3 +39,6 @@ target_link_libraries(SponzaApp PRIVATE VulkanEngine)
 target_compile_definitions(VulkanEngine PUBLIC EXAMPLES_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 
 set_property(TARGET RendererApp RotatingKabuto RaytracingApp SponzaApp PROPERTY FOLDER "examples")
+
+# Assets loaded at runtime with GET_ASSET_PATH()
+vkfw_app_assets(SponzaApp sponza/assets)

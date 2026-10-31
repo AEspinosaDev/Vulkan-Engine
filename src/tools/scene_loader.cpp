@@ -88,7 +88,7 @@ void VKFW::Tools::SceneLoader::load_children(tinyxml2::XMLElement* element, Core
         }
         if (meshType == "sphere")
         {
-            Loaders::load_3D_file(mesh, ENGINE_RESOURCES_PATH "meshes/sphere.obj", m_asyncLoad);
+            Loaders::load_3D_file(mesh, GET_RESOURCE_PATH("meshes/sphere.obj"), m_asyncLoad);
         }
         if (meshType == "cube")
         {
@@ -561,12 +561,16 @@ void VKFW::Tools::SceneLoader::load_scene(Core::Scene* const scene, const std::s
         throw VKFW_Exception("Scene is null pointer");
 
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(fileName.c_str());
+    if (doc.LoadFile(fileName.c_str()) != tinyxml2::XML_SUCCESS)
+        throw VKFW_Exception(("Could not load scene file: " + fileName).c_str());
 
     std::string resources = "";
     if (doc.FirstChildElement("Scene")->FirstChildElement("Resources"))
     {
         resources = std::string(doc.FirstChildElement("Scene")->FirstChildElement("Resources")->Attribute("path"));
+        // Relative resource paths are resolved against the scene file's directory
+        if (!resources.empty() && std::filesystem::path(resources).is_relative())
+            resources = (std::filesystem::path(fileName).parent_path() / resources).generic_string();
     }
 
     // Load the camera

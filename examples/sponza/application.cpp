@@ -5,7 +5,7 @@ void Application::init(Systems::RendererSettings settings) {
     m_window = std::make_shared<WindowGLFW>("Sponza", 1280, 1024);
 
         m_window->init();
-    m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
+    m_window->set_window_icon(GET_RESOURCE_PATH("textures/ico.png").c_str());
 
     m_window->set_window_size_callback(std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
     m_window->set_mouse_callback(std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -42,12 +42,9 @@ void Application::run(int argc, char* argv[]) {
 }
 
 void Application::setup() {
-    const std::string SCENE_PATH(EXAMPLES_RESOURCES_PATH "scenes/");
-    const std::string TEXTURE_PATH(EXAMPLES_RESOURCES_PATH "textures/");
-
     m_scene = new Scene();
     Tools::SceneLoader loader(true);
-    loader.load_scene(m_scene, SCENE_PATH + "sponza.xml");
+    loader.load_scene(m_scene, GET_ASSET_PATH("sponza.xml"));
 
     m_scene->set_ambient_intensity(0.1f);
     m_scene->use_IBL(false);

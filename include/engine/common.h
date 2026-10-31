@@ -58,7 +58,10 @@
 
 #define ASSERT_PTR(ptr) assert((ptr) && "Pointer is null")
 
+// Optick opens a TCP port for its profiler client, keep it out of distribution builds
+#if !DISTRIBUTION_MODE
 #define ENABLE_OPTICK_PROFILING
+#endif
 #ifdef ENABLE_OPTICK_PROFILING
 #define PROFILING_EVENT() OPTICK_EVENT()
 #define PROFILING_FRAME() OPTICK_FRAME("MainThread");
@@ -122,6 +125,13 @@ extern const std::filesystem::path RESOURCES_PATH;
 }
 
 #define GET_RESOURCE_PATH(relative_path) ((Paths::RESOURCES_PATH / relative_path).string())
+
+// Application assets declared with vkfw_app_assets() (cmake/app_assets.cmake)
+#if DISTRIBUTION_MODE
+#define GET_ASSET_PATH(relative_path) ((Paths::RESOURCES_PATH.parent_path() / "assets" / relative_path).string())
+#else
+#define GET_ASSET_PATH(relative_path) ((std::filesystem::path(APP_ASSETS_PATH) / relative_path).string())
+#endif
 
 // Mathematics library glm
 namespace math = glm;

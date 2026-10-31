@@ -1,6 +1,6 @@
 <!-- VULKAN ENGINE SCENE EXAMPLE EXPECIFICATION -->
 <Scene>
-    <Resources path="C:/Dev/Vulkan-Engine/tests/resources/" />
+    <Resources path="../" />
     <!-- CAMERA -->
     <Camera type="perspective" fov="70" near="0.1" far="50">
         <Transform>

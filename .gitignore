@@ -1,5 +1,7 @@
 /build
+/dist
 /.vscode
 /.vs
 /imgui.ini
-/examples/sponza/assets
+/examples/sponza/assets/meshes
+/examples/sponza/assets/textures

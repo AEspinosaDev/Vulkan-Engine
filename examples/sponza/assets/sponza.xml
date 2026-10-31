@@ -2,7 +2,7 @@
 <Scene>
 
     <!-- assets are in gitignore doe to heavy files. If needed they can be download from here: -->
-    <Resources path="C:/Dev/Vulkan-Engine/examples/sponza/assets/" />
+    <Resources path="./" />
 
     <!-- CAMERA -->
     <Camera type="perspective" fov="70" near="0.1" far="50">

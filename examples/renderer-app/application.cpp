@@ -5,7 +5,7 @@ void Application::init(Systems::RendererSettings settings) {
     m_window = std::make_shared<WindowGLFW>("VK Engine", 1280, 1024);
 
     m_window->init();
-    m_window->set_window_icon(EXAMPLES_RESOURCES_PATH "textures/ico.png");
+    m_window->set_window_icon(GET_RESOURCE_PATH("textures/ico.png").c_str());
 
     m_window->set_window_size_callback(std::bind(&Application::window_resize_callback, this, std::placeholders::_1, std::placeholders::_2));
     m_window->set_mouse_callback(std::bind(&Application::mouse_callback, this, std::placeholders::_1, std::placeholders::_2));
