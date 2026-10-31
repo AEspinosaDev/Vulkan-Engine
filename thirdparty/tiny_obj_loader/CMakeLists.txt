@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 project(tiny_obj_loader)
 
 add_library(tiny_obj_loader)
